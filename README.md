@@ -1,5 +1,7 @@
 # ovirt-web-ui-ng
 
+[![ci](https://github.com/skywalkw3r/ovirt-web-ui-ng/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/skywalkw3r/ovirt-web-ui-ng/actions/workflows/ci.yml)
+
 A modern, secure, fast web console for [oVirt](https://www.ovirt.org/) / OLVM —
 a clean-break rebuild that **converges oVirt's two separate web frontends**, the
 self-service **VM Portal** (`ovirt-web-ui`) and the admin **Administration
