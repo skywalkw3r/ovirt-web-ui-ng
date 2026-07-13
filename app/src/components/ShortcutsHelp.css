@@ -1,0 +1,47 @@
+/*
+ * Shortcuts dialog — key-cap treatment for <kbd> plus section stacking.
+ * PF6 has no Kbd component, so this extends the palette-hints precedent
+ * (CommandPalette.css) with PF6 tokens only; dark theme rides the tokens.
+ */
+
+.console-shortcuts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pf-t--global--spacer--lg);
+}
+
+.console-shortcuts__section-title {
+  margin-block-end: var(--pf-t--global--spacer--md);
+}
+
+/* Keys column: caps sit on one line; sequence keys separate by the flex gap
+   alone, chord keys additionally carry a '+' connector. The term is bold in
+   PF — reset so the caps carry the emphasis instead. */
+.console-shortcuts__keys {
+  display: inline-flex;
+  gap: var(--pf-t--global--spacer--xs);
+  align-items: center;
+  font-weight: var(--pf-t--global--font--weight--body--default);
+}
+
+.console-shortcuts__keys kbd {
+  min-inline-size: 1.75rem;
+  padding: var(--pf-t--global--spacer--xs) var(--pf-t--global--spacer--sm);
+  font-family: var(--pf-t--global--font--family--mono);
+  font-size: var(--pf-t--global--font--size--xs);
+  line-height: 1;
+  color: var(--pf-t--global--text--color--regular);
+  text-align: center;
+  background: var(--pf-t--global--background--color--secondary--default);
+  border: var(--pf-t--global--border--width--regular) solid
+    var(--pf-t--global--border--color--default);
+  border-radius: var(--pf-t--global--border--radius--small);
+  /* thicker bottom edge = physical key-cap read */
+  box-shadow: inset 0 calc(-2 * var(--pf-t--global--border--width--regular)) 0
+    var(--pf-t--global--border--color--default);
+}
+
+.console-shortcuts__plus {
+  font-size: var(--pf-t--global--font--size--xs);
+  color: var(--pf-t--global--text--color--subtle);
+}

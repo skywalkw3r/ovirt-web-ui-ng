@@ -1,0 +1,26 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Base for deploying the console on OpenShift (ArgoCD-friendly).
+# Typical use: reference this base from a per-cluster/per-env overlay that
+# patches ENGINE_ORIGIN / CSP_CONNECT_EXTRA and swaps config.js. See README.md.
+
+resources:
+  - deployment.yaml
+  - service.yaml
+  - route.yaml
+
+# config.js is the deploy-time runtime config (multi-engine server list,
+# monitoring). The generator suffixes the ConfigMap name with a content hash
+# and rewrites the Deployment reference, so editing config.js in Git rolls
+# the pods automatically — no manual restart.
+configMapGenerator:
+  - name: web-ui-ng-config
+    files:
+      - config.js
+
+# Point at your registry/tag from an overlay (or uncomment here):
+# images:
+#   - name: ovirt-web-ui-ng
+#     newName: quay.io/yourorg/ovirt-web-ui-ng
+#     newTag: "1.0.0"

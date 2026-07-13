@@ -1,0 +1,240 @@
+import { useState } from 'react'
+import {
+  Button,
+  Form,
+  FormGroup,
+  FormHelperText,
+  FormSection,
+  HelperText,
+  HelperTextItem,
+  Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+  Switch,
+  TextInput,
+} from '@patternfly/react-core'
+import type { InstanceType } from '../../api/schemas/instance-type'
+import {
+  blankInstanceTypeDraft,
+  draftToPayload,
+  instanceTypeMemoryError,
+  instanceTypeNameError,
+  instanceTypeToDraft,
+  retrackMemory,
+  type InstanceTypeDraft,
+} from './instanceTypeDraft'
+import { useCreateInstanceType, useUpdateInstanceType } from '../../hooks/useInstanceTypeMutations'
+
+// The Create/Edit instance type modal. Owns a single flat draft — seeded from
+// the instance type's read model in edit mode, blank defaults in create mode.
+// Save POSTs (create) or PUTs (edit) the draft and closes on success; a fault
+// keeps the modal open so the toast's error is actionable. Mirrors
+// ClusterFormModal's draft/set/seededId/Save-Cancel shape, but with no
+// create-only field to lock (an instance type's fields are all editable, unlike
+// a cluster's fixed data center).
+export function InstanceTypeFormModal({
+  instanceType,
+  isOpen,
+  onClose,
+}: {
+  instanceType?: InstanceType
+  isOpen: boolean
+  onClose: () => void
+}) {
+  const isEdit = instanceType !== undefined
+  const [draft, setDraft] = useState<InstanceTypeDraft>(() =>
+    instanceType ? instanceTypeToDraft(instanceType) : blankInstanceTypeDraft(),
+  )
+  // Re-seed when the modal is pointed at a different instance type (or flips
+  // between create and edit). Tracking the id we last seeded from and resetting
+  // during render keeps the draft in sync without an extra commit/flicker —
+  // same pattern as ClusterFormModal.
+  const [seededId, setSeededId] = useState(instanceType?.id)
+  if (seededId !== instanceType?.id) {
+    setSeededId(instanceType?.id)
+    setDraft(instanceType ? instanceTypeToDraft(instanceType) : blankInstanceTypeDraft())
+  }
+
+  const set = <K extends keyof InstanceTypeDraft>(key: K, value: InstanceTypeDraft[K]) => {
+    setDraft((current) => ({ ...current, [key]: value }))
+  }
+
+  // TextInput hands back a string; the numeric draft fields collapse an empty
+  // input to 0 rather than NaN so the controlled value stays a real number —
+  // mirror edit-vm SystemSection's setNumber.
+  const setNumber = <K extends keyof InstanceTypeDraft>(key: K) => {
+    return (_event: unknown, value: string) => {
+      set(key, (value === '' ? 0 : Number(value)) as InstanceTypeDraft[K])
+    }
+  }
+
+  // Memory size is special: webadmin keeps the guaranteed and maximum tracking
+  // it, so raising Memory Size re-pins any field still at the old-memory default
+  // (guaranteed == memory, max == memory * 4) rather than silently leaving a
+  // stale value behind. retrackMemory returns the whole next draft.
+  const setMemory = (_event: unknown, value: string) => {
+    const nextMemoryMb = value === '' ? 0 : Number(value)
+    setDraft((current) => retrackMemory(current, current.memoryMb, nextMemoryMb))
+  }
+
+  const create = useCreateInstanceType()
+  const update = useUpdateInstanceType()
+  const pending = create.isPending || update.isPending
+
+  const save = () => {
+    const payload = draftToPayload(draft)
+    if (isEdit) {
+      update.mutate({ id: instanceType.id, payload }, { onSuccess: () => onClose() })
+    } else {
+      create.mutate(payload, { onSuccess: () => onClose() })
+    }
+  }
+
+  // Inline validation (webadmin parity) — the Save gate uses the same validators
+  // so an invalid name/memory both shows why and blocks the save, instead of
+  // bouncing a raw engine fault.
+  const nameError = instanceTypeNameError(draft.name)
+  const memoryError = instanceTypeMemoryError(draft)
+  const title = isEdit ? `Edit instance type — ${instanceType.name}` : 'New instance type'
+
+  return (
+    <Modal
+      variant="medium"
+      isOpen={isOpen}
+      onClose={onClose}
+      aria-labelledby="instance-type-form-title"
+      aria-describedby="instance-type-form-body"
+    >
+      <ModalHeader title={title} labelId="instance-type-form-title" />
+      <ModalBody id="instance-type-form-body">
+        <Form onSubmit={(event) => event.preventDefault()}>
+          <FormGroup label="Name" isRequired fieldId="instance-type-name">
+            <TextInput
+              id="instance-type-name"
+              isRequired
+              aria-label="Instance type name"
+              validated={nameError !== undefined ? 'error' : 'default'}
+              value={draft.name}
+              onChange={(_event, value) => set('name', value)}
+            />
+            {nameError !== undefined && (
+              <FormHelperText>
+                <HelperText>
+                  <HelperTextItem variant="error">{nameError}</HelperTextItem>
+                </HelperText>
+              </FormHelperText>
+            )}
+          </FormGroup>
+
+          <FormGroup label="Description" fieldId="instance-type-description">
+            <TextInput
+              id="instance-type-description"
+              aria-label="Instance type description"
+              value={draft.description}
+              onChange={(_event, value) => set('description', value)}
+            />
+          </FormGroup>
+
+          <FormGroup label="Memory Size (MB)" fieldId="instance-type-memory">
+            <TextInput
+              id="instance-type-memory"
+              type="number"
+              aria-label="Memory Size (MB)"
+              validated={memoryError !== undefined ? 'error' : 'default'}
+              value={draft.memoryMb}
+              onChange={setMemory}
+            />
+          </FormGroup>
+
+          <FormGroup
+            label="Physical Memory Guaranteed (MB)"
+            fieldId="instance-type-guaranteed-memory"
+          >
+            <TextInput
+              id="instance-type-guaranteed-memory"
+              type="number"
+              aria-label="Physical Memory Guaranteed (MB)"
+              validated={memoryError !== undefined ? 'error' : 'default'}
+              value={draft.guaranteedMemoryMb}
+              onChange={setNumber('guaranteedMemoryMb')}
+            />
+          </FormGroup>
+
+          <FormGroup label="Maximum memory (MB)" fieldId="instance-type-max-memory">
+            <TextInput
+              id="instance-type-max-memory"
+              type="number"
+              aria-label="Maximum memory (MB)"
+              validated={memoryError !== undefined ? 'error' : 'default'}
+              value={draft.maxMemoryMb}
+              onChange={setNumber('maxMemoryMb')}
+            />
+            {memoryError !== undefined && (
+              <FormHelperText>
+                <HelperText>
+                  <HelperTextItem variant="error">{memoryError}</HelperTextItem>
+                </HelperText>
+              </FormHelperText>
+            )}
+          </FormGroup>
+
+          <FormSection title="Virtual CPUs" titleElement="h3">
+            <FormGroup label="Virtual Sockets" fieldId="instance-type-sockets">
+              <TextInput
+                id="instance-type-sockets"
+                type="number"
+                aria-label="Virtual Sockets"
+                value={draft.sockets}
+                onChange={setNumber('sockets')}
+              />
+            </FormGroup>
+
+            <FormGroup label="Cores per Virtual Socket" fieldId="instance-type-cores">
+              <TextInput
+                id="instance-type-cores"
+                type="number"
+                aria-label="Cores per Virtual Socket"
+                value={draft.coresPerSocket}
+                onChange={setNumber('coresPerSocket')}
+              />
+            </FormGroup>
+
+            <FormGroup label="Threads per Core" fieldId="instance-type-threads">
+              <TextInput
+                id="instance-type-threads"
+                type="number"
+                aria-label="Threads per Core"
+                value={draft.threadsPerCore}
+                onChange={setNumber('threadsPerCore')}
+              />
+            </FormGroup>
+          </FormSection>
+
+          <FormGroup fieldId="instance-type-ha">
+            <Switch
+              id="instance-type-ha"
+              label="Highly available"
+              aria-label="Highly available"
+              isChecked={draft.haEnabled}
+              onChange={(_event, checked) => set('haEnabled', checked)}
+            />
+          </FormGroup>
+        </Form>
+      </ModalBody>
+      <ModalFooter>
+        <Button
+          variant="primary"
+          onClick={save}
+          isLoading={pending}
+          isDisabled={pending || nameError !== undefined || memoryError !== undefined}
+        >
+          Save
+        </Button>
+        <Button variant="secondary" onClick={onClose} isDisabled={pending}>
+          Cancel
+        </Button>
+      </ModalFooter>
+    </Modal>
+  )
+}

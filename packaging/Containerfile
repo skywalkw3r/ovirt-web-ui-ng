@@ -1,0 +1,86 @@
+# Containerfile -- nginx:alpine serving the Vite static build.
+#
+# This is the *container* deploy path (dev demos, OpenShift/pod alongside the
+# engine, air-gapped previews). The RPM (ovirt-web-ui-ng.spec) is the path for
+# an integrated engine host; this image is for running the SPA as its own pod
+# with a same-origin reverse proxy to the engine (see nginx-sample.conf).
+#
+# Two-stage: build the SPA with Node, then serve the tiny dist/ with nginx.
+# Build-time arg VITE_BASE / ENGINE_URL let a caller retarget without editing.
+
+# ---- Stage 1: build --------------------------------------------------------
+FROM docker.io/library/node:22-alpine AS build
+
+WORKDIR /src
+
+# Served sub-path; MUST match the Alias/location in nginx-sample.conf and the
+# app's vite.config.ts base. Override with --build-arg VITE_BASE=/...
+ARG VITE_BASE=/ovirt-engine/web-ui-ng/
+ENV VITE_BASE=${VITE_BASE}
+
+# Copy manifests first for layer caching, then install from the lockfile.
+COPY app/package.json app/package-lock.json ./app/
+WORKDIR /src/app
+RUN npm ci
+
+# Copy the rest of the app and build. dist/ lands in /src/app/dist.
+WORKDIR /src
+COPY app ./app
+WORKDIR /src/app
+
+# Multi-engine is compiled in ONLY for this container (proxy/external) build:
+# the config.js `servers` list is honored and the login-page picker can
+# render (still inert until a deployer actually lists servers). The
+# integrated RPM uses the default build where the capability does not exist —
+# an install on a hosted engine is single-engine by design.
+ENV VITE_MULTI_ENGINE=1
+
+# Bake a placeholder into index.html's <meta> CSP connect-src. nginx swaps it
+# at serve time (sub_filter, see nginx-sample.conf) for the runtime
+# ${CSP_CONNECT_EXTRA} value, so enabling multi-engine on a running container
+# is env-only — no image rebuild. Source builds outside this Containerfile
+# leave the variable unset and get a clean, strict meta (vite.config.ts
+# defaults it to empty).
+ENV VITE_CSP_CONNECT_EXTRA=__CSP_CONNECT_EXTRA__
+RUN npm run build
+
+# ---- Stage 2: serve --------------------------------------------------------
+# nginx-unprivileged: same envsubst-template entrypoint as nginx:alpine, but
+# pidfile/cache/temp paths writable by an arbitrary UID — required for
+# OpenShift's restricted SCC (random UID), harmless everywhere else. Listens
+# on 8080 by default, matching nginx-sample.conf.
+FROM docker.io/nginxinc/nginx-unprivileged:alpine AS serve
+
+# Our server config as an envsubst *template*. The stock nginx:alpine
+# entrypoint runs `envsubst` over /etc/nginx/templates/*.template into
+# /etc/nginx/conf.d/ (dropping the .template suffix) and then execs nginx, so
+# this replaces the default server block. envsubst ships in the base image --
+# no extra package needed.
+COPY packaging/nginx-sample.conf /etc/nginx/templates/default.conf.template
+
+# Static build. nginx-sample.conf serves it from /usr/share/nginx/html at the
+# configured sub-path.
+COPY --from=build /src/app/dist /usr/share/nginx/html/ovirt-engine/web-ui-ng
+
+# The engine origin this container reverse-proxies /ovirt-engine/{api,sso,...}
+# to. Templated into the nginx config at start via envsubst so the same image
+# targets any engine. Provide at run time:
+#   podman run -e ENGINE_ORIGIN=https://engine.lab.example.com -p 8080:8080 ...
+ENV ENGINE_ORIGIN=https://engine.local
+
+# Multi-engine (optional): extra CSP connect-src origins for the engines
+# listed in config.js — space-separated, e.g.
+#   -e CSP_CONNECT_EXTRA='https://engine2.example.com https://engine3.example.com'
+# Substituted into BOTH the CSP response header and (via sub_filter) the
+# baked <meta> CSP placeholder. Empty (the default) keeps the strict
+# single-engine policy byte-for-byte.
+ENV CSP_CONNECT_EXTRA=''
+
+# Restrict envsubst to ONLY our variables so literal nginx runtime vars
+# ($uri, $host, $http_upgrade, ...) in the template survive untouched.
+ENV NGINX_ENVSUBST_FILTER='ENGINE_ORIGIN|CSP_CONNECT_EXTRA'
+
+# Unprivileged: listen on 8080 so the image runs without root / NET_BIND.
+EXPOSE 8080
+
+# nginx:alpine default entrypoint handles envsubst + launch. No CMD override.

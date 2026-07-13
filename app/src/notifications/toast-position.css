@@ -1,0 +1,13 @@
+/* Toast placement override. PF6's .pf-m-toast pins the alert group to the
+   top-RIGHT, where it covers the masthead controls (notification bell, user
+   menu) and page-header actions. Center it horizontally instead and start it
+   below the masthead so no persistent control is ever obscured; toasts
+   auto-dismiss after 5s (AUTO_DISMISS_MS in NotificationProvider.tsx).
+   The `:root` prefix is required for the override to beat PF's own selector
+   regardless of import order (see styles/brand-tokens.css traps). */
+:root .pf-v6-c-alert-group.pf-m-toast {
+  inset-inline-end: auto;
+  inset-inline-start: 50%;
+  inset-block-start: 4.5rem;
+  transform: translateX(-50%);
+}

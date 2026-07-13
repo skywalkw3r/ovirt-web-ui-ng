@@ -1,0 +1,184 @@
+/*
+ * cmdk palette — the one custom island (docs/COMPONENTS.md "Known gaps").
+ * PF has no palette component, so this styles cmdk's data-attribute hooks
+ * with PF6 design tokens only (ground rule 1); the floating/backdrop tokens
+ * track the pf-v6-theme-dark class, so both themes come for free.
+ */
+
+.console-command-palette__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--pf-t--global--z-index--500);
+  background: var(--pf-t--global--background--color--backdrop--default);
+}
+
+.console-command-palette {
+  position: fixed;
+  top: 20vh;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: var(--pf-t--global--z-index--500);
+  width: min(36rem, calc(100vw - 2 * var(--pf-t--global--spacer--lg)));
+  overflow: hidden;
+  font-family: var(--pf-t--global--font--family--body);
+  color: var(--pf-t--global--text--color--regular);
+  background: var(--pf-t--global--background--color--floating--default);
+  border: var(--pf-t--global--border--width--regular) solid
+    var(--pf-t--global--border--color--default);
+  border-radius: var(--pf-t--global--border--radius--large);
+  box-shadow: var(--pf-t--global--box-shadow--lg);
+}
+
+/* Focus ring on the whole surface — the input inside is borderless, so the
+   dialog frame carries the focus indication. */
+.console-command-palette:focus-within {
+  border-color: var(--pf-t--global--border--color--brand--default);
+}
+
+.console-command-palette [cmdk-input] {
+  width: 100%;
+  padding: var(--pf-t--global--spacer--md) var(--pf-t--global--spacer--lg);
+  font-family: inherit;
+  font-size: var(--pf-t--global--font--size--md);
+  color: var(--pf-t--global--text--color--regular);
+  background: transparent;
+  border: none;
+  border-bottom: var(--pf-t--global--border--width--regular) solid
+    var(--pf-t--global--border--color--default);
+  outline: none;
+}
+
+.console-command-palette [cmdk-input]::placeholder {
+  color: var(--pf-t--global--text--color--placeholder);
+}
+
+.console-command-palette [cmdk-list] {
+  max-height: min(24rem, 50vh);
+  padding: var(--pf-t--global--spacer--sm);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scroll-padding-block: var(--pf-t--global--spacer--sm);
+}
+
+.console-command-palette [cmdk-group-heading] {
+  padding: var(--pf-t--global--spacer--sm) var(--pf-t--global--spacer--md);
+  font-size: var(--pf-t--global--font--size--xs);
+  font-weight: var(--pf-t--global--font--weight--body--bold);
+  color: var(--pf-t--global--text--color--subtle);
+}
+
+.console-command-palette [cmdk-item] {
+  display: flex;
+  gap: var(--pf-t--global--spacer--sm);
+  align-items: center;
+  padding: var(--pf-t--global--spacer--sm) var(--pf-t--global--spacer--md);
+  font-size: var(--pf-t--global--font--size--sm);
+  cursor: pointer;
+  border-radius: var(--pf-t--global--border--radius--small);
+}
+
+/* Keyboard selection highlight = hover surface + brand accent bar, matching
+   how PF nav marks its active item. */
+.console-command-palette [cmdk-item][data-selected='true'] {
+  background: var(--pf-t--global--background--color--floating--hover);
+  box-shadow: inset var(--pf-t--global--border--width--extra-strong) 0 0 0
+    var(--pf-t--global--border--color--brand--default);
+}
+
+.console-command-palette [cmdk-item][data-disabled='true'] {
+  color: var(--pf-t--global--text--color--disabled);
+  cursor: not-allowed;
+}
+
+.console-command-palette__item-meta {
+  margin-inline-start: auto;
+  font-size: var(--pf-t--global--font--size--xs);
+  color: var(--pf-t--global--text--color--subtle);
+}
+
+/* Search-syntax completions read as code — field names, operators, and enum
+   values the user is composing into a DSL clause. */
+.console-command-palette__suggest-token {
+  font-family: var(--pf-t--global--font--family--mono);
+  font-size: var(--pf-t--global--font--size--sm);
+}
+
+.console-command-palette [cmdk-empty],
+.console-command-palette [cmdk-loading] {
+  padding: var(--pf-t--global--spacer--lg) var(--pf-t--global--spacer--md);
+  font-size: var(--pf-t--global--font--size--sm);
+  color: var(--pf-t--global--text--color--subtle);
+  text-align: center;
+}
+
+.console-command-palette__hints {
+  display: flex;
+  gap: var(--pf-t--global--spacer--lg);
+  padding: var(--pf-t--global--spacer--sm) var(--pf-t--global--spacer--lg);
+  font-size: var(--pf-t--global--font--size--xs);
+  color: var(--pf-t--global--text--color--subtle);
+  border-top: var(--pf-t--global--border--width--regular) solid
+    var(--pf-t--global--border--color--default);
+}
+
+.console-command-palette__hints kbd,
+.console-search-trigger__kbd {
+  padding: 0 var(--pf-t--global--spacer--xs);
+  margin-inline-end: var(--pf-t--global--spacer--xs);
+  font-family: var(--pf-t--global--font--family--mono);
+  font-size: var(--pf-t--global--font--size--xs);
+  background: var(--pf-t--global--background--color--secondary--default);
+  border: var(--pf-t--global--border--width--regular) solid
+    var(--pf-t--global--border--color--default);
+  border-radius: var(--pf-t--global--border--radius--small);
+}
+
+/* DSL tip pushed to the far end of the hints row, visually quieter than the
+   keyboard hints beside it. */
+.console-command-palette__hint-dsl {
+  margin-inline-start: auto;
+}
+
+/* "Show all N matches" rows read as links, not objects. */
+.console-command-palette__show-all {
+  color: var(--pf-t--global--text--color--link--default);
+  font-size: var(--pf-t--global--font--size--xs);
+}
+
+/* Masthead trigger (GlobalSearchBox) — drawn as a search input, but it is a
+   button that opens the palette; same token-only rule as the palette above. */
+.console-search-trigger {
+  display: flex;
+  gap: var(--pf-t--global--spacer--sm);
+  align-items: center;
+  inline-size: min(20rem, 40vw);
+  padding: var(--pf-t--global--spacer--xs) var(--pf-t--global--spacer--sm);
+  font-family: inherit;
+  font-size: var(--pf-t--global--font--size--sm);
+  color: var(--pf-t--global--text--color--placeholder);
+  cursor: pointer;
+  background: var(--pf-t--global--background--color--secondary--default);
+  border: var(--pf-t--global--border--width--regular) solid
+    var(--pf-t--global--border--color--default);
+  border-radius: var(--pf-t--global--border--radius--small);
+}
+
+.console-search-trigger:hover,
+.console-search-trigger:focus-visible {
+  border-color: var(--pf-t--global--border--color--hover);
+}
+
+.console-search-trigger__icon {
+  flex: none;
+}
+
+.console-search-trigger__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.console-search-trigger__kbd {
+  margin-inline-start: auto;
+  margin-inline-end: 0;
+}

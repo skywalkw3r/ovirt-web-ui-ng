@@ -1,0 +1,39 @@
+/* Permission checkbox tree (components/role-form/PermitTree). PF tokens only —
+   no hardcoded colors/spacing (docs/COMPONENTS.md ground rules). */
+
+.role-permit-tree {
+  border: 1px solid var(--pf-t--global--border--color--default);
+  border-radius: var(--pf-t--global--border--radius--small);
+  max-height: 22rem;
+  overflow-y: auto;
+}
+
+.role-permit-group + .role-permit-group {
+  border-top: 1px solid var(--pf-t--global--border--color--default);
+}
+
+.role-permit-group-header {
+  display: flex;
+  align-items: center;
+  gap: var(--pf-t--global--spacer--sm);
+  padding: var(--pf-t--global--spacer--sm) var(--pf-t--global--spacer--md);
+}
+
+.role-permit-group-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: var(--pf-t--global--icon--color--subtle);
+}
+
+.role-permit-group-body {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+  gap: var(--pf-t--global--spacer--xs) var(--pf-t--global--spacer--lg);
+  padding: 0 var(--pf-t--global--spacer--md) var(--pf-t--global--spacer--sm)
+    var(--pf-t--global--spacer--xl);
+}

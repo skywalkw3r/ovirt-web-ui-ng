@@ -1,0 +1,305 @@
+---
+# 02-bootstrap-node.yml
+#
+# Turns the freshly provisioned CentOS Stream 9 VM (see 01-provision-proxmox-vm.yml)
+# into a single-node oVirt hypervisor that also serves its own NFS storage.
+#
+# Run:
+#   ansible-playbook -i inventory.ini 02-bootstrap-node.yml -e @vars.yml
+#
+# Controller requirements:
+#   ansible-galaxy collection install ansible.posix
+#
+# Variables consumed (see vars.example.yml): node_fqdn, node_ip,
+# engine_fqdn, engine_ip
+
+- name: Bootstrap the oVirt node (CentOS Stream 9)
+  hosts: ovirt_node
+  become: true
+
+  handlers:
+    - name: Re-export NFS shares
+      # A handler only fires after a notifying task reported 'changed', so
+      # whenever this runs it genuinely re-publishes the export table.
+      ansible.builtin.command:
+        cmd: exportfs -ra
+      changed_when: true
+
+  tasks:
+    # ------------------------------------------------------------------
+    # Fail fast: nested virtualization
+    # Ansible facts do not expose CPU flags, so we grep /proc/cpuinfo.
+    # Everything after this point is pointless without vmx/svm + /dev/kvm,
+    # so this check runs before any package or config work.
+    # ------------------------------------------------------------------
+    - name: Count hardware-virt CPU flags (vmx=Intel, svm=AMD)
+      ansible.builtin.command:
+        cmd: grep -Ec '(vmx|svm)' /proc/cpuinfo
+      register: virt_flags
+      changed_when: false
+      failed_when: false # grep exits 1 on zero matches; the assert below decides
+
+    - name: Check that /dev/kvm exists
+      ansible.builtin.stat:
+        path: /dev/kvm
+      register: kvm_dev
+
+    - name: Assert nested virtualization is exposed to this VM
+      ansible.builtin.assert:
+        that:
+          - virt_flags.stdout | int > 0
+          - kvm_dev.stat.exists
+          - kvm_dev.stat.ischr | default(false)
+        fail_msg: >-
+          Nested virtualization is NOT available inside this VM (no vmx/svm
+          flag in /proc/cpuinfo or /dev/kvm is missing). On the Proxmox host:
+          enable nesting (kvm_intel/kvm_amd nested=1 -- default on PVE 7+) and
+          make sure the VM uses CPU type 'host' (01-provision-proxmox-vm.yml
+          sets this). A config change needs a full VM stop/start, not a soft
+          reboot.
+        success_msg: >-
+          Nested virt OK: {{ virt_flags.stdout }} CPU(s) expose vmx/svm and
+          /dev/kvm is present.
+
+    # ------------------------------------------------------------------
+    # Identity: hostname + /etc/hosts (the lab has no DNS)
+    # ------------------------------------------------------------------
+    - name: Set the node hostname
+      ansible.builtin.hostname:
+        name: "{{ node_fqdn }}"
+
+    - name: Stop cloud-init from reverting the hostname on later boots
+      # The GenericCloud image runs cloud-init on every boot; without this
+      # drop-in it can reset the hostname we just configured after a reboot.
+      ansible.builtin.copy:
+        dest: /etc/cloud/cloud.cfg.d/99-lab-preserve-hostname.cfg
+        content: |
+          # Managed by ovirt-web-ui lab/ansible/02-bootstrap-node.yml
+          preserve_hostname: true
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: Pin node and engine names in /etc/hosts
+      # hosted-engine setup requires that engine_fqdn resolves and does NOT
+      # resolve to 127.0.0.1 or to the node's own name. Keying the regexp on
+      # the FQDN also replaces any bogus 127.0.1.1 line cloud-init may have
+      # written for the node.
+      ansible.builtin.lineinfile:
+        path: /etc/hosts
+        regexp: '\s{{ item.fqdn | regex_escape }}(\s|$)'
+        line: "{{ item.ip }} {{ item.fqdn }} {{ item.fqdn.split('.') | first }}"
+      loop:
+        - { ip: "{{ node_ip }}", fqdn: "{{ node_fqdn }}" }
+        - { ip: "{{ engine_ip }}", fqdn: "{{ engine_fqdn }}" }
+
+    # ------------------------------------------------------------------
+    # Time sync -- sanlock storage leases and engine TLS certificates are
+    # both time sensitive; oVirt requires host/engine clocks to agree.
+    # ------------------------------------------------------------------
+    - name: Install chrony
+      ansible.builtin.dnf:
+        name: chrony
+        state: present
+
+    - name: Enable and start chronyd
+      ansible.builtin.systemd_service:
+        name: chronyd
+        state: started
+        enabled: true
+
+    # ------------------------------------------------------------------
+    # Repositories: oVirt 4.5 SIG + CRB
+    # ------------------------------------------------------------------
+    - name: Install the oVirt 4.5 SIG release package
+      # centos-release-ovirt45 ships in the default-enabled CS9 extras-common
+      # repo and is still the current package for oVirt 4.5.x (there is no
+      # 4.6 / no separate ovirt-release45 rpm for EL9).
+      ansible.builtin.dnf:
+        name: centos-release-ovirt45
+        state: present
+
+    # On a fresh image the first install from a SIG repo stops at an
+    # interactive "Importing GPG key ... Is this ok [y/N]" prompt, which
+    # under Ansible just hangs forever. Import ONLY the keys the oVirt 4.5
+    # repos are signed with — a blanket import of /etc/pki/rpm-gpg/* breaks
+    # on RPM-GPG-KEY-centosofficial-PQC, a V6 post-quantum key that current
+    # rpm cannot import ("Unsupported version of key: V6").
+    - name: Import the GPG keys the oVirt repos are signed with
+      ansible.builtin.rpm_key:
+        key: "/etc/pki/rpm-gpg/{{ item }}"
+        state: present
+      loop:
+        # centos-ovirt45 CBS packages (the key behind the original hang)
+        - RPM-GPG-KEY-CentOS-SIG-Virtualization
+        # ceph/gluster dependencies pulled in by vdsm
+        - RPM-GPG-KEY-CentOS-SIG-Storage
+        # ovirt-45-upstream repo content
+        - RPM-GPG-KEY-oVirt-4.5
+
+    - name: List enabled dnf repositories
+      ansible.builtin.command:
+        cmd: dnf repolist --enabled --quiet
+      register: enabled_repos
+      changed_when: false
+
+    - name: Enable the CRB repository
+      # Required for oVirt dependency resolution on CS9 but missing from the
+      # official quick-start docs. Guarded by the repolist check above so the
+      # task stays idempotent.
+      ansible.builtin.command:
+        cmd: dnf config-manager --set-enabled crb
+      when: enabled_repos.stdout_lines | select('match', '^crb(\s|$)') | list | length == 0
+      # The repolist guard above is the idempotency check — whenever this
+      # task runs it really does flip the repo to enabled.
+      changed_when: true
+
+    # ------------------------------------------------------------------
+    # Full update, then reboot only if the running kernel/userland needs it
+    # ------------------------------------------------------------------
+    # Intentional full system update: the needs-restarting/reboot logic
+    # below depends on the whole system being current, not a pinned subset.
+    - name: Update all packages # noqa: package-latest
+      ansible.builtin.dnf:
+        name: "*"
+        state: latest
+        update_cache: true
+
+    - name: Install dnf-utils (provides needs-restarting)
+      ansible.builtin.dnf:
+        name: dnf-utils
+        state: present
+
+    - name: Check whether a reboot is required
+      # needs-restarting -r exits 1 when a reboot is needed (new kernel,
+      # core library updates), 0 otherwise -- both are success for us.
+      ansible.builtin.command:
+        cmd: needs-restarting -r
+      register: reboot_required
+      changed_when: false
+      failed_when: reboot_required.rc not in [0, 1]
+
+    - name: Reboot to load the updated kernel
+      ansible.builtin.reboot:
+        reboot_timeout: 600
+      when: reboot_required.rc == 1
+
+    # ------------------------------------------------------------------
+    # oVirt hosted-engine packages
+    # ------------------------------------------------------------------
+    - name: Install oVirt hosted-engine setup packages
+      ansible.builtin.dnf:
+        name:
+          # Pulls vdsm + the ovirt-ansible-collection used by playbook 03.
+          - ovirt-hosted-engine-setup
+          # ~1.5 GB engine appliance image. The hosted_engine_setup role would
+          # install it anyway; pre-pulling it here keeps the long download out
+          # of the (already slow) deploy step in 03.
+          - ovirt-engine-appliance
+          # Needed by the ovirt.ovirt modules in 04-post-deploy.yml, which
+          # execute on this node.
+          - python3-ovirt-engine-sdk4
+        state: present
+
+    # ------------------------------------------------------------------
+    # NFS server: the node serves its own storage domains.
+    #   /exports/he   -> hosted_storage (engine VM disk), used by playbook 03
+    #   /exports/data -> 'data' storage domain, attached by playbook 04
+    #   /exports/iso  -> installer media (reserved for manual use; ISO
+    #                    domains are deprecated in oVirt 4.5 — upload
+    #                    images to the data domain instead)
+    # ------------------------------------------------------------------
+    - name: Install NFS server
+      ansible.builtin.dnf:
+        name: nfs-utils
+        state: present
+
+    - name: Create export directories owned by vdsm:kvm (36:36)
+      # Numeric uid/gid on purpose: oVirt mandates 36:36 regardless of local
+      # account names, and this keeps the task valid even before the vdsm
+      # user exists. Wrong ownership fails storage-domain creation with a
+      # permission error.
+      ansible.builtin.file:
+        path: "/exports/{{ item }}"
+        state: directory
+        owner: "36"
+        group: "36"
+        mode: "0755"
+      loop:
+        - he
+        - data
+        - iso
+
+    - name: Configure oVirt NFS exports
+      # all_squash + anonuid/anongid=36 is, per the oVirt NFS troubleshooting
+      # docs, "the only configuration guaranteed to work". Dropped into
+      # /etc/exports.d/ instead of editing /etc/exports.
+      ansible.builtin.copy:
+        dest: /etc/exports.d/ovirt-lab.exports
+        content: |
+          /exports/he   *(rw,sync,no_subtree_check,all_squash,anonuid=36,anongid=36)
+          /exports/data *(rw,sync,no_subtree_check,all_squash,anonuid=36,anongid=36)
+          /exports/iso  *(rw,sync,no_subtree_check,all_squash,anonuid=36,anongid=36)
+        owner: root
+        group: root
+        mode: "0644"
+      notify: Re-export NFS shares
+
+    - name: Enable and start nfs-server
+      ansible.builtin.systemd_service:
+        name: nfs-server
+        state: started
+        enabled: true
+
+    - name: Install firewalld
+      ansible.builtin.dnf:
+        name: firewalld
+        state: present
+
+    - name: Enable and start firewalld
+      # firewalld must be running for 'immediate: true' below, and the
+      # hosted-engine deploy expects to manage it later.
+      ansible.builtin.systemd_service:
+        name: firewalld
+        state: started
+        enabled: true
+
+    - name: Open the firewall for NFS
+      # 'nfs' (tcp/2049) is all NFSv4 needs; rpc-bind and mountd only matter
+      # for v3 clients but are harmless to open in a lab.
+      ansible.posix.firewalld:
+        service: "{{ item }}"
+        state: enabled
+        permanent: true
+        immediate: true
+      loop:
+        - nfs
+        - rpc-bind
+        - mountd
+
+    # ------------------------------------------------------------------
+    # Verify the exports before letting 03 anywhere near them
+    # ------------------------------------------------------------------
+    - name: Flush handlers so exportfs -ra runs before verification
+      ansible.builtin.meta: flush_handlers
+
+    - name: Query the export list via the node's routable address
+      # Deliberately node_ip and not localhost: hosted-engine mounts the
+      # storage via node_fqdn over the ovirtmgmt bridge, so this proves the
+      # path a real client will use (including the firewall rules).
+      ansible.builtin.command:
+        cmd: showmount -e {{ node_ip }}
+      register: showmount_out
+      changed_when: false
+
+    - name: Assert all oVirt exports are published
+      ansible.builtin.assert:
+        that:
+          - "'/exports/he' in showmount_out.stdout"
+          - "'/exports/data' in showmount_out.stdout"
+          - "'/exports/iso' in showmount_out.stdout"
+        fail_msg: >-
+          Expected /exports/he, /exports/data and /exports/iso in
+          'showmount -e {{ node_ip }}' but got:
+          {{ showmount_out.stdout | default('<empty>') }}
+        success_msg: "NFS exports are live: {{ showmount_out.stdout_lines | join(' | ') }}"

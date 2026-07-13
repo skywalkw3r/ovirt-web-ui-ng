@@ -1,0 +1,967 @@
+/*
+ * The ONLY place for brand/style overrides (docs/COMPONENTS.md ground rule 1).
+ * Override PF6 design tokens (--pf-t-*) here; never restyle PF component
+ * internals.
+ */
+
+:root {
+  /*
+   * Links: quiet by default, underline only on hover. PF6 ships every link
+   * with a dashed underline (line--200/style--200), which reads as visual
+   * noise in link-dense tables (VM/host/template name columns). line--100 is
+   * PF's "none" token; hover keeps its underline but solid (style--100)
+   * instead of dashed.
+   */
+  --pf-t--global--text-decoration--link--line--default: var(
+    --pf-t--global--text-decoration--line--100
+  );
+  --pf-t--global--text-decoration--link--style--default: var(
+    --pf-t--global--text-decoration--style--100
+  );
+  --pf-t--global--text-decoration--link--style--hover: var(
+    --pf-t--global--text-decoration--style--100
+  );
+}
+
+/*
+ * Detail-page tab panels (TabContentBody hasPadding): PF6 widens the padding
+ * to spacer--lg (24px) at the xl breakpoint (≥75rem). Keep the spacer--md
+ * (16px) it uses below xl at every viewport — 24px reads too airy next to our
+ * compact tables. These --pf-v6-c-* custom properties are PF's public
+ * per-component theming API; PF assigns them on .pf-v6-c-tab-content itself,
+ * so a :root override can never win (element-set custom properties beat
+ * inherited ones) — target the component class, with :root prepended to
+ * out-rank PF's single-class rule regardless of stylesheet order.
+ */
+/*
+ * Timestamps (event feeds, detail metadata): quiet by default — PF underlines
+ * the tooltip-bearing (help-text) variant with a dashed line at rest, which
+ * reads as noise in dense event lists. Kill the resting underline (the hover/
+ * focus rule re-assigns from its own --hover vars at higher specificity, so
+ * the affordance still appears on hover) and drop the font a step to xs.
+ * Same :root-prefix trick as the tab-content override below.
+ */
+:root .pf-v6-c-timestamp {
+  --pf-v6-c-timestamp--FontSize: var(--pf-t--global--font--size--xs);
+  --pf-v6-c-timestamp--m-help-text--TextDecorationLine: var(
+    --pf-t--global--text-decoration--line--100
+  );
+}
+
+/*
+ * Sidebar mini icon-rail. The masthead toggle collapses the nav to a narrow
+ * icon rail (section icons + tooltips) instead of hiding it entirely — the
+ * vCenter/webadmin pattern. Override PF's fixed sidebar width; the body lays
+ * its nav / rail out over a full-height column with the collapse toggle
+ * pinned to the foot.
+ */
+/* Shrink the sidebar variable at the PAGE ROOT (the grid container), not on
+ * the sidebar element: PF lays the shell out as a grid whose sidebar TRACK
+ * reads this var from .pf-v6-c-page. Overriding it here shrinks the track AND
+ * the sidebar (which inherits it), so the main content reflows into the freed
+ * space instead of leaving an empty gap. Both the base and xl (desktop)
+ * variants are set so it holds at every breakpoint. */
+:root .pf-v6-c-page.app-nav-collapsed {
+  --pf-v6-c-page__sidebar--Width: 4.25rem;
+  --pf-v6-c-page__sidebar--xl--Width: 4.25rem;
+}
+/* column layout only so the foot toggle can pin to the bottom (margin-top
+ * auto); the nav itself keeps its natural height and PF's own row spacing —
+ * do NOT flex-grow it, which stretches and spreads the items. */
+.app-sidebar-body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+/* section icon paired with the group/label text in the expanded nav */
+.app-nav-group-title {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--pf-t--global--spacer--sm);
+}
+.app-nav-group-icon {
+  color: var(--pf-t--global--icon--color--subtle);
+  flex: 0 0 auto;
+}
+
+/* the collapsed rail */
+.app-mini-rail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--pf-t--global--spacer--xs);
+  padding: var(--pf-t--global--spacer--sm) 0;
+}
+.app-mini-divider {
+  width: 40%;
+  height: 1px;
+  background: var(--pf-t--global--border--color--default);
+  margin: var(--pf-t--global--spacer--xs) 0;
+}
+.app-mini-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: var(--pf-t--global--border--radius--small);
+  color: var(--pf-t--global--text--color--regular);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 1.05rem;
+  transition: background-color 0.1s ease;
+}
+.app-mini-item:hover {
+  background: var(--pf-t--global--background--color--action--plain--hover);
+}
+.app-mini-item:focus-visible {
+  outline: 2px solid var(--pf-t--global--border--color--brand--default);
+  outline-offset: 1px;
+}
+/* active section: brand accent + a left tick, echoing PF's nav current state */
+.app-mini-item.app-mini-active {
+  color: var(--pf-t--global--text--color--brand--default);
+  background: var(--pf-t--global--background--color--action--plain--hover);
+  position: relative;
+}
+.app-mini-item.app-mini-active::before {
+  content: '';
+  position: absolute;
+  left: -0.5rem;
+  top: 0.35rem;
+  bottom: 0.35rem;
+  width: 3px;
+  border-radius: 0 2px 2px 0;
+  background: var(--pf-t--global--color--brand--default);
+}
+
+/* foot toggle — full-width in the expanded nav, centered icon when collapsed;
+ * margin-top:auto pins it to the bottom of the sidebar column */
+.app-sidebar-collapse {
+  flex: 0 0 auto;
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--pf-t--global--spacer--sm);
+  width: 100%;
+  padding: var(--pf-t--global--spacer--sm) var(--pf-t--global--spacer--md);
+  background: transparent;
+  border: none;
+  border-top: 1px solid var(--pf-t--global--border--color--default);
+  color: var(--pf-t--global--text--color--subtle);
+  cursor: pointer;
+  font-size: var(--pf-t--global--font--size--sm);
+}
+.app-sidebar-collapse:hover {
+  background: var(--pf-t--global--background--color--action--plain--hover);
+  color: var(--pf-t--global--text--color--regular);
+}
+.app-sidebar-mini .app-sidebar-collapse {
+  justify-content: center;
+  padding-inline: 0;
+}
+.app-collapse-caret {
+  transition: transform 0.15s ease;
+}
+.app-sidebar-mini .app-collapse-caret {
+  transform: rotate(180deg);
+}
+
+/*
+ * Notification/Tasks drawer items ("bubbles"): PF pads each list item with
+ * spacer--md on all sides, which reads airy for a glanceable feed — keep md
+ * inline (text needs breathing room off the rounded border) but drop the
+ * block padding to sm so more entries fit vertically. Same element-set var
+ * override pattern as below.
+ */
+:root .pf-v6-c-notification-drawer__list-item {
+  --pf-v6-c-notification-drawer__list-item--PaddingBlockStart: var(--pf-t--global--spacer--sm);
+  --pf-v6-c-notification-drawer__list-item--PaddingInlineEnd: var(--pf-t--global--spacer--md);
+  --pf-v6-c-notification-drawer__list-item--PaddingBlockEnd: var(--pf-t--global--spacer--sm);
+  --pf-v6-c-notification-drawer__list-item--PaddingInlineStart: var(--pf-t--global--spacer--md);
+}
+
+/*
+ * …and the drawer chrome around the bubbles: PF frames the header, group
+ * toggles, and list gutters generously (md/lg) for a full-height page drawer;
+ * in our compact anchored panels that reads as wasted space. One step down
+ * across the board (header/toggles md→sm block + lg→md inline, list gutters
+ * lg→md, bubble gap sm→xs, body tail md→sm).
+ */
+:root .pf-v6-c-notification-drawer {
+  --pf-v6-c-notification-drawer__header--PaddingBlockStart: var(--pf-t--global--spacer--sm);
+  --pf-v6-c-notification-drawer__header--PaddingBlockEnd: var(--pf-t--global--spacer--sm);
+  --pf-v6-c-notification-drawer__header--PaddingInlineStart: var(--pf-t--global--spacer--md);
+  --pf-v6-c-notification-drawer__header--PaddingInlineEnd: var(--pf-t--global--spacer--md);
+  --pf-v6-c-notification-drawer__body--PaddingBlockEnd: var(--pf-t--global--spacer--sm);
+  --pf-v6-c-notification-drawer__list--Gap: var(--pf-t--global--spacer--xs);
+  --pf-v6-c-notification-drawer__list--PaddingInlineStart: var(--pf-t--global--spacer--md);
+  --pf-v6-c-notification-drawer__list--PaddingInlineEnd: var(--pf-t--global--spacer--md);
+  --pf-v6-c-notification-drawer__group-toggle--PaddingBlockStart: var(--pf-t--global--spacer--sm);
+  --pf-v6-c-notification-drawer__group-toggle--PaddingBlockEnd: var(--pf-t--global--spacer--sm);
+  --pf-v6-c-notification-drawer__group-toggle--PaddingInlineStart: var(--pf-t--global--spacer--md);
+  --pf-v6-c-notification-drawer__group-toggle--PaddingInlineEnd: var(--pf-t--global--spacer--md);
+}
+
+/*
+ * Dashboard cards: PF's lg spacer above the first child (the title/header)
+ * reads too tall in a dense card grid — one step down to md. Scoped by our
+ * own class (set on the dashboard PageSection) so cards elsewhere keep the
+ * stock frame.
+ */
+:root .dashboard-cards .pf-v6-c-card {
+  --pf-v6-c-card--first-child--PaddingBlockStart: var(--pf-t--global--spacer--md);
+}
+
+:root .pf-v6-c-tab-content {
+  --pf-v6-c-tab-content__body--m-padding--xl--PaddingBlockStart: var(--pf-t--global--spacer--md);
+  --pf-v6-c-tab-content__body--m-padding--xl--PaddingInlineEnd: var(--pf-t--global--spacer--md);
+  --pf-v6-c-tab-content__body--m-padding--xl--PaddingBlockEnd: var(--pf-t--global--spacer--md);
+  --pf-v6-c-tab-content__body--m-padding--xl--PaddingInlineStart: var(--pf-t--global--spacer--md);
+}
+
+/*
+ * About-dialog fact lists. PF's horizontal DescriptionList kept fighting the
+ * AboutModal's wide flex content — flowing groups into two columns and, once
+ * space got tight, crushing the term track until "Console version" wrapped one
+ * letter per line. So this is a plain, self-owned grid instead of PF's
+ * component: term│value pairs where the term track is max-content (never
+ * crushes) and the value takes the rest. dt/dd auto-place into the two tracks
+ * row by row. Uses PF spacer/font tokens only.
+ *
+ * The :root prefix is load-bearing: AboutModal wraps its children in
+ * .pf-v6-c-content, whose `:is(.pf-v6-c-content--dl, .pf-v6-c-content dl)`
+ * rule (specificity 0,1,1) forces `grid-template-columns: 1fr` — a plain
+ * `.about-facts` (0,1,0) loses to it and collapses back to one stacked column.
+ * `:root .about-facts` (0,2,0) out-ranks it. Same trick as the overrides above.
+ */
+:root .about-facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  column-gap: var(--pf-t--global--spacer--xl);
+  row-gap: var(--pf-t--global--spacer--sm);
+  align-items: baseline;
+  margin: 0;
+}
+:root .about-facts dt {
+  font-weight: var(--pf-t--global--font--weight--body--bold);
+}
+:root .about-facts dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+ * ─── Density pass · "clean hypervisor" stage 1 ──────────────────────────────
+ * Token-only compaction toward the hypervisor-console look (vSphere/Proxmox
+ * school): full-bleed workbench instead of PF6's floating rounded panel,
+ * ~34px data rows, working titles instead of heroes, square-ish actions
+ * instead of pills, and dot-quiet status labels. Everything below is PF's
+ * public token/element-var API — no component internals, both themes ride
+ * the tokens (the dark block only remaps colors, never sizes/spacers).
+ */
+
+/* Global dials. Bare :root works for --pf-t--* tokens ONLY because main.tsx
+ * imports PF base.css before this file — PF's theme blocks
+ * (:root:where(.pf-v6-theme-dark)) tie at (0,1,0) and lose on source order.
+ * Don't reorder those imports. */
+:root {
+  /* the floating panel's 4px frame is invisible padding — reclaim it. Must
+   * be 0px, not unitless 0: PF subtracts this token inside length calc()s
+   * (page section padding, tabs/pagination page-insets), and a unitless 0 is
+   * a <number> there, invalidating the declaration at computed-value time
+   * (the padding would silently collapse to 0). */
+  --pf-t--global--border--width--main--default: 0px;
+  /* shell chrome inset 24px → 16px: masthead inline padding + sidebar gap */
+  --pf-t--global--spacer--inset--page-chrome: var(--pf-t--global--spacer--md);
+  /* un-pill MenuToggles (999px → 6px) — pills read consumer, not console.
+   * (action--plain--default is already radius--small in the default theme;
+   * plain Buttons need no change. Solid Buttons don't consume this token at
+   * all — they're handled by the element var below.) */
+  --pf-t--global--border--radius--action--default: var(--pf-t--global--border--radius--small);
+  /* body 14px → 13px: the single highest-leverage density token (tables,
+   * nav, forms all key off it) */
+  --pf-t--global--font--size--body--default: 0.8125rem;
+}
+
+/* Un-pill solid Buttons too: PF6 Button sets its radius straight to the pill
+ * token (button.css line 18), bypassing radius--action--default — without
+ * this, "New host"-style primaries would stay pills next to 6px MenuToggles. */
+:root .pf-v6-c-button {
+  --pf-v6-c-button--BorderRadius: var(--pf-t--global--border--radius--small);
+}
+
+/* Full-bleed workbench. These vars are element-set on .pf-v6-c-page, where a
+ * bare :root override loses (element-set custom properties beat inherited) —
+ * same trick as the overrides above. PF itself ships this flattening below
+ * 48rem via its *--xs-- vars; this applies it at every viewport. */
+:root .pf-v6-c-page {
+  --pf-v6-c-page__main-container--BorderRadius: 0;
+  --pf-v6-c-page__main-container--MarginInlineStart: 0;
+  --pf-v6-c-page__main-container--MarginInlineEnd: 0;
+  --pf-v6-c-page__main-container--MaxHeight: 100%;
+  --pf-v6-c-page__main-container--AlignSelf: stretch;
+  /* paint the page canvas with the content surface so the panel edge
+   * disappears; the masthead/sidebar keep their darker secondary background
+   * and become the "chrome strip" (references resolve per-theme, so light
+   * mode gets white-on-gray for free) */
+  --pf-v6-c-page--BackgroundColor: var(--pf-t--global--background--color--primary--default);
+  /* section gutters 24px → 16px, stacked-section gap one step down */
+  --pf-v6-c-page__main-section--PaddingInlineStart: var(--pf-t--global--spacer--md);
+  --pf-v6-c-page__main-section--PaddingInlineEnd: var(--pf-t--global--spacer--md);
+  --pf-v6-c-page__main-section--RowGap: var(--pf-t--global--spacer--md);
+  /* sidebar 290px → 232px — nav labels fit comfortably at the smaller body
+   * size; the mini-rail override above (.app-nav-collapsed) still out-ranks
+   * this when collapsed */
+  --pf-v6-c-page__sidebar--Width: 14.5rem;
+  --pf-v6-c-page__sidebar--xl--Width: 14.5rem;
+}
+
+/* Slimmer masthead: block padding md → sm (~58px → ~44px overall). */
+:root .pf-v6-c-masthead {
+  --pf-v6-c-masthead--PaddingBlock: var(--pf-t--global--spacer--sm);
+}
+
+/* Denser nav rows: link block padding sm → xs (~40px → ~30px items). */
+:root .pf-v6-c-nav {
+  --pf-v6-c-nav__link--PaddingBlockStart: var(--pf-t--global--spacer--xs);
+  --pf-v6-c-nav__link--PaddingBlockEnd: var(--pf-t--global--spacer--xs);
+}
+
+/* Denser compact tables: cell block padding 8px → 4px. Every table in the
+ * app already uses variant="compact", so this lands everywhere at once.
+ * Text-only rows drop to ≈34px; rows with a kebab actions column stay ≈44px
+ * (the plain button's 1lh + control padding sets the floor, uniformly).
+ *
+ * Inline padding md → sm (16px → 8px per cell edge): PF's compact variant only
+ * shrinks BLOCK padding, leaving a 32px visual gutter between columns — the
+ * old-webadmin grid packs columns at roughly half that. Special cells (toggle/
+ * check/action) reassign these vars per-cell from their own tokens, so they
+ * keep PF's control-sized padding. first-last-child inline follows suit so the
+ * Name/kebab columns sit snug against the new frame.
+ *
+ * The frame itself: a faded 1px border around the whole grid (webadmin-style
+ * bounded table, not PF's open-ended row list). Divider width/color tokens —
+ * the same hairline the row separators use, so both themes stay faint; PF's
+ * base reset collapses table borders, so the last row's separator merges with
+ * the frame instead of doubling. */
+:root .pf-v6-c-table {
+  --pf-v6-c-table--m-compact--cell--PaddingBlockStart: var(--pf-t--global--spacer--xs);
+  --pf-v6-c-table--m-compact--cell--PaddingBlockEnd: var(--pf-t--global--spacer--xs);
+  --pf-v6-c-table--cell--PaddingInlineStart: var(--pf-t--global--spacer--sm);
+  --pf-v6-c-table--cell--PaddingInlineEnd: var(--pf-t--global--spacer--sm);
+  --pf-v6-c-table--cell--first-last-child--PaddingInline: var(--pf-t--global--spacer--sm);
+  border: var(--pf-t--global--border--width--divider--default) solid
+    var(--pf-t--global--border--color--default);
+}
+/* The frame's BOTTOM edge: under border-collapse Chromium drops the
+ * table-level bottom border when the last row's cells declare 0/none (PF's
+ * default, which suits its open-ended row lists). Re-assert the hairline at
+ * CELL level — collapse keeps it a single line, never a double — so every
+ * bounded grid closes with the same divider it opened with. */
+:root .pf-v6-c-table > tbody > tr:last-child > td,
+:root .pf-v6-c-table > tbody > tr:last-child > th {
+  border-block-end: var(--pf-t--global--border--width--divider--default) solid
+    var(--pf-t--global--border--color--default);
+}
+
+/* Working titles, not heroes: page h1 24px → 18px. */
+:root .pf-v6-c-title {
+  --pf-v6-c-title--m-h1--FontSize: var(--pf-t--global--font--size--lg);
+}
+
+/* Cards follow the flattened shell: 16px radius reads bubbly on a full-bleed
+ * ground — one step down to 6px. */
+:root .pf-v6-c-card {
+  --pf-v6-c-card--BorderRadius: var(--pf-t--global--border--radius--small);
+}
+
+/*
+ * Status labels → dot + text. Filled badges repeated down a column ("Ok" ×15,
+ * "Normal" ×50) are pure noise; a colored dot reads as texture until a row is
+ * the exception. Opt-in via .app-status-label (set by VmStatusLabel and
+ * EventSeverityLabel only) so VmLabels tag chips keep their filled palette.
+ * PF's per-color blocks (.pf-v6-c-label.pf-m-green) are 0,2,0 — these 0,3,0
+ * rules out-rank them regardless of stylesheet order.
+ */
+:root .pf-v6-c-label.app-status-label {
+  --pf-v6-c-label--BackgroundColor: transparent;
+  --pf-v6-c-label--Color: var(--pf-t--global--text--color--regular);
+  /* icons (event error/alert) take the dot's color — PF's on-color icon
+   * tokens assume a filled background */
+  --pf-v6-c-label__icon--Color: var(--app-status-dot, var(--pf-t--global--icon--color--subtle));
+  --pf-v6-c-label--PaddingBlockStart: 0;
+  --pf-v6-c-label--PaddingBlockEnd: 0;
+  --pf-v6-c-label--PaddingInlineStart: 0;
+  --pf-v6-c-label--PaddingInlineEnd: 0;
+}
+/* The dot: a flex item before the label content, spaced by the label's gap.
+ * BASE STATE = the inert hollow ring (stopped/unknown/normal): PF6 renders
+ * color="grey" with NO pf-m-* modifier class (Label.js maps grey to ''), so
+ * grey can only be expressed as the un-modified fallback — a .pf-m-grey
+ * selector would be dead code. The real color classes below override into a
+ * filled dot. */
+:root .pf-v6-c-label.app-status-label::before {
+  content: '';
+  flex: 0 0 auto;
+  align-self: center;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px var(--pf-t--global--icon--color--subtle);
+}
+:root .pf-v6-c-label.app-status-label.pf-m-green::before,
+:root .pf-v6-c-label.app-status-label.pf-m-red::before,
+:root .pf-v6-c-label.app-status-label.pf-m-yellow::before,
+:root .pf-v6-c-label.app-status-label.pf-m-blue::before,
+:root .pf-v6-c-label.app-status-label.pf-m-orange::before,
+:root .pf-v6-c-label.app-status-label.pf-m-teal::before,
+:root .pf-v6-c-label.app-status-label.pf-m-purple::before {
+  background: var(--app-status-dot);
+  box-shadow: none;
+}
+:root .pf-v6-c-label.app-status-label.pf-m-green {
+  --app-status-dot: var(--pf-t--global--icon--color--status--success--default);
+}
+:root .pf-v6-c-label.app-status-label.pf-m-red {
+  --app-status-dot: var(--pf-t--global--icon--color--status--danger--default);
+}
+/* warning--300 (#b98412), not the icon-warning token: the default light
+ * warning icon color is 2.2:1 on white — under the 3:1 non-text minimum
+ * (WCAG 1.4.11). warning--300 clears 3:1 on white and 4.4:1 on dark. */
+:root .pf-v6-c-label.app-status-label.pf-m-yellow {
+  --app-status-dot: var(--pf-t--global--color--status--warning--300);
+}
+/* …but in dark the stock bright warning yellow (9.6:1 there) pops better */
+:root.pf-v6-theme-dark .pf-v6-c-label.app-status-label.pf-m-yellow {
+  --app-status-dot: var(--pf-t--global--icon--color--status--warning--default);
+}
+:root .pf-v6-c-label.app-status-label.pf-m-blue {
+  --app-status-dot: var(--pf-t--global--color--brand--default);
+}
+/* severity labels that carry an icon (error/alert): the icon IS the shape —
+ * suppress the dot rather than doubling up */
+:root .pf-v6-c-label.app-status-label:has(.pf-v6-c-label__icon)::before {
+  display: none;
+}
+
+/* Complete the dot map: orange / teal / purple. The stage-1 map only filled
+ * green/red/yellow/blue; every other color fell through to the inert hollow
+ * ring — including ErrataPage's 'important' severity, which is ORANGE, so a
+ * high-severity erratum read as inert. These three finish the StatusBadge
+ * palette (StatusBadgeColor's orange/teal/purple). Same 0,3,0 out-ranking as
+ * the stage-1 colors, and the filled-dot ::before group above now lists them.
+ *
+ * Each hue splits by theme like yellow does: the shade that clears >=3:1
+ * (WCAG 1.4.11, non-text) on the LIGHT content surface (white) is too dark to
+ * read on the DARK content surface, and vice-versa. Dots reference PF palette
+ * tokens (stable public --pf-t--color--* values), computed against the
+ * primary content surface tables sit on (white light / #1b1e24 dark). */
+:root .pf-v6-c-label.app-status-label.pf-m-orange {
+  /* orange--50 #ca6c0f on white = 3.71:1 (>=3 non-text) */
+  --app-status-dot: var(--pf-t--color--orange--50);
+}
+:root.pf-v6-theme-dark .pf-v6-c-label.app-status-label.pf-m-orange {
+  /* orange--40 #f5921b on content #1b1e24 = 7.10:1 (the darker --50 is a muddy
+   * 4.5:1 here; the bright shade reads truer on ink) */
+  --app-status-dot: var(--pf-t--color--orange--40);
+}
+:root .pf-v6-c-label.app-status-label.pf-m-teal {
+  /* teal--60 #147878 on white = 5.26:1 */
+  --app-status-dot: var(--pf-t--color--teal--60);
+}
+:root.pf-v6-theme-dark .pf-v6-c-label.app-status-label.pf-m-teal {
+  /* teal--40 #63bdbd on content #1b1e24 = 7.59:1 (--60 sinks to 3.2:1 on ink) */
+  --app-status-dot: var(--pf-t--color--teal--40);
+}
+:root .pf-v6-c-label.app-status-label.pf-m-purple {
+  /* purple--50 #5e40be on white = 7.12:1 */
+  --app-status-dot: var(--pf-t--color--purple--50);
+}
+:root.pf-v6-theme-dark .pf-v6-c-label.app-status-label.pf-m-purple {
+  /* purple--30 #b6a6e9 on content #1b1e24 = 7.57:1 (--50 fails at 2.3:1 on ink) */
+  --app-status-dot: var(--pf-t--color--purple--30);
+}
+
+/*
+ * ─── ListPageHeader layout (contract 3 · part 1) ────────────────────────────
+ * The load-bearing classes the ListPageHeader primitive emits. One flex row:
+ * title, then optional meta (status/tags) and a muted breadcrumb inline, with
+ * page-level actions pushed to the far end. Spacers/fonts are PF tokens; no
+ * colors invented here beyond the subtle text token. flex-wrap lets a long
+ * title + crowded actions wrap on narrow viewports instead of overflowing.
+ */
+.app-page-header {
+  display: flex;
+  align-items: center;
+  column-gap: var(--pf-t--global--spacer--md);
+  margin-block-end: var(--pf-t--global--spacer--sm);
+  min-block-size: 2.25rem;
+  flex-wrap: wrap;
+}
+/* the class owns spacing — kill any residual heading margin so the row stays
+ * centered regardless of PF Title defaults */
+.app-page-header > .pf-v6-c-title {
+  margin-block: 0;
+}
+/* entity-kind glyph leading the h1 (VM monitor / template layers): inherits
+ * the heading size, subtle-tinted like the list's Name-cell glyphs, nudged to
+ * the text baseline */
+.app-page-header__icon {
+  display: inline-flex;
+  margin-inline-end: var(--pf-t--global--spacer--sm);
+  vertical-align: -0.125em;
+  color: var(--pf-t--global--icon--color--subtle);
+}
+.app-page-header__meta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--pf-t--global--spacer--sm);
+}
+/* muted crumb LINE above the title row (ListPageHeader renders it as a
+ * sibling before .app-page-header): tight to the heading it locates */
+.app-page-header__crumb {
+  font-size: var(--pf-t--global--font--size--sm);
+  color: var(--pf-t--global--text--color--subtle);
+  margin-block-end: var(--pf-t--global--spacer--xs);
+}
+.app-page-header__actions {
+  margin-inline-start: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--pf-t--global--spacer--sm);
+}
+
+/*
+ * ─── Identity C · dark "flat ink" ground (contract 3 · part 2) ───────────────
+ * The DEFAULT theme. PF's stock dark is a warm neutral gray (canvas #151515,
+ * content #292929) with a pastel #92c5f9 accent that reads consumer-grade. We
+ * retint it to a cool, near-black ink stage with a saturated azure accent —
+ * the hypervisor-console register.
+ *
+ * MECHANIC: PF's dark theme block (:root:where(.pf-v6-theme-dark), 0,1,0) maps
+ * every semantic token onto a --pf-t--global--dark--* alias defined back in the
+ * base :root. So retinting dark = overriding those aliases, NOT the semantic
+ * tokens (touching the semantics in a bare :root would leak into light via
+ * source order). :root.pf-v6-theme-dark (0,2,0) out-ranks the base :root alias
+ * definitions and only matches when the dark class is on <html>, so light is
+ * untouched. Elevation INVERTS here: chrome (secondary) is DARKER than content
+ * (primary), so the masthead/sidebar recede behind the work surface.
+ */
+:root.pf-v6-theme-dark {
+  /* secondary → masthead + sidebar chrome; the full-bleed page canvas is
+   * painted primary (stage-1), so this is the recessed frame behind content */
+  --pf-t--global--dark--background--color--100: #121418; /* chrome */
+  --pf-t--global--dark--background--color--200: #1b1e24; /* content surface */
+  --pf-t--global--dark--background--color--300: #252a32; /* floating menus */
+  /* hairline: a quiet cool divider. 1.35:1 on content #1b1e24 — deliberately
+   * sub-3:1, matching PF's own stock dark divider (1.72:1) regime: row/cell
+   * separators are decorative, not state-bearing, so WCAG 1.4.11 doesn't gate
+   * them. Kept faint so the flat ink ground stays calm. */
+  --pf-t--global--dark--border--color--100: #2f353e;
+  /* azure accent replaces pastel #92c5f9. brand--100 backs color--brand--default
+   * (nav current-item bar, focus ring, primary-button fill, mini-rail tick).
+   * #4da3ff vs content #1b1e24 = 6.36:1, vs chrome #121418 = 6.95:1 (non-text,
+   * >=3). Primary buttons keep PF's near-black inverse text (#1f1f1f) on this
+   * fill = 6.28:1 (text, >=4.5). */
+  --pf-t--global--dark--color--brand--100: #4da3ff;
+  /* brand--200 backs text--color--brand--default + link--default + icon brand.
+   * #6cb1ff vs content #1b1e24 = 7.45:1 (text, >=4.5) */
+  --pf-t--global--dark--color--brand--200: #6cb1ff;
+  --pf-t--global--dark--text--color--link--100: #6cb1ff; /* link rest (7.45:1) */
+  --pf-t--global--dark--text--color--link--200: #93c5ff; /* link hover 9.28:1 */
+  /* focus ring off the same azure (was pastel #92c5f9): #4da3ff vs content
+   * 6.36:1 / vs chrome 6.95:1 (>=3, non-text a11y) */
+  --pf-t--global--dark--focus-ring--color--100: #4da3ff;
+}
+
+/*
+ * ─── Identity B · light "cool workbench" (contract 3 · part 3) ───────────────
+ * A cool near-white studio: white content, hue-tinted cool-gray chrome and
+ * hairlines, a Clarity-school blue (#0072a3 family) for brand/links, and a
+ * dark-slate masthead strip. Light is the bare-default theme (no dark class),
+ * so these overrides scope to :root:not(.pf-v6-theme-dark) (0,2,0) — they beat
+ * the base :root definitions AND, critically, PF's dark :where() block, yet
+ * evaporate the moment the dark class appears, so identity C is untouched.
+ */
+:root:not(.pf-v6-theme-dark) {
+  /* secondary → sidebar + any secondary chrome. Cool near-white, a hair off the
+   * white content surface so the sidebar reads as a distinct plane */
+  --pf-t--global--background--color--secondary--default: #eef1f5;
+  /* cool-tinted hairlines. default 1.37:1 / subtle 1.26:1 on white — the same
+   * decorative-divider regime as PF stock (#e0e0e0 = 1.32:1); dividers aren't
+   * state-bearing so they aren't gated at 3:1 */
+  --pf-t--global--border--color--default: #d6dde3;
+  --pf-t--global--border--color--subtle: #e1e6ea;
+  /* Clarity blue for brand + links. #0072a3 vs white = 5.33:1 (text/link,
+   * >=4.5) and vs the #eef1f5 sidebar = 4.71:1; primary buttons put white
+   * inverse text on this fill = 5.33:1 (text). Non-text brand cues (focus ring,
+   * nav bar, mini-rail tick) clear >=3 comfortably. */
+  --pf-t--global--color--brand--default: #0072a3;
+  --pf-t--global--color--brand--hover: #005b82; /* 7.47:1 on white */
+  --pf-t--global--color--brand--clicked: #00485f; /* 10.0:1 on white */
+  --pf-t--global--border--color--brand--default: #0072a3;
+  --pf-t--global--text--color--brand--default: #0072a3;
+  --pf-t--global--text--color--brand--hover: #005b82;
+  --pf-t--global--text--color--link--default: #0072a3;
+  --pf-t--global--text--color--link--hover: #005b82;
+  /* focus ring follows brand on white content (5.33:1); the masthead island
+   * below re-lightens it for the dark slate */
+  --pf-t--global--focus-ring--color--default: #0072a3;
+}
+
+/*
+ * Light-mode masthead = dark slate strip. In stage-1 the full-bleed canvas is
+ * painted primary, which would leave the masthead flat cool-white; a dark strip
+ * gives the console its anchoring top rail. --pf-v6-c-masthead--BackgroundColor
+ * is element-set on .pf-v6-c-masthead, so we set it there directly (beats PF's
+ * secondary default). Then we re-declare the GLOBAL foreground tokens the
+ * masthead's controls inherit (the Tasks/bell plain buttons key off
+ * icon/text--color--regular, the user MenuToggle text off text--color--regular,
+ * hover off action--plain--hover) so they invert to light on the slate. Scoped
+ * to light only; identity C's masthead is already dark with light foreground.
+ */
+:root:not(.pf-v6-theme-dark) .pf-v6-c-masthead {
+  --pf-v6-c-masthead--BackgroundColor: #1b2b32; /* dark slate */
+  --pf-t--global--text--color--regular: #e8eef2; /* on slate = 12.5:1 */
+  --pf-t--global--icon--color--regular: #e8eef2; /* on slate = 12.5:1 */
+  --pf-t--global--text--color--subtle: #aebdc5; /* on slate = 7.57:1 */
+  --pf-t--global--icon--color--subtle: #aebdc5; /* on slate = 7.57:1 */
+  --pf-t--global--background--color--action--plain--hover: rgb(255 255 255 / 0.12);
+  /* PF's default light focus ring (#004d99) is only 1.75:1 on the slate —
+   * re-light it so keyboard focus on the bell/tasks/user stays visible
+   * (#6cb1ff on slate = 6.51:1, >=3) */
+  --pf-t--global--focus-ring--color--default: #6cb1ff;
+}
+/*
+ * The Tasks/bell toggles are NotificationBadge "read" STATEFUL buttons (not
+ * plain), so they carry a light control-pill background by default. On the
+ * slate that pill stays light while the icon above inverts to light — light on
+ * light, invisible (the "Tasks icon hard to see in light mode" report). PF
+ * element-sets --m-read--BackgroundColor ON the button itself, so it must be
+ * re-set on the button (the masthead ancestor alone loses to the element
+ * declaration) — same element-set trap documented throughout this file. Drop
+ * the read pill so the light icon sits straight on the slate; hover/clicked
+ * pick up the faint white overlay the other plain masthead controls use.
+ */
+:root:not(.pf-v6-theme-dark) .pf-v6-c-masthead .pf-v6-c-button.pf-m-read {
+  --pf-v6-c-button--m-read--BackgroundColor: transparent;
+  --pf-v6-c-button--m-read--hover--BackgroundColor: rgb(255 255 255 / 0.12);
+  --pf-v6-c-button--m-read--m-clicked--BackgroundColor: rgb(255 255 255 / 0.16);
+}
+/*
+ * …but the Tasks and Notifications panels are anchored dropdowns rendered
+ * INLINE inside the masthead (position:absolute siblings of their toggles — see
+ * anchoredPanelStyle.ts), not portaled to <body> like the user-menu Dropdown.
+ * They'd inherit the light-on-slate foreground above onto their own white
+ * (floating) surface = invisible. Re-assert the light-theme defaults on the
+ * NotificationDrawer both panels use, so their content stays dark-on-white.
+ * (The user-menu Dropdown escapes via PF Popper's default appendTo=body, so it
+ * stays light untouched — no reset needed there.)
+ */
+:root:not(.pf-v6-theme-dark) .pf-v6-c-masthead .pf-v6-c-notification-drawer {
+  --pf-t--global--text--color--regular: var(--pf-t--global--text--color--100);
+  --pf-t--global--icon--color--regular: var(--pf-t--global--icon--color--100);
+  --pf-t--global--text--color--subtle: var(--pf-t--global--text--color--200);
+  --pf-t--global--icon--color--subtle: var(--pf-t--global--icon--color--200);
+  --pf-t--global--background--color--action--plain--hover: var(
+    --pf-t--global--background--color--600
+  );
+  /* restore the WORKBENCH focus ring (#0072a3, set on :root above), not PF's
+   * stock --200 (#004d99) — the island must un-invert back to our light
+   * identity, not to stock PF light (adversarial-review finding) */
+  --pf-t--global--focus-ring--color--default: #0072a3;
+}
+
+/* ---------------------------------------------------------------------------
+ * EmptyState call-to-action spacing. ~112 four-states views render their
+ * Retry / call-to-action Button as a bare EmptyState child (PF6 wants it
+ * wrapped in EmptyStateFooter > EmptyStateActions, which is what supplies
+ * the gap) — bare buttons sit flush against the body text. One sibling rule
+ * covers every instance; new code should still use the Footer/Actions
+ * wrapper (see PoolsPage), which this rule leaves untouched.
+ */
+:root .pf-v6-c-empty-state__body ~ .pf-v6-c-button {
+  margin-block-start: var(--pf-t--global--spacer--md);
+}
+
+/* ---------------------------------------------------------------------------
+ * Compact button labels. PF6 buttons pad 1rem per side, which reads bloated
+ * in dense admin toolbars (Save/Cancel, Migrate, Create VM). Element-set vars
+ * need the :root prefix to win regardless of import order (see traps above).
+ */
+:root .pf-v6-c-button {
+  --pf-v6-c-button--PaddingInlineStart: var(--pf-t--global--spacer--sm);
+  --pf-v6-c-button--PaddingInlineEnd: var(--pf-t--global--spacer--sm);
+}
+
+/* ---------------------------------------------------------------------------
+ * Tighter toolbar rhythm. PF6 spaces toolbar items/groups with a roomy gap
+ * that reads as detachment between related controls (search box vs its
+ * save/bookmark buttons). One notch down keeps the grouping legible.
+ */
+:root .pf-v6-c-toolbar {
+  --pf-v6-c-toolbar__content-section--ColumnGap: var(--pf-t--global--spacer--sm);
+  --pf-v6-c-toolbar__group--ColumnGap: var(--pf-t--global--spacer--sm);
+}
+
+/* ---------------------------------------------------------------------------
+ * Global never-wrap: every PF table cell renders single-line, app-wide. Dense
+ * hypervisor tables read as a scannable grid only when rows stay one line —
+ * a long description or free-text name must clip with an ellipsis, never push
+ * the row two lines tall and go ragged. This is the floor; per-page truncate
+ * modifiers/widths still tune individual columns on top of it.
+ *
+ * The :root prefix is load-bearing (same trap documented throughout this file):
+ * these target the bare `th`/`td` ELEMENTS under .pf-v6-c-table, so the base
+ * rule lands at specificity (0,2,1). A plain `td.pf-v6-c-table__action` (0,1,1)
+ * exemption would LOSE to it — every exemption below must therefore carry the
+ * `:root .pf-v6-c-table` prefix to out-rank the base rule regardless of source
+ * order. max-width is a CAP (48ch ≈ a long-ish description), not a fixed width,
+ * so narrow structured columns (status, counts, checkboxes) stay their natural
+ * size and only genuinely long text hits the ellipsis. */
+:root .pf-v6-c-table th,
+:root .pf-v6-c-table td {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 48ch;
+}
+
+/* EXEMPTION · action (kebab) cells. PF6 renders `isActionCell` Td as
+ * `td.pf-v6-c-table__action`; overflow:hidden clips the MenuToggle's focus
+ * ring (and any inline action bar that overflows its cell) — restore visible
+ * overflow. The cell holds only a button/kebab, so single-line is moot here. */
+:root .pf-v6-c-table td.pf-v6-c-table__action {
+  overflow: visible;
+}
+
+/* ----------------------------------------------------------------------------
+ * Platform settings · logo preview swatch (pages/PlatformSettingsPage).
+ * The masthead is a dark strip in BOTH themes (ink chrome in dark; the slate
+ * island above), so an uploaded mark must be previewed against dark or a
+ * light-on-dark logo (like the shipped one) would vanish on the light page
+ * canvas. One slate swatch — the light-mode masthead color — previews both
+ * themes closely enough. */
+.app-logo-preview {
+  display: inline-flex;
+  align-items: center;
+  background: #1b2b32; /* matches the light-mode masthead slate */
+  border-radius: var(--pf-t--global--border--radius--small);
+  padding: var(--pf-t--global--spacer--md);
+  max-width: 100%;
+}
+
+/* ---------------------------------------------------------------------------
+ * Compact tree views (the two inventory navigators, folder pickers, permit
+ * tree). PF6 pads the expand toggle a full spacer--md per side and indents
+ * every node by that toggle-box width (md×2 + caret ≈ 46px base, ~30px per
+ * level) — in a 20rem sidebar that wastes a third of the line before any
+ * text starts. One notch down across the board: sm toggle padding, and the
+ * indents re-derived from sm so the root node ("All infrastructure" / "All
+ * virtual machines") starts near the panel edge and each level steps ~22px.
+ * nested-indent must be re-declared even though PF derives it from
+ * indent--base: PF's formula subtracts md — left alone it would collapse to
+ * 14px against the new base. Element-set vars, so the :root prefix is
+ * required to win regardless of import order (see traps above).
+ */
+:root .pf-v6-c-tree-view {
+  --pf-v6-c-tree-view__node-toggle--PaddingInlineStart: var(--pf-t--global--spacer--sm);
+  --pf-v6-c-tree-view__node-toggle--PaddingInlineEnd: var(--pf-t--global--spacer--sm);
+  --pf-v6-c-tree-view__node--indent--base: calc(
+    var(--pf-t--global--spacer--sm) * 2 + var(--pf-v6-c-tree-view__node-toggle-icon--MinWidth)
+  );
+  --pf-v6-c-tree-view__node--nested-indent--base: calc(
+    var(--pf-v6-c-tree-view__node--indent--base) - var(--pf-t--global--spacer--sm)
+  );
+}
+
+/* ---------------------------------------------------------------------------
+ * Vertically centered rows. PF6 top-aligns body cells (.pf-v6-c-table__tbody
+ * { vertical-align: top }), so in any row taller than one text line — kebab
+ * action cells set a ≈44px floor — text hugs the top edge and the row reads
+ * ragged. Middle-align every body cell; thead keeps PF's bottom alignment.
+ * Cell-level (not tbody-level) so it also out-ranks PF's per-cell top rules
+ * (.pf-v6-c-table__check) — the UA sheet's `td { vertical-align: inherit }`
+ * only carries a tbody override into cells that don't set their own. */
+:root .pf-v6-c-table tbody th,
+:root .pf-v6-c-table tbody td {
+  vertical-align: middle;
+}
+
+/* ---------------------------------------------------------------------------
+ * Resizable columns (components/list-toolbar/ResizableTh). Three pieces:
+ *
+ * 1. .app-table-viewport — the scroll container every resizable list wraps
+ *    its <Table> in. Once dragged widths outgrow the page, fixed layout makes
+ *    the table wider than its container (max(100%, Σ columns)) and this box
+ *    scrolls it; the page body itself never scrolls horizontally.
+ *
+ * 2. .app-col-resizer — the drag handle, absolutely pinned to the header
+ *    cell's trailing edge (cells are position:relative per PF's base rule;
+ *    the global th overflow:hidden keeps the handle clipped inside its cell).
+ *    At rest it shows a short faded | divider (same hairline token as the
+ *    table frame) so the grab point is discoverable; hover/keyboard-focus
+ *    grow it into a full-height 2px brand line as the active affordance AND
+ *    the focus indicator, so no outline is needed.
+ *
+ * 3. .app-table-fixed guards — under table-layout:fixed, width-less columns
+ *    absorb all leftover space. The data columns carry widths (ResizableTh),
+ *    and the row-actions kebab column is deliberately left auto so IT soaks
+ *    the slack (the kebab trails the data instead of a phantom gap) — but
+ *    control columns (bulk-select checkbox, expand toggle) must stay
+ *    control-sized, so pin them here.
+ */
+.app-table-viewport {
+  overflow-x: auto;
+}
+
+/* Inventory tree sidebar (Hosts & Clusters + VMs & Templates split views).
+ * The list/detail pane on the right is usually far taller than the short tree,
+ * which left a tall empty column on the left as the page scrolled. Pin the
+ * sidebar so it rides down with the scroll — sticky under the masthead (the
+ * PF main section is the scroll container, so top: 0 sits just below it) with
+ * align-self: flex-start so it no longer stretches to the content's height.
+ *
+ * The scroll moved off the FlexItem onto the inner .inventory-tree-scroll
+ * wrapper (rendered by InventoryTreeSidebar): the drag handle is absolutely
+ * pinned to the sidebar's trailing edge, and inside an overflow box it would
+ * scroll away with a tall tree and sit under its scrollbar. position: sticky
+ * already makes the FlexItem the containing block for the absolute handle
+ * (no position: relative needed — it would replace sticky), so the handle
+ * spans the sidebar's full height and never scrolls; the 7px inline-end
+ * padding is the handle's gutter, keeping the wrapper's scrollbar clear of
+ * the grab target. A tree taller than the viewport still scrolls within the
+ * wrapper. */
+.inventory-tree-sidebar {
+  flex-basis: 20rem;
+  flex-shrink: 0;
+  align-self: flex-start;
+  position: sticky;
+  top: 0;
+  padding-inline-end: 7px;
+}
+.inventory-tree-scroll {
+  max-height: calc(100vh - 6rem);
+  overflow-y: auto;
+}
+
+/* The sidebar's drag handle — same visual language as .app-col-resizer
+ * (below): a short faded | divider at rest so the grab point is
+ * discoverable; hover/keyboard-focus grow it into a full-height 2px brand
+ * line as the active affordance AND the focus indicator, so no outline is
+ * needed. */
+.app-sidebar-resizer {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-end: 0;
+  width: 7px;
+  cursor: col-resize;
+  touch-action: none; /* the pointer drag owns horizontal movement */
+  user-select: none;
+}
+.app-sidebar-resizer::before {
+  content: '';
+  position: absolute;
+  inset-block: 22%;
+  inset-inline-end: 0;
+  width: 1px;
+  background: var(--pf-t--global--border--color--default);
+}
+.app-sidebar-resizer:hover,
+.app-sidebar-resizer:focus-visible {
+  outline: none;
+}
+.app-sidebar-resizer:hover::before,
+.app-sidebar-resizer:focus-visible::before {
+  inset-block: 0;
+  width: 2px;
+  background: var(--pf-t--global--border--color--brand--default);
+}
+
+/* Dashboard Activity: PF's Timestamp renders at its own (md) size, so the
+ * event time stayed large while the message shrank. Pin it to xs and tighten
+ * the bordered list rows so four audit lines fit without stretching the top
+ * card row (and leaving whitespace under Details/Utilization). */
+:root .pf-v6-c-timestamp.app-activity-time {
+  font-size: var(--pf-t--global--font--size--xs);
+}
+:root .app-activity-time,
+:root .app-activity-list .pf-v6-c-list__item {
+  --pf-v6-c-list--li--MarginBlockStart: var(--pf-t--global--spacer--xs);
+}
+
+/* Compact row-action controls. A default MenuToggle (kebab) or button sitting
+ * in a table action cell is ~36px tall, which forces every action-bearing row
+ * to ~44px — well past the ~28px a control-free grid (Clusters/Quotas) sits at.
+ * Trim the vertical padding + min-height of the kebab AND any inline action
+ * button (e.g. the flat VMs page's Migrate) so action rows match the plain
+ * grids; the hit target stays the full row height, so clickability is
+ * unaffected. Applies to every list's row-action cell. */
+:root .pf-v6-c-table .pf-v6-c-table__action .pf-v6-c-menu-toggle,
+:root .pf-v6-c-table .pf-v6-c-table__action .pf-v6-c-button {
+  --pf-v6-c-menu-toggle--PaddingBlockStart: 0;
+  --pf-v6-c-menu-toggle--PaddingBlockEnd: 0;
+  --pf-v6-c-menu-toggle--MinHeight: auto;
+  --pf-v6-c-button--PaddingBlockStart: 0;
+  --pf-v6-c-button--PaddingBlockEnd: 0;
+  min-height: 0;
+}
+:root .pf-v6-c-table .app-col-resizer {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-end: 0;
+  width: 7px;
+  cursor: col-resize;
+  touch-action: none; /* the pointer drag owns horizontal movement */
+  user-select: none;
+}
+/* the resting | divider — rendered on ::before so the rest and active states
+ * share one element and can't drift apart */
+:root .pf-v6-c-table .app-col-resizer::before {
+  content: '';
+  position: absolute;
+  inset-block: 22%;
+  inset-inline-end: 0;
+  width: 1px;
+  background: var(--pf-t--global--border--color--default);
+}
+:root .pf-v6-c-table .app-col-resizer:hover,
+:root .pf-v6-c-table .app-col-resizer:focus-visible {
+  outline: none;
+}
+:root .pf-v6-c-table .app-col-resizer:hover::before,
+:root .pf-v6-c-table .app-col-resizer:focus-visible::before {
+  inset-block: 0;
+  width: 2px;
+  background: var(--pf-t--global--border--color--brand--default);
+}
+:root .pf-v6-c-table.app-table-fixed th.pf-v6-c-table__check,
+:root .pf-v6-c-table.app-table-fixed th.pf-v6-c-table__toggle,
+/* a leading control header that carries no data column (TasksPage's row-
+ * expansion column renders a plain screen-reader Th, not a __toggle) */
+:root .pf-v6-c-table.app-table-fixed thead th:first-child:not([data-app-column]) {
+  width: 2.75rem;
+}
+/* Under fixed layout the user's column width IS the truncation bound — the
+ * global never-wrap 48ch max-width cap (above) would silently clamp any
+ * column dragged wider than ~320px, so it lifts here. nowrap/ellipsis remain;
+ * every data column carries an explicit width, so nothing grows unbounded. */
+:root .pf-v6-c-table.app-table-fixed th,
+:root .pf-v6-c-table.app-table-fixed td {
+  max-width: none;
+}
+
+/* Context menu below modals. PF's body-appended popper pins the menu at
+ * z-index:9999, which sits ABOVE a PF modal (box 500, backdrop 400) — so a
+ * modal opened FROM a right-click item (Change CD, Move to folder…) rendered
+ * UNDERNEATH the menu that launched it. The menu keeps the launching item's
+ * modal mounted (the shield), so it stays open behind the modal; cap it just
+ * under the backdrop so the modal always layers on top while the menu still
+ * sits above all ordinary page chrome. */
+:root .pf-v6-c-menu.app-context-menu {
+  z-index: calc(var(--pf-t--global--z-index--lg) - 1) !important;
+}

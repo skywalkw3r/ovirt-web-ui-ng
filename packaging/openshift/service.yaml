@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ovirt-web-ui-ng
+  labels:
+    app: ovirt-web-ui-ng
+spec:
+  selector:
+    app: ovirt-web-ui-ng
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http

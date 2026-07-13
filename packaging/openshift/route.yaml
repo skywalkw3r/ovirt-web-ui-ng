@@ -1,0 +1,20 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: ovirt-web-ui-ng
+  labels:
+    app: ovirt-web-ui-ng
+spec:
+  # Omit `host:` to take the cluster default
+  # (ovirt-web-ui-ng-<namespace>.apps.<cluster>). NOTE: whatever host this
+  # resolves to IS the console's origin — the engines' CORSAllowedOrigins /
+  # engine-cors drop-in must list exactly https://<this host>.
+  # host: console.apps.cluster.example.com
+  to:
+    kind: Service
+    name: ovirt-web-ui-ng
+  port:
+    targetPort: http
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
