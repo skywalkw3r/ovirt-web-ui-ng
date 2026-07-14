@@ -1,23 +1,28 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="470" height="156"
-     viewBox="0 0 470 156" role="img" aria-label="Oracle Linux Virtualization Manager">
+<svg xmlns="http://www.w3.org/2000/svg" width="461.6" height="102"
+     viewBox="0 0 461.6 102" role="img" aria-label="Oracle Linux Virtualization Manager">
   <!--
-    OLVM (Oracle Linux Virtualization Manager) mark for the console masthead.
-    A typographic wordmark — the product name typeset in the Oracle brand red
-    (#C74634, the modern "Redwood" brand red) over the product descriptor — not
-    a trace of Oracle's proprietary logo artwork, so it stays maintainable and
-    easy to swap.
-    Foreground is red + white so it reads on the dark masthead strip in BOTH
-    themes (brand-tokens.css). The white descriptor is optimised for that dark
-    strip, matching how the shipped oVirt mark is light-on-transparent (it is
-    correspondingly faint on the light login card in the light theme — the same
-    trade-off the oVirt mark already makes).
-    Replace this file in place (app/src/assets/olvm-logo.svg) to swap the mark
-    with no code changes.
+    OLVM (Oracle Linux Virtualization Manager) mark for the console.
+    The ORACLE wordmark is Oracle's official vector art (supplied by the user);
+    the "Linux Virtualization Manager" descriptor is typeset beneath it in white
+    so the lockup reads on the dark masthead strip / logo tile in BOTH themes
+    (brand-tokens.css). The wordmark fill is a lightly brightened Oracle red
+    (#E4573A) tuned for legibility on dark; Oracle's exact brand red is #C74634
+    — change the fill below to switch back. Replace this file in place
+    (app/src/assets/olvm-logo.svg) to swap the mark with no code changes.
   -->
-  <text x="235" y="80" text-anchor="middle"
+  <g transform="translate(0,6)">
+    <path fill="#E4573A" d="M199.7,39h30.4l-16.1-26l-29.6,46.9h-13.4l36-56.3c2.7-3.9,8.1-4.8,11.9-2.1c0.8,0.6,1.5,1.2,2.1,2l36.1,56.4
+      h-13.4l-6.3-10.5h-30.8L199.7,39 M339.5,49.5V0.6h-11.4v53.7c0,1.5,0.6,3,1.7,4c1.1,1.1,2.6,1.7,4.2,1.7h51.9l6.8-10.5L339.5,49.5
+      M150.6,40.7c11.1,0,20.1-9,20.1-20.1s-9-20.1-20.1-20.1h-49.9v59.4H112V11.1h37.8c5.3,0,9.6,4.3,9.6,9.6s-4.3,9.6-9.6,9.6h-32.2
+      l34.1,29.6h16.6l-22.9-19.2H150.6 M30.5,59.9H65c16.4-0.4,29.3-14.1,28.9-30.4C93.5,13.7,80.7,1,65,0.6H30.5
+      C14.1,0.2,0.4,13.1,0,29.5s12.5,30,28.9,30.4C29.4,60,29.9,60,30.5,59.9 M64.2,49.5h-33c-10.6-0.3-18.9-9.2-18.6-19.8
+      c0.3-10.1,8.5-18.3,18.6-18.6h33c10.6-0.3,19.5,8,19.8,18.6c0.3,10.6-8,19.5-18.6,19.8C65,49.5,64.6,49.5,64.2,49.5 M280.9,59.9
+      h35.2l6.7-10.4h-41.1c-10.6,0.3-19.5-8-19.8-18.6c-0.3-10.6,8-19.5,18.6-19.8c0.4,0,0.8,0,1.2,0h33.5l6.8-10.5h-41
+      c-16.4-0.4-30,12.5-30.4,28.9c-0.4,16.4,12.5,30,28.9,30.4C279.9,60,280.4,60,280.9,59.9 M420.5,49.5c-8.6,0-16.2-5.7-18.5-14h48.8
+      l6.7-10.5H402c2.3-8.3,9.9-14,18.5-14H454l6.7-10.5h-41C403.3,1,390.4,14.6,390.8,31c0.4,15.8,13.1,28.5,28.9,28.9h35.2l6.7-10.4
+      L420.5,49.5"/>
+  </g>
+  <text x="230.8" y="95" text-anchor="middle"
         font-family="Arial, 'Helvetica Neue', Helvetica, sans-serif"
-        font-size="84" font-weight="700" letter-spacing="1" fill="#C74634">ORACLE</text>
-  <text x="235" y="126" text-anchor="middle"
-        font-family="Arial, 'Helvetica Neue', Helvetica, sans-serif"
-        font-size="27" font-weight="500" letter-spacing="0.4" fill="#FFFFFF">Linux Virtualization Manager</text>
+        font-size="24" font-weight="500" letter-spacing="0.4" fill="#FFFFFF">Linux Virtualization Manager</text>
 </svg>

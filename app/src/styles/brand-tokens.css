@@ -755,6 +755,20 @@
   max-width: 100%;
 }
 
+/* Login card · logo tile. The sign-in card is near-white in the light theme
+ * (the masthead the mark normally rides is dark in BOTH themes; this card is
+ * not), so the light-on-transparent mark — shipped oVirt/OLVM or an uploaded
+ * one — sits on the same slate tile the preview uses, keeping its descriptor
+ * legible instead of washing out on the white card. */
+.app-login-logo {
+  display: flex;
+  justify-content: center;
+  background: #1b2b32; /* matches the light-mode masthead slate */
+  border-radius: var(--pf-t--global--border--radius--medium);
+  padding: var(--pf-t--global--spacer--md);
+  margin-block-end: var(--pf-t--global--spacer--lg);
+}
+
 /* ---------------------------------------------------------------------------
  * Compact tree views (the two inventory navigators, folder pickers, permit
  * tree). PF6 pads the expand toggle a full spacer--md per side and indents

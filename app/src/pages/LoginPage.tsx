@@ -167,16 +167,17 @@ export function LoginPage() {
     <Bullseye style={{ height: '100vh' }}>
       <Card style={{ width: '24rem' }}>
         <CardBody style={{ paddingBlockEnd: 0 }}>
-          <Brand
-            src={platform?.logoDataUri ?? assets.logo}
-            alt={productName}
-            heights={{ default: '48px' }}
-            style={{
-              display: 'block',
-              marginInline: 'auto',
-              marginBlockEnd: 'var(--pf-t--global--spacer--lg)',
-            }}
-          />
+          {/* Dark tile: the card is near-white in the light theme, so the
+              light-on-transparent mark rides the masthead slate to stay legible
+              (see .app-login-logo in brand-tokens.css). */}
+          <div className="app-login-logo">
+            <Brand
+              src={platform?.logoDataUri ?? assets.logo}
+              alt={productName}
+              heights={{ default: '44px' }}
+              style={{ display: 'block' }}
+            />
+          </div>
           {loginNotice !== '' && (
             <p
               style={{
