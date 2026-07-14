@@ -18,7 +18,7 @@
 #     See packaging/openshift/.
 
 # ---- Stage 1: build --------------------------------------------------------
-FROM registry.access.redhat.com/ubi9/nodejs-22:latest AS build
+FROM registry.access.redhat.com/ubi9/nodejs-24:latest AS build
 
 # Build as root to avoid file-ownership friction on COPY into /opt/app-root
 # (only the resulting dist/ is carried into the serve stage).
