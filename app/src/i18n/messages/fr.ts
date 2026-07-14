@@ -67,7 +67,7 @@ export const fr: LocaleCatalog = {
   'search.showAll': 'Afficher {count, plural, one {# résultat} other {# résultats}}',
   'search.noResults': 'Aucun résultat trouvé.',
   'search.hint': 'Limitez avec vm: host: — ou la syntaxe moteur comme status=up',
-  'login.title': 'Connectez-vous à la console oVirt',
+  'login.title': 'Connectez-vous à {productName}',
   'login.username': 'Identifiant',
   'login.password': 'Mot de passe',
   'login.usernamePlaceholder': 'par exemple admin@ovirt',
@@ -98,8 +98,7 @@ export const fr: LocaleCatalog = {
   'folders.tree.loading': 'Chargement des dossiers',
   'folders.tree.error.title': 'Impossible de charger les dossiers',
   'folders.tree.empty.title': 'Aucun dossier',
-  'folders.tree.empty.body':
-    'Créez des dossiers dans le gestionnaire de balises pour organiser les machines virtuelles dans une arborescence.',
+  'folders.tree.empty.body': 'Organisez les machines virtuelles dans une arborescence de dossiers.',
   'folders.tree.toggle.hide': "Masquer l'arborescence des dossiers",
   'folders.tree.toggle.show': "Afficher l'arborescence des dossiers",
   'folders.breadcrumb.ariaLabel': 'Chemin du dossier',

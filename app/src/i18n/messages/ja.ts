@@ -67,7 +67,7 @@ export const ja: LocaleCatalog = {
   'search.showAll': '{count, plural, other {# 件の一致}}をすべて表示',
   'search.noResults': '結果が見つかりませんでした。',
   'search.hint': 'vm: host: で絞り込み、または status=up のようなエンジン構文',
-  'login.title': 'oVirtコンソールにサインイン',
+  'login.title': '{productName}にサインイン',
   'login.username': 'ユーザー名',
   'login.password': 'パスワード',
   'login.usernamePlaceholder': '例）admin@ovirt',
@@ -98,8 +98,7 @@ export const ja: LocaleCatalog = {
   'folders.tree.loading': 'フォルダーを読み込んでいます...',
   'folders.tree.error.title': 'フォルダーを読み込めませんでした',
   'folders.tree.empty.title': 'フォルダーはまだありません',
-  'folders.tree.empty.body':
-    'タグマネージャーでフォルダーを作成して、仮想マシンをツリーに整理します。',
+  'folders.tree.empty.body': '仮想マシンをフォルダーのツリーに整理します。',
   'folders.tree.toggle.hide': 'フォルダーツリー',
   'folders.tree.toggle.show': 'フォルダーツリー',
   'folders.breadcrumb.ariaLabel': 'フォルダーパス',

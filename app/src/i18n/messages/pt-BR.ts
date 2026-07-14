@@ -66,7 +66,7 @@ export const ptBR: LocaleCatalog = {
   'search.showAll': 'Mostrar {count, plural, one {# correspondência} other {# correspondências}}',
   'search.noResults': 'Nenhum resultado encontrado.',
   'search.hint': 'Delimite com vm: host: — ou sintaxe do engine como status=up',
-  'login.title': 'Iniciar sessão no Console oVirt',
+  'login.title': 'Iniciar sessão no {productName}',
   'login.username': 'Nome de usuário',
   'login.password': 'Senha',
   'login.usernamePlaceholder': 'por exemplo, admin@ovirt',
@@ -97,8 +97,7 @@ export const ptBR: LocaleCatalog = {
   'folders.tree.loading': 'Carregando pastas',
   'folders.tree.error.title': 'Não foi possível carregar as pastas',
   'folders.tree.empty.title': 'Sem Pastas',
-  'folders.tree.empty.body':
-    'Crie pastas no Gestor de etiquetas para organizar as máquinas virtuais numa árvore.',
+  'folders.tree.empty.body': 'Organize as máquinas virtuais numa árvore de pastas.',
   'folders.tree.toggle.hide': 'Ocultar árvore de pastas',
   'folders.tree.toggle.show': 'Mostrar árvore de pastas',
   'folders.breadcrumb.ariaLabel': 'Caminho para a pasta',

@@ -67,7 +67,7 @@ export const de: LocaleCatalog = {
   'search.showAll': 'Alle {count, plural, one {# Treffer} other {# Treffer}} anzeigen',
   'search.noResults': 'Keine Ergebnisse gefunden.',
   'search.hint': 'Eingrenzen mit vm: host: — oder Engine-Syntax wie status=up',
-  'login.title': 'Melden Sie sich bei der oVirt-Konsole an',
+  'login.title': 'Melden Sie sich bei {productName} an',
   'login.username': 'Benutzername',
   'login.password': 'Kennwort',
   'login.usernamePlaceholder': 'z.B. admin@ovirt',
@@ -98,8 +98,7 @@ export const de: LocaleCatalog = {
   'folders.tree.loading': 'Ordner werden geladen...',
   'folders.tree.error.title': 'Ordner konnten nicht geladen werden',
   'folders.tree.empty.title': 'Keine Ordner vorhanden',
-  'folders.tree.empty.body':
-    'Erstellen Sie Ordner im Tag-Manager, um virtuelle Maschinen in einer Struktur zu organisieren.',
+  'folders.tree.empty.body': 'Organisieren Sie virtuelle Maschinen in einer Ordnerstruktur.',
   'folders.tree.toggle.hide': 'Ordnerbaum',
   'folders.tree.toggle.show': 'Ordnerstruktur anzeigen',
   'folders.breadcrumb.ariaLabel': 'Ordnerpfad',

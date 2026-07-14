@@ -66,7 +66,7 @@ export const tr: LocaleCatalog = {
   'search.showAll': 'Tümünü göster: {count, plural, one {# eşleşme} other {# eşleşme}}',
   'search.noResults': 'Sonuç bulunamadı.',
   'search.hint': 'vm: host: ile kapsamı daraltın veya status=up gibi motor sözdizimi kullanın',
-  'login.title': 'oVirt Konsolunda oturum açın',
+  'login.title': '{productName} oturumu açın',
   'login.username': 'Kullanıcı adı',
   'login.password': 'Parola',
   'login.usernamePlaceholder': 'örn. admin@ovirt',
@@ -97,8 +97,7 @@ export const tr: LocaleCatalog = {
   'folders.tree.loading': 'Klasörler yükleniyor',
   'folders.tree.error.title': 'Klasörler yüklenemedi',
   'folders.tree.empty.title': 'Henüz klasör yok',
-  'folders.tree.empty.body':
-    'Sanal makineleri bir ağaçta düzenlemek için Etiket yöneticisinde klasörler oluşturun.',
+  'folders.tree.empty.body': 'Sanal makineleri bir klasör ağacında düzenleyin.',
   'folders.tree.toggle.hide': 'Klasör ağacını gizle',
   'folders.tree.toggle.show': 'Klasör ağacını göster',
   'folders.breadcrumb.ariaLabel': 'Klasör dizini',

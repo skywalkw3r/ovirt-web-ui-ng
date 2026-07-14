@@ -20,6 +20,7 @@ import { FormattedMessage, useIntl } from 'react-intl'
 import { Navigate, useNavigate, useSearch } from '@tanstack/react-router'
 import { readPlatformMirror } from '../api/resources/platformSettings'
 import { readBrandMirror } from '../branding/brand'
+import { applyBrandFavicon } from '../branding/favicon'
 import { brandAssets } from '../branding/logos'
 import { useAuth } from '../auth/context'
 import { getActiveBase, getServers, setActiveBase, useActiveBase } from '../servers/registry'
@@ -140,7 +141,8 @@ export function LoginPage() {
   const loginNotice = getRuntimeConfig().login.notice || (platform?.loginNotice.trim() ?? '')
   useEffect(() => {
     document.title = productName
-  }, [productName])
+    applyBrandFavicon(brand)
+  }, [productName, brand])
 
   const effectiveProfile = profile === CUSTOM_PROFILE ? customProfile.trim() : profile
   // The composed user@profile principal the SSO grant actually receives.
@@ -193,7 +195,7 @@ export function LoginPage() {
           )}
         </CardBody>
         <CardTitle>
-          <FormattedMessage id="login.title" />
+          <FormattedMessage id="login.title" values={{ productName }} />
         </CardTitle>
         <CardBody>
           <Form onSubmit={onSubmit}>

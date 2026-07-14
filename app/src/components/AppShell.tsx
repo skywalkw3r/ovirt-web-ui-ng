@@ -1,5 +1,6 @@
 import { useEffect, useState, type ComponentType } from 'react'
 import {
+  Label,
   Masthead,
   MastheadBrand,
   MastheadContent,
@@ -24,6 +25,7 @@ import {
   ListIcon,
   MonitoringIcon,
   NetworkIcon,
+  ServerIcon,
   StorageDomainIcon,
   TachometerAltIcon,
   TaskIcon,
@@ -31,6 +33,7 @@ import {
 } from '@patternfly/react-icons'
 import { FormattedMessage, useIntl } from 'react-intl'
 import { Link, Outlet, useRouterState } from '@tanstack/react-router'
+import { applyBrandFavicon } from '../branding/favicon'
 import { brandAssets } from '../branding/logos'
 import { useCapabilities } from '../auth/capabilities'
 import { useNavShortcuts } from '../hooks/useNavShortcuts'
@@ -333,11 +336,13 @@ export function AppShell() {
   // tab; otherwise the detected engine flavour's default (oVirt vs OLVM) does.
   // index.html's static default holds until either resolves.
   const { settings: platform } = usePlatformSettings()
-  const brandProductName = brandAssets(useProductBrand()).productName
+  const brand = useProductBrand()
+  const brandProductName = brandAssets(brand).productName
   const productName = platform.productName.trim()
   useEffect(() => {
     document.title = productName !== '' ? productName : brandProductName
-  }, [productName, brandProductName])
+    applyBrandFavicon(brand)
+  }, [productName, brandProductName, brand])
 
   const groups = visibleNavGroups(isAdmin)
 
@@ -366,6 +371,17 @@ export function AppShell() {
   // the masthead is unchanged. The base is fixed for the life of a session
   // (switching happens on the login page), so a render-time read suffices.
   const activeServer = getActiveServer()
+  // Full engine URL for the badge tooltip: same-origin resolves to the page's
+  // own origin, a '/e/<slug>' same-origin path prefix gets that origin
+  // prepended, and an absolute engine origin stands on its own.
+  const engineUrl =
+    activeServer === null
+      ? ''
+      : activeServer.base === ''
+        ? window.location.origin
+        : activeServer.base.startsWith('/')
+          ? `${window.location.origin}${activeServer.base}`
+          : activeServer.base
 
   const masthead = (
     <Masthead>
@@ -399,18 +415,16 @@ export function AppShell() {
             <ToolbarGroup align={{ default: 'alignEnd' }}>
               {activeServer !== null && (
                 <ToolbarItem alignSelf="center">
-                  {/* which engine this session is signed in to (multi-engine);
-                      the title carries the URL for hover disambiguation */}
-                  <span
-                    title={activeServer.base === '' ? window.location.origin : activeServer.base}
-                    style={{
-                      color: 'var(--pf-t--global--text--color--subtle)',
-                      fontSize: 'var(--pf-t--global--font--size--body--sm)',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {activeServer.name}
-                  </span>
+                  {/* which engine this session is signed in to (multi-engine).
+                      A compact badge whose tooltip carries the full engine URL;
+                      the focusable span opens it on hover and keyboard focus. */}
+                  <Tooltip content={engineUrl} position="bottom" entryDelay={300}>
+                    <span tabIndex={0} style={{ display: 'inline-flex', whiteSpace: 'nowrap' }}>
+                      <Label isCompact color="blue" variant="outline" icon={<ServerIcon />}>
+                        {activeServer.name}
+                      </Label>
+                    </span>
+                  </Tooltip>
                 </ToolbarItem>
               )}
               <ToolbarItem>

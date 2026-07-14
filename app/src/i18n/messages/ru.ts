@@ -68,7 +68,7 @@ export const ru: LocaleCatalog = {
     'Показать {count, plural, one {# совпадение} few {# совпадения} many {# совпадений} other {# совпадения}}',
   'search.noResults': 'Ничего не найдено.',
   'search.hint': 'Ограничьте через vm: host: — или синтаксис движка, например status=up',
-  'login.title': 'Войдите в консоль oVirt',
+  'login.title': 'Войдите в {productName}',
   'login.username': 'Имя пользователя',
   'login.password': 'Пароль',
   'login.usernamePlaceholder': 'например, admin@ovirt',
@@ -99,8 +99,7 @@ export const ru: LocaleCatalog = {
   'folders.tree.loading': 'Загрузка папок',
   'folders.tree.error.title': 'Не удалось загрузить папки',
   'folders.tree.empty.title': 'Нет папок',
-  'folders.tree.empty.body':
-    'Создайте папки в диспетчере тегов для организации виртуальных машин в дерево.',
+  'folders.tree.empty.body': 'Организуйте виртуальные машины в дерево папок.',
   'folders.tree.toggle.hide': 'Скрыть дерево папок',
   'folders.tree.toggle.show': 'Показать дерево папок',
   'folders.breadcrumb.ariaLabel': 'Путь к папке',

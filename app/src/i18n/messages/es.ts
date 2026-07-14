@@ -67,7 +67,7 @@ export const es: LocaleCatalog = {
   'search.showAll': 'Mostrar {count, plural, one {# coincidencia} other {# coincidencias}}',
   'search.noResults': 'No se encontraron resultados.',
   'search.hint': 'Delimite con vm: host: — o sintaxis del motor como status=up',
-  'login.title': 'Iniciar sesión en oVirt Console',
+  'login.title': 'Iniciar sesión en {productName}',
   'login.username': 'Nombre de usuario',
   'login.password': 'Contraseña',
   'login.usernamePlaceholder': 'p. ej. admin@ovirt',
@@ -98,8 +98,7 @@ export const es: LocaleCatalog = {
   'folders.tree.loading': 'Cargando carpetas',
   'folders.tree.error.title': 'No se pudieron cargar las carpetas',
   'folders.tree.empty.title': 'Aún no hay carpetas',
-  'folders.tree.empty.body':
-    'Cree carpetas en el administrador de etiquetas para organizar las máquinas virtuales en un árbol.',
+  'folders.tree.empty.body': 'Organice las máquinas virtuales en un árbol de carpetas.',
   'folders.tree.toggle.hide': 'Ocultar árbol de carpetas',
   'folders.tree.toggle.show': 'Mostrar árbol de carpetas',
   'folders.breadcrumb.ariaLabel': 'Ruta de carpeta',

@@ -12,7 +12,7 @@ export type ProductBrand = 'ovirt' | 'olvm'
 // the shared default so the stock name has one source of truth.
 export const PRODUCT_NAMES: Record<ProductBrand, string> = {
   ovirt: DEFAULT_PRODUCT_NAME,
-  olvm: 'OLVM Console',
+  olvm: 'Oracle Linux Virtualization Manager',
 }
 
 // Resolve the brand from GET /ovirt-engine/api's product_info. OLVM reports

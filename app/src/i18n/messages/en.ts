@@ -87,7 +87,7 @@ export const en = {
   'search.hint': 'Scope with vm: host: — or engine syntax like status=up',
 
   // Login card (LoginPage visible strings) ----------------------------------
-  'login.title': 'Sign in to oVirt Console',
+  'login.title': 'Sign in to {productName}',
   'login.username': 'Username',
   'login.password': 'Password',
   'login.usernamePlaceholder': 'e.g. admin@ovirt',
@@ -126,8 +126,7 @@ export const en = {
   'folders.tree.loading': 'Loading folders',
   'folders.tree.error.title': 'Could not load folders',
   'folders.tree.empty.title': 'No folders yet',
-  'folders.tree.empty.body':
-    'Create folders in the Tag manager to organize virtual machines into a tree.',
+  'folders.tree.empty.body': 'Organize virtual machines into a tree of folders.',
   'folders.tree.toggle.hide': 'Hide folder tree',
   'folders.tree.toggle.show': 'Show folder tree',
   'folders.breadcrumb.ariaLabel': 'Folder path',
