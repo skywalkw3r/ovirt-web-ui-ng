@@ -39,7 +39,12 @@ interface Window {
     // Honored only in multi-engine-capable builds (VITE_MULTI_ENGINE=1 —
     // proxy/external deploys); the integrated RPM build ignores it entirely.
     servers?: {
-      list?: { name?: string; url?: string }[]
+      list?: { name?: string; url?: string; profile?: string }[]
+    }
+    // Deploy-time, truly-global login-screen notice (shown pre-auth, same for
+    // every user/engine — see config/runtime.ts LoginConfig).
+    login?: {
+      notice?: string
     }
   }
 }

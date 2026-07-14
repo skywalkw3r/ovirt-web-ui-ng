@@ -31,10 +31,11 @@ import {
 } from '@patternfly/react-icons'
 import { FormattedMessage, useIntl } from 'react-intl'
 import { Link, Outlet, useRouterState } from '@tanstack/react-router'
-import { DEFAULT_PRODUCT_NAME } from '../api/schemas/platform-settings'
+import { brandAssets } from '../branding/logos'
 import { useCapabilities } from '../auth/capabilities'
 import { useNavShortcuts } from '../hooks/useNavShortcuts'
 import { usePlatformSettings } from '../hooks/usePlatformSettings'
+import { useProductBrand } from '../hooks/useProductBrand'
 import { NotificationBell } from '../notifications/NotificationDrawerPanel'
 import { getActiveServer } from '../servers/registry'
 import { BrandLogo } from './BrandLogo'
@@ -328,13 +329,15 @@ export function AppShell() {
   // keydown listener; gated off while a field or dialog owns the keyboard.
   useNavShortcuts()
 
-  // Branding (platform settings): an admin-set product name renames the
-  // browser tab; index.html's default holds until the settings resolve.
+  // Branding: an admin-set product name (platform settings) renames the browser
+  // tab; otherwise the detected engine flavour's default (oVirt vs OLVM) does.
+  // index.html's static default holds until either resolves.
   const { settings: platform } = usePlatformSettings()
+  const brandProductName = brandAssets(useProductBrand()).productName
   const productName = platform.productName.trim()
   useEffect(() => {
-    document.title = productName !== '' ? productName : DEFAULT_PRODUCT_NAME
-  }, [productName])
+    document.title = productName !== '' ? productName : brandProductName
+  }, [productName, brandProductName])
 
   const groups = visibleNavGroups(isAdmin)
 

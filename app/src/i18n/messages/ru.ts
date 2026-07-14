@@ -82,7 +82,6 @@ export const ru: LocaleCatalog = {
   'login.submit': 'Войти',
   'login.failed': 'Вход не удался',
   'login.server': 'Сервер',
-  'login.connectingTo': 'Подключение к {url}',
   'action.start': 'Запуск',
   'action.stop': 'Остановить',
   'action.reboot': 'Перезагрузка',

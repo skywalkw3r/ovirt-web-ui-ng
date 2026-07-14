@@ -81,7 +81,6 @@ export const ko: LocaleCatalog = {
   'login.submit': '로그인',
   'login.failed': '로그인 실패',
   'login.server': '서버',
-  'login.connectingTo': '{url}에 연결',
   'action.start': '시작',
   'action.stop': '정지',
   'action.reboot': '다시 시작',

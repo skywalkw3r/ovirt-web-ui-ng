@@ -24,7 +24,6 @@ import {
 import { UploadIcon } from '@patternfly/react-icons'
 import { FormattedMessage, useIntl } from 'react-intl'
 import {
-  DEFAULT_PRODUCT_NAME,
   LOGO_MIME_TYPES,
   MAX_LOGIN_NOTICE_CHARS,
   MAX_LOGO_BYTES,
@@ -46,7 +45,8 @@ import { useNow } from '../hooks/useNow'
 import { usePlatformSettings, useSavePlatformSettings } from '../hooks/usePlatformSettings'
 import type { MessageId } from '../i18n/messages/en'
 import { useT } from '../i18n/useT'
-import ovirtLogo from '../assets/ovirt-logo.svg'
+import { brandAssets } from '../branding/logos'
+import { useProductBrand } from '../hooks/useProductBrand'
 
 // Severity → the i18n id of its radio label; keys mirror MOTD_SEVERITIES.
 const SEVERITY_LABEL_IDS: Record<MotdSeverity, MessageId> = {
@@ -88,6 +88,10 @@ export function PlatformSettingsPage() {
   const intl = useIntl()
   const { settings, isLive, isError, error, refetch } = usePlatformSettings()
   const save = useSavePlatformSettings()
+  // The shipped default logo/name the preview and product-name field fall back
+  // to reflect the detected engine flavour (oVirt vs OLVM), so an admin on an
+  // OLVM engine sees the OLVM defaults rather than stock oVirt.
+  const assets = brandAssets(useProductBrand())
   // Drives the schedule status line ("goes live …" / "expired …") so it flips
   // on its own while the page sits open, same tick the banner itself uses.
   const now = useNow(30_000)
@@ -379,7 +383,7 @@ export function PlatformSettingsPage() {
                   both themes — see .app-logo-preview in brand-tokens.css. */}
               <div className="app-logo-preview">
                 <img
-                  src={form.logoDataUri ?? ovirtLogo}
+                  src={form.logoDataUri ?? assets.logo}
                   alt={t('platform.branding.logoPreviewAlt')}
                   style={{ height: '32px', maxWidth: '100%' }}
                 />
@@ -435,7 +439,7 @@ export function PlatformSettingsPage() {
                 <FieldHelp
                   field={t('platform.branding.productName')}
                   content={t('platform.branding.productNameHelp', {
-                    defaultName: DEFAULT_PRODUCT_NAME,
+                    defaultName: assets.productName,
                   })}
                 />
               }
@@ -444,7 +448,7 @@ export function PlatformSettingsPage() {
                 id="platform-product-name"
                 value={form.productName}
                 maxLength={MAX_PRODUCT_NAME_CHARS}
-                placeholder={DEFAULT_PRODUCT_NAME}
+                placeholder={assets.productName}
                 onChange={(_event, value) => patch({ productName: value })}
               />
             </FormGroup>

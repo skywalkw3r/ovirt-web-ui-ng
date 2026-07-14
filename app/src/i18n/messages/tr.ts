@@ -80,7 +80,6 @@ export const tr: LocaleCatalog = {
   'login.submit': 'Oturum aç',
   'login.failed': 'Giriş başarısız',
   'login.server': 'Sunucu',
-  'login.connectingTo': '{url} adresine bağlanılıyor',
   'action.start': 'Başlat',
   'action.stop': 'Durdur',
   'action.reboot': 'Yeniden başlat',

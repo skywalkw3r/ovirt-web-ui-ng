@@ -19,10 +19,11 @@ import {
 import { FormattedMessage, useIntl } from 'react-intl'
 import { Navigate, useNavigate, useSearch } from '@tanstack/react-router'
 import { readPlatformMirror } from '../api/resources/platformSettings'
-import { DEFAULT_PRODUCT_NAME } from '../api/schemas/platform-settings'
+import { readBrandMirror } from '../branding/brand'
+import { brandAssets } from '../branding/logos'
 import { useAuth } from '../auth/context'
-import { getServers, setActiveBase, useActiveBase } from '../servers/registry'
-import ovirtLogo from '../assets/ovirt-logo.svg'
+import { getActiveBase, getServers, setActiveBase, useActiveBase } from '../servers/registry'
+import { getRuntimeConfig } from '../config/runtime'
 
 // The auth guard's Navigate carries the intended destination in a 'redirect'
 // search param (built by loginRedirectSearch in auth/capabilities.ts). Only
@@ -77,7 +78,14 @@ export function LoginPage() {
   const target = redirectTarget(search.redirect)
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
-  const [profile, setProfile] = useState(() => readStored(PROFILE_KEY) ?? 'internalsso')
+  // Initial profile: the picked engine's configured default (config.js
+  // `servers[].profile`) wins so a fresh visit lands on e.g. ad.example.com;
+  // otherwise the browser's last manual pick, else the generic default.
+  const [profile, setProfile] = useState(() => {
+    if (IS_MOCK) return 'internalsso'
+    const server = getServers().find((s) => s.base === getActiveBase())
+    return server?.profile ?? readStored(PROFILE_KEY) ?? 'internalsso'
+  })
   const [customProfile, setCustomProfile] = useState(() => readStored(CUSTOM_PROFILE_KEY) ?? '')
   const [error, setError] = useState<string | null>(null)
   const [pending, setPending] = useState(false)
@@ -101,18 +109,35 @@ export function LoginPage() {
       setActiveBase(servers[0].base)
     }
   }, [servers, activeBase])
-  const activeServerUrl = activeBase === '' ? window.location.origin : activeBase
-
+  const activeServer = servers.find((s) => s.base === activeBase) ?? null
+  // Picking an engine snaps the profile to that engine's configured default,
+  // so switching between an AD engine and a DMZ engine (different directories)
+  // just works. A manual override afterward sticks — this only fires when the
+  // engine (activeBase) changes, not on every profile edit. Engines with no
+  // configured profile leave the current selection untouched.
+  useEffect(() => {
+    const server = servers.find((s) => s.base === activeBase)
+    if (server?.profile) setProfile(server.profile)
+  }, [servers, activeBase])
   // Pre-auth branding: no token exists yet, so the custom logo / product
   // name / sign-in notice come from this browser's mirrored copy of the
   // platform settings (written on every authenticated visit). A brand-new
   // browser simply shows the stock oVirt branding until its first session.
   const [platform] = useState(() => readPlatformMirror())
+  // The engine flavour (oVirt vs OLVM) can't be detected pre-auth either, so it
+  // rides the same mirror pattern: useProductBrand writes it on every
+  // authenticated visit, and a fresh browser defaults to oVirt until then.
+  const [brand] = useState(() => readBrandMirror() ?? 'ovirt')
+  const assets = brandAssets(brand)
   const productName =
     platform !== null && platform.productName.trim() !== ''
       ? platform.productName
-      : DEFAULT_PRODUCT_NAME
-  const loginNotice = platform?.loginNotice.trim() ?? ''
+      : assets.productName
+  // A deploy-time config.js notice is truly global (shown pre-auth, same for
+  // every user/engine, no cache dependency) and takes precedence; failing
+  // that, the per-browser platform-settings mirror (per-engine, populated only
+  // after an authenticated visit) still stands in.
+  const loginNotice = getRuntimeConfig().login.notice || (platform?.loginNotice.trim() ?? '')
   useEffect(() => {
     document.title = productName
   }, [productName])
@@ -143,7 +168,7 @@ export function LoginPage() {
       <Card style={{ width: '24rem' }}>
         <CardBody style={{ paddingBlockEnd: 0 }}>
           <Brand
-            src={platform?.logoDataUri ?? ovirtLogo}
+            src={platform?.logoDataUri ?? assets.logo}
             alt={productName}
             heights={{ default: '48px' }}
             style={{
@@ -184,11 +209,6 @@ export function LoginPage() {
                     <FormSelectOption key={server.base} value={server.base} label={server.name} />
                   ))}
                 </FormSelect>
-                <HelperText style={{ marginTop: 'var(--pf-t--global--spacer--sm)' }}>
-                  <HelperTextItem>
-                    {intl.formatMessage({ id: 'login.connectingTo' }, { url: activeServerUrl })}
-                  </HelperTextItem>
-                </HelperText>
               </FormGroup>
             )}
             <FormGroup
@@ -215,6 +235,14 @@ export function LoginPage() {
                   }}
                   aria-label={intl.formatMessage({ id: 'login.profile' })}
                 >
+                  {/* The picked engine's configured directory profile (e.g.
+                      ad.example.com) — the pre-selected default. Shown only
+                      when it isn't already one of the built-in options below. */}
+                  {activeServer?.profile &&
+                    activeServer.profile !== 'internalsso' &&
+                    activeServer.profile !== 'internal' && (
+                      <FormSelectOption value={activeServer.profile} label={activeServer.profile} />
+                    )}
                   <FormSelectOption
                     value="internalsso"
                     label={intl.formatMessage({ id: 'login.profileInternalsso' })}

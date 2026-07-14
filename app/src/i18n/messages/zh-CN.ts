@@ -81,7 +81,6 @@ export const zhCN: LocaleCatalog = {
   'login.submit': '登录',
   'login.failed': '登录失败',
   'login.server': '服务器',
-  'login.connectingTo': '连接到 {url}',
   'action.start': '启动',
   'action.stop': '停止',
   'action.reboot': '重启',

@@ -44,15 +44,39 @@ export interface MonitoringConfig {
 export interface ServerEntry {
   // display label for the login-page picker and the masthead
   name: string
-  // fetch prefix for every API/SSO call: '' when the server IS the page's own
-  // origin (the integrated same-origin path — keeps window.userInfo bootstrap,
-  // the dev proxy, and CSP 'self' semantics), else the server's https origin.
+  // fetch prefix for every API/SSO call, in one of three forms:
+  //   '' — the server IS the page's own origin (integrated same-origin path;
+  //        keeps window.userInfo bootstrap, the dev proxy, CSP 'self');
+  //   '/e/<slug>' — a same-origin PATH prefix the console's reverse proxy maps
+  //        to this engine (nginx `location /e/<slug>/ { proxy_pass … }`). Every
+  //        call stays same-origin, so NO CORS and CSP can stay 'self' — the
+  //        preferred multi-engine shape behind our proxy;
+  //   'https://engine.example.com' — the engine's own origin (browser talks to
+  //        it DIRECTLY; requires per-engine CORS + a CSP connect-src entry).
   base: string
+  // Default oVirt AAA profile for this engine, appended to the username as
+  // `user@profile` at login (the SSO http grant resolves the profile from the
+  // suffix). The login form pre-selects it when this engine is picked; the
+  // user can still override to a local/other profile. Optional — omit to fall
+  // back to the form's generic default.
+  profile?: string
+}
+
+// Deploy-time login-screen content, shown pre-auth (before any token exists),
+// identical for every user and every configured engine. Unlike the platform
+// settings notice — which is per-engine, admin-set, and only reaches the login
+// page via a per-browser cache after an authenticated visit — this is truly
+// global: it renders straight from config.js on the very first visit.
+export interface LoginConfig {
+  // Sign-in notice / banner text. Plain text (rendered escaped, whitespace
+  // preserved); '' hides it. Empty by default.
+  notice: string
 }
 
 export interface RuntimeConfig {
   monitoring: MonitoringConfig
   servers: ServerEntry[]
+  login: LoginConfig
 }
 
 export type QueryEntity = keyof MonitoringConfig['queries']
@@ -97,13 +121,32 @@ function safeUrl(url: string | undefined): string | undefined {
   }
 }
 
-// A configured server URL must be an absolute http(s) URL; anything else
-// (javascript:, data:, protocol-relative, garbage) drops the entry. Only the
-// origin is kept — the engine's paths (/ovirt-engine/api, /ovirt-engine/sso)
-// are fixed, so a path in the configured URL is ignored. An origin equal to
-// the page's own collapses to '' (same-origin base, see ServerEntry).
+// Trailing slashes are stripped from a path base so it concatenates cleanly
+// with the fixed engine paths (`${base}/ovirt-engine/api`): '/e/bbn/' → '/e/bbn'.
+function normalizePathBase(path: string): string {
+  const trimmed = path.replace(/\/+$/, '')
+  // A path that normalizes away entirely ('/' or '//') is the page root —
+  // that is the same-origin default, expressed as '' like the origin case.
+  return trimmed === '' ? '' : trimmed
+}
+
+// Resolve a configured server URL to the fetch prefix (base) every API/SSO call
+// is stamped with. Three accepted forms, mapping to ServerEntry.base:
+//   - a same-origin PATH ('/e/bbn'): kept verbatim (minus trailing slash) so
+//     the request stays same-origin and the console's proxy routes it to the
+//     engine — no CORS. Protocol-relative '//host' is rejected (it escapes the
+//     origin); bare '/' collapses to '' (same-origin root).
+//   - an absolute http(s) URL on the PAGE's own origin: collapses to its path
+//     ('' when the path is just root) — same same-origin proxy semantics.
+//   - an absolute http(s) URL on a DIFFERENT origin: the origin is kept (the
+//     engine's fixed paths are appended), the direct-connect (CORS) shape.
+// Anything else (javascript:, data:, garbage) drops the entry.
 function serverBase(url: string | undefined): string | undefined {
   if (!url) return undefined
+  // Same-origin path prefix (but not protocol-relative '//host').
+  if (url.startsWith('/')) {
+    return url.startsWith('//') ? undefined : normalizePathBase(url)
+  }
   try {
     const parsed = new URL(url)
     if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return undefined
@@ -112,7 +155,8 @@ function serverBase(url: string | undefined): string | undefined {
       window.location !== undefined &&
       parsed.origin === window.location.origin
     ) {
-      return ''
+      // Same origin as the page: keep any path (the proxy prefix), else ''.
+      return normalizePathBase(parsed.pathname)
     }
     return parsed.origin
   } catch {
@@ -144,8 +188,19 @@ const InjectedConfigSchema = z
     servers: z
       .looseObject({
         list: z
-          .array(z.looseObject({ name: z.string().optional(), url: z.string().optional() }))
+          .array(
+            z.looseObject({
+              name: z.string().optional(),
+              url: z.string().optional(),
+              profile: z.string().optional(),
+            }),
+          )
           .optional(),
+      })
+      .optional(),
+    login: z
+      .looseObject({
+        notice: z.string().optional(),
       })
       .optional(),
   })
@@ -166,8 +221,11 @@ function multiEngineCapable(): boolean {
 
 // Narrow the injected server list: blank names and invalid URLs drop the
 // entry, duplicate bases keep the first occurrence (a stable, predictable
-// pick order for the login select).
-function toServers(list: { name?: string; url?: string }[] | undefined): ServerEntry[] {
+// pick order for the login select). A blank/whitespace profile is dropped so
+// it never composes an empty `user@` suffix.
+function toServers(
+  list: { name?: string; url?: string; profile?: string }[] | undefined,
+): ServerEntry[] {
   if (!multiEngineCapable() || !list) return []
   const out: ServerEntry[] = []
   const seen = new Set<string>()
@@ -176,7 +234,10 @@ function toServers(list: { name?: string; url?: string }[] | undefined): ServerE
     const base = serverBase(item.url)
     if (name === '' || base === undefined || seen.has(base)) continue
     seen.add(base)
-    out.push({ name, base })
+    const profile = item.profile?.trim()
+    // Omit the key entirely (not `profile: undefined`) so entries without a
+    // profile keep the exact { name, base } shape existing tests assert on.
+    out.push(profile ? { name, base, profile } : { name, base })
   }
   return out
 }
@@ -197,6 +258,16 @@ function toMode(enabled: boolean | undefined): MonitoringMode | undefined {
   return enabled ? 'on' : 'off'
 }
 
+// A defensive ceiling so a runaway config.js value can't blow up the login
+// card; the notice is announcement text, not a document.
+const MAX_LOGIN_NOTICE_CHARS = 2000
+
+// Trim + cap; '' (the default) hides the banner. Rendered as escaped text in
+// LoginPage, so no sanitization beyond length is needed.
+function toLoginNotice(notice: string | undefined): string {
+  return (notice ?? '').trim().slice(0, MAX_LOGIN_NOTICE_CHARS)
+}
+
 function resolve(): RuntimeConfig {
   const build = buildDefault()
   const injectedGlobal = typeof window !== 'undefined' ? window.ovirtWebUiConfig : undefined
@@ -215,6 +286,9 @@ function resolve(): RuntimeConfig {
       },
     },
     servers: toServers(parsed.success ? parsed.data?.servers?.list : undefined),
+    login: {
+      notice: toLoginNotice(parsed.success ? parsed.data?.login?.notice : undefined),
+    },
   }
 }
 

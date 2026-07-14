@@ -81,7 +81,6 @@ export const ja: LocaleCatalog = {
   'login.submit': 'サインイン',
   'login.failed': 'ログインに失敗しました',
   'login.server': 'サーバー',
-  'login.connectingTo': '{url} に接続します',
   'action.start': '開始',
   'action.stop': '停止',
   'action.reboot': '再起動',

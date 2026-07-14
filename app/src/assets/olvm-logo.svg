@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="470" height="156"
+     viewBox="0 0 470 156" role="img" aria-label="Oracle Linux Virtualization Manager">
+  <!--
+    OLVM (Oracle Linux Virtualization Manager) mark for the console masthead.
+    A typographic wordmark — the product name typeset in the Oracle brand red
+    (#C74634, the modern "Redwood" brand red) over the product descriptor — not
+    a trace of Oracle's proprietary logo artwork, so it stays maintainable and
+    easy to swap.
+    Foreground is red + white so it reads on the dark masthead strip in BOTH
+    themes (brand-tokens.css). The white descriptor is optimised for that dark
+    strip, matching how the shipped oVirt mark is light-on-transparent (it is
+    correspondingly faint on the light login card in the light theme — the same
+    trade-off the oVirt mark already makes).
+    Replace this file in place (app/src/assets/olvm-logo.svg) to swap the mark
+    with no code changes.
+  -->
+  <text x="235" y="80" text-anchor="middle"
+        font-family="Arial, 'Helvetica Neue', Helvetica, sans-serif"
+        font-size="84" font-weight="700" letter-spacing="1" fill="#C74634">ORACLE</text>
+  <text x="235" y="126" text-anchor="middle"
+        font-family="Arial, 'Helvetica Neue', Helvetica, sans-serif"
+        font-size="27" font-weight="500" letter-spacing="0.4" fill="#FFFFFF">Linux Virtualization Manager</text>
+</svg>

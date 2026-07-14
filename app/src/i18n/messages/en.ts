@@ -101,7 +101,6 @@ export const en = {
   'login.submit': 'Sign in',
   'login.failed': 'Login failed',
   'login.server': 'Server',
-  'login.connectingTo': 'Connecting to {url}',
 
   // Common action verbs (VM lifecycle) — reference slice --------------------
   'action.start': 'Start',

@@ -81,7 +81,6 @@ export const fr: LocaleCatalog = {
   'login.submit': 'Se connecter',
   'login.failed': 'La connexion a échoué',
   'login.server': 'Serveur',
-  'login.connectingTo': 'Connexion à {url}',
   'action.start': 'Démarrer',
   'action.stop': 'Arrêter',
   'action.reboot': 'Redémarrer',

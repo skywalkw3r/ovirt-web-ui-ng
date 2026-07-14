@@ -80,7 +80,6 @@ export const ptBR: LocaleCatalog = {
   'login.submit': 'Iniciar sessão',
   'login.failed': 'Falha ao iniciar sessão',
   'login.server': 'Servidor',
-  'login.connectingTo': 'Conectando a {url}',
   'action.start': 'Iniciar',
   'action.stop': 'Parar',
   'action.reboot': 'Reiniciar',

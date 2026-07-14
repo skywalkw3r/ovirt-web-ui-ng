@@ -26,6 +26,23 @@ describe('getRuntimeConfig', () => {
     expect(getRuntimeConfig().monitoring.grafanaBaseUrl).toBe('/ovirt-engine-grafana')
   })
 
+  it('defaults the global login notice to empty', () => {
+    inject(undefined)
+    expect(getRuntimeConfig().login.notice).toBe('')
+    inject({ login: {} })
+    expect(getRuntimeConfig().login.notice).toBe('')
+  })
+
+  it('trims the global login notice from config.js', () => {
+    inject({ login: { notice: '  Authorized use only.  ' } })
+    expect(getRuntimeConfig().login.notice).toBe('Authorized use only.')
+  })
+
+  it('caps a runaway login notice at 2000 chars', () => {
+    inject({ login: { notice: 'x'.repeat(5000) } })
+    expect(getRuntimeConfig().login.notice).toHaveLength(2000)
+  })
+
   it('honors a valid injected absolute URL and maps enabled:false to off', () => {
     inject({ monitoring: { grafanaBaseUrl: 'https://grafana.example', enabled: false } })
     const cfg = getRuntimeConfig()
@@ -167,6 +184,47 @@ describe('getRuntimeConfig servers', () => {
       },
     })
     expect(getRuntimeConfig().servers).toEqual([{ name: 'HE 2', base: 'https://engine2.example' }])
+  })
+
+  it('keeps a same-origin path base for the reverse-proxy shape (no CORS)', () => {
+    injectAt({
+      servers: {
+        list: [
+          { name: 'HE BBN', url: '/e/bbn' },
+          // trailing slash normalized away so it concatenates cleanly
+          { name: 'HE COS', url: '/e/cos/' },
+          // an absolute URL on the page origin collapses to its path too
+          { name: 'HE SGP', url: 'https://console.example/e/sgp' },
+        ],
+      },
+    })
+    expect(getRuntimeConfig().servers).toEqual([
+      { name: 'HE BBN', base: '/e/bbn' },
+      { name: 'HE COS', base: '/e/cos' },
+      { name: 'HE SGP', base: '/e/sgp' },
+    ])
+  })
+
+  it('rejects a protocol-relative URL (it escapes the same origin)', () => {
+    injectAt({ servers: { list: [{ name: 'evil', url: '//evil.example/e/x' }] } })
+    expect(getRuntimeConfig().servers).toEqual([])
+  })
+
+  it('carries a per-engine profile and drops a blank one', () => {
+    injectAt({
+      servers: {
+        list: [
+          { name: 'HE BBN', url: '/e/bbn', profile: 'ad.example.com' },
+          { name: 'HE DMZ', url: '/e/dmz', profile: '  ad-dmz.example.com  ' },
+          { name: 'HE COS', url: '/e/cos', profile: '   ' },
+        ],
+      },
+    })
+    expect(getRuntimeConfig().servers).toEqual([
+      { name: 'HE BBN', base: '/e/bbn', profile: 'ad.example.com' },
+      { name: 'HE DMZ', base: '/e/dmz', profile: 'ad-dmz.example.com' },
+      { name: 'HE COS', base: '/e/cos' },
+    ])
   })
 
   it('survives a malformed servers block without dropping the rest of the config', () => {

@@ -23,6 +23,13 @@ window.ovirtWebUiConfig = {
     ],
   },
 
+  // Truly-global login-screen notice: shown pre-auth to every user on every
+  // engine, straight from this file (no sign-in / cache / admin role needed).
+  // Distinct from the per-engine Platform Settings sign-in notice. Omit to hide.
+  login: {
+    notice: 'Authorized use only. Activity is monitored.',
+  },
+
   monitoring: {
     grafanaBaseUrl: '/ovirt-engine-grafana',
   },

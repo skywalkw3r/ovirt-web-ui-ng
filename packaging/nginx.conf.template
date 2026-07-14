@@ -1,0 +1,51 @@
+# nginx.conf.template -- main/global nginx config for the container image.
+#
+# The entrypoint (nginx-entrypoint.sh) substitutes ${RESOLVER} and writes
+# /etc/nginx/nginx.conf, then runs `nginx -c /etc/nginx/nginx.conf`. Everything
+# here is chosen so nginx runs unprivileged under OpenShift's restricted SCC
+# (an arbitrary non-root UID in group 0): no `user` directive, pid + all temp
+# paths under /tmp, and logs to stdout/stderr (no writes to /var/log/nginx).
+
+worker_processes  auto;
+error_log         /dev/stderr warn;
+pid               /tmp/nginx.pid;
+
+events {
+    worker_connections  1024;
+}
+
+http {
+    include       /etc/nginx/mime.types;
+    default_type  application/octet-stream;
+
+    log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+                      '$status $body_bytes_sent "$http_referer" "$http_user_agent"';
+    access_log  /dev/stdout  main;
+
+    sendfile        on;
+    tcp_nopush      on;
+    keepalive_timeout  65;
+
+    # Temp/scratch paths writable by the container's (possibly random) UID.
+    client_body_temp_path  /tmp/nginx-client-body;
+    proxy_temp_path        /tmp/nginx-proxy;
+    fastcgi_temp_path      /tmp/nginx-fastcgi;
+    uwsgi_temp_path        /tmp/nginx-uwsgi;
+    scgi_temp_path         /tmp/nginx-scgi;
+
+    # DNS resolver for DYNAMIC (variable) upstreams. The multi-engine proxy
+    # blocks use `proxy_pass https://$var/...` so nginx re-resolves each engine
+    # at request time (per this TTL) instead of at startup — one unreachable
+    # engine can never keep nginx from starting. Substituted by the entrypoint
+    # from the pod's /etc/resolv.conf. Unused by static single-engine
+    # proxy_pass, so harmless when no engine blocks are mounted.
+    resolver          ${RESOLVER} valid=30s ipv6=off;
+    resolver_timeout  5s;
+
+    # Upload ceiling; the API proxies inherit it.
+    client_max_body_size  64m;
+
+    # Rendered/mounted server config (single-engine default.conf, or a
+    # deployer's multi-engine default.conf).
+    include  /etc/nginx/conf.d/*.conf;
+}

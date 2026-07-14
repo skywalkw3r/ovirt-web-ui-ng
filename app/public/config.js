@@ -37,6 +37,17 @@ window.ovirtWebUiConfig = {
   // },
 
   // Monitoring tab: live utilization always works; this block controls the
+  // Global login-screen notice, shown pre-auth to every user on every engine
+  // — reads straight from this file on the first visit (no sign-in, no
+  // per-browser cache, no admin role needed). This is the truly-global banner;
+  // the per-engine Platform Settings > "sign-in notice" is separate and only
+  // reaches the login page after an authenticated visit in that browser.
+  // Plain text; whitespace/newlines are preserved. Omit or '' to hide.
+  //
+  // login: {
+  //   notice: 'Authorized use only. Activity is monitored.',
+  // },
+
   // Grafana / Data-Warehouse HISTORY charts (admin-gated).
   //
   // ZERO-CONFIG DEFAULT: the app probes {grafanaBaseUrl}/api/health and shows
