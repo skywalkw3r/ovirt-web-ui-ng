@@ -26,13 +26,19 @@ window.ovirtWebUiConfig = {
   //      origin (see docs/SECURITY-HEADERS.md "Multi-engine deployments").
   //   4. Users' browsers must trust the engine's TLS certificate.
   //
-  // URLs: absolute https origin of the engine (any path is ignored — the
-  // /ovirt-engine/* paths are fixed). Example:
+  // URLs: absolute https origin of the engine, OR a '/e/<slug>' same-origin
+  // proxy path when the console reverse-proxies its engines (any path on an
+  // absolute origin is ignored — the /ovirt-engine/* paths are fixed).
+  //
+  // `fqdn` (optional): the Hosted Engine's fully-qualified hostname, shown in
+  // the masthead badge tooltip so operators see which engine the session
+  // targets. Omit it and the tooltip falls back to the console-side URL (which,
+  // for a '/e/<slug>' proxy entry, is just the console's own origin + path).
   //
   // servers: {
   //   list: [
-  //     { name: 'HE 1 (local)', url: 'https://engine1.example.com' },
-  //     { name: 'HE 2 — lab',  url: 'https://engine2.example.com' },
+  //     { name: 'HE 1 (local)', url: 'https://engine1.example.com', fqdn: 'engine1.example.com' },
+  //     { name: 'HE 2 — lab',  url: '/e/lab', fqdn: 'engine2.example.com' },
   //   ],
   // },
 

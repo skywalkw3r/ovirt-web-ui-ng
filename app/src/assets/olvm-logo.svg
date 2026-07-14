@@ -1,17 +1,17 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="461.6" height="160"
-     viewBox="0 0 461.6 160" role="img" aria-label="Oracle Linux Virtualization Manager">
+<svg xmlns="http://www.w3.org/2000/svg" width="461.6" height="116"
+     viewBox="0 0 461.6 116" role="img" aria-label="Oracle Linux Virtualization Manager">
   <!--
-    OLVM (Oracle Linux Virtualization Manager) mark for the console — 3-line
-    stack (matches Oracle's product lockup). The ORACLE wordmark is Oracle's
-    official vector art (supplied by the user); "Linux" and "Virtualization
-    Manager" are typeset beneath it in white so the lockup reads on the dark
-    masthead strip / logo tile in BOTH themes (brand-tokens.css). The wordmark
-    fill is a lightly brightened Oracle red (#E4573A) tuned for legibility on
-    dark; Oracle's exact brand red is #C74634 — change the fill below to switch
-    back. Replace this file in place (app/src/assets/olvm-logo.svg) to swap the
-    mark with no code changes.
+    OLVM (Oracle Linux Virtualization Manager) mark for the console — the
+    ORACLE wordmark (Oracle's official vector art, supplied by the user) over a
+    single-line "Linux Virtualization Manager" descriptor in white, so the
+    lockup reads on the dark masthead strip / logo tile in BOTH themes
+    (brand-tokens.css) and stays legible even at the 32px masthead size. The
+    wordmark fill is a lightly brightened Oracle red (#E4573A) tuned for
+    legibility on dark; Oracle's exact brand red is #C74634 — change the fill
+    below to switch back. Replace this file in place
+    (app/src/assets/olvm-logo.svg) to swap the mark with no code changes.
   -->
-  <g transform="translate(0,8)">
+  <g transform="translate(0,6)">
     <path fill="#E4573A" d="M199.7,39h30.4l-16.1-26l-29.6,46.9h-13.4l36-56.3c2.7-3.9,8.1-4.8,11.9-2.1c0.8,0.6,1.5,1.2,2.1,2l36.1,56.4
       h-13.4l-6.3-10.5h-30.8L199.7,39 M339.5,49.5V0.6h-11.4v53.7c0,1.5,0.6,3,1.7,4c1.1,1.1,2.6,1.7,4.2,1.7h51.9l6.8-10.5L339.5,49.5
       M150.6,40.7c11.1,0,20.1-9,20.1-20.1s-9-20.1-20.1-20.1h-49.9v59.4H112V11.1h37.8c5.3,0,9.6,4.3,9.6,9.6s-4.3,9.6-9.6,9.6h-32.2
@@ -23,10 +23,7 @@
       l6.7-10.5H402c2.3-8.3,9.9-14,18.5-14H454l6.7-10.5h-41C403.3,1,390.4,14.6,390.8,31c0.4,15.8,13.1,28.5,28.9,28.9h35.2l6.7-10.4
       L420.5,49.5"/>
   </g>
-  <text x="230.8" y="108" text-anchor="middle"
+  <text x="230.8" y="103" text-anchor="middle"
         font-family="Arial, 'Helvetica Neue', Helvetica, sans-serif"
-        font-size="32" font-weight="500" letter-spacing="0.4" fill="#FFFFFF">Linux</text>
-  <text x="230.8" y="146" text-anchor="middle"
-        font-family="Arial, 'Helvetica Neue', Helvetica, sans-serif"
-        font-size="32" font-weight="500" letter-spacing="0.4" fill="#FFFFFF">Virtualization Manager</text>
+        font-size="32" font-weight="600" letter-spacing="0.2" fill="#FFFFFF">Linux Virtualization Manager</text>
 </svg>

@@ -371,8 +371,8 @@ export function AppShell() {
   // the masthead is unchanged. The base is fixed for the life of a session
   // (switching happens on the login page), so a render-time read suffices.
   const activeServer = getActiveServer()
-  // Full engine URL for the badge tooltip: same-origin resolves to the page's
-  // own origin, a '/e/<slug>' same-origin path prefix gets that origin
+  // Resolved engine URL, the tooltip's fallback: same-origin resolves to the
+  // page's own origin, a '/e/<slug>' same-origin path prefix gets that origin
   // prepended, and an absolute engine origin stands on its own.
   const engineUrl =
     activeServer === null
@@ -382,6 +382,10 @@ export function AppShell() {
         : activeServer.base.startsWith('/')
           ? `${window.location.origin}${activeServer.base}`
           : activeServer.base
+  // Prefer the configured Hosted Engine FQDN (config.js servers[].fqdn) so the
+  // tooltip names the engine the session actually targets, not the console's
+  // own proxy URL; fall back to the resolved URL when no FQDN is configured.
+  const engineTooltip = activeServer?.fqdn ?? engineUrl
 
   const masthead = (
     <Masthead>
@@ -416,9 +420,10 @@ export function AppShell() {
               {activeServer !== null && (
                 <ToolbarItem alignSelf="center">
                   {/* which engine this session is signed in to (multi-engine).
-                      A compact badge whose tooltip carries the full engine URL;
-                      the focusable span opens it on hover and keyboard focus. */}
-                  <Tooltip content={engineUrl} position="bottom" entryDelay={300}>
+                      A compact badge whose tooltip names the Hosted Engine FQDN
+                      (falling back to its URL); the focusable span opens it on
+                      hover and keyboard focus. */}
+                  <Tooltip content={engineTooltip} position="bottom" entryDelay={300}>
                     <span tabIndex={0} style={{ display: 'inline-flex', whiteSpace: 'nowrap' }}>
                       <Label isCompact color="blue" variant="outline" icon={<ServerIcon />}>
                         {activeServer.name}

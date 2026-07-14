@@ -54,6 +54,13 @@ export interface ServerEntry {
   //   'https://engine.example.com' — the engine's own origin (browser talks to
   //        it DIRECTLY; requires per-engine CORS + a CSP connect-src entry).
   base: string
+  // Fully-qualified hostname of the Hosted Engine this entry targets, shown in
+  // the masthead badge tooltip so operators can confirm which engine the
+  // session talks to. `base` above is only the console-side proxy path
+  // (e.g. '/e/cosite'), which is what the tooltip would otherwise show — the
+  // FQDN is the useful identity. Free-form; the deployer sets it. Optional —
+  // omit to fall back to the resolved engine URL.
+  fqdn?: string
   // Default oVirt AAA profile for this engine, appended to the username as
   // `user@profile` at login (the SSO http grant resolves the profile from the
   // suffix). The login form pre-selects it when this engine is picked; the
@@ -192,6 +199,7 @@ const InjectedConfigSchema = z
             z.looseObject({
               name: z.string().optional(),
               url: z.string().optional(),
+              fqdn: z.string().optional(),
               profile: z.string().optional(),
             }),
           )
@@ -224,7 +232,7 @@ function multiEngineCapable(): boolean {
 // pick order for the login select). A blank/whitespace profile is dropped so
 // it never composes an empty `user@` suffix.
 function toServers(
-  list: { name?: string; url?: string; profile?: string }[] | undefined,
+  list: { name?: string; url?: string; fqdn?: string; profile?: string }[] | undefined,
 ): ServerEntry[] {
   if (!multiEngineCapable() || !list) return []
   const out: ServerEntry[] = []
@@ -234,10 +242,14 @@ function toServers(
     const base = serverBase(item.url)
     if (name === '' || base === undefined || seen.has(base)) continue
     seen.add(base)
+    // Add optional keys only when present (never `key: undefined`) so entries
+    // without them keep the exact { name, base } shape existing tests assert on.
+    const entry: ServerEntry = { name, base }
+    const fqdn = item.fqdn?.trim()
+    if (fqdn) entry.fqdn = fqdn
     const profile = item.profile?.trim()
-    // Omit the key entirely (not `profile: undefined`) so entries without a
-    // profile keep the exact { name, base } shape existing tests assert on.
-    out.push(profile ? { name, base, profile } : { name, base })
+    if (profile) entry.profile = profile
+    out.push(entry)
   }
   return out
 }
