@@ -5,6 +5,8 @@ import {
   EmptyStateActions,
   EmptyStateBody,
   EmptyStateFooter,
+  Flex,
+  FlexItem,
   Label,
   PageSection,
   Skeleton,
@@ -88,8 +90,8 @@ export function RolesPage() {
 
   return (
     <PageSection>
-      {/* No search toolbar on this page, so RefreshControl rides the header
-          actions (same shape as DashboardPage). */}
+      {/* RefreshControl rides the header actions; the search + type-filter
+          toolbar sits below it. */}
       <ListPageHeader
         title={<FormattedMessage id="roles.title" />}
         actions={
@@ -104,34 +106,44 @@ export function RolesPage() {
 
       <Toolbar style={{ paddingBottom: 'var(--pf-t--global--spacer--md)' }}>
         <ToolbarContent>
-          <ToolbarItem style={{ width: '18rem' }}>
-            <SearchInput
-              value={filter}
-              onChange={setFilter}
-              onCommit={() => {}}
-              hint={t('roles.filter.hint')}
-              ariaLabel={t('roles.filter.ariaLabel')}
-            />
-          </ToolbarItem>
-          {/* System = engine-shipped immutable defaults, Custom = user-created */}
+          {/* search + type toggle share one flex row so only the small gap
+              sits between them, not the wide default toolbar-item gap */}
           <ToolbarItem>
-            <ToggleGroup aria-label={t('roles.filter.typeLabel')}>
-              <ToggleGroupItem
-                text={t('common.filter.all')}
-                isSelected={roleType === 'all'}
-                onChange={() => setRoleType('all')}
-              />
-              <ToggleGroupItem
-                text={t('roles.roleType.system')}
-                isSelected={roleType === 'system'}
-                onChange={() => setRoleType('system')}
-              />
-              <ToggleGroupItem
-                text={t('roles.roleType.custom')}
-                isSelected={roleType === 'custom'}
-                onChange={() => setRoleType('custom')}
-              />
-            </ToggleGroup>
+            <Flex
+              alignItems={{ default: 'alignItemsCenter' }}
+              gap={{ default: 'gapSm' }}
+              flexWrap={{ default: 'nowrap' }}
+            >
+              <FlexItem style={{ width: '18rem' }}>
+                <SearchInput
+                  value={filter}
+                  onChange={setFilter}
+                  onCommit={() => {}}
+                  hint={t('roles.filter.hint')}
+                  ariaLabel={t('roles.filter.ariaLabel')}
+                />
+              </FlexItem>
+              {/* System = engine-shipped immutable defaults, Custom = user-created */}
+              <FlexItem>
+                <ToggleGroup aria-label={t('roles.filter.typeLabel')}>
+                  <ToggleGroupItem
+                    text={t('common.filter.all')}
+                    isSelected={roleType === 'all'}
+                    onChange={() => setRoleType('all')}
+                  />
+                  <ToggleGroupItem
+                    text={t('roles.roleType.system')}
+                    isSelected={roleType === 'system'}
+                    onChange={() => setRoleType('system')}
+                  />
+                  <ToggleGroupItem
+                    text={t('roles.roleType.custom')}
+                    isSelected={roleType === 'custom'}
+                    onChange={() => setRoleType('custom')}
+                  />
+                </ToggleGroup>
+              </FlexItem>
+            </Flex>
           </ToolbarItem>
         </ToolbarContent>
       </Toolbar>

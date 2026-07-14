@@ -5,7 +5,9 @@ import {
   DropdownItem,
   DropdownList,
   EmptyState,
+  EmptyStateActions,
   EmptyStateBody,
+  EmptyStateFooter,
   Skeleton,
   TreeView,
   type TreeViewDataItem,
@@ -269,14 +271,37 @@ export function FolderTreePanel({
     )
   }
 
-  // No folder subtree yet (fresh engine or nothing under 'ui.folders').
+  // No folder subtree yet (fresh engine or nothing under 'ui.folders'). This
+  // branch replaces the tree, so the right-click "New folder" has no node to
+  // land on — admin tier needs an explicit bootstrap button or there's no way
+  // to create the first folder. useCreateFolder auto-provisions the reserved
+  // 'ui.folders' root on that first POST, so nothing needs pre-creating. User
+  // tier stays read-only (no create surface), matching the rest of the panel.
   if (data[0].children === undefined) {
     return (
-      <EmptyState variant="sm" icon={FolderOpenIcon} titleText={t('folders.tree.empty.title')}>
-        <EmptyStateBody className="folder-tree__empty-body">
-          <FormattedMessage id="folders.tree.empty.body" />
-        </EmptyStateBody>
-      </EmptyState>
+      <>
+        <EmptyState variant="sm" icon={FolderOpenIcon} titleText={t('folders.tree.empty.title')}>
+          <EmptyStateBody className="folder-tree__empty-body">
+            <FormattedMessage id="folders.tree.empty.body" />
+          </EmptyStateBody>
+          {isAdmin && (
+            <EmptyStateFooter>
+              <EmptyStateActions>
+                <Button
+                  variant="primary"
+                  icon={<PlusIcon />}
+                  onClick={() => setFolderModal({ kind: 'create', parent: null })}
+                >
+                  <FormattedMessage id="contextMenu.folder.create" />
+                </Button>
+              </EmptyStateActions>
+            </EmptyStateFooter>
+          )}
+        </EmptyState>
+        {folderModal?.kind === 'create' && (
+          <CreateFolderModal parent={folderModal.parent} onClose={() => setFolderModal(null)} />
+        )}
+      </>
     )
   }
 

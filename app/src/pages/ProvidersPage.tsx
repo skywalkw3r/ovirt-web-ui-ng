@@ -20,6 +20,7 @@ import { ConfirmModal } from '../components/ConfirmModal'
 import { ListPageHeader } from '../components/ListPageHeader'
 import { NotPermitted } from '../components/NotPermitted'
 import { RefreshControl } from '../components/RefreshControl'
+import { SearchInput } from '../components/list-toolbar/SearchInput'
 import { ProviderFormModal } from '../components/provider-form/ProviderFormModal'
 import { ProviderTypeLabel } from '../components/provider-tabs/ProviderTypeLabel'
 import { useDeleteProvider, useProviders } from '../hooks/useParityResources'
@@ -41,6 +42,8 @@ export function ProvidersPage() {
   const [creating, setCreating] = useState(false)
   const [editing, setEditing] = useState<Provider | null>(null)
   const [removing, setRemoving] = useState<Provider | null>(null)
+  // client-side name/type/url/description filter — the provider list is small
+  const [filter, setFilter] = useState('')
 
   // The nav already hides Providers from user-tier accounts; this covers deep
   // links typed straight into the address bar. Before the profile loads the
@@ -56,7 +59,16 @@ export function ProvidersPage() {
   }
 
   const items = providers.data ?? []
-  const sortedProviders = sortRows(items, sort, (provider, key) =>
+  const needle = filter.trim().toLowerCase()
+  const filtered = items.filter(
+    (provider) =>
+      needle === '' ||
+      (provider.name ?? '').toLowerCase().includes(needle) ||
+      (provider.providerType ?? '').toLowerCase().includes(needle) ||
+      (provider.url ?? '').toLowerCase().includes(needle) ||
+      (provider.description ?? '').toLowerCase().includes(needle),
+  )
+  const sortedProviders = sortRows(filtered, sort, (provider, key) =>
     key === 'name'
       ? provider.name
       : key === 'type'
@@ -80,6 +92,15 @@ export function ProvidersPage() {
       />
       <Toolbar style={{ paddingBottom: 'var(--pf-t--global--spacer--md)' }}>
         <ToolbarContent>
+          <ToolbarItem style={{ width: '18rem' }}>
+            <SearchInput
+              value={filter}
+              onChange={setFilter}
+              onCommit={() => {}}
+              hint={t('providers.filter.hint')}
+              ariaLabel={t('providers.filter.ariaLabel')}
+            />
+          </ToolbarItem>
           <ToolbarGroup align={{ default: 'alignEnd' }}>
             <ToolbarItem>
               <RefreshControl />
@@ -120,7 +141,17 @@ export function ProvidersPage() {
         </EmptyState>
       )}
 
-      {providers.isSuccess && items.length > 0 && (
+      {providers.isSuccess && items.length > 0 && sortedProviders.length === 0 && (
+        <EmptyState titleText={t('common.state.searchEmpty.title')}>
+          <EmptyStateBody>
+            <Button variant="link" isInline onClick={() => setFilter('')}>
+              {t('common.action.clearFilter')}
+            </Button>
+          </EmptyStateBody>
+        </EmptyState>
+      )}
+
+      {providers.isSuccess && sortedProviders.length > 0 && (
         <Table aria-label={t('providers.table.ariaLabel')} variant="compact">
           <Thead>
             <Tr>

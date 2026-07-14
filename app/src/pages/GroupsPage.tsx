@@ -6,6 +6,9 @@ import {
   EmptyStateBody,
   EmptyStateFooter,
   Skeleton,
+  Toolbar,
+  ToolbarContent,
+  ToolbarItem,
 } from '@patternfly/react-core'
 import { ActionsColumn, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -13,6 +16,7 @@ import { listGroups, removeGroup } from '../api/resources/users'
 import { useCapabilities } from '../auth/capabilities'
 import { ConfirmModal } from '../components/ConfirmModal'
 import { DomainLabel, GroupIdentityCell } from '../components/user-tabs/PrincipalIdentity'
+import { SearchInput } from '../components/list-toolbar/SearchInput'
 import { useAdminResourcePollInterval } from '../hooks/useAdminResources'
 import { useNotify } from '../notifications/context'
 import { useT } from '../i18n/useT'
@@ -45,8 +49,18 @@ export function GroupsPanel() {
   })
 
   const [removing, setRemoving] = useState<{ groupId: string; name: string } | null>(null)
+  // client-side name/namespace/domain filter — the group list is small
+  const [filter, setFilter] = useState('')
   const { sort, thSort } = useColumnSort()
-  const sortedGroups = sortRows(groups.data ?? [], sort, (group, key) =>
+  const needle = filter.trim().toLowerCase()
+  const filteredGroups = (groups.data ?? []).filter(
+    (group) =>
+      needle === '' ||
+      (group.name ?? '').toLowerCase().includes(needle) ||
+      (group.namespace ?? '').toLowerCase().includes(needle) ||
+      (group.domain?.name ?? '').toLowerCase().includes(needle),
+  )
+  const sortedGroups = sortRows(filteredGroups, sort, (group, key) =>
     key === 'name'
       ? (group.name ?? group.id)
       : key === 'namespace'
@@ -77,6 +91,20 @@ export function GroupsPanel() {
 
   return (
     <>
+      <Toolbar style={{ paddingBottom: 'var(--pf-t--global--spacer--md)' }}>
+        <ToolbarContent>
+          <ToolbarItem style={{ width: '18rem' }}>
+            <SearchInput
+              value={filter}
+              onChange={setFilter}
+              onCommit={() => {}}
+              hint={t('groups.filter.hint')}
+              ariaLabel={t('groups.filter.ariaLabel')}
+            />
+          </ToolbarItem>
+        </ToolbarContent>
+      </Toolbar>
+
       {groups.isPending && (
         <>
           <Skeleton height="2.5rem" style={{ marginBottom: '0.5rem' }} />
@@ -106,7 +134,17 @@ export function GroupsPanel() {
         </EmptyState>
       )}
 
-      {groups.isSuccess && groups.data.length > 0 && (
+      {groups.isSuccess && groups.data.length > 0 && sortedGroups.length === 0 && (
+        <EmptyState titleText={t('common.state.searchEmpty.title')}>
+          <EmptyStateBody>
+            <Button variant="link" isInline onClick={() => setFilter('')}>
+              {t('common.action.clearFilter')}
+            </Button>
+          </EmptyStateBody>
+        </EmptyState>
+      )}
+
+      {groups.isSuccess && sortedGroups.length > 0 && (
         <Table aria-label={t('groups.table.ariaLabel')} variant="compact">
           <Thead>
             <Tr>

@@ -8,6 +8,9 @@ import {
   Label,
   PageSection,
   Skeleton,
+  Toolbar,
+  ToolbarContent,
+  ToolbarItem,
 } from '@patternfly/react-core'
 import { LockIcon } from '@patternfly/react-icons'
 import { ActionsColumn, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table'
@@ -21,6 +24,7 @@ import { ConfirmModal } from '../components/ConfirmModal'
 import { ListPageHeader } from '../components/ListPageHeader'
 import { NotPermitted } from '../components/NotPermitted'
 import { RefreshControl } from '../components/RefreshControl'
+import { SearchInput } from '../components/list-toolbar/SearchInput'
 import { sortRows, useColumnSort } from '../hooks/useColumnSort'
 import {
   SchedulingPolicyFormModal,
@@ -57,6 +61,9 @@ export function SchedulingPoliciesPage() {
   // the destructive ConfirmModal per project rule.
   const [editor, setEditor] = useState<EditorState | null>(null)
   const [removing, setRemoving] = useState<SchedulingPolicy | null>(null)
+  // Client-side name/description filter — the policy list is small, so no
+  // engine DSL (the RolesPage posture). Hardcoded English pending the i18n pass.
+  const [filter, setFilter] = useState('')
 
   // The nav already hides Scheduling Policies from user-tier accounts; this
   // covers deep links typed straight into the address bar. Skeletons cover the
@@ -72,7 +79,14 @@ export function SchedulingPoliciesPage() {
     )
   }
 
-  const items = policies.data ?? []
+  const total = policies.data?.length ?? 0
+  const needle = filter.trim().toLowerCase()
+  const items = (policies.data ?? []).filter(
+    (policy) =>
+      needle === '' ||
+      (policy.name ?? '').toLowerCase().includes(needle) ||
+      (policy.description ?? '').toLowerCase().includes(needle),
+  )
   const sortedPolicies = sortRows(items, sort, (policy, key) =>
     key === 'name'
       ? (policy.name ?? policy.id)
@@ -85,8 +99,8 @@ export function SchedulingPoliciesPage() {
 
   return (
     <PageSection>
-      {/* No search toolbar on this page, so RefreshControl rides the header
-          actions (same shape as RolesPage). */}
+      {/* RefreshControl rides the header actions; the search toolbar sits
+          below it (the RolesPage shape). */}
       <ListPageHeader
         title="Scheduling policies"
         actions={
@@ -98,6 +112,20 @@ export function SchedulingPoliciesPage() {
           </>
         }
       />
+
+      <Toolbar style={{ paddingBottom: 'var(--pf-t--global--spacer--md)' }}>
+        <ToolbarContent>
+          <ToolbarItem style={{ width: '18rem' }}>
+            <SearchInput
+              value={filter}
+              onChange={setFilter}
+              onCommit={() => {}}
+              hint="Filter by name"
+              ariaLabel="Filter scheduling policies by name"
+            />
+          </ToolbarItem>
+        </ToolbarContent>
+      </Toolbar>
 
       {(!loaded || policies.isPending) && (
         <>
@@ -118,7 +146,7 @@ export function SchedulingPoliciesPage() {
         </EmptyState>
       )}
 
-      {loaded && policies.isSuccess && items.length === 0 && (
+      {loaded && policies.isSuccess && total === 0 && (
         <EmptyState titleText="No scheduling policies">
           <EmptyStateBody>
             Scheduling policies control how the engine places and balances VMs across the hosts of a
@@ -131,6 +159,16 @@ export function SchedulingPoliciesPage() {
               </Button>
             </EmptyStateActions>
           </EmptyStateFooter>
+        </EmptyState>
+      )}
+
+      {loaded && policies.isSuccess && total > 0 && items.length === 0 && (
+        <EmptyState titleText="Nothing matches the filter">
+          <EmptyStateBody>
+            <Button variant="link" isInline onClick={() => setFilter('')}>
+              Clear filter
+            </Button>
+          </EmptyStateBody>
         </EmptyState>
       )}
 

@@ -11,6 +11,9 @@ import {
   Label,
   PageSection,
   Skeleton,
+  Toolbar,
+  ToolbarContent,
+  ToolbarItem,
 } from '@patternfly/react-core'
 import { UserIcon, UsersIcon } from '@patternfly/react-icons'
 import { ActionsColumn, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table'
@@ -27,6 +30,7 @@ import { ListPageHeader } from '../components/ListPageHeader'
 import { RefreshControl } from '../components/RefreshControl'
 import { ColumnPicker } from '../components/list-toolbar/ColumnPicker'
 import { ResizableTh, resizableTableProps } from '../components/list-toolbar/ResizableTh'
+import { SearchInput } from '../components/list-toolbar/SearchInput'
 import { AddSystemPermissionModal } from '../components/system-permissions/AddSystemPermissionModal'
 import { useColumnPrefs } from '../hooks/useColumnPrefs'
 import { useGroups, usePermissionUsers } from '../hooks/usePermissionMutations'
@@ -86,6 +90,8 @@ export function SystemPermissionsPage() {
 
   const [isAddOpen, setIsAddOpen] = useState(false)
   const [removing, setRemoving] = useState<RemoveSystemPermissionVars | null>(null)
+  // client-side filter on principal name, role name and provider/namespace
+  const [filter, setFilter] = useState('')
   const mutating = create.isPending || remove.isPending
 
   // The nav already hides System Permissions from user-tier accounts; this
@@ -110,7 +116,18 @@ export function SystemPermissionsPage() {
     )
   }
 
-  const items = sortRows(permissions.data ?? [], sort, (permission, key) => {
+  const total = permissions.data?.length ?? 0
+  const needle = filter.trim().toLowerCase()
+  const filteredPermissions = (permissions.data ?? []).filter((permission) => {
+    if (needle === '') return true
+    const principal = systemPermissionPrincipal(permission, join)
+    return (
+      (principal?.name ?? '').toLowerCase().includes(needle) ||
+      (permission.role?.name ?? '').toLowerCase().includes(needle) ||
+      (principal?.namespace ?? '').toLowerCase().includes(needle)
+    )
+  })
+  const items = sortRows(filteredPermissions, sort, (permission, key) => {
     if (key === 'role') return permission.role?.name
     if (key === 'inherited') return isInheritedPermission(permission) ? 1 : 0
     const principal = systemPermissionPrincipal(permission, join)
@@ -121,8 +138,8 @@ export function SystemPermissionsPage() {
 
   return (
     <PageSection>
-      {/* No search toolbar on this page, so RefreshControl and the column
-          picker ride the header actions (same shape as DashboardPage). */}
+      {/* The column picker and RefreshControl ride the header actions; the
+          search toolbar sits below (the RolesPage shape). */}
       <ListPageHeader
         title={t('systemPermissions.title')}
         actions={
@@ -140,6 +157,20 @@ export function SystemPermissionsPage() {
           </>
         }
       />
+
+      <Toolbar style={{ paddingBottom: 'var(--pf-t--global--spacer--md)' }}>
+        <ToolbarContent>
+          <ToolbarItem style={{ width: '18rem' }}>
+            <SearchInput
+              value={filter}
+              onChange={setFilter}
+              onCommit={() => {}}
+              hint={t('systemPermissions.filter.hint')}
+              ariaLabel={t('systemPermissions.filter.ariaLabel')}
+            />
+          </ToolbarItem>
+        </ToolbarContent>
+      </Toolbar>
 
       {(!loaded || permissions.isPending) && (
         <>
@@ -162,7 +193,7 @@ export function SystemPermissionsPage() {
         </EmptyState>
       )}
 
-      {loaded && permissions.isSuccess && items.length === 0 && (
+      {loaded && permissions.isSuccess && total === 0 && (
         <EmptyState titleText={t('systemPermissions.empty.title')}>
           <EmptyStateBody>{t('systemPermissions.empty.body')}</EmptyStateBody>
           <EmptyStateFooter>
@@ -172,6 +203,16 @@ export function SystemPermissionsPage() {
               </Button>
             </EmptyStateActions>
           </EmptyStateFooter>
+        </EmptyState>
+      )}
+
+      {loaded && permissions.isSuccess && total > 0 && items.length === 0 && (
+        <EmptyState titleText={t('common.state.searchEmpty.title')}>
+          <EmptyStateBody>
+            <Button variant="link" isInline onClick={() => setFilter('')}>
+              {t('common.action.clearFilter')}
+            </Button>
+          </EmptyStateBody>
         </EmptyState>
       )}
 

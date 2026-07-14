@@ -1431,6 +1431,8 @@ export const en = {
   'systemPermissions.empty.body':
     'Roles granted at the system scope — administrators and cross-cutting user roles — appear here.',
   'systemPermissions.table.ariaLabel': 'System permissions',
+  'systemPermissions.filter.hint': 'Filter by name',
+  'systemPermissions.filter.ariaLabel': 'Filter permissions by name',
   'systemPermissions.column.principal': 'Principal',
   'systemPermissions.column.provider': 'Provider',
   'systemPermissions.column.inherited': 'Inherited',
@@ -1453,6 +1455,8 @@ export const en = {
   'quotas.empty.title': 'No quotas',
   'quotas.empty.body': 'Quotas defined on any data center appear here.',
   'quotas.table.ariaLabel': 'Quotas',
+  'quotas.filter.hint': 'Filter by name',
+  'quotas.filter.ariaLabel': 'Filter quotas by name',
   'quotas.column.dataCenter': 'Data center',
   'quotas.remove.confirm.title': "Remove quota ''{name}''?",
   'quotas.remove.confirm.body':
@@ -1470,6 +1474,8 @@ export const en = {
   'providers.empty.body':
     'External host and OpenStack providers registered on the engine appear here.',
   'providers.table.ariaLabel': 'Providers',
+  'providers.filter.hint': 'Filter by name',
+  'providers.filter.ariaLabel': 'Filter providers by name',
   'providers.column.url': 'URL',
   'providers.type.image': 'OpenStack Image (Glance)',
   'providers.type.network': 'OpenStack Networking (Neutron)',
@@ -1871,6 +1877,8 @@ export const en = {
   'nav.groups': 'Groups',
   'groups.title': 'Groups',
   'groups.table.ariaLabel': 'Directory groups',
+  'groups.filter.hint': 'Filter by name',
+  'groups.filter.ariaLabel': 'Filter groups by name',
   'groups.column.namespace': 'Namespace',
   'groups.column.domain': 'Domain',
   'groups.remove.confirm.title': "Remove group ''{name}''?",

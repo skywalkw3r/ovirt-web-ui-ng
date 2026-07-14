@@ -21,6 +21,7 @@ import { ListPageHeader } from '../components/ListPageHeader'
 import { NotPermitted } from '../components/NotPermitted'
 import { QuotaFormModal } from '../components/quota-form/QuotaFormModal'
 import { RefreshControl } from '../components/RefreshControl'
+import { SearchInput } from '../components/list-toolbar/SearchInput'
 import { useDataCenters } from '../hooks/useAdminResources'
 import { useQuotas } from '../hooks/useParityResources'
 import { useDeleteQuota } from '../hooks/useQuotaMutations'
@@ -41,6 +42,8 @@ export function QuotasPage() {
   const [creating, setCreating] = useState(false)
   const [editing, setEditing] = useState<Quota | null>(null)
   const [removing, setRemoving] = useState<Quota | null>(null)
+  // client-side name/description/data-center filter — the quota list is small
+  const [filter, setFilter] = useState('')
 
   // The nav already hides Quotas from user-tier accounts; this covers deep
   // links typed straight into the address bar. Before the profile loads both
@@ -62,7 +65,18 @@ export function QuotasPage() {
   const dataCenterNames = new Map(
     (dataCenters.data ?? []).map((dataCenter) => [dataCenter.id, dataCenter.name]),
   )
-  const sortedQuotas = sortRows(quotas.data ?? [], sort, (quota, key) =>
+  const needle = filter.trim().toLowerCase()
+  const filteredQuotas = (quotas.data ?? []).filter((quota) => {
+    if (needle === '') return true
+    const dcName =
+      quota.data_center?.id !== undefined ? (dataCenterNames.get(quota.data_center.id) ?? '') : ''
+    return (
+      (quota.name ?? '').toLowerCase().includes(needle) ||
+      (quota.description ?? '').toLowerCase().includes(needle) ||
+      dcName.toLowerCase().includes(needle)
+    )
+  })
+  const sortedQuotas = sortRows(filteredQuotas, sort, (quota, key) =>
     key === 'name'
       ? quota.name
       : key === 'description'
@@ -86,6 +100,15 @@ export function QuotasPage() {
       />
       <Toolbar style={{ paddingBottom: 'var(--pf-t--global--spacer--md)' }}>
         <ToolbarContent>
+          <ToolbarItem style={{ width: '18rem' }}>
+            <SearchInput
+              value={filter}
+              onChange={setFilter}
+              onCommit={() => {}}
+              hint={t('quotas.filter.hint')}
+              ariaLabel={t('quotas.filter.ariaLabel')}
+            />
+          </ToolbarItem>
           <ToolbarGroup align={{ default: 'alignEnd' }}>
             <ToolbarItem>
               <RefreshControl />
@@ -126,7 +149,20 @@ export function QuotasPage() {
         </EmptyState>
       )}
 
-      {quotas.isSuccess && !dataCenters.isPending && quotas.data.length > 0 && (
+      {quotas.isSuccess &&
+        !dataCenters.isPending &&
+        quotas.data.length > 0 &&
+        sortedQuotas.length === 0 && (
+          <EmptyState titleText={t('common.state.searchEmpty.title')}>
+            <EmptyStateBody>
+              <Button variant="link" isInline onClick={() => setFilter('')}>
+                {t('common.action.clearFilter')}
+              </Button>
+            </EmptyStateBody>
+          </EmptyState>
+        )}
+
+      {quotas.isSuccess && !dataCenters.isPending && sortedQuotas.length > 0 && (
         <Table aria-label={t('quotas.table.ariaLabel')} variant="compact">
           <Thead>
             <Tr>
