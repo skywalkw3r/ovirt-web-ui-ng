@@ -5,7 +5,6 @@ import {
   EmptyStateActions,
   EmptyStateBody,
   EmptyStateFooter,
-  Label,
   PageSection,
   SearchInput,
   Skeleton,
@@ -26,7 +25,7 @@ import {
   Thead,
   Tr,
 } from '@patternfly/react-table'
-import type { Job, Step } from '../api/schemas/job'
+import type { Job } from '../api/schemas/job'
 import { ColumnPicker } from '../components/list-toolbar/ColumnPicker'
 import { ResizableTh, resizableTableProps } from '../components/list-toolbar/ResizableTh'
 import { ConfirmModal } from '../components/ConfirmModal'
@@ -35,7 +34,7 @@ import { RefreshControl } from '../components/RefreshControl'
 import { StatusBadge, type StatusBadgeColor } from '../components/StatusBadge'
 import { useColumnPrefs } from '../hooks/useColumnPrefs'
 import { sortRows, useColumnSort } from '../hooks/useColumnSort'
-import { useEndJob, useJobSteps, useJobs } from '../hooks/useJobs'
+import { useEndJob, useJobs } from '../hooks/useJobs'
 import { useNow } from '../hooks/useNow'
 import { useT } from '../i18n/useT'
 
@@ -109,71 +108,6 @@ function relativeTime(epochMs: number, now: number): string {
     duration /= amount
   }
   return relativeFormat.format(Math.round(duration), 'years')
-}
-
-// The nested per-job step feed, mounted only while a row is expanded. Its own
-// four states: skeleton while loading, danger empty-state on a real error
-// (listJobSteps swallows 404 to []), the informative empty when the job
-// reported no steps, and the compact list when populated.
-function JobSteps({ jobId, isExpanded }: { jobId: string; isExpanded: boolean }) {
-  const t = useT()
-  const steps = useJobSteps(jobId, isExpanded)
-
-  if (steps.isPending) {
-    return <Skeleton height="1.5rem" screenreaderText={t('tasks.loading')} />
-  }
-
-  if (steps.isError) {
-    return (
-      <EmptyState variant="sm" titleText={t('tasks.error.title')} status="danger">
-        <EmptyStateBody>
-          {steps.error instanceof Error ? steps.error.message : t('common.error.unknown')}
-        </EmptyStateBody>
-      </EmptyState>
-    )
-  }
-
-  const rows = steps.data ?? []
-  if (rows.length === 0) {
-    return (
-      <span style={{ color: 'var(--pf-t--global--text--color--subtle)' }}>
-        {t('tasks.steps.empty')}
-      </span>
-    )
-  }
-
-  return (
-    <div
-      role="list"
-      aria-label={t('tasks.steps.ariaLabel')}
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 'var(--pf-t--global--spacer--xs)',
-      }}
-    >
-      {rows.map((step: Step) => (
-        <div
-          role="listitem"
-          key={step.id}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 'var(--pf-t--global--spacer--sm)',
-            flexWrap: 'wrap',
-          }}
-        >
-          <span>
-            {step.number !== undefined ? `${step.number}. ` : ''}
-            {step.description || '—'}
-          </span>
-          <StatusChip status={step.status ?? 'unknown'} />
-          {/* type is categorical, not a status → plain Label per convention */}
-          {step.type && <Label isCompact>{step.type}</Label>}
-        </div>
-      ))}
-    </div>
-  )
 }
 
 // A data column of the task list (identity/expand/action cells live outside
@@ -448,10 +382,16 @@ export function TasksPage() {
                   </Tr>
                   <Tr isExpanded={isExpanded}>
                     <Td />
-                    <Td dataLabel={t('tasks.steps.ariaLabel')} colSpan={expandedColSpan}>
-                      <ExpandableRowContent>
-                        <JobSteps jobId={job.id} isExpanded={isExpanded} />
-                      </ExpandableRowContent>
+                    {/* Expanding reveals the job's FULL description — the whole
+                        point, since the column ellipsises it at one line. The
+                        class lifts the global single-line cap so it wraps (see
+                        .app-expanded-detail in brand-tokens.css). */}
+                    <Td
+                      dataLabel={t('tasks.column.description')}
+                      colSpan={expandedColSpan}
+                      className="app-expanded-detail"
+                    >
+                      <ExpandableRowContent>{job.description || '—'}</ExpandableRowContent>
                     </Td>
                   </Tr>
                 </Tbody>

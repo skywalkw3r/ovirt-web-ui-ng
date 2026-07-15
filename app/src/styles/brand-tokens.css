@@ -739,6 +739,16 @@
   overflow: visible;
 }
 
+/* EXEMPTION · expanded detail cells. An expanded row exists precisely to show
+ * the full text the column truncates (the Tasks row's whole job description),
+ * so the global single-line rule above must not clip it too — let it wrap and
+ * grow. Opt-in per cell, so ordinary rows keep the one-line grid. */
+:root .pf-v6-c-table td.app-expanded-detail {
+  white-space: normal;
+  overflow: visible;
+  max-width: none;
+}
+
 /* EXEMPTION · status columns. Status/severity cells render a single dot+label
  * (or icon) and carry no header sort (removed in the table audit), so they
  * shrink to their content instead of taking an even share of the grid —
