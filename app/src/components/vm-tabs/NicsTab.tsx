@@ -25,6 +25,7 @@ import {
 import { EllipsisVIcon, PlugIcon, PluggedIcon } from '@patternfly/react-icons'
 import { ActionsColumn, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table'
 import { useQueries, useQuery } from '@tanstack/react-query'
+import { Link } from '@tanstack/react-router'
 import { StatusBadge } from '../StatusBadge'
 import { StatusIcon } from '../StatusIcon'
 import { isValidMac } from '../../api/resources/macPools'
@@ -298,10 +299,18 @@ export function NicsTab({ vmId }: { vmId: string }) {
       case 'name':
         return nic.name ?? '—'
       case 'network': {
-        const networkName = profile?.network?.id
-          ? networkNameById.get(profile.network.id)
-          : undefined
-        return networkName ?? '—'
+        // Link through to the network detail page once the vNIC profile's
+        // network link and the cached name join both resolve; an unresolved
+        // join (user tier, admin-gated networks cache) falls back to a dash,
+        // same posture as the other joined columns.
+        const networkId = profile?.network?.id
+        const networkName = networkId ? networkNameById.get(networkId) : undefined
+        if (networkId === undefined || networkName === undefined) return '—'
+        return (
+          <Link to="/networks/$networkId" params={{ networkId }}>
+            {networkName}
+          </Link>
+        )
       }
       case 'profile':
         return profile?.name ?? '—'
