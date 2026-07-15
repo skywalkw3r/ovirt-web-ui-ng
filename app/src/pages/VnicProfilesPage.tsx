@@ -21,6 +21,7 @@ import { NotPermitted } from '../components/NotPermitted'
 import { RefreshControl } from '../components/RefreshControl'
 import { ColumnPicker } from '../components/list-toolbar/ColumnPicker'
 import { ResizableTh, resizableTableProps } from '../components/list-toolbar/ResizableTh'
+import { SearchInput } from '../components/list-toolbar/SearchInput'
 import { VnicProfileFormModal } from '../components/vnic-profile-form/VnicProfileFormModal'
 import { useDataCenters } from '../hooks/useAdminResources'
 import { useVnicProfiles } from '../hooks/useCatalogPages'
@@ -119,7 +120,12 @@ const COLUMNS: VnicProfileColumn[] = [
     defaultHidden: true,
     cell: (profile, ctx) => ctx.profileName(profile.failover?.id) ?? '—',
   },
-  { key: 'description', label: 'Description', cell: (profile) => profile.description || '—' },
+  {
+    key: 'description',
+    label: 'Description',
+    sortValue: (profile) => profile.description || undefined,
+    cell: (profile) => profile.description || '—',
+  },
 ]
 // Deferred vs webadmin's grid: QoS Name and Network Filter (the flat list
 // carries both as bare id links, and no cached inventory covers /qoss or
@@ -140,6 +146,10 @@ function VnicProfilesTable() {
   const { sort, thSort } = useColumnSort()
   const [page, setPage] = useState(1)
   const [perPage, setPerPage] = useState(50)
+  // client-side name/description/network filter — /vnicprofiles has no
+  // server-side search
+  const [filter, setFilter] = useState('')
+  const [prevFilter, setPrevFilter] = useState(filter)
   // create when null-with-flag, edit when a profile is set; removing gates the
   // destructive ConfirmModal per project rule.
   const [creating, setCreating] = useState(false)
@@ -162,9 +172,25 @@ function VnicProfilesTable() {
     profileName: (profileId) => profiles.data?.find((entry) => entry.id === profileId)?.name,
   }
 
-  const items = sortRows(profiles.data ?? [], sort, (row, key) =>
+  const allProfiles = profiles.data ?? []
+  const needle = filter.trim().toLowerCase()
+  const filtered = allProfiles.filter(
+    (profile) =>
+      needle === '' ||
+      (profile.name ?? '').toLowerCase().includes(needle) ||
+      (profile.description ?? '').toLowerCase().includes(needle) ||
+      (columnCtx.networkName(profile.network?.id) ?? '').toLowerCase().includes(needle),
+  )
+  const items = sortRows(filtered, sort, (row, key) =>
     COLUMNS.find((column) => column.key === key)?.sortValue?.(row, columnCtx),
   )
+
+  // a new filter starts back at page 1 (guarded setState during render, like
+  // the server-side search pages)
+  if (filter !== prevFilter) {
+    setPrevFilter(filter)
+    setPage(1)
+  }
 
   // clamp rather than effect-reset: polling refetches can shrink the list
   // underneath the current page
@@ -186,6 +212,15 @@ function VnicProfilesTable() {
       />
       <Toolbar style={{ paddingBottom: 'var(--pf-t--global--spacer--md)' }}>
         <ToolbarContent>
+          <ToolbarItem style={{ width: '18rem' }}>
+            <SearchInput
+              value={filter}
+              onChange={setFilter}
+              onCommit={() => {}}
+              hint="Filter by name"
+              ariaLabel="Filter vNIC profiles by name"
+            />
+          </ToolbarItem>
           <ToolbarGroup align={{ default: 'alignEnd' }}>
             <ToolbarItem variant="pagination">
               <Pagination
@@ -260,13 +295,26 @@ function VnicProfilesTable() {
         </EmptyState>
       )}
 
-      {profiles.isSuccess && !networks.isPending && items.length === 0 && (
+      {profiles.isSuccess && !networks.isPending && allProfiles.length === 0 && (
         <EmptyState titleText="No vNIC profiles">
           <EmptyStateBody>
             vNIC profiles you have permission to see will appear here.
           </EmptyStateBody>
         </EmptyState>
       )}
+
+      {profiles.isSuccess &&
+        !networks.isPending &&
+        allProfiles.length > 0 &&
+        items.length === 0 && (
+          <EmptyState titleText="Nothing matches the filter">
+            <EmptyStateBody>
+              <Button variant="link" isInline onClick={() => setFilter('')}>
+                Clear filter
+              </Button>
+            </EmptyStateBody>
+          </EmptyState>
+        )}
 
       {profiles.isSuccess && !networks.isPending && items.length > 0 && (
         <div className="app-table-viewport">

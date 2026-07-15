@@ -1493,6 +1493,10 @@ export const es: LocaleCatalog = {
   'quotas.filter.ariaLabel': 'Filtrar cuotas por nombre',
   'providers.filter.hint': 'Filtrar por nombre',
   'providers.filter.ariaLabel': 'Filtrar proveedores por nombre',
+  'volumes.filter.hint': 'Filtrar por nombre',
+  'volumes.filter.ariaLabel': 'Filtrar volúmenes por nombre',
+  'pools.filter.hint': 'Filtrar por nombre',
+  'pools.filter.ariaLabel': 'Filtrar pools por nombre',
   'groups.filter.hint': 'Filtrar por nombre',
   'groups.filter.ariaLabel': 'Filtrar grupos por nombre',
   'roles.immutable.editReason':

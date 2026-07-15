@@ -326,12 +326,16 @@ export function VmsAndTemplatesPage() {
   // the machine-readable export value); see lib/csv.ts for the quoting and
   // formula-injection posture.
   const exportCsv = () => {
-    const exportColumns = visibleColumns.filter((column) => column.sortValue !== undefined)
+    const exportColumns = visibleColumns.filter(
+      (column) => column.sortValue !== undefined || column.exportValue !== undefined,
+    )
     downloadCsv(
       `vms-templates-${new Date().toISOString().slice(0, 10)}.csv`,
       toCsv(
         exportColumns.map((column) => column.label),
-        sorted.map((row) => exportColumns.map((column) => column.sortValue?.(row, ctx))),
+        sorted.map((row) =>
+          exportColumns.map((column) => (column.sortValue ?? column.exportValue)?.(row, ctx)),
+        ),
       ),
     )
   }

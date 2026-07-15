@@ -174,7 +174,6 @@ const COLUMNS: DiskColumn[] = [
   {
     key: 'status',
     labelId: 'common.field.status',
-    sortValue: (disk) => disk.status,
     cell: (disk) => <DiskStatusLabel status={disk.status} />,
   },
   {

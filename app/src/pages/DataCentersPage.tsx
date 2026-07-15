@@ -90,7 +90,6 @@ const COLUMNS: DataCenterColumn[] = [
   {
     key: 'status',
     labelId: 'common.field.status',
-    sortValue: (dataCenter) => dataCenter.status,
     cell: (dataCenter) => <StatusCell status={dataCenter.status} />,
   },
   {

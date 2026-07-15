@@ -739,6 +739,19 @@
   overflow: visible;
 }
 
+/* EXEMPTION · status columns. Status/severity cells render a single dot+label
+ * (or icon) and carry no header sort (removed in the table audit), so they
+ * shrink to their content instead of taking an even share of the grid —
+ * reclaiming horizontal space on wide list tables. width:1% is the PF
+ * fitContent trick (paired with the global nowrap above); keyed on the
+ * ResizableTh data-column marker so it only touches these structured columns. A
+ * stored drag width, when present, rides as an inline style and still wins. */
+:root .pf-v6-c-table th[data-app-column='status'],
+:root .pf-v6-c-table th[data-app-column='severity'],
+:root .pf-v6-c-table th[data-app-column='upgradeStatus'] {
+  width: 1%;
+}
+
 /* ----------------------------------------------------------------------------
  * Platform settings · logo preview swatch (pages/PlatformSettingsPage).
  * The masthead is a dark strip in BOTH themes (ink chrome in dark; the slate

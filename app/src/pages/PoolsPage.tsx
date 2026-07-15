@@ -16,6 +16,9 @@ import {
   Stack,
   StackItem,
   TextInput,
+  Toolbar,
+  ToolbarContent,
+  ToolbarItem,
 } from '@patternfly/react-core'
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table'
 import { EllipsisVIcon } from '@patternfly/react-icons'
@@ -28,6 +31,7 @@ import { ListPageHeader } from '../components/ListPageHeader'
 import { RefreshControl } from '../components/RefreshControl'
 import { ColumnPicker } from '../components/list-toolbar/ColumnPicker'
 import { ResizableTh, resizableTableProps } from '../components/list-toolbar/ResizableTh'
+import { SearchInput } from '../components/list-toolbar/SearchInput'
 import { PoolFormModal } from '../components/pool-form/PoolFormModal'
 import { useColumnPrefs } from '../hooks/useColumnPrefs'
 import { sortRows, useColumnSort } from '../hooks/useColumnSort'
@@ -191,7 +195,19 @@ export function PoolsPage() {
   // client-side header sort; no default — the engine list order stands
   // until a header is clicked (see hooks/useColumnSort)
   const { sort, thSort } = useColumnSort()
-  const rows = sortRows(pools.data ?? [], sort, (row, key) =>
+  // client-side name/comment/description/type filter — /vmpools has no
+  // server-side search
+  const [filter, setFilter] = useState('')
+  const needle = filter.trim().toLowerCase()
+  const filtered = (pools.data ?? []).filter(
+    (pool) =>
+      needle === '' ||
+      (pool.name ?? '').toLowerCase().includes(needle) ||
+      (pool.comment ?? '').toLowerCase().includes(needle) ||
+      (pool.description ?? '').toLowerCase().includes(needle) ||
+      (pool.type ?? '').toLowerCase().includes(needle),
+  )
+  const rows = sortRows(filtered, sort, (row, key) =>
     columns.find((column) => column.key === key)?.sortValue?.(row),
   )
   // undefined = closed; { pool } = edit; { pool: undefined } = create.
@@ -218,6 +234,20 @@ export function PoolsPage() {
           </>
         }
       />
+
+      <Toolbar style={{ paddingBottom: 'var(--pf-t--global--spacer--md)' }}>
+        <ToolbarContent>
+          <ToolbarItem style={{ width: '18rem' }}>
+            <SearchInput
+              value={filter}
+              onChange={setFilter}
+              onCommit={() => {}}
+              hint={t('pools.filter.hint')}
+              ariaLabel={t('pools.filter.ariaLabel')}
+            />
+          </ToolbarItem>
+        </ToolbarContent>
+      </Toolbar>
 
       <PoolFormModal
         pool={editing?.pool}
@@ -263,7 +293,17 @@ export function PoolsPage() {
         </EmptyState>
       )}
 
-      {pools.isSuccess && pools.data.length > 0 && (
+      {pools.isSuccess && pools.data.length > 0 && rows.length === 0 && (
+        <EmptyState titleText={t('common.state.searchEmpty.title')}>
+          <EmptyStateBody>
+            <Button variant="link" isInline onClick={() => setFilter('')}>
+              {t('common.action.clearFilter')}
+            </Button>
+          </EmptyStateBody>
+        </EmptyState>
+      )}
+
+      {pools.isSuccess && pools.data.length > 0 && rows.length > 0 && (
         <div className="app-table-viewport">
           <Table
             aria-label={t('pools.table.ariaLabel')}

@@ -1488,6 +1488,10 @@ export const ptBR: LocaleCatalog = {
   'quotas.filter.ariaLabel': 'Filtrar cotas por nome',
   'providers.filter.hint': 'Filtrar por nome',
   'providers.filter.ariaLabel': 'Filtrar fornecedores por nome',
+  'volumes.filter.hint': 'Filtrar por nome',
+  'volumes.filter.ariaLabel': 'Filtrar volumes por nome',
+  'pools.filter.hint': 'Filtrar por nome',
+  'pools.filter.ariaLabel': 'Filtrar pools por nome',
   'groups.filter.hint': 'Filtrar por nome',
   'groups.filter.ariaLabel': 'Filtrar grupos por nome',
   'roles.immutable.editReason':

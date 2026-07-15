@@ -19,6 +19,7 @@ import { ConfirmModal } from '../components/ConfirmModal'
 import { ListPageHeader } from '../components/ListPageHeader'
 import { NotPermitted } from '../components/NotPermitted'
 import { RefreshControl } from '../components/RefreshControl'
+import { SearchInput } from '../components/list-toolbar/SearchInput'
 import { MacPoolFormModal } from '../components/mac-pool-form/MacPoolFormModal'
 import { useDeleteMacPool, useMacPools } from '../hooks/useMacPools'
 import { sortRows, useColumnSort } from '../hooks/useColumnSort'
@@ -54,6 +55,8 @@ export function MacPoolsPage() {
   const [creating, setCreating] = useState(false)
   const [editing, setEditing] = useState<MacPool | null>(null)
   const [removing, setRemoving] = useState<MacPool | null>(null)
+  // client-side name/description filter — /macpools has no server-side search
+  const [filter, setFilter] = useState('')
 
   // The nav already hides MAC pools from user-tier accounts; this covers deep
   // links typed straight into the address bar. Skeletons cover the pre-profile
@@ -70,7 +73,14 @@ export function MacPoolsPage() {
   }
 
   const items = pools.data ?? []
-  const sortedPools = sortRows(items, sort, (pool, key) =>
+  const needle = filter.trim().toLowerCase()
+  const filtered = items.filter(
+    (pool) =>
+      needle === '' ||
+      (pool.name ?? pool.id).toLowerCase().includes(needle) ||
+      (pool.description ?? '').toLowerCase().includes(needle),
+  )
+  const sortedPools = sortRows(filtered, sort, (pool, key) =>
     key === 'name'
       ? (pool.name ?? pool.id)
       : key === 'description'
@@ -96,6 +106,15 @@ export function MacPoolsPage() {
       />
       <Toolbar style={{ paddingBottom: 'var(--pf-t--global--spacer--md)' }}>
         <ToolbarContent>
+          <ToolbarItem style={{ width: '18rem' }}>
+            <SearchInput
+              value={filter}
+              onChange={setFilter}
+              onCommit={() => {}}
+              hint="Filter by name"
+              ariaLabel="Filter MAC address pools by name"
+            />
+          </ToolbarItem>
           <ToolbarGroup align={{ default: 'alignEnd' }}>
             <ToolbarItem>
               <RefreshControl />
@@ -144,7 +163,17 @@ export function MacPoolsPage() {
         </EmptyState>
       )}
 
-      {loaded && pools.isSuccess && items.length > 0 && (
+      {loaded && pools.isSuccess && items.length > 0 && sortedPools.length === 0 && (
+        <EmptyState titleText="Nothing matches the filter">
+          <EmptyStateBody>
+            <Button variant="link" isInline onClick={() => setFilter('')}>
+              Clear filter
+            </Button>
+          </EmptyStateBody>
+        </EmptyState>
+      )}
+
+      {loaded && pools.isSuccess && items.length > 0 && sortedPools.length > 0 && (
         <Table aria-label="MAC address pools" variant="compact">
           <Thead>
             <Tr>

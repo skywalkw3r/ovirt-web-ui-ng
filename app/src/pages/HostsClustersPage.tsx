@@ -299,7 +299,6 @@ const INFRA_HOST_COLUMNS: InfraHostColumn[] = [
   {
     key: 'status',
     labelId: 'common.field.status',
-    sortValue: (host) => host.status,
     cell: (host, ctx) => (
       <HostStatusCell host={host} updateLabel={ctx.t('host.upgrade.available')} />
     ),
@@ -511,11 +510,15 @@ function InfraFilterToolbar({
 // the page component).
 function InfraTreePanel({
   treeData,
+  filtering,
   selectedId,
   onSelect,
   onTreeContextMenu,
 }: {
   treeData: TreeViewDataItem[]
+  // true while a search filter is active — drives the collapse-when-idle,
+  // expand-while-searching remount of the tree below
+  filtering: boolean
   selectedId: string | null
   onSelect: (id: string | null) => void
   onTreeContextMenu: (event: ReactMouseEvent<HTMLDivElement>) => void
@@ -528,6 +531,10 @@ function InfraTreePanel({
       </div>
       <div onContextMenu={onTreeContextMenu}>
         <TreeView
+          // Remount on the idle↔filtering transition so PF re-reads
+          // defaultExpanded — an uncontrolled TreeView otherwise caches each
+          // node's expand state, leaving collapsed folders shut during a search.
+          key={filtering ? 'filtering' : 'idle'}
           aria-label={t('infra.tree.ariaLabel')}
           data={treeData}
           hasSelectableNodes
@@ -1348,7 +1355,9 @@ export function HostsClustersPage() {
         id: nodeId('cluster', cluster.id),
         name: <span data-infra-ctx={nodeId('cluster', cluster.id)}>{cluster.name}</span>,
         icon: <ClusterIcon />,
-        defaultExpanded: true,
+        // Collapsed by default (large host estates); auto-open while filtering
+        // so search reveals matching hosts inside.
+        defaultExpanded: needle !== '',
         children: clusterHosts.length > 0 ? clusterHosts.map(hostItem) : undefined,
       }
     }
@@ -1365,7 +1374,7 @@ export function HostsClustersPage() {
         id: nodeId('datacenter', dc.id),
         name: <span data-infra-ctx={nodeId('datacenter', dc.id)}>{dc.name}</span>,
         icon: <InfrastructureIcon />,
-        defaultExpanded: true,
+        defaultExpanded: needle !== '',
         children: children.length > 0 ? children : undefined,
       }
     }
@@ -1659,6 +1668,7 @@ export function HostsClustersPage() {
         >
           <InfraTreePanel
             treeData={treeData}
+            filtering={needle !== ''}
             selectedId={selectedId}
             onSelect={setSelectedId}
             onTreeContextMenu={onTreeContextMenu}

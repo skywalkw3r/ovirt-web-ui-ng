@@ -1480,6 +1480,10 @@ export const ja: LocaleCatalog = {
   'quotas.filter.ariaLabel': '名前でクォータをフィルター',
   'providers.filter.hint': '名前でフィルター',
   'providers.filter.ariaLabel': '名前でプロバイダーをフィルター',
+  'volumes.filter.hint': '名前でフィルター',
+  'volumes.filter.ariaLabel': '名前でボリュームをフィルター',
+  'pools.filter.hint': '名前でフィルター',
+  'pools.filter.ariaLabel': '名前でプールをフィルター',
   'groups.filter.hint': '名前でフィルター',
   'groups.filter.ariaLabel': '名前でグループをフィルター',
   'roles.immutable.editReason':

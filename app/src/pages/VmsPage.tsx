@@ -89,6 +89,8 @@ interface VmColumn {
   defaultHidden?: boolean
   // opt-in header sort: extract the comparable value (see hooks/useColumnSort)
   sortValue?: (vm: Vm, ctx: VmColumnCtx) => string | number | undefined
+  // CSV export value for columns deliberately kept out of header sort (status)
+  exportValue?: (vm: Vm, ctx: VmColumnCtx) => string | number | undefined
   cell: (vm: Vm, ctx: VmColumnCtx) => ReactNode
 }
 
@@ -117,7 +119,7 @@ const COLUMNS: VmColumn[] = [
   {
     key: 'status',
     labelId: 'vms.column.status',
-    sortValue: (vm) => vm.status,
+    exportValue: (vm) => vm.status,
     cell: (vm) => (
       <>
         <VmStatusLabel status={vm.status} />
@@ -412,12 +414,14 @@ export function VmsPage() {
   const exportCsv = () => {
     const exportColumns = columns
       .filter((column) => prefs.isVisible(column.key))
-      .filter((column) => column.sortValue !== undefined)
+      .filter((column) => column.sortValue !== undefined || column.exportValue !== undefined)
     downloadCsv(
       `vms-${new Date().toISOString().slice(0, 10)}.csv`,
       toCsv(
         exportColumns.map((column) => column.label),
-        sorted.map((vm) => exportColumns.map((column) => column.sortValue?.(vm, columnCtx))),
+        sorted.map((vm) =>
+          exportColumns.map((column) => (column.sortValue ?? column.exportValue)?.(vm, columnCtx)),
+        ),
       ),
     )
   }

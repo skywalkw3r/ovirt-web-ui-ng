@@ -103,7 +103,6 @@ const COLUMNS: TemplateColumn[] = [
   {
     key: 'status',
     labelId: 'common.field.status',
-    sortValue: (template) => template.status,
     cell: (template) => <TemplateStatusLabel status={template.status} />,
   },
   {

@@ -1472,6 +1472,10 @@ export const tr: LocaleCatalog = {
   'quotas.filter.ariaLabel': 'Kontenjanları ada göre filtrele',
   'providers.filter.hint': 'Ada göre filtrele',
   'providers.filter.ariaLabel': 'Sağlayıcıları ada göre filtrele',
+  'volumes.filter.hint': 'Ada göre filtrele',
+  'volumes.filter.ariaLabel': 'Hacimleri ada göre filtrele',
+  'pools.filter.hint': 'Ada göre filtrele',
+  'pools.filter.ariaLabel': 'Havuzları ada göre filtrele',
   'groups.filter.hint': 'Ada göre filtrele',
   'groups.filter.ariaLabel': 'Grupları ada göre filtrele',
   'roles.immutable.editReason':

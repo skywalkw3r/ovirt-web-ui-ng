@@ -121,6 +121,7 @@ const COLUMNS: NetworkColumn[] = [
   {
     key: 'role',
     labelId: 'networks.column.role',
+    sortValue: (network) => network.usages?.usage?.slice().sort().join(', ') || undefined,
     cell: (network) => <RoleBadges usages={network.usages} />,
   },
   {

@@ -51,6 +51,8 @@ export interface VmListColumn {
   // opt-in header sort: extract the comparable value for this column (see
   // hooks/useColumnSort — missing values sink to the end in both directions)
   sortValue?: (row: VmListRow, ctx: VmListCtx) => string | number | undefined
+  // CSV export value for columns deliberately kept out of header sort (status)
+  exportValue?: (row: VmListRow, ctx: VmListCtx) => string | number | undefined
   cell: (row: VmListRow, ctx: VmListCtx) => ReactNode
 }
 
@@ -65,8 +67,7 @@ export const VM_LIST_COLUMNS: VmListColumn[] = [
   {
     key: 'status',
     labelId: 'inventory.column.status',
-    sortValue: (row) => (row.kind === 'vm' ? row.vm.status : row.template.status),
-    width: 15,
+    exportValue: (row) => (row.kind === 'vm' ? row.vm.status : row.template.status),
     modifier: 'nowrap',
     cell: (row) =>
       row.kind === 'vm' ? (

@@ -1488,6 +1488,10 @@ export const ru: LocaleCatalog = {
   'quotas.filter.ariaLabel': 'Фильтровать квоты по имени',
   'providers.filter.hint': 'Фильтр по имени',
   'providers.filter.ariaLabel': 'Фильтровать провайдеры по имени',
+  'volumes.filter.hint': 'Фильтр по имени',
+  'volumes.filter.ariaLabel': 'Фильтровать тома по имени',
+  'pools.filter.hint': 'Фильтр по имени',
+  'pools.filter.ariaLabel': 'Фильтровать пулы по имени',
   'groups.filter.hint': 'Фильтр по имени',
   'groups.filter.ariaLabel': 'Фильтровать группы по имени',
   'roles.immutable.editReason':

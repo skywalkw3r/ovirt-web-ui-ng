@@ -1505,6 +1505,10 @@ export const de: LocaleCatalog = {
   'quotas.filter.ariaLabel': 'Kontingente nach Namen filtern',
   'providers.filter.hint': 'Nach Namen filtern',
   'providers.filter.ariaLabel': 'Anbieter nach Namen filtern',
+  'volumes.filter.hint': 'Nach Namen filtern',
+  'volumes.filter.ariaLabel': 'Volumes nach Namen filtern',
+  'pools.filter.hint': 'Nach Namen filtern',
+  'pools.filter.ariaLabel': 'Pools nach Namen filtern',
   'groups.filter.hint': 'Nach Namen filtern',
   'groups.filter.ariaLabel': 'Gruppen nach Namen filtern',
   'roles.immutable.editReason':

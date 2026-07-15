@@ -1497,6 +1497,10 @@ export const it: LocaleCatalog = {
   'quotas.filter.ariaLabel': 'Filtra le quote per nome',
   'providers.filter.hint': 'Filtra per nome',
   'providers.filter.ariaLabel': 'Filtra i provider per nome',
+  'volumes.filter.hint': 'Filtra per nome',
+  'volumes.filter.ariaLabel': 'Filtra i volumi per nome',
+  'pools.filter.hint': 'Filtra per nome',
+  'pools.filter.ariaLabel': 'Filtra i pool per nome',
   'groups.filter.hint': 'Filtra per nome',
   'groups.filter.ariaLabel': 'Filtra i gruppi per nome',
   'roles.immutable.editReason':

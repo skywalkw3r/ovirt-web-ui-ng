@@ -1461,6 +1461,10 @@ export const ko: LocaleCatalog = {
   'quotas.filter.ariaLabel': '이름으로 할당량 필터링',
   'providers.filter.hint': '이름으로 필터링',
   'providers.filter.ariaLabel': '이름으로 공급자 필터링',
+  'volumes.filter.hint': '이름으로 필터링',
+  'volumes.filter.ariaLabel': '이름으로 볼륨 필터링',
+  'pools.filter.hint': '이름으로 필터링',
+  'pools.filter.ariaLabel': '이름으로 풀 필터링',
   'groups.filter.hint': '이름으로 필터링',
   'groups.filter.ariaLabel': '이름으로 그룹 필터링',
   'roles.immutable.editReason':

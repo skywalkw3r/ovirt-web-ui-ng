@@ -137,7 +137,6 @@ const COLUMNS: HostColumn[] = [
   {
     key: 'status',
     labelId: 'common.field.status',
-    sortValue: (host) => host.status,
     cell: (host, ctx) => (
       <HostStatusCell host={host} updateLabel={ctx.t('host.upgrade.available')} />
     ),

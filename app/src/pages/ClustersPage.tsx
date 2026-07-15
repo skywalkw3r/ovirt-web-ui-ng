@@ -138,7 +138,6 @@ const COLUMNS: ClusterColumn[] = [
     // externally-driven upgrade) holds it.
     key: 'upgradeStatus',
     labelId: 'clusters.column.upgradeStatus',
-    sortValue: (cluster) => (isClusterUpgradeRunning(cluster) ? 1 : 0),
     cell: (cluster, ctx) =>
       isClusterUpgradeRunning(cluster) ? (
         <StatusBadge color="blue">{ctx.upgradeRunningLabel}</StatusBadge>

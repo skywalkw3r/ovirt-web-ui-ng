@@ -226,7 +226,6 @@ const COLUMNS: StorageColumn[] = [
     // text stands in for all types.
     key: 'status',
     labelId: 'common.field.status',
-    sortValue: (domain) => domain.status ?? domain.data_centers?.data_center?.[0]?.status,
     cell: (domain) => <StatusCell domain={domain} />,
   },
   {

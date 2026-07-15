@@ -23,6 +23,7 @@ import { NotPermitted } from '../components/NotPermitted'
 import { RefreshControl } from '../components/RefreshControl'
 import { ColumnPicker } from '../components/list-toolbar/ColumnPicker'
 import { ResizableTh, resizableTableProps } from '../components/list-toolbar/ResizableTh'
+import { SearchInput } from '../components/list-toolbar/SearchInput'
 import { VolumeActionsMenu } from '../components/volume-form/VolumeActionsMenu'
 import { VolumeFormModal } from '../components/volume-form/VolumeFormModal'
 import { useClustersInventory } from '../hooks/useAdminResources'
@@ -69,7 +70,6 @@ const COLUMNS: VolumeColumn[] = [
   {
     key: 'status',
     labelId: 'common.field.status',
-    sortValue: (volume) => volume.status,
     cell: (volume) => <StatusCell status={volume.status} />,
   },
   {
@@ -153,6 +153,9 @@ export function VolumesPage() {
   const volumes = useGlusterVolumes()
   const clusters = useClustersInventory()
   const [creating, setCreating] = useState(false)
+  // client-side name/comment/description/cluster/type filter — the volume list
+  // is a per-cluster fan-out with no server-side search
+  const [filter, setFilter] = useState('')
   const columnCtx: VolumeColumnCtx = {
     clusterName: (id) => clusters.data?.find((cluster) => cluster.id === id)?.name,
   }
@@ -161,7 +164,17 @@ export function VolumesPage() {
   // client-side header sort; no default — the engine list order stands
   // until a header is clicked (see hooks/useColumnSort)
   const { sort, thSort } = useColumnSort()
-  const rows = sortRows(volumes.data ?? [], sort, (row, key) =>
+  const needle = filter.trim().toLowerCase()
+  const filtered = (volumes.data ?? []).filter(
+    (volume) =>
+      needle === '' ||
+      (volume.name ?? '').toLowerCase().includes(needle) ||
+      (volume.comment ?? '').toLowerCase().includes(needle) ||
+      (volume.description ?? '').toLowerCase().includes(needle) ||
+      (columnCtx.clusterName(volume.cluster?.id) ?? '').toLowerCase().includes(needle) ||
+      (volume.volume_type ?? '').toLowerCase().includes(needle),
+  )
+  const rows = sortRows(filtered, sort, (row, key) =>
     columns.find((column) => column.key === key)?.sortValue?.(row, columnCtx),
   )
   const visibleColumns = columns.filter((column) => prefs.isVisible(column.key))
@@ -191,6 +204,15 @@ export function VolumesPage() {
       />
       <Toolbar style={{ paddingBottom: 'var(--pf-t--global--spacer--md)' }}>
         <ToolbarContent>
+          <ToolbarItem style={{ width: '18rem' }}>
+            <SearchInput
+              value={filter}
+              onChange={setFilter}
+              onCommit={() => {}}
+              hint={t('volumes.filter.hint')}
+              ariaLabel={t('volumes.filter.ariaLabel')}
+            />
+          </ToolbarItem>
           <ToolbarGroup align={{ default: 'alignEnd' }}>
             <ToolbarItem>
               <ColumnPicker
@@ -239,10 +261,20 @@ export function VolumesPage() {
         </EmptyState>
       )}
 
+      {volumes.isSuccess && !clusters.isPending && volumes.data.length > 0 && rows.length === 0 && (
+        <EmptyState titleText={t('common.state.searchEmpty.title')}>
+          <EmptyStateBody>
+            <Button variant="link" isInline onClick={() => setFilter('')}>
+              {t('common.action.clearFilter')}
+            </Button>
+          </EmptyStateBody>
+        </EmptyState>
+      )}
+
       {/* Waiting on clusters.isPending keeps resolved cluster names from
           flashing in as '—'; if the clusters fetch fails the table still
           renders, just with unresolved names. */}
-      {volumes.isSuccess && !clusters.isPending && volumes.data.length > 0 && (
+      {volumes.isSuccess && !clusters.isPending && rows.length > 0 && (
         <div className="app-table-viewport">
           <Table
             aria-label={t('volumes.table.ariaLabel')}
