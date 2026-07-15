@@ -5,10 +5,11 @@ import { useDiskVms } from '../../hooks/useDiskDetail'
 import { useT } from '../../i18n/useT'
 import { VmStatusLabel } from '../VmStatusLabel'
 
-// The VMs this disk is attached to. The engine exposes it as a REST
-// subcollection (GET /disks/{id}/vms) via useDiskVms → listDiskVms, which is
-// 404-tolerant → [] for an unattached disk (drives the empty state). Mirrors
-// HostVmsTab / TemplateVmsTab's four-state shell.
+// The VMs this disk is attached to — resolved from the Disk entity's `vms`
+// follow (useDiskVms → listDiskVms; the /disks/{id}/vms subcollection does not
+// exist on the live engine), 404/5xx-tolerant → [] for an unattached disk or a
+// degraded follow (drives the empty state). Mirrors HostVmsTab / TemplateVmsTab's
+// four-state shell.
 export function DiskVmsTab({ diskId }: { diskId: string }) {
   const t = useT()
   const vms = useDiskVms(diskId)

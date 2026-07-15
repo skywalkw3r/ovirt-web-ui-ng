@@ -52,18 +52,24 @@ export async function getDisk(id: string, signal?: AbortSignal): Promise<Disk> {
   }
 }
 
-// The VMs this disk is attached to. The engine exposes it as a REST
-// subcollection (GET /disks/{id}/vms) — an unshared disk has at most one, a
-// shareable disk several. Shares the flat VmSchema/VmListSchema with the global
-// /vms collection. Optional: a disk attached to nothing (or an engine that
-// omits the subcollection) answers 404 → [] rather than an empty list, mirror
-// the 404-tolerant hosts.ts listHostHooks path.
+// The VMs this disk is attached to. oVirt's DiskService exposes NO /vms
+// subcollection locator, so GET /disks/{id}/vms 404s on the live engine (it only
+// ever resolved against the mock) — the tab came up empty even for an ATTACHED
+// disk. The real relationship is the Disk entity's `vms` link: ?follow=vms
+// inlines the attached VMs (vms.vm[] — one for an unshared disk, several for a
+// shareable one), reusing the flat VmListSchema. Degrade to [] on a 404 (disk
+// gone) or a 5xx (the live-engine quirk where an absent followed link NPEs) so
+// the empty state stands in rather than an error.
+const DiskWithVmsSchema = z.looseObject({ vms: VmListSchema.optional() })
+
 export async function listDiskVms(id: string): Promise<Vm[]> {
   try {
-    const data = VmListSchema.parse(await request(`/disks/${encodeURIComponent(id)}/vms`))
-    return data.vm ?? []
+    const disk = DiskWithVmsSchema.parse(
+      await request(`/disks/${encodeURIComponent(id)}?follow=vms`),
+    )
+    return disk.vms?.vm ?? []
   } catch (error) {
-    if (error instanceof ApiError && error.status === 404) return []
+    if (error instanceof ApiError && (error.status === 404 || error.status >= 500)) return []
     throw error
   }
 }

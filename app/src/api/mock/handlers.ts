@@ -3048,10 +3048,11 @@ const initialDiskDetails: Record<string, MockDiskDetail> = {
   },
 }
 
-// VMs attached to a disk (GET /disks/{id}/vms). disk-orphaned-backup is
-// unattached → its subcollection is absent (404 → [], exercising the tab's
-// empty state). disk-iso-uploads is a shareable image mounted by two VMs, so
-// its list is populated. Scalars mix string/number forms to exercise coercion.
+// VMs attached to a disk, inlined into GET /disks/{id}?follow=vms (the Disk
+// `vms` link — see resources/disks.ts listDiskVms). disk-orphaned-backup is
+// unattached → no vms element → [] (exercising the tab's empty state).
+// disk-iso-uploads is a shareable image mounted by two VMs, so its list is
+// populated. Scalars mix string/number forms to exercise coercion.
 const diskVms: Record<string, MockVm[]> = {
   'disk-iso-uploads': [
     { id: 'vm-03', name: 'db-01', status: 'up', memory: `${16 * GiB}` },
@@ -13090,19 +13091,6 @@ const routes: MockRoute[] = [
     pattern: /^\/imagetransfers\/([^/]+)\/cancel$/,
     handle: ([id]) => cancelImageTransfer(id),
   },
-  // GET /disks/{id}/vms — the VMs a disk is attached to. Unattached disks omit
-  // the subcollection entirely (404), exercising listDiskVms' 404-tolerant path;
-  // the disk must still exist first.
-  {
-    method: 'GET',
-    pattern: /^\/disks\/([^/]+)\/vms$/,
-    handle: ([id]) => {
-      requireDiskDetail(id)
-      const vms = diskVms[id]
-      if (!vms) throw new ApiError(404, 'Not Found', `no vms subcollection on disk ${id}`)
-      return { vm: vms }
-    },
-  },
   // GET /disks/{id}/permissions — an optional subcollection: disks without any
   // assigned answer 404 for the whole collection, exercising
   // listDiskPermissions' 404-tolerant path. The disk must still exist first.
@@ -13120,7 +13108,18 @@ const routes: MockRoute[] = [
   },
   // GET /disks/{id} — the enriched detail body. Registered after the
   // subcollection routes so those match first; an unknown id 404s.
-  { method: 'GET', pattern: /^\/disks\/([^/]+)$/, handle: ([id]) => requireDiskDetail(id) },
+  {
+    method: 'GET',
+    pattern: /^\/disks\/([^/]+)$/,
+    // getDisk (?follow=storage_domains) and listDiskVms (?follow=vms) both land
+    // here; inline the attached VMs so a ?follow=vms read resolves like the live
+    // engine's Disk `vms` link (see resources/disks.ts listDiskVms).
+    handle: ([id]) => {
+      const disk = requireDiskDetail(id)
+      const vms = diskVms[id]
+      return vms ? { ...disk, vms: { vm: vms } } : disk
+    },
+  },
   // PUT /disks/{id} — the main-tab Edit dialog (grow-only 409, field round-trip).
   {
     method: 'PUT',
