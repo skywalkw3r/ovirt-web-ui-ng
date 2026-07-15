@@ -173,7 +173,9 @@ export function LoginPage() {
           {loginNotice !== '' && (
             <p
               style={{
-                marginBlockEnd: 'var(--pf-t--global--spacer--sm)',
+                // Default spacer, not sm: the notice butts straight up against
+                // the "Sign in to …" title otherwise (CardBody ends at 0).
+                marginBlockEnd: 'var(--pf-t--global--spacer--md)',
                 color: 'var(--pf-t--global--text--color--subtle)',
                 fontSize: 'var(--pf-t--global--font--size--body--sm)',
                 textAlign: 'center',
