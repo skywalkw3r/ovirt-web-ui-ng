@@ -16,6 +16,7 @@ import type { UseQueryResult } from '@tanstack/react-query'
 import type { PermissionEntityKind } from '../../api/resources/permissions'
 import { useCapabilities } from '../../auth/capabilities'
 import { useT } from '../../i18n/useT'
+import { sortRows, useColumnSort } from '../../hooks/useColumnSort'
 import { useGroups, usePermissionUsers } from '../../hooks/usePermissionMutations'
 import {
   useAddPermission,
@@ -108,6 +109,11 @@ function principalOf(
 // can resolve the ancestor-scope permission ids (currently the VM tab) passes
 // `inheritedIds`; the panel then offers the All/Direct toggle. Tabs that don't
 // supply it render the flat list with no toggle rather than a broken one.
+// Header-sort keys, in visual column order so each <Th>'s index lines up (the
+// trailing actions cell carries no sort). Every column here is categorical or
+// free text — none is a status chip — so all four sort.
+const PERMISSION_KEYS = ['assignee', 'assigneeType', 'role', 'type'] as const
+
 export function PermissionsPanel<T extends PermissionRow>({
   entityKind,
   entityId,
@@ -146,6 +152,9 @@ export function PermissionsPanel<T extends PermissionRow>({
   const add = useAddPermission(entityKind, entityId)
   const remove = useRemovePermission(entityKind, entityId)
   const mutating = add.isPending || remove.isPending
+  // client-side header sort; no default — the engine list order stands until a
+  // header is clicked (see hooks/useColumnSort)
+  const { sort, thSort } = useColumnSort()
 
   // Hidden (not disabled) below admin tier — same posture as the nav; the
   // engine would reject the mutations server-side anyway.
@@ -158,6 +167,16 @@ export function PermissionsPanel<T extends PermissionRow>({
     canFilterScope && scope === 'direct'
       ? allRows.filter((row) => isDirectPermission(row, inheritedIds))
       : allRows
+  // Sorts on the RESOLVED principal (the assignee/type cells render the
+  // client-side join, not anything on the permission itself), so the order
+  // matches what the table shows. Unresolved principals sink (undefined).
+  const sortedRows = sortRows(visibleRows, sort, (permission, key) => {
+    const principal = principalOf(permission, principalNames)
+    if (key === 'assignee') return principal?.name
+    if (key === 'assigneeType') return principal?.kind
+    if (key === 'role') return permission.role?.name
+    return isAdministrative(permission) ? 1 : 0
+  })
 
   return (
     <>
@@ -223,15 +242,15 @@ export function PermissionsPanel<T extends PermissionRow>({
         <Table aria-label={t('permissions.table.ariaLabel')} variant="compact">
           <Thead>
             <Tr>
-              <Th>{t('permissions.column.assignee')}</Th>
-              <Th>{t('permissions.column.assigneeType')}</Th>
-              <Th>{t('common.field.role')}</Th>
-              <Th>{t('common.field.type')}</Th>
+              <Th sort={thSort(PERMISSION_KEYS, 0)}>{t('permissions.column.assignee')}</Th>
+              <Th sort={thSort(PERMISSION_KEYS, 1)}>{t('permissions.column.assigneeType')}</Th>
+              <Th sort={thSort(PERMISSION_KEYS, 2)}>{t('common.field.role')}</Th>
+              <Th sort={thSort(PERMISSION_KEYS, 3)}>{t('common.field.type')}</Th>
               {canManage && <Th screenReaderText={t('common.field.actions')} />}
             </Tr>
           </Thead>
           <Tbody>
-            {visibleRows.map((permission, index) => {
+            {sortedRows.map((permission, index) => {
               const permissionId = permission.id
               const principal = principalOf(permission, principalNames)
               const roleName = permission.role?.name ?? 'Role'

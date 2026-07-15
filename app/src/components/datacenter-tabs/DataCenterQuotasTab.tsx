@@ -1,12 +1,23 @@
 import { Button, EmptyState, EmptyStateBody, Skeleton } from '@patternfly/react-core'
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table'
+import { sortRows, useColumnSort } from '../../hooks/useColumnSort'
 import { useDataCenterQuotas } from '../../hooks/useDataCenterDetail'
+
+// Every column in visual order so each Th's index matches its position.
+const DC_QUOTA_KEYS = ['name', 'description'] as const
 
 // Quotas cap the resources a data center can hand out. They come from the
 // 404-tolerant /quotas subcollection — engines without quota enforcement 404
 // and the resource maps that to an empty list, which renders the empty state.
 export function DataCenterQuotasTab({ dataCenterId }: { dataCenterId: string }) {
   const quotas = useDataCenterQuotas(dataCenterId)
+  // client-side header sort; no default — the engine list order stands until a
+  // header is clicked (see hooks/useColumnSort)
+  const { sort, thSort } = useColumnSort()
+
+  const sortedQuotas = sortRows(quotas.data ?? [], sort, (quota, key) =>
+    key === 'name' ? quota.name : quota.description || undefined,
+  )
 
   return (
     <>
@@ -38,12 +49,12 @@ export function DataCenterQuotasTab({ dataCenterId }: { dataCenterId: string }) 
         <Table aria-label="Quotas" variant="compact">
           <Thead>
             <Tr>
-              <Th>Name</Th>
-              <Th>Description</Th>
+              <Th sort={thSort(DC_QUOTA_KEYS, 0)}>Name</Th>
+              <Th sort={thSort(DC_QUOTA_KEYS, 1)}>Description</Th>
             </Tr>
           </Thead>
           <Tbody>
-            {quotas.data.map((quota, index) => (
+            {sortedQuotas.map((quota, index) => (
               <Tr key={quota.id ?? index}>
                 <Td dataLabel="Name">{quota.name}</Td>
                 <Td dataLabel="Description">{quota.description ?? '—'}</Td>

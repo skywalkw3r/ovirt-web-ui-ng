@@ -7,9 +7,14 @@ import {
   TimestampTooltipVariant,
 } from '@patternfly/react-core'
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table'
+import { sortRows, useColumnSort } from '../../hooks/useColumnSort'
 import { useHostEvents } from '../../hooks/useHostDetail'
 import { useNow } from '../../hooks/useNow'
 import { EventSeverityLabel } from '../EventSeverityLabel'
+
+// Every column in visual order so each Th's index matches its position;
+// Severity stays unsortable — it is a state chip, not a scannable value.
+const HOST_EVENT_KEYS = ['severity', 'time', 'description'] as const
 
 // Relative-time formatting mirrors EventsPage: the 60s polls alone can't keep
 // the labels fresh (structural sharing suppresses the re-render), so useNow
@@ -39,6 +44,10 @@ function relativeTime(epochMs: number, now: number): string {
 export function HostEventsTab({ hostName }: { hostName: string }) {
   const events = useHostEvents(hostName)
   const now = useNow(30_000)
+  // client-side header sort; no default — the engine list order stands until a
+  // header is clicked (see hooks/useColumnSort). Before the early returns so
+  // hook order stays stable.
+  const { sort, thSort } = useColumnSort()
 
   if (events.isPending) {
     return (
@@ -71,6 +80,16 @@ export function HostEventsTab({ hostName }: { hostName: string }) {
     )
   }
 
+  // time sorts on the raw epoch ms the cell formats, not the rendered relative
+  // text ("2 hours ago"), so the order stays chronological.
+  const sortedEvents = sortRows(events.data, sort, (event, key) =>
+    key === 'time'
+      ? event.time
+      : key === 'description'
+        ? event.description || undefined
+        : undefined,
+  )
+
   // Severity/Time hug their content (5% + nowrap) so Description — the column
   // that carries the actual information — takes all the remaining width instead
   // of leaving the two short columns padded out into wasted space. PF's width
@@ -82,12 +101,14 @@ export function HostEventsTab({ hostName }: { hostName: string }) {
       <Thead>
         <Tr>
           <Th style={{ width: '5%' }}>Severity</Th>
-          <Th style={{ width: '5%' }}>Time</Th>
-          <Th>Description</Th>
+          <Th style={{ width: '5%' }} sort={thSort(HOST_EVENT_KEYS, 1)}>
+            Time
+          </Th>
+          <Th sort={thSort(HOST_EVENT_KEYS, 2)}>Description</Th>
         </Tr>
       </Thead>
       <Tbody>
-        {events.data.map((event) => (
+        {sortedEvents.map((event) => (
           <Tr key={event.id}>
             <Td dataLabel="Severity" modifier="nowrap">
               <EventSeverityLabel severity={event.severity} />

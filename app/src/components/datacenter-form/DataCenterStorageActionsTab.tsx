@@ -19,6 +19,7 @@ import { Link } from '@tanstack/react-router'
 import { StatusBadge } from '../StatusBadge'
 import { ConfirmModal } from '../ConfirmModal'
 import type { StorageDomain } from '../../api/schemas/storage-domain'
+import { sortRows, useColumnSort } from '../../hooks/useColumnSort'
 import { useDataCenterStorageDomains } from '../../hooks/useDataCenterDetail'
 import {
   useActivateStorageDomain,
@@ -92,6 +93,13 @@ function StatusCell({ domain }: { domain: StorageDomain }) {
 // kebab. Only one confirm is up at a time.
 type PendingConfirm = { kind: 'maintenance' | 'detach'; domain: StorageDomain } | null
 
+// Every column in visual order so each Th's index matches its position (the
+// trailing actions cell is unsortable and carries no key). Status is listed to
+// keep the indices aligned but stays unsortable — it is a state chip, not a
+// scannable value. Sort values mirror StorageDomainsPage's column set so the
+// two storage grids order identically.
+const DC_STORAGE_KEYS = ['name', 'domainType', 'storageType', 'status', 'utilization'] as const
+
 // The data center detail Storage tab. Supersedes the read-only
 // datacenter-tabs/DataCenterStorageTab: same four-states table plus the
 // lifecycle verbs webadmin's StorageDataCenterActionPanel offers — a tab-level
@@ -111,6 +119,26 @@ export function DataCenterStorageActionsTab({ dataCenterId }: { dataCenterId: st
 
   const [attaching, setAttaching] = useState(false)
   const [confirm, setConfirm] = useState<PendingConfirm>(null)
+  // client-side header sort; no default — the engine list order stands until a
+  // header is clicked (see hooks/useColumnSort)
+  const { sort, thSort } = useColumnSort()
+
+  // Domain type orders on the raw engine enum (the cell decorates it with
+  // '(Master)'); storage type on its display label, since the raw spellings
+  // ('fcp' → FC) don't collate the way the column reads; utilization on the raw
+  // used fraction behind the bar. All three mirror StorageDomainsPage. No
+  // header maps to 'status', so it never reaches this.
+  const sortedDomains = sortRows(domains.data ?? [], sort, (domain, key) =>
+    key === 'name'
+      ? domain.name
+      : key === 'domainType'
+        ? domain.type
+        : key === 'storageType'
+          ? storageTypeText(domain)
+          : key === 'utilization'
+            ? storageUsedPercent(domain)
+            : undefined,
+  )
 
   // While any lifecycle mutation is in flight, disable every row kebab so a
   // second verb cannot race the first.
@@ -199,16 +227,16 @@ export function DataCenterStorageActionsTab({ dataCenterId }: { dataCenterId: st
         <Table aria-label="Storage domains" variant="compact">
           <Thead>
             <Tr>
-              <Th>Name</Th>
-              <Th>Domain type</Th>
-              <Th>Storage Type</Th>
+              <Th sort={thSort(DC_STORAGE_KEYS, 0)}>Name</Th>
+              <Th sort={thSort(DC_STORAGE_KEYS, 1)}>Domain type</Th>
+              <Th sort={thSort(DC_STORAGE_KEYS, 2)}>Storage Type</Th>
               <Th>Status</Th>
-              <Th>Utilization</Th>
+              <Th sort={thSort(DC_STORAGE_KEYS, 4)}>Utilization</Th>
               <Th screenReaderText="Actions" />
             </Tr>
           </Thead>
           <Tbody>
-            {domains.data.map((domain) => (
+            {sortedDomains.map((domain) => (
               <Tr key={domain.id}>
                 <Td dataLabel="Name">
                   <Link to="/storage/$storageDomainId" params={{ storageDomainId: domain.id }}>

@@ -32,6 +32,7 @@ import {
   type IscsiBond,
   type StorageConnection,
 } from '../../api/resources/iscsiBonds'
+import { sortRows, useColumnSort } from '../../hooks/useColumnSort'
 import {
   DATA_CENTER_DETAIL_POLL_INTERVAL_MS,
   useDataCenterNetworks,
@@ -41,6 +42,13 @@ import { useSettings } from '../../settings/SettingsProvider'
 import { ConfirmModal } from '../ConfirmModal'
 
 const DASH = '—'
+
+// Every column in visual order so each Th's index matches its position (the
+// trailing actions cell is unsortable and carries no key). Only Name sorts:
+// the other two cells render the bond's member networks / connections as label
+// lists, and ordering those by member count would sort on something the column
+// never shows.
+const ISCSI_BOND_KEYS = ['name', 'networks', 'connections'] as const
 
 // One iSCSI storage connection's human label — the target IQN when present,
 // otherwise the portal address (falling back to the id so a row is never blank).
@@ -68,6 +76,9 @@ export function IscsiMultipathTab({ dataCenterId }: { dataCenterId: string }) {
   const [adding, setAdding] = useState(false)
   const [editing, setEditing] = useState<IscsiBond | null>(null)
   const [removing, setRemoving] = useState<IscsiBond | null>(null)
+  // client-side header sort; no default — the engine list order stands until a
+  // header is clicked (see hooks/useColumnSort)
+  const { sort, thSort } = useColumnSort()
 
   const remove = useMutation({
     mutationFn: ({ bond }: { bond: IscsiBond }) => deleteIscsiBond(dataCenterId, bond.id!),
@@ -83,6 +94,9 @@ export function IscsiMultipathTab({ dataCenterId }: { dataCenterId: string }) {
   })
 
   const bondCount = bonds.data?.length ?? 0
+  const sortedBonds = sortRows(bonds.data ?? [], sort, (bond, key) =>
+    key === 'name' ? bond.name : undefined,
+  )
 
   return (
     <>
@@ -138,14 +152,14 @@ export function IscsiMultipathTab({ dataCenterId }: { dataCenterId: string }) {
         <Table aria-label="iSCSI bonds" variant="compact">
           <Thead>
             <Tr>
-              <Th>Name</Th>
+              <Th sort={thSort(ISCSI_BOND_KEYS, 0)}>Name</Th>
               <Th>Logical networks</Th>
               <Th>Storage connections</Th>
               <Th screenReaderText="Actions" />
             </Tr>
           </Thead>
           <Tbody>
-            {bonds.data.map((bond) => {
+            {sortedBonds.map((bond) => {
               const networks = bond.networks?.network ?? []
               const connections = bond.storage_connections?.storage_connection ?? []
               return (

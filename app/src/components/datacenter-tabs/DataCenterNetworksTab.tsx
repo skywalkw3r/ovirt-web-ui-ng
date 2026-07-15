@@ -16,12 +16,17 @@ import {
 import { ActionsColumn, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table'
 import { Link } from '@tanstack/react-router'
 import type { Network } from '../../api/schemas/network'
+import { sortRows, useColumnSort } from '../../hooks/useColumnSort'
 import { useDataCenterNetworks } from '../../hooks/useDataCenterDetail'
 import { useDeleteNetwork } from '../../hooks/useNetworkMutations'
 import { ConfirmModal } from '../ConfirmModal'
 import { NetworkFormModal } from '../network-form/NetworkFormModal'
 
 const DASH = '—'
+
+// Every column in visual order so each Th's index matches its position (the
+// trailing actions cell is unsortable and carries no key).
+const DC_NETWORK_KEYS = ['name', 'description', 'vlan'] as const
 
 // The data center detail Logical Networks tab. Renders the DC's networks and
 // wires webadmin's New / Edit / Remove verbs by reusing NetworkFormModal (the
@@ -39,6 +44,19 @@ export function DataCenterNetworksTab({ dataCenterId }: { dataCenterId: string }
   const [creating, setCreating] = useState(false)
   const [editing, setEditing] = useState<Network | null>(null)
   const [removing, setRemoving] = useState<Network | null>(null)
+  // client-side header sort; no default — the engine list order stands until a
+  // header is clicked (see hooks/useColumnSort)
+  const { sort, thSort } = useColumnSort()
+
+  // VLAN sorts on the raw tag so 10 follows 7; untagged networks (the cell
+  // renders 'Default') have no id, so they sort as undefined and sink.
+  const sortedNetworks = sortRows(networks.data ?? [], sort, (network, key) =>
+    key === 'name'
+      ? network.name
+      : key === 'description'
+        ? network.description || undefined
+        : network.vlan?.id,
+  )
 
   const invalidateDcNetworks = () => {
     void queryClient.invalidateQueries({ queryKey: ['datacenter', dataCenterId, 'networks'] })
@@ -128,14 +146,14 @@ export function DataCenterNetworksTab({ dataCenterId }: { dataCenterId: string }
         <Table aria-label="Logical networks" variant="compact">
           <Thead>
             <Tr>
-              <Th>Name</Th>
-              <Th>Description</Th>
-              <Th>VLAN</Th>
+              <Th sort={thSort(DC_NETWORK_KEYS, 0)}>Name</Th>
+              <Th sort={thSort(DC_NETWORK_KEYS, 1)}>Description</Th>
+              <Th sort={thSort(DC_NETWORK_KEYS, 2)}>VLAN</Th>
               <Th screenReaderText="Actions" />
             </Tr>
           </Thead>
           <Tbody>
-            {networks.data.map((network) => (
+            {sortedNetworks.map((network) => (
               <Tr key={network.id}>
                 <Td dataLabel="Name">
                   {network.id ? (

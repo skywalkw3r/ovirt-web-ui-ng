@@ -22,6 +22,7 @@ import {
 import { ActionsColumn, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table'
 import { FormattedMessage } from 'react-intl'
 import type { DataCenterQos } from '../../api/resources/datacenters'
+import { sortRows, useColumnSort } from '../../hooks/useColumnSort'
 import { useDataCenterQoss } from '../../hooks/useDataCenterDetail'
 import { useDeleteDataCenterQos } from '../../hooks/useDataCenterQosMutations'
 import { useT } from '../../i18n/useT'
@@ -35,6 +36,12 @@ import {
   toQosType,
   type QosType,
 } from '../datacenter-qos-form/qosDraft'
+
+// Every column in visual order so each Th's index matches its position (the
+// trailing actions cell is unsortable and carries no key). Limits is listed to
+// keep the indices aligned but stays unsortable — the cell folds several
+// per-type scalars into one summary, so there is no single value to order on.
+const QOS_KEYS = ['name', 'type', 'description', 'limits'] as const
 
 // "New QoS profile" is a type-choosing dropdown (webadmin buries each type under
 // its own sub-tab; here one menu covers all four). Shared by the toolbar and the
@@ -115,9 +122,25 @@ export function DataCenterQosTab({ dataCenterId }: { dataCenterId: string }) {
   const [creating, setCreating] = useState<QosType | null>(null)
   const [editing, setEditing] = useState<DataCenterQos | null>(null)
   const [removing, setRemoving] = useState<DataCenterQos | null>(null)
+  // client-side header sort; no default — the engine list order stands until a
+  // header is clicked (see hooks/useColumnSort)
+  const { sort, thSort } = useColumnSort()
 
   const rows = (qoss.data ?? []).filter(
     (qos) => typeFilter === 'all' || toQosType(qos.type) === typeFilter,
+  )
+
+  // Type sorts on the raw engine enum rather than the localized badge text, so
+  // the grouping stays put across locales (mirrors the flat storage list's
+  // Domain Type). No header maps to 'limits', so it never reaches this.
+  const sortedRows = sortRows(rows, sort, (qos, key) =>
+    key === 'name'
+      ? qos.name
+      : key === 'type'
+        ? qos.type
+        : key === 'description'
+          ? qos.description || undefined
+          : undefined,
   )
 
   return (
@@ -196,13 +219,13 @@ export function DataCenterQosTab({ dataCenterId }: { dataCenterId: string }) {
         <Table aria-label={t('qos.table.ariaLabel')} variant="compact">
           <Thead>
             <Tr>
-              <Th>
+              <Th sort={thSort(QOS_KEYS, 0)}>
                 <FormattedMessage id="common.field.name" />
               </Th>
-              <Th>
+              <Th sort={thSort(QOS_KEYS, 1)}>
                 <FormattedMessage id="common.field.type" />
               </Th>
-              <Th>
+              <Th sort={thSort(QOS_KEYS, 2)}>
                 <FormattedMessage id="common.field.description" />
               </Th>
               <Th>
@@ -212,7 +235,7 @@ export function DataCenterQosTab({ dataCenterId }: { dataCenterId: string }) {
             </Tr>
           </Thead>
           <Tbody>
-            {rows.map((qos, index) => (
+            {sortedRows.map((qos, index) => (
               <Tr key={qos.id ?? index}>
                 <Td dataLabel={t('common.field.name')}>{qos.name ?? '—'}</Td>
                 <Td dataLabel={t('common.field.type')}>

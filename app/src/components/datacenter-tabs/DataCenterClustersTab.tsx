@@ -2,6 +2,7 @@ import { Button, EmptyState, EmptyStateBody, Skeleton } from '@patternfly/react-
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table'
 import { Link } from '@tanstack/react-router'
 import type { Cluster } from '../../api/schemas/cluster'
+import { sortRows, useColumnSort } from '../../hooks/useColumnSort'
 import { useDataCenterClusters } from '../../hooks/useDataCenterDetail'
 
 // e.g. { major: 4, minor: 7 } → '4.7'; a bare major still renders. The live
@@ -14,8 +15,29 @@ function CompatVersionCell({ version }: { version: Cluster['version'] }) {
   )
 }
 
+// The version's sort weight — major/minor as one number so 4.10 lands after
+// 4.7, which the rendered '4.7' string would collate the other way round.
+function compatVersionValue(version: Cluster['version']): number | undefined {
+  if (version?.major === undefined) return undefined
+  return version.major * 1000 + (version.minor ?? 0)
+}
+
+// Every column in visual order so each Th's index matches its position.
+const DC_CLUSTER_KEYS = ['name', 'cpuType', 'compatVersion'] as const
+
 export function DataCenterClustersTab({ dataCenterId }: { dataCenterId: string }) {
   const clusters = useDataCenterClusters(dataCenterId)
+  // client-side header sort; no default — the engine list order stands until a
+  // header is clicked (see hooks/useColumnSort)
+  const { sort, thSort } = useColumnSort()
+
+  const sortedClusters = sortRows(clusters.data ?? [], sort, (cluster, key) =>
+    key === 'name'
+      ? cluster.name
+      : key === 'cpuType'
+        ? cluster.cpu?.type
+        : compatVersionValue(cluster.version),
+  )
 
   return (
     <>
@@ -47,13 +69,13 @@ export function DataCenterClustersTab({ dataCenterId }: { dataCenterId: string }
         <Table aria-label="Clusters in this data center" variant="compact">
           <Thead>
             <Tr>
-              <Th>Name</Th>
-              <Th>CPU type</Th>
-              <Th>Compatibility version</Th>
+              <Th sort={thSort(DC_CLUSTER_KEYS, 0)}>Name</Th>
+              <Th sort={thSort(DC_CLUSTER_KEYS, 1)}>CPU type</Th>
+              <Th sort={thSort(DC_CLUSTER_KEYS, 2)}>Compatibility version</Th>
             </Tr>
           </Thead>
           <Tbody>
-            {clusters.data.map((cluster) => (
+            {sortedClusters.map((cluster) => (
               <Tr key={cluster.id}>
                 <Td dataLabel="Name">
                   <Link to="/clusters/$clusterId" params={{ clusterId: cluster.id }}>
