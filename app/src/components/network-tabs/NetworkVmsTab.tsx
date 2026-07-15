@@ -2,8 +2,13 @@ import { Button, EmptyState, EmptyStateBody, Skeleton } from '@patternfly/react-
 import { Link } from '@tanstack/react-router'
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table'
 import { useNetworkVms } from './useNetworkMembership'
+import { sortRows, useColumnSort } from '../../hooks/useColumnSort'
 import { useT } from '../../i18n/useT'
 import { VmStatusLabel } from '../VmStatusLabel'
+
+// Every column in visual order so each Th's index matches its position; Status
+// stays unsortable — it is a state chip, not a scannable value.
+const NETWORK_VM_KEYS = ['name', 'status'] as const
 
 // VMs with a vNIC on this network. No server-side read exists (NetworkService
 // has no vms locator), so useNetworkVms derives membership from the network's
@@ -11,6 +16,13 @@ import { VmStatusLabel } from '../VmStatusLabel'
 export function NetworkVmsTab({ networkId }: { networkId: string }) {
   const t = useT()
   const vms = useNetworkVms(networkId)
+  // client-side header sort; no default — the engine list order stands until a
+  // header is clicked (see hooks/useColumnSort)
+  const { sort, thSort } = useColumnSort()
+
+  const sortedVms = sortRows(vms.data ?? [], sort, (vm, key) =>
+    key === 'name' ? vm.name : undefined,
+  )
 
   return (
     <>
@@ -38,12 +50,12 @@ export function NetworkVmsTab({ networkId }: { networkId: string }) {
         <Table aria-label={t('networkDetail.tab.vms')} variant="compact">
           <Thead>
             <Tr>
-              <Th>{t('common.field.name')}</Th>
+              <Th sort={thSort(NETWORK_VM_KEYS, 0)}>{t('common.field.name')}</Th>
               <Th>{t('common.field.status')}</Th>
             </Tr>
           </Thead>
           <Tbody>
-            {vms.data.map((vm) => (
+            {sortedVms.map((vm) => (
               <Tr key={vm.id}>
                 <Td dataLabel={t('common.field.name')}>
                   <Link to="/vms/$vmId" params={{ vmId: vm.id }}>

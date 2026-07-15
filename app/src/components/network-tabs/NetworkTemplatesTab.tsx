@@ -2,7 +2,11 @@ import { Button, EmptyState, EmptyStateBody, Skeleton } from '@patternfly/react-
 import { Link } from '@tanstack/react-router'
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table'
 import { useNetworkTemplates } from './useNetworkMembership'
+import { sortRows, useColumnSort } from '../../hooks/useColumnSort'
 import { useT } from '../../i18n/useT'
+
+// Every column in visual order so each Th's index matches its position.
+const NETWORK_TEMPLATE_KEYS = ['name', 'description'] as const
 
 // Templates with a vNIC on this network. No server-side read exists
 // (NetworkService has no templates locator), so useNetworkTemplates derives
@@ -11,6 +15,15 @@ import { useT } from '../../i18n/useT'
 export function NetworkTemplatesTab({ networkId }: { networkId: string }) {
   const t = useT()
   const templates = useNetworkTemplates(networkId)
+  // client-side header sort; no default — the engine list order stands until a
+  // header is clicked (see hooks/useColumnSort)
+  const { sort, thSort } = useColumnSort()
+
+  // a blank description sorts as absent, so those rows sink instead of leading
+  // with em dashes
+  const sortedTemplates = sortRows(templates.data ?? [], sort, (template, key) =>
+    key === 'name' ? template.name : template.description || undefined,
+  )
 
   return (
     <>
@@ -40,12 +53,12 @@ export function NetworkTemplatesTab({ networkId }: { networkId: string }) {
         <Table aria-label={t('networkDetail.tab.templates')} variant="compact">
           <Thead>
             <Tr>
-              <Th>{t('common.field.name')}</Th>
-              <Th>{t('common.field.description')}</Th>
+              <Th sort={thSort(NETWORK_TEMPLATE_KEYS, 0)}>{t('common.field.name')}</Th>
+              <Th sort={thSort(NETWORK_TEMPLATE_KEYS, 1)}>{t('common.field.description')}</Th>
             </Tr>
           </Thead>
           <Tbody>
-            {templates.data.map((template) => (
+            {sortedTemplates.map((template) => (
               <Tr key={template.id}>
                 <Td dataLabel={t('common.field.name')}>
                   <Link to="/templates/$templateId" params={{ templateId: template.id }}>

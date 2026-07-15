@@ -3,6 +3,7 @@ import { Button, EmptyState, EmptyStateBody, Skeleton } from '@patternfly/react-
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table'
 import { Link } from '@tanstack/react-router'
 import { listStorageDomainDiskSnapshots } from '../../api/resources/diskSnapshots'
+import { sortRows, useColumnSort } from '../../hooks/useColumnSort'
 import { STORAGE_DOMAIN_DETAIL_POLL_INTERVAL_MS } from '../../hooks/useStorageDomainDetail'
 import { useT } from '../../i18n/useT'
 import { formatBytes, statusText } from '../../lib/format'
@@ -41,6 +42,10 @@ function SnapshotStatusLabel({ status }: { status?: string }) {
   )
 }
 
+// Every column in visual order so each Th's index matches its position; Status
+// stays unsortable — it is a state chip, not a scannable value.
+const SD_DISK_SNAPSHOT_KEYS = ['disk', 'description', 'status', 'provisionedSize'] as const
+
 // The storage domain's Disk Snapshots subtab (webadmin's read-only grid of the
 // snapshot images living on the domain). The alias is the parent disk's alias
 // (DiskSnapshot extends Disk), so it doubles as the disk link's label — the
@@ -48,6 +53,10 @@ function SnapshotStatusLabel({ status }: { status?: string }) {
 export function StorageDomainDiskSnapshotsTab({ storageDomainId }: { storageDomainId: string }) {
   const t = useT()
   const snapshots = useStorageDomainDiskSnapshots(storageDomainId)
+  // client-side header sort; no default — the engine list order stands until a
+  // header is clicked (see hooks/useColumnSort). Before the early returns so
+  // hook order stays stable.
+  const { sort, thSort } = useColumnSort()
 
   if (snapshots.isPending) {
     return (
@@ -81,21 +90,34 @@ export function StorageDomainDiskSnapshotsTab({ storageDomainId }: { storageDoma
     )
   }
 
+  // Disk sorts on the label the cell renders (alias, else the bare link's id);
+  // the size on the raw byte count handed to formatBytes, so 900 GiB lands
+  // under 1 TiB instead of collating by the rendered string.
+  const sortedSnapshots = sortRows(snapshots.data, sort, (snapshot, key) =>
+    key === 'disk'
+      ? (snapshot.alias ?? snapshot.disk?.id)
+      : key === 'description'
+        ? snapshot.description || undefined
+        : key === 'provisionedSize'
+          ? snapshot.provisioned_size
+          : undefined,
+  )
+
   return (
     <Table aria-label="Disk snapshots" variant="compact">
       <Thead>
         <Tr>
-          <Th>Disk</Th>
-          <Th>{t('common.field.description')}</Th>
+          <Th sort={thSort(SD_DISK_SNAPSHOT_KEYS, 0)}>Disk</Th>
+          <Th sort={thSort(SD_DISK_SNAPSHOT_KEYS, 1)}>{t('common.field.description')}</Th>
           <Th>{t('common.field.status')}</Th>
-          <Th>Provisioned Size</Th>
+          <Th sort={thSort(SD_DISK_SNAPSHOT_KEYS, 3)}>Provisioned Size</Th>
           {/* actual_size is intentionally left out: 4 data columns keeps the
               tab under the ColumnPicker threshold and webadmin leads with the
               virtual size here too */}
         </Tr>
       </Thead>
       <Tbody>
-        {snapshots.data.map((snapshot) => (
+        {sortedSnapshots.map((snapshot) => (
           <Tr key={snapshot.id}>
             <Td dataLabel="Disk">
               {snapshot.disk?.id ? (

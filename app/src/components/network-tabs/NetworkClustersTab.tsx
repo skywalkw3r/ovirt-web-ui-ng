@@ -19,6 +19,7 @@ import {
 } from '../../api/resources/networks'
 import type { Network } from '../../api/schemas/network'
 import { useCapabilities } from '../../auth/capabilities'
+import { sortRows, useColumnSort } from '../../hooks/useColumnSort'
 import { NETWORK_DETAIL_POLL_INTERVAL_MS } from '../../hooks/useNetworkDetail'
 import { useT } from '../../i18n/useT'
 import { useNotify } from '../../notifications/context'
@@ -60,6 +61,13 @@ async function listNetworkClusterAttachments(
   )
 }
 
+// Every data column in visual order so each Th's index matches its position
+// (the trailing actions cell is screen-reader-only and admin-only). Two stay
+// unsortable: Attached is a state chip, and Network roles renders a LabelGroup
+// of role NAMES — there is no single honest comparable value behind it, and
+// sorting a name list by its length would be a lie.
+const NETWORK_CLUSTER_KEYS = ['cluster', 'attached', 'required', 'roles'] as const
+
 // The network's per-cluster attachment state with attach / toggle-required /
 // detach row actions (ClusterNetworksService Add/Update/Remove — the write
 // functions already live in resources/networks.ts). Admin-gated the
@@ -89,6 +97,10 @@ export function NetworkClustersTab({ network }: { network: Network }) {
 
   // non-null while the detach confirm is up
   const [detaching, setDetaching] = useState<ClusterAttachmentRow | null>(null)
+  // client-side header sort; no default — the engine list order stands until a
+  // header is clicked (see hooks/useColumnSort). Before the early return so
+  // hook order stays stable.
+  const { sort, thSort } = useColumnSort()
 
   const invalidate = () => void queryClient.invalidateQueries({ queryKey: clustersKey })
   // ApiError.message carries the engine fault detail verbatim in all three
@@ -111,6 +123,21 @@ export function NetworkClustersTab({ network }: { network: Network }) {
 
   const canManage = loaded && isAdmin
   const mutating = attach.isPending || setRequired.isPending || detach.isPending
+
+  // Required is only meaningful on an attached cluster — an unattached row
+  // renders '—' and sorts as absent, so those sink rather than piling in with
+  // the explicit Nos.
+  const sortedRows = sortRows(rows.data ?? [], sort, (row, key) =>
+    key === 'cluster'
+      ? row.clusterName
+      : key === 'required'
+        ? row.attachment === undefined
+          ? undefined
+          : row.attachment.required === true
+            ? 1
+            : 0
+        : undefined,
+  )
 
   if (dataCenterId === undefined) {
     // Defensive: only reachable if the network read lost its data_center link —
@@ -154,15 +181,15 @@ export function NetworkClustersTab({ network }: { network: Network }) {
         <Table aria-label="Clusters in this network's data center" variant="compact">
           <Thead>
             <Tr>
-              <Th>{t('common.field.cluster')}</Th>
+              <Th sort={thSort(NETWORK_CLUSTER_KEYS, 0)}>{t('common.field.cluster')}</Th>
               <Th>{t('networkDetail.hosts.attached')}</Th>
-              <Th>Required</Th>
+              <Th sort={thSort(NETWORK_CLUSTER_KEYS, 2)}>Required</Th>
               <Th>Network roles</Th>
               {canManage && <Th screenReaderText={t('common.field.actions')} />}
             </Tr>
           </Thead>
           <Tbody>
-            {rows.data.map((row) => {
+            {sortedRows.map((row) => {
               const attached = row.attachment !== undefined
               const required = row.attachment?.required === true
               const roles = row.attachment?.usages?.usage ?? []

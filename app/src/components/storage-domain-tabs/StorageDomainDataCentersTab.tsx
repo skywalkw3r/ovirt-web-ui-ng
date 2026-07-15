@@ -27,6 +27,7 @@ import { ActionsColumn, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/reac
 import { Link } from '@tanstack/react-router'
 import type { StorageDomain } from '../../api/schemas/storage-domain'
 import { useDataCenters } from '../../hooks/useAdminResources'
+import { sortRows, useColumnSort } from '../../hooks/useColumnSort'
 import {
   useActivateStorageDomain,
   useAttachStorageDomain,
@@ -186,6 +187,11 @@ function AttachDataCenterModal({
 // mirror image on the DC detail page.
 type PendingConfirm = { kind: 'maintenance' | 'detach'; dc: AttachedDc } | null
 
+// Every data column in visual order so each Th's index matches its position
+// (the trailing actions cell is screen-reader-only); Status stays unsortable —
+// it is a state chip, not a scannable value.
+const SD_DC_KEYS = ['name', 'status'] as const
+
 // The storage domain's Data Centers subtab (webadmin StorageDataCenterListModel):
 // the data centers this domain is attached to, each with the domain's status
 // WITHIN that DC and the per-DC lifecycle verbs. This is what unlocks per-DC
@@ -203,6 +209,9 @@ export function StorageDomainDataCentersTab({ domain }: { domain: StorageDomain 
 
   const [attaching, setAttaching] = useState(false)
   const [confirm, setConfirm] = useState<PendingConfirm>(null)
+  // client-side header sort; no default — the engine list order stands until a
+  // header is clicked (see hooks/useColumnSort)
+  const { sort, thSort } = useColumnSort()
 
   const rows: AttachedDc[] = domain.data_centers?.data_center ?? []
   const attachedIds = new Set(
@@ -217,6 +226,13 @@ export function StorageDomainDataCentersTab({ domain }: { domain: StorageDomain 
   const dcNameById = new Map((dataCenters.data ?? []).map((dc) => [dc.id, dc.name] as const))
   const dcDisplayName = (dc: AttachedDc): string | undefined =>
     (dc.id !== undefined ? dcNameById.get(dc.id) : undefined) ?? dc.name
+
+  // Name sorts on the resolved friendly name the cell renders, falling back to
+  // the id it shows when the inventory join has not landed yet; a row with
+  // neither sorts as absent and sinks.
+  const sortedRows = sortRows(rows, sort, (dc, key) =>
+    key === 'name' ? (dcDisplayName(dc) ?? dc.id) : undefined,
+  )
 
   // Attach gating mirrors lifecycle.ts canAttach: an unattached domain, or an
   // ISO domain (attachable to additional data centers). An attached data
@@ -303,13 +319,13 @@ export function StorageDomainDataCentersTab({ domain }: { domain: StorageDomain 
         <Table aria-label="Attached data centers" variant="compact">
           <Thead>
             <Tr>
-              <Th>{t('common.field.name')}</Th>
+              <Th sort={thSort(SD_DC_KEYS, 0)}>{t('common.field.name')}</Th>
               <Th>{t('common.field.status')}</Th>
               <Th screenReaderText={t('common.field.actions')} />
             </Tr>
           </Thead>
           <Tbody>
-            {rows.map((dc, index) => (
+            {sortedRows.map((dc, index) => (
               <Tr key={dc.id ?? index}>
                 <Td dataLabel={t('common.field.name')}>
                   {dc.id ? (

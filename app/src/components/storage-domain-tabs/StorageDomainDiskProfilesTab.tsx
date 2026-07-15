@@ -35,6 +35,7 @@ import {
   type StorageDomainDiskProfile,
 } from '../../api/resources/diskProfiles'
 import type { StorageDomain } from '../../api/schemas/storage-domain'
+import { sortRows, useColumnSort } from '../../hooks/useColumnSort'
 import { STORAGE_DOMAIN_DETAIL_POLL_INTERVAL_MS } from '../../hooks/useStorageDomainDetail'
 import { useT } from '../../i18n/useT'
 import { useNotify } from '../../notifications/context'
@@ -246,6 +247,10 @@ function DiskProfileFormModal({
   )
 }
 
+// Every data column in visual order so each Th's index matches its position
+// (the trailing actions cell is screen-reader-only).
+const SD_DISK_PROFILE_KEYS = ['name', 'description', 'qos'] as const
+
 // The storage domain's Disk Profiles subtab (webadmin DiskProfileListModel):
 // list + New/Edit/Remove. A disk profile groups a domain's disks under an
 // optional storage QoS; every data domain gets a default one at attach time.
@@ -268,6 +273,9 @@ export function StorageDomainDiskProfilesTab({ domain }: { domain: StorageDomain
   const [creating, setCreating] = useState(false)
   const [editing, setEditing] = useState<StorageDomainDiskProfile | null>(null)
   const [removing, setRemoving] = useState<StorageDomainDiskProfile | null>(null)
+  // client-side header sort; no default — the engine list order stands until a
+  // header is clicked (see hooks/useColumnSort)
+  const { sort, thSort } = useColumnSort()
 
   const remove = useMutation({
     mutationFn: (profile: StorageDomainDiskProfile) => deleteDiskProfile(profile.id),
@@ -297,6 +305,18 @@ export function StorageDomainDiskProfilesTab({ domain }: { domain: StorageDomain
     const match = (qoss.data ?? []).find((qos) => qos.id === id)
     return match?.name ?? profile.qos?.name ?? id
   }
+
+  // QoS sorts on the resolved name the cell renders (never the bare id); an
+  // unbound profile renders '—' and sorts as absent, so those rows sink.
+  const sortedProfiles = sortRows(profiles.data ?? [], sort, (profile, key) =>
+    key === 'name'
+      ? profile.name
+      : key === 'description'
+        ? profile.description
+        : profile.qos?.id
+          ? qosName(profile)
+          : undefined,
+  )
 
   const formProps = {
     storageDomainId: domain.id,
@@ -360,14 +380,14 @@ export function StorageDomainDiskProfilesTab({ domain }: { domain: StorageDomain
         <Table aria-label="Disk profiles" variant="compact">
           <Thead>
             <Tr>
-              <Th>{t('common.field.name')}</Th>
-              <Th>{t('common.field.description')}</Th>
-              <Th>QoS</Th>
+              <Th sort={thSort(SD_DISK_PROFILE_KEYS, 0)}>{t('common.field.name')}</Th>
+              <Th sort={thSort(SD_DISK_PROFILE_KEYS, 1)}>{t('common.field.description')}</Th>
+              <Th sort={thSort(SD_DISK_PROFILE_KEYS, 2)}>QoS</Th>
               <Th screenReaderText={t('common.field.actions')} />
             </Tr>
           </Thead>
           <Tbody>
-            {profiles.data.map((profile) => (
+            {sortedProfiles.map((profile) => (
               <Tr key={profile.id}>
                 <Td dataLabel={t('common.field.name')}>{profile.name ?? DASH}</Td>
                 <Td dataLabel={t('common.field.description')}>{profile.description ?? DASH}</Td>

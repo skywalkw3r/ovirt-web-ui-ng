@@ -3,6 +3,7 @@ import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table'
 import { Link } from '@tanstack/react-router'
 import { StatusBadge } from '../StatusBadge'
 import type { Disk } from '../../api/schemas/disk'
+import { sortRows, useColumnSort } from '../../hooks/useColumnSort'
 import { useStorageDomainDisks } from '../../hooks/useStorageDomainDetail'
 import { useT } from '../../i18n/useT'
 import { formatBytes, statusText } from '../../lib/format'
@@ -25,9 +26,38 @@ function diskDisplayName(disk: Disk): string | undefined {
   return disk.alias || disk.name
 }
 
+// Every column in visual order so each Th's index matches its position; Status
+// stays unsortable — it is a state chip, not a scannable value.
+const STORAGE_DISK_KEYS = [
+  'aliasName',
+  'provisionedSize',
+  'actualSize',
+  'status',
+  'contentType',
+] as const
+
 export function StorageDomainDisksTab({ storageDomainId }: { storageDomainId: string }) {
   const t = useT()
   const disks = useStorageDomainDisks(storageDomainId)
+  // client-side header sort; no default — the engine list order stands until a
+  // header is clicked (see hooks/useColumnSort)
+  const { sort, thSort } = useColumnSort()
+
+  // Both sizes sort on the raw byte counts the cells hand formatBytes, so 900
+  // GiB lands under 1 TiB instead of collating by the rendered string. This is
+  // the domain's own disk list, so provisioned_size is read straight (no
+  // diskSizeBytes LUN fallback) — exactly what the cell renders.
+  const sortedDisks = sortRows(disks.data ?? [], sort, (disk, key) =>
+    key === 'aliasName'
+      ? diskDisplayName(disk)
+      : key === 'provisionedSize'
+        ? disk.provisioned_size
+        : key === 'actualSize'
+          ? disk.actual_size
+          : key === 'contentType'
+            ? disk.content_type
+            : undefined,
+  )
 
   return (
     <>
@@ -60,15 +90,17 @@ export function StorageDomainDisksTab({ storageDomainId }: { storageDomainId: st
         <Table aria-label={t('storageDisks.table.ariaLabel')} variant="compact">
           <Thead>
             <Tr>
-              <Th>{t('storageDisks.column.aliasName')}</Th>
-              <Th>{t('storageDisks.column.provisionedSize')}</Th>
-              <Th>{t('storageDisks.column.actualSize')}</Th>
+              <Th sort={thSort(STORAGE_DISK_KEYS, 0)}>{t('storageDisks.column.aliasName')}</Th>
+              <Th sort={thSort(STORAGE_DISK_KEYS, 1)}>
+                {t('storageDisks.column.provisionedSize')}
+              </Th>
+              <Th sort={thSort(STORAGE_DISK_KEYS, 2)}>{t('storageDisks.column.actualSize')}</Th>
               <Th>{t('common.field.status')}</Th>
-              <Th>{t('storageDisks.column.contentType')}</Th>
+              <Th sort={thSort(STORAGE_DISK_KEYS, 4)}>{t('storageDisks.column.contentType')}</Th>
             </Tr>
           </Thead>
           <Tbody>
-            {disks.data.map((disk) => (
+            {sortedDisks.map((disk) => (
               <Tr key={disk.id}>
                 <Td dataLabel={t('storageDisks.column.aliasName')}>
                   {disk.id ? (

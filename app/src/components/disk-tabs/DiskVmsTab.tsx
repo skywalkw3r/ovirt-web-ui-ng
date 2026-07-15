@@ -1,9 +1,14 @@
 import { Button, EmptyState, EmptyStateBody, Skeleton } from '@patternfly/react-core'
 import { Link } from '@tanstack/react-router'
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table'
+import { sortRows, useColumnSort } from '../../hooks/useColumnSort'
 import { useDiskVms } from '../../hooks/useDiskDetail'
 import { useT } from '../../i18n/useT'
 import { VmStatusLabel } from '../VmStatusLabel'
+
+// Every column in visual order so each Th's index matches its position; Status
+// stays unsortable — it is a state chip, not a scannable value.
+const DISK_VM_KEYS = ['name', 'status'] as const
 
 // The VMs this disk is attached to — resolved from the Disk entity's `vms`
 // follow (useDiskVms → listDiskVms; the /disks/{id}/vms subcollection does not
@@ -13,6 +18,10 @@ import { VmStatusLabel } from '../VmStatusLabel'
 export function DiskVmsTab({ diskId }: { diskId: string }) {
   const t = useT()
   const vms = useDiskVms(diskId)
+  // client-side header sort; no default — the engine list order stands until a
+  // header is clicked (see hooks/useColumnSort). Before the early returns so
+  // hook order stays stable.
+  const { sort, thSort } = useColumnSort()
 
   if (vms.isPending) {
     return (
@@ -44,16 +53,18 @@ export function DiskVmsTab({ diskId }: { diskId: string }) {
     )
   }
 
+  const sortedVms = sortRows(vms.data, sort, (vm, key) => (key === 'name' ? vm.name : undefined))
+
   return (
     <Table aria-label={t('diskVms.table.ariaLabel')} variant="compact">
       <Thead>
         <Tr>
-          <Th>{t('common.field.name')}</Th>
+          <Th sort={thSort(DISK_VM_KEYS, 0)}>{t('common.field.name')}</Th>
           <Th>{t('common.field.status')}</Th>
         </Tr>
       </Thead>
       <Tbody>
-        {vms.data.map((vm) => (
+        {sortedVms.map((vm) => (
           <Tr key={vm.id}>
             <Td dataLabel={t('common.field.name')}>
               {vm.id ? (

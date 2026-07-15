@@ -6,6 +6,7 @@ import {
   type DiskSnapshot,
 } from '../../api/resources/diskSnapshots'
 import type { Disk } from '../../api/schemas/disk'
+import { sortRows, useColumnSort } from '../../hooks/useColumnSort'
 import { DISK_DETAIL_POLL_INTERVAL_MS } from '../../hooks/useDiskDetail'
 import { useT } from '../../i18n/useT'
 import { formatBytes, statusText } from '../../lib/format'
@@ -53,6 +54,10 @@ function SnapshotStatusLabel({ status }: { status?: string }) {
   )
 }
 
+// Every column in visual order so each Th's index matches its position; Status
+// stays unsortable — it is a state chip, not a scannable value.
+const DISK_SNAPSHOT_KEYS = ['description', 'status', 'provisionedSize', 'actualSize'] as const
+
 // The disk detail Snapshots tab: the point-in-time images in this disk's
 // snapshot chain (created by VM snapshots that included the disk).
 export function DiskSnapshotsTab({ disk }: { disk: Disk }) {
@@ -61,6 +66,10 @@ export function DiskSnapshotsTab({ disk }: { disk: Disk }) {
     .map((sd) => sd.id)
     .filter((id): id is string => id !== undefined)
   const snapshots = useDiskSnapshots(disk, storageDomainIds)
+  // client-side header sort; no default — the engine list order stands until a
+  // header is clicked (see hooks/useColumnSort). Before the early returns so
+  // hook order stays stable.
+  const { sort, thSort } = useColumnSort()
 
   // A direct-LUN (or cinder/unattached) disk links no storage domain — there
   // is no image chain to list, and the gated query above never runs (its
@@ -108,18 +117,30 @@ export function DiskSnapshotsTab({ disk }: { disk: Disk }) {
     )
   }
 
+  // Both sizes sort on the raw byte counts the cells hand formatBytes, so 900
+  // GiB lands under 1 TiB instead of collating by the rendered string.
+  const sortedSnapshots = sortRows(snapshots.data, sort, (snapshot, key) =>
+    key === 'description'
+      ? snapshot.description || undefined
+      : key === 'provisionedSize'
+        ? snapshot.provisioned_size
+        : key === 'actualSize'
+          ? snapshot.actual_size
+          : undefined,
+  )
+
   return (
     <Table aria-label="Disk snapshots" variant="compact">
       <Thead>
         <Tr>
-          <Th>{t('common.field.description')}</Th>
+          <Th sort={thSort(DISK_SNAPSHOT_KEYS, 0)}>{t('common.field.description')}</Th>
           <Th>{t('common.field.status')}</Th>
-          <Th>Provisioned Size</Th>
-          <Th>Actual Size</Th>
+          <Th sort={thSort(DISK_SNAPSHOT_KEYS, 2)}>Provisioned Size</Th>
+          <Th sort={thSort(DISK_SNAPSHOT_KEYS, 3)}>Actual Size</Th>
         </Tr>
       </Thead>
       <Tbody>
-        {snapshots.data.map((snapshot) => (
+        {sortedSnapshots.map((snapshot) => (
           <Tr key={snapshot.id}>
             <Td dataLabel={t('common.field.description')} modifier="truncate">
               <span title={snapshot.description}>{snapshot.description ?? DASH}</span>

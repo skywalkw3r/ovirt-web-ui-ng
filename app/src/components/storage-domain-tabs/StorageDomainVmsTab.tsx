@@ -1,9 +1,14 @@
 import { Button, EmptyState, EmptyStateBody, Skeleton } from '@patternfly/react-core'
 import { Link } from '@tanstack/react-router'
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table'
+import { sortRows, useColumnSort } from '../../hooks/useColumnSort'
 import { useStorageDomainVms } from '../../hooks/useStorageDomainDetail'
 import { useT } from '../../i18n/useT'
 import { VmStatusLabel } from '../VmStatusLabel'
+
+// Every column in visual order so each Th's index matches its position; Status
+// stays unsortable — it is a state chip, not a scannable value.
+const STORAGE_VM_KEYS = ['name', 'status'] as const
 
 // The VMs whose disks live on this storage domain, straight from the engine's
 // /storagedomains/{id}/vms subcollection (404-tolerant → empty list for domain
@@ -12,6 +17,10 @@ import { VmStatusLabel } from '../VmStatusLabel'
 export function StorageDomainVmsTab({ storageDomainId }: { storageDomainId: string }) {
   const t = useT()
   const vms = useStorageDomainVms(storageDomainId)
+  // client-side header sort; no default — the engine list order stands until a
+  // header is clicked (see hooks/useColumnSort). Before the early returns so
+  // hook order stays stable.
+  const { sort, thSort } = useColumnSort()
 
   if (vms.isPending) {
     return (
@@ -43,16 +52,18 @@ export function StorageDomainVmsTab({ storageDomainId }: { storageDomainId: stri
     )
   }
 
+  const sortedVms = sortRows(vms.data, sort, (vm, key) => (key === 'name' ? vm.name : undefined))
+
   return (
     <Table aria-label={t('storageVms.table.ariaLabel')} variant="compact">
       <Thead>
         <Tr>
-          <Th>{t('common.field.name')}</Th>
+          <Th sort={thSort(STORAGE_VM_KEYS, 0)}>{t('common.field.name')}</Th>
           <Th>{t('common.field.status')}</Th>
         </Tr>
       </Thead>
       <Tbody>
-        {vms.data.map((vm) => (
+        {sortedVms.map((vm) => (
           <Tr key={vm.id}>
             <Td dataLabel={t('common.field.name')}>
               {vm.id ? (

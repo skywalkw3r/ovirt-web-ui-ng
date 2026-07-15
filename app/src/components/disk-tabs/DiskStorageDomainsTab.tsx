@@ -2,6 +2,7 @@ import { EmptyState, EmptyStateBody } from '@patternfly/react-core'
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table'
 import { StatusBadge } from '../StatusBadge'
 import type { Disk } from '../../api/schemas/disk'
+import { sortRows, useColumnSort } from '../../hooks/useColumnSort'
 import { useT } from '../../i18n/useT'
 import { statusText } from '../../lib/format'
 
@@ -40,6 +41,10 @@ function StatusCell({ domain }: { domain: InlinedStorageDomain }) {
   )
 }
 
+// Every column in visual order so each Th's index matches its position; Status
+// stays unsortable — it is a state chip, not a scannable value.
+const DISK_SD_KEYS = ['name', 'type', 'status'] as const
+
 // The storage domain(s) holding this disk — usually exactly one. Data is
 // inlined by getDisk's ?follow=storage_domains straight off the `disk` prop, so
 // there is no separate fetch here; the parent detail page owns the disk's
@@ -48,6 +53,10 @@ function StatusCell({ domain }: { domain: InlinedStorageDomain }) {
 export function DiskStorageDomainsTab({ disk }: { disk: Disk }) {
   const t = useT()
   const domains = (disk.storage_domains?.storage_domain ?? []) as InlinedStorageDomain[]
+  // client-side header sort; no default — the engine list order stands until a
+  // header is clicked (see hooks/useColumnSort). Before the early return so
+  // hook order stays stable.
+  const { sort, thSort } = useColumnSort()
 
   if (domains.length === 0) {
     return (
@@ -57,17 +66,24 @@ export function DiskStorageDomainsTab({ disk }: { disk: Disk }) {
     )
   }
 
+  // Name sorts on the same fallback chain the cell renders, minus displayName's
+  // em dash: a domain the follow left with neither name nor id sorts as absent
+  // and sinks rather than leading the table.
+  const sortedDomains = sortRows(domains, sort, (domain, key) =>
+    key === 'name' ? (domain.name ?? domain.id) : key === 'type' ? domain.type : undefined,
+  )
+
   return (
     <Table aria-label={t('diskStorageDomains.table.ariaLabel')} variant="compact">
       <Thead>
         <Tr>
-          <Th>{t('common.field.name')}</Th>
-          <Th>{t('common.field.type')}</Th>
+          <Th sort={thSort(DISK_SD_KEYS, 0)}>{t('common.field.name')}</Th>
+          <Th sort={thSort(DISK_SD_KEYS, 1)}>{t('common.field.type')}</Th>
           <Th>{t('common.field.status')}</Th>
         </Tr>
       </Thead>
       <Tbody>
-        {domains.map((domain, index) => (
+        {sortedDomains.map((domain, index) => (
           <Tr key={domain.id ?? index}>
             <Td dataLabel={t('common.field.name')}>{displayName(domain)}</Td>
             <Td dataLabel={t('common.field.type')}>{domain.type ?? DASH}</Td>

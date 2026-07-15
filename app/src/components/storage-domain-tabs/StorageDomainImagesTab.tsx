@@ -26,6 +26,7 @@ import {
   type StorageDomainImage,
 } from '../../api/resources/storageDomains'
 import { useClustersInventory } from '../../hooks/useAdminResources'
+import { sortRows, useColumnSort } from '../../hooks/useColumnSort'
 import { STORAGE_DOMAIN_DETAIL_POLL_INTERVAL_MS } from '../../hooks/useStorageDomainDetail'
 import { useStorageDomains } from '../../hooks/useStorageDomains'
 import { useNotify } from '../../notifications/context'
@@ -248,10 +249,23 @@ function ImportImageModal({
   )
 }
 
+// Every data column in visual order so each Th's index matches its position
+// (the trailing actions cell is screen-reader-only).
+const SD_IMAGE_KEYS = ['name', 'size'] as const
+
 export function StorageDomainImagesTab({ storageDomainId }: { storageDomainId: string }) {
   const t = useT()
   const images = useStorageDomainImages(storageDomainId)
   const [importing, setImporting] = useState<StorageDomainImage | null>(null)
+  // client-side header sort; no default — the engine list order stands until a
+  // header is clicked (see hooks/useColumnSort)
+  const { sort, thSort } = useColumnSort()
+
+  // Size sorts on the raw byte count the cell hands formatBytes, so 900 GiB
+  // lands under 1 TiB instead of collating by the rendered string.
+  const sortedImages = sortRows(images.data ?? [], sort, (image, key) =>
+    key === 'name' ? image.name : image.size,
+  )
 
   return (
     <>
@@ -284,13 +298,13 @@ export function StorageDomainImagesTab({ storageDomainId }: { storageDomainId: s
         <Table aria-label={t('storage.images.tab')} variant="compact">
           <Thead>
             <Tr>
-              <Th>{t('storage.images.column.name')}</Th>
-              <Th>{t('storage.images.column.size')}</Th>
+              <Th sort={thSort(SD_IMAGE_KEYS, 0)}>{t('storage.images.column.name')}</Th>
+              <Th sort={thSort(SD_IMAGE_KEYS, 1)}>{t('storage.images.column.size')}</Th>
               <Th screenReaderText={t('common.field.actions')} />
             </Tr>
           </Thead>
           <Tbody>
-            {images.data.map((image) => (
+            {sortedImages.map((image) => (
               <Tr key={image.id}>
                 <Td dataLabel={t('storage.images.column.name')}>{image.name ?? '—'}</Td>
                 <Td dataLabel={t('storage.images.column.size')}>{formatBytes(image.size)}</Td>

@@ -3,6 +3,7 @@ import { Link } from '@tanstack/react-router'
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table'
 import { StatusBadge } from '../StatusBadge'
 import { useNetworkHosts } from './useNetworkMembership'
+import { sortRows, useColumnSort } from '../../hooks/useColumnSort'
 import { useT } from '../../i18n/useT'
 
 // The hosts that carry this network as an attachment. There is no server-side
@@ -19,9 +20,20 @@ function AttachmentBadge({ inSync }: { inSync: boolean }) {
   )
 }
 
+// Every column in visual order so each Th's index matches its position; Status
+// stays unsortable — the in_sync badge is a state chip, not a scannable value.
+const NETWORK_HOST_KEYS = ['name', 'status'] as const
+
 export function NetworkHostsTab({ networkId }: { networkId: string }) {
   const t = useT()
   const hosts = useNetworkHosts(networkId)
+  // client-side header sort; no default — the engine list order stands until a
+  // header is clicked (see hooks/useColumnSort)
+  const { sort, thSort } = useColumnSort()
+
+  const sortedHosts = sortRows(hosts.data ?? [], sort, (row, key) =>
+    key === 'name' ? row.host.name : undefined,
+  )
 
   return (
     <>
@@ -51,12 +63,12 @@ export function NetworkHostsTab({ networkId }: { networkId: string }) {
         <Table aria-label={t('networkDetail.tab.hosts')} variant="compact">
           <Thead>
             <Tr>
-              <Th>{t('common.field.name')}</Th>
+              <Th sort={thSort(NETWORK_HOST_KEYS, 0)}>{t('common.field.name')}</Th>
               <Th>{t('common.field.status')}</Th>
             </Tr>
           </Thead>
           <Tbody>
-            {hosts.data.map(({ host, inSync }) => (
+            {sortedHosts.map(({ host, inSync }) => (
               <Tr key={host.id}>
                 <Td dataLabel={t('common.field.name')}>
                   <Link to="/hosts/$hostId" params={{ hostId: host.id }}>

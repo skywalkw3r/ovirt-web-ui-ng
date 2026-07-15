@@ -15,6 +15,7 @@ import { ActionsColumn, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/reac
 import { useQueryClient } from '@tanstack/react-query'
 import type { VnicProfile } from '../../api/schemas/vnic-profile'
 import { useCapabilities } from '../../auth/capabilities'
+import { sortRows, useColumnSort } from '../../hooks/useColumnSort'
 import { useNetworkVnicProfiles } from '../../hooks/useNetworkDetail'
 import { useDeleteVnicProfile } from '../../hooks/useVnicProfileMutations'
 import { useT } from '../../i18n/useT'
@@ -33,6 +34,14 @@ function isPortMirrored(profile: VnicProfile): boolean {
   return profile.port_mirroring === true
 }
 
+// Every data column in visual order so each Th's index matches its position
+// (the trailing actions cell is screen-reader-only and admin-only). Both
+// booleans are profile CONFIGURATION rather than runtime state — grouping the
+// SR-IOV / mirrored profiles is a real scan — so unlike a status chip they
+// sort, on the same predicates the cells render (cf. MacPoolsPage's
+// allow_duplicates).
+const NETWORK_VNIC_KEYS = ['name', 'passThrough', 'portMirroring', 'description'] as const
+
 // The network's vNIC profiles with full CRUD: a New button (network pre-bound)
 // plus an Edit/Remove kebab per row, all reusing VnicProfileFormModal and the
 // existing /vnicprofiles mutations. Admin-gated the NetworkLabelsTab way —
@@ -42,6 +51,9 @@ export function NetworkVnicProfilesTab({ networkId }: { networkId: string }) {
   const { loaded, isAdmin } = useCapabilities()
   const queryClient = useQueryClient()
   const profiles = useNetworkVnicProfiles(networkId)
+  // client-side header sort; no default — the engine list order stands until a
+  // header is clicked (see hooks/useColumnSort)
+  const { sort, thSort } = useColumnSort()
 
   const [creating, setCreating] = useState(false)
   const [editing, setEditing] = useState<VnicProfile | null>(null)
@@ -56,6 +68,22 @@ export function NetworkVnicProfilesTab({ networkId }: { networkId: string }) {
     void queryClient.invalidateQueries({ queryKey: ['network', networkId, 'vnicProfiles'] })
 
   const canManage = loaded && isAdmin
+
+  // a blank description sorts as absent, so those rows sink instead of leading
+  // with em dashes
+  const sortedProfiles = sortRows(profiles.data ?? [], sort, (profile, key) =>
+    key === 'name'
+      ? profile.name
+      : key === 'passThrough'
+        ? isPassThrough(profile)
+          ? 1
+          : 0
+        : key === 'portMirroring'
+          ? isPortMirrored(profile)
+            ? 1
+            : 0
+          : profile.description || undefined,
+  )
 
   return (
     <>
@@ -108,15 +136,15 @@ export function NetworkVnicProfilesTab({ networkId }: { networkId: string }) {
         <Table aria-label={t('networkVnic.table.ariaLabel')} variant="compact">
           <Thead>
             <Tr>
-              <Th>{t('common.field.name')}</Th>
-              <Th>{t('networkVnic.column.passThrough')}</Th>
-              <Th>{t('networkVnic.column.portMirroring')}</Th>
-              <Th>{t('common.field.description')}</Th>
+              <Th sort={thSort(NETWORK_VNIC_KEYS, 0)}>{t('common.field.name')}</Th>
+              <Th sort={thSort(NETWORK_VNIC_KEYS, 1)}>{t('networkVnic.column.passThrough')}</Th>
+              <Th sort={thSort(NETWORK_VNIC_KEYS, 2)}>{t('networkVnic.column.portMirroring')}</Th>
+              <Th sort={thSort(NETWORK_VNIC_KEYS, 3)}>{t('common.field.description')}</Th>
               {canManage && <Th screenReaderText={t('common.field.actions')} />}
             </Tr>
           </Thead>
           <Tbody>
-            {profiles.data.map((profile) => (
+            {sortedProfiles.map((profile) => (
               <Tr key={profile.id}>
                 <Td dataLabel={t('common.field.name')}>{profile.name}</Td>
                 <Td dataLabel={t('networkVnic.column.passThrough')}>

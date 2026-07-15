@@ -1,8 +1,12 @@
 import { Button, EmptyState, EmptyStateBody, Skeleton } from '@patternfly/react-core'
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table'
 import { Link } from '@tanstack/react-router'
+import { sortRows, useColumnSort } from '../../hooks/useColumnSort'
 import { useStorageDomainTemplates } from '../../hooks/useStorageDomainDetail'
 import { useT } from '../../i18n/useT'
+
+// Every column in visual order so each Th's index matches its position.
+const STORAGE_TEMPLATE_KEYS = ['name', 'description'] as const
 
 // Templates whose disks live on this storage domain, served from the
 // 404-tolerant /storagedomains/{id}/templates subcollection — domains that
@@ -11,6 +15,15 @@ import { useT } from '../../i18n/useT'
 export function StorageDomainTemplatesTab({ storageDomainId }: { storageDomainId: string }) {
   const t = useT()
   const templates = useStorageDomainTemplates(storageDomainId)
+  // client-side header sort; no default — the engine list order stands until a
+  // header is clicked (see hooks/useColumnSort)
+  const { sort, thSort } = useColumnSort()
+
+  // a blank description sorts as absent, so those rows sink instead of leading
+  // with em dashes
+  const sortedTemplates = sortRows(templates.data ?? [], sort, (template, key) =>
+    key === 'name' ? template.name : template.description || undefined,
+  )
 
   return (
     <>
@@ -42,12 +55,12 @@ export function StorageDomainTemplatesTab({ storageDomainId }: { storageDomainId
         <Table aria-label={t('storageTemplates.table.ariaLabel')} variant="compact">
           <Thead>
             <Tr>
-              <Th>{t('common.field.name')}</Th>
-              <Th>{t('common.field.description')}</Th>
+              <Th sort={thSort(STORAGE_TEMPLATE_KEYS, 0)}>{t('common.field.name')}</Th>
+              <Th sort={thSort(STORAGE_TEMPLATE_KEYS, 1)}>{t('common.field.description')}</Th>
             </Tr>
           </Thead>
           <Tbody>
-            {templates.data.map((template) => (
+            {sortedTemplates.map((template) => (
               <Tr key={template.id}>
                 <Td dataLabel={t('common.field.name')}>
                   {template.id ? (
