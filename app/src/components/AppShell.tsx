@@ -35,6 +35,7 @@ import { FormattedMessage, useIntl } from 'react-intl'
 import { Link, Outlet, useRouterState } from '@tanstack/react-router'
 import { applyBrandFavicon } from '../branding/favicon'
 import { brandAssets } from '../branding/logos'
+import { monitoringPortalUrl } from '../lib/monitoringPortal'
 import { useCapabilities } from '../auth/capabilities'
 import { useNavShortcuts } from '../hooks/useNavShortcuts'
 import { usePlatformSettings } from '../hooks/usePlatformSettings'
@@ -237,11 +238,13 @@ function SidebarNav({
             </NavExpandable>
           )
         })}
-        {/* External anchor into the engine's bundled Grafana — not a router
-            Link, so PF's cloned child is a plain <a> that leaves the SPA. */}
+        {/* External anchor into the ENGINE's bundled Grafana — not a router
+            Link, so PF's cloned child is a plain <a> that leaves the SPA. The
+            href resolves against the active engine, never this console's own
+            origin (see lib/monitoringPortal.ts). */}
         {isAdmin && (
           <NavItem itemId="monitoring-portal">
-            <a href="/ovirt-engine-grafana" target="_blank" rel="noopener">
+            <a href={monitoringPortalUrl()} target="_blank" rel="noopener">
               <MonitoringIcon className="app-nav-group-icon" />
               <FormattedMessage id="nav.monitoringPortal" /> <ExternalLinkAltIcon />
             </a>
@@ -306,7 +309,7 @@ function MiniRail({
       {isAdmin && (
         <Tooltip content={intl.formatMessage({ id: 'nav.monitoringPortal' })} position="right">
           <a
-            href="/ovirt-engine-grafana"
+            href={monitoringPortalUrl()}
             target="_blank"
             rel="noopener"
             role="listitem"
