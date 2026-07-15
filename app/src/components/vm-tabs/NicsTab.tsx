@@ -24,14 +24,20 @@ import {
 } from '@patternfly/react-core'
 import { EllipsisVIcon, PlugIcon, PluggedIcon } from '@patternfly/react-icons'
 import { ActionsColumn, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table'
-import { useQuery } from '@tanstack/react-query'
+import { useQueries, useQuery } from '@tanstack/react-query'
 import { StatusBadge } from '../StatusBadge'
 import { StatusIcon } from '../StatusIcon'
 import { isValidMac } from '../../api/resources/macPools'
-import { listVmNicStatistics, nicThroughput, type NicPatch } from '../../api/resources/nics'
+import {
+  listVmNicStatistics,
+  nicThroughput,
+  type NicPatch,
+  type NicThroughput,
+} from '../../api/resources/nics'
 import type { Nic } from '../../api/schemas/nic'
 import type { VnicProfile } from '../../api/schemas/vnic-profile'
 import { useColumnPrefs } from '../../hooks/useColumnPrefs'
+import { sortRows, useColumnSort } from '../../hooks/useColumnSort'
 import { useNetworks } from '../../hooks/useNetworks'
 import { useVnicProfiles } from '../../hooks/useCatalogPages'
 import { useVm } from '../../hooks/useVm'
@@ -118,17 +124,43 @@ function NicRateCell({
 // headers); everything else resolves per-locale in the component. Headers and
 // cells both map over the same isVisible-filtered array; the actions kebab
 // renders unconditionally.
-const COLUMNS: { key: string; labelId?: MessageId; label?: string; always?: boolean }[] = [
+// A NIC carries only a bare vnic_profile.id, its IPs come from the guest agent
+// and its rates from the per-row statistics query — none of it is on the Nic
+// itself. The sortValue extractors below therefore read the joins the cells
+// display through this ctx, resolved in the component (the VolumesPage idiom).
+interface NicColumnCtx {
+  networkName: (nic: Nic) => string | undefined
+  profileName: (nic: Nic) => string | undefined
+  ips: (nic: Nic) => string[]
+  rateBps: (nic: Nic, direction: 'rx' | 'tx') => number | undefined
+}
+
+const COLUMNS: {
+  key: string
+  labelId?: MessageId
+  label?: string
+  always?: boolean
+  // opt-in header sort (see hooks/useColumnSort). Plugged and Linked stay
+  // unsortable — they are state glyphs, not scannable values (same rule as the
+  // list pages).
+  sortValue?: (nic: Nic, ctx: NicColumnCtx) => string | number | undefined
+}[] = [
   { key: 'plugged', labelId: 'vmNics.column.plugged' },
-  { key: 'name', labelId: 'common.field.name', always: true },
-  { key: 'network', labelId: 'nics.column.network' },
-  { key: 'profile', labelId: 'nics.column.profile' },
-  { key: 'type', labelId: 'nics.column.type' },
-  { key: 'mac', labelId: 'vmNics.column.mac' },
-  { key: 'ip', labelId: 'vmNics.column.ipAddresses' },
+  { key: 'name', labelId: 'common.field.name', always: true, sortValue: (nic) => nic.name },
+  { key: 'network', labelId: 'nics.column.network', sortValue: (nic, ctx) => ctx.networkName(nic) },
+  { key: 'profile', labelId: 'nics.column.profile', sortValue: (nic, ctx) => ctx.profileName(nic) },
+  { key: 'type', labelId: 'nics.column.type', sortValue: (nic) => nic.interface },
+  { key: 'mac', labelId: 'vmNics.column.mac', sortValue: (nic) => nic.mac?.address },
+  {
+    key: 'ip',
+    labelId: 'vmNics.column.ipAddresses',
+    sortValue: (nic, ctx) => ctx.ips(nic).join(', ') || undefined,
+  },
   { key: 'linked', labelId: 'vmNics.column.linked' },
-  { key: 'rx', label: 'Rx' },
-  { key: 'tx', label: 'Tx' },
+  // the bits-per-second gauge the cell formats, so the sort is numeric rather
+  // than lexical on "1.5 Mbps"
+  { key: 'rx', label: 'Rx', sortValue: (nic, ctx) => ctx.rateBps(nic, 'rx') },
+  { key: 'tx', label: 'Tx', sortValue: (nic, ctx) => ctx.rateBps(nic, 'tx') },
 ]
 
 type ConfirmAction = 'unplug' | 'remove'
@@ -187,6 +219,9 @@ export function NicsTab({ vmId }: { vmId: string }) {
     [t],
   )
   const prefs = useColumnPrefs('vm-nics', columns)
+  // client-side header sort; no default — the engine list order stands until a
+  // header is clicked (see hooks/useColumnSort)
+  const { sort, thSort } = useColumnSort()
   const visibleColumns = columns.filter((column) => prefs.isVisible(column.key))
 
   const profileById = useMemo(() => {
@@ -205,6 +240,40 @@ export function NicsTab({ vmId }: { vmId: string }) {
     const id = nic.vnic_profile?.id
     return id ? profileById.get(id) : undefined
   }
+
+  // Sorting Rx/Tx needs the rates in this scope, but each NicRateCell owns its
+  // own statistics query. Observing the SAME per-NIC keys here shares those
+  // cache entries: no extra requests, and no interval of our own — the cells
+  // drive the polling and this observer just re-renders the tab when a rate
+  // actually changes, which is what keeps a rate-sorted table in the order its
+  // cells show. Results ride in the queries array's order.
+  const nicStats = useQueries({
+    queries: (nics.data ?? []).map((nic) => ({
+      queryKey: ['vm', vmId, 'nics', nic.id, 'statistics'],
+      queryFn: () => listVmNicStatistics(vmId, nic.id),
+    })),
+  })
+  const throughputByNicId = new Map<string, NicThroughput>(
+    (nics.data ?? []).map((nic, index) => [nic.id, nicThroughput(nicStats[index]?.data ?? [])]),
+  )
+
+  const columnCtx: NicColumnCtx = {
+    networkName: (nic) => {
+      const networkId = resolveProfile(nic)?.network?.id
+      return networkId ? networkNameById.get(networkId) : undefined
+    },
+    profileName: (nic) => resolveProfile(nic)?.name,
+    ips: (nic) =>
+      nic.mac?.address !== undefined ? (ipsByMac.get(nic.mac.address.toLowerCase()) ?? []) : [],
+    rateBps: (nic, direction) => {
+      const throughput = throughputByNicId.get(nic.id)
+      return direction === 'rx' ? throughput?.rxBps : throughput?.txBps
+    },
+  }
+
+  const sortedNics = sortRows(nics.data ?? [], sort, (nic, key) =>
+    columns.find((column) => column.key === key)?.sortValue?.(nic, columnCtx),
+  )
 
   const togglePlugged = (nic: Nic) => {
     if (isPlugged(nic) && vm.data?.status === 'up') {
@@ -319,12 +388,20 @@ export function NicsTab({ vmId }: { vmId: string }) {
           >
             <Thead>
               <Tr>
-                {visibleColumns.map((column) => (
+                {visibleColumns.map((column, index) => (
                   <ResizableTh
                     key={column.key}
                     columnKey={column.key}
                     label={column.label}
                     prefs={prefs}
+                    sort={
+                      column.sortValue !== undefined
+                        ? thSort(
+                            visibleColumns.map((c) => c.key),
+                            index,
+                          )
+                        : undefined
+                    }
                   >
                     {column.label}
                   </ResizableTh>
@@ -333,7 +410,7 @@ export function NicsTab({ vmId }: { vmId: string }) {
               </Tr>
             </Thead>
             <Tbody>
-              {nics.data.map((nic) => (
+              {sortedNics.map((nic) => (
                 <Tr key={nic.id}>
                   {visibleColumns.map((column) => (
                     <Td key={column.key} dataLabel={column.label}>

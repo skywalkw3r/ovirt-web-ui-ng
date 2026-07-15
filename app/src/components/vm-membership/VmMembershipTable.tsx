@@ -4,6 +4,7 @@ import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table'
 import type { UseQueryResult } from '@tanstack/react-query'
 import type { Vm } from '../../api/schemas/vm'
 import type { ColumnPrefs } from '../../hooks/useColumnPrefs'
+import { sortRows, useColumnSort } from '../../hooks/useColumnSort'
 import { ResizableTh, resizableTableProps } from '../list-toolbar/ResizableTh'
 import type { VmMembershipColumn } from './columns'
 
@@ -30,6 +31,11 @@ export function VmMembershipTable({
   toolbar?: ReactNode
   resizePrefs?: ColumnPrefs
 }) {
+  // client-side header sort; no default — the engine list order stands until a
+  // header is clicked (see hooks/useColumnSort). Called before the early returns
+  // below so hook order stays stable across the four states.
+  const { sort, thSort } = useColumnSort()
+
   if (query.isPending) {
     return (
       <>
@@ -60,6 +66,10 @@ export function VmMembershipTable({
     )
   }
 
+  const rows = sortRows(query.data, sort, (vm, key) =>
+    columns.find((column) => column.key === key)?.sortValue?.(vm),
+  )
+
   const table = (
     <Table
       aria-label={ariaLabel}
@@ -68,27 +78,35 @@ export function VmMembershipTable({
     >
       <Thead>
         <Tr>
-          {columns.map((column) =>
-            resizePrefs ? (
+          {columns.map((column, index) => {
+            const sortProps =
+              column.sortValue !== undefined
+                ? thSort(
+                    columns.map((c) => c.key),
+                    index,
+                  )
+                : undefined
+            return resizePrefs ? (
               <ResizableTh
                 key={column.key}
                 columnKey={column.key}
                 label={column.label}
                 prefs={resizePrefs}
                 presetWidth={column.width}
+                sort={sortProps}
               >
                 {column.label}
               </ResizableTh>
             ) : (
-              <Th key={column.key} width={column.width}>
+              <Th key={column.key} width={column.width} sort={sortProps}>
                 {column.label}
               </Th>
-            ),
-          )}
+            )
+          })}
         </Tr>
       </Thead>
       <Tbody>
-        {query.data.map((vm) => (
+        {rows.map((vm) => (
           <Tr key={vm.id}>
             {columns.map((column) => (
               <Td

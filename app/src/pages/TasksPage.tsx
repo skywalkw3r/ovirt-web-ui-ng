@@ -34,6 +34,7 @@ import { ListPageHeader } from '../components/ListPageHeader'
 import { RefreshControl } from '../components/RefreshControl'
 import { StatusBadge, type StatusBadgeColor } from '../components/StatusBadge'
 import { useColumnPrefs } from '../hooks/useColumnPrefs'
+import { sortRows, useColumnSort } from '../hooks/useColumnSort'
 import { useEndJob, useJobSteps, useJobs } from '../hooks/useJobs'
 import { useNow } from '../hooks/useNow'
 import { useT } from '../i18n/useT'
@@ -183,6 +184,9 @@ interface TaskColumn {
   label: string
   always?: boolean
   defaultHidden?: boolean
+  // opt-in header sort (see hooks/useColumnSort). Status stays unsortable — it
+  // is a state chip, not a scannable value (same rule as the other list pages).
+  sortValue?: (job: Job) => string | number | undefined
   cell: (job: Job, now: number) => ReactNode
 }
 
@@ -211,6 +215,7 @@ export function TasksPage() {
         key: 'description',
         label: t('tasks.column.description'),
         always: true,
+        sortValue: (job) => job.description || undefined,
         cell: (job) => job.description || '—',
       },
       {
@@ -221,18 +226,26 @@ export function TasksPage() {
       {
         key: 'started',
         label: t('tasks.column.started'),
+        sortValue: (job) => job.start_time,
         cell: (job, at) => <JobTime epochMs={job.start_time} now={at} />,
       },
       {
         key: 'ended',
         label: t('tasks.column.ended'),
+        sortValue: (job) => job.end_time,
         cell: (job, at) => <JobTime epochMs={job.end_time} now={at} />,
       },
-      { key: 'owner', label: t('tasks.column.owner'), cell: (job) => ownerLabel(job) },
+      {
+        key: 'owner',
+        label: t('tasks.column.owner'),
+        sortValue: (job) => ownerLabel(job),
+        cell: (job) => ownerLabel(job),
+      },
       {
         key: 'correlationId',
         label: 'Correlation ID',
         defaultHidden: true,
+        sortValue: (job) => job.correlation_id || undefined,
         cell: (job) =>
           job.correlation_id ? <span title={job.correlation_id}>{job.correlation_id}</span> : '—',
       },
@@ -240,6 +253,9 @@ export function TasksPage() {
     [t],
   )
   const prefs = useColumnPrefs('tasks', columns)
+  // client-side header sort; no default — the engine list order stands until a
+  // header is clicked (see hooks/useColumnSort)
+  const { sort, thSort } = useColumnSort()
   const visibleColumns = columns.filter((column) => prefs.isVisible(column.key))
 
   const toggle = (id: string) =>
@@ -256,6 +272,11 @@ export function TasksPage() {
   const rows = filterTrim
     ? afterDismiss.filter((job) => (job.correlation_id ?? '').toLowerCase().includes(filterTrim))
     : afterDismiss
+  // Sorts the FULL fetched job list (useJobs has no server paging), so a header
+  // sort spans every task rather than reordering a single window.
+  const sortedRows = sortRows(rows, sort, (job, key) =>
+    columns.find((column) => column.key === key)?.sortValue?.(job),
+  )
 
   const clearableCount = rows.filter(isTerminal).length
   const clearFinished = () =>
@@ -366,12 +387,20 @@ export function TasksPage() {
             <Thead>
               <Tr>
                 <Th screenReaderText="Row expansion" />
-                {visibleColumns.map((column) => (
+                {visibleColumns.map((column, index) => (
                   <ResizableTh
                     key={column.key}
                     columnKey={column.key}
                     label={column.label}
                     prefs={prefs}
+                    sort={
+                      column.sortValue !== undefined
+                        ? thSort(
+                            visibleColumns.map((c) => c.key),
+                            index,
+                          )
+                        : undefined
+                    }
                   >
                     {column.label}
                   </ResizableTh>
@@ -379,7 +408,7 @@ export function TasksPage() {
                 <Th screenReaderText={t('tasks.action.end')} />
               </Tr>
             </Thead>
-            {rows.map((job, rowIndex) => {
+            {sortedRows.map((job, rowIndex) => {
               const isExpanded = expanded.has(job.id)
               // "End job" is offered only for externally-owned jobs still marked
               // started — the stuck-external case webadmin exposes it for.

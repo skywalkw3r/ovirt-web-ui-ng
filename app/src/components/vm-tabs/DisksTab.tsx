@@ -63,6 +63,7 @@ import {
   sparsifyDisabledReasonId,
 } from '../../lib/diskActionGuards'
 import { useColumnPrefs } from '../../hooks/useColumnPrefs'
+import { sortRows, useColumnSort } from '../../hooks/useColumnSort'
 import type { MessageId } from '../../i18n/messages/en'
 import { formatBytes } from '../../lib/format'
 import { ColumnPicker } from '../list-toolbar/ColumnPicker'
@@ -103,15 +104,57 @@ const BLOCK_STORAGE_TYPES = new Set(['iscsi', 'fcp'])
 // per-locale in the component; headers and cells both map over the same
 // isVisible-filtered array so they can never desync. The actions kebab
 // renders unconditionally outside the pickable set.
-const COLUMNS: { key: string; labelId: MessageId; always?: boolean }[] = [
+const COLUMNS: {
+  key: string
+  labelId: MessageId
+  always?: boolean
+  // opt-in header sort (see hooks/useColumnSort). Status and Active stay
+  // unsortable — they are state glyphs, not scannable values (same rule as the
+  // list pages).
+  sortValue?: (attachment: DiskAttachment) => string | number | undefined
+}[] = [
   { key: 'status', labelId: 'common.field.status' },
-  { key: 'name', labelId: 'common.field.name', always: true },
-  { key: 'bootable', labelId: 'vmDisks.column.bootable' },
-  { key: 'interface', labelId: 'vmDisks.column.interface' },
-  { key: 'format', labelId: 'vmDisks.column.format' },
-  { key: 'size', labelId: 'vmDisks.column.provisionedSize' },
-  { key: 'readOnly', labelId: 'vmDisks.column.readOnly' },
-  { key: 'shareable', labelId: 'vmDisks.column.shareable' },
+  {
+    key: 'name',
+    labelId: 'common.field.name',
+    always: true,
+    sortValue: (attachment) => attachment.disk?.name,
+  },
+  {
+    key: 'bootable',
+    labelId: 'vmDisks.column.bootable',
+    sortValue: (attachment) =>
+      attachment.bootable === undefined ? undefined : attachment.bootable ? 1 : 0,
+  },
+  {
+    key: 'interface',
+    labelId: 'vmDisks.column.interface',
+    sortValue: (attachment) => attachment.interface,
+  },
+  {
+    key: 'format',
+    labelId: 'vmDisks.column.format',
+    sortValue: (attachment) => attachment.disk?.format,
+  },
+  {
+    key: 'size',
+    labelId: 'vmDisks.column.provisionedSize',
+    // the byte value the cell formats (LUN fallback and all), so the sort is
+    // numeric rather than lexical on "10 GiB"
+    sortValue: (attachment) => diskSizeBytes(attachment.disk),
+  },
+  {
+    key: 'readOnly',
+    labelId: 'vmDisks.column.readOnly',
+    sortValue: (attachment) =>
+      attachment.read_only === undefined ? undefined : attachment.read_only ? 1 : 0,
+  },
+  {
+    key: 'shareable',
+    labelId: 'vmDisks.column.shareable',
+    sortValue: (attachment) =>
+      attachment.disk?.shareable === undefined ? undefined : attachment.disk?.shareable ? 1 : 0,
+  },
   { key: 'active', labelId: 'vmDisks.column.active' },
 ]
 
@@ -147,6 +190,9 @@ export function DisksTab({ vmId }: { vmId: string }) {
     [t],
   )
   const prefs = useColumnPrefs('vm-disks', columns)
+  // client-side header sort; no default — the engine list order stands until a
+  // header is clicked (see hooks/useColumnSort)
+  const { sort, thSort } = useColumnSort()
   const visibleColumns = columns.filter((column) => prefs.isVisible(column.key))
 
   const mutating =
@@ -164,6 +210,9 @@ export function DisksTab({ vmId }: { vmId: string }) {
   // image (the engine default), same convention as the flat Disks page.
   const visibleDisks = (disks.data ?? []).filter(
     (attachment) => diskType === 'all' || (attachment.disk?.storage_type ?? 'image') === diskType,
+  )
+  const sortedDisks = sortRows(visibleDisks, sort, (attachment, key) =>
+    columns.find((column) => column.key === key)?.sortValue?.(attachment),
   )
 
   // ids already attached here — the Attach picker excludes them
@@ -374,12 +423,20 @@ export function DisksTab({ vmId }: { vmId: string }) {
           >
             <Thead>
               <Tr>
-                {visibleColumns.map((column) => (
+                {visibleColumns.map((column, index) => (
                   <ResizableTh
                     key={column.key}
                     columnKey={column.key}
                     label={column.label}
                     prefs={prefs}
+                    sort={
+                      column.sortValue !== undefined
+                        ? thSort(
+                            visibleColumns.map((c) => c.key),
+                            index,
+                          )
+                        : undefined
+                    }
                   >
                     {column.label}
                   </ResizableTh>
@@ -388,7 +445,7 @@ export function DisksTab({ vmId }: { vmId: string }) {
               </Tr>
             </Thead>
             <Tbody>
-              {visibleDisks.map((attachment) => (
+              {sortedDisks.map((attachment) => (
                 <Tr key={attachment.id}>
                   {visibleColumns.map((column) => (
                     <Td key={column.key} dataLabel={column.label}>

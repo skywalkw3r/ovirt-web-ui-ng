@@ -16,6 +16,7 @@ import { StatusBadge } from '../StatusBadge'
 import type { HostNic } from '../../api/schemas/host-nic'
 import type { NetworkAttachment } from '../../api/schemas/network-attachment'
 import { useColumnPrefs, type ColumnDef } from '../../hooks/useColumnPrefs'
+import { sortRows, useColumnSort } from '../../hooks/useColumnSort'
 import { useHostNetworkAttachments, useHostNics } from '../../hooks/useHostDetail'
 import { statusText } from '../../lib/format'
 import { ColumnPicker } from '../list-toolbar/ColumnPicker'
@@ -73,17 +74,28 @@ function NicNetworksCell({
   )
 }
 
+interface NicColumn extends ColumnDef {
+  // opt-in header sort (see hooks/useColumnSort). Status stays unsortable — it
+  // is a state chip, not a scannable value. Networks opts out too: it is a chip
+  // group joined from the separate attachments query, so a NIC row carries no
+  // single value to sort it by.
+  sortValue?: (nic: HostNic) => string | number | undefined
+}
+
 // >4 columns ⇒ the COLUMNS + useColumnPrefs + ColumnPicker house pattern
 // (Name pinned). Labels stay hardcoded English like the rest of this tab.
 // Headers and cells both map over the same isVisible-filtered array so they
 // can never desync.
-const COLUMNS: ColumnDef[] = [
-  { key: 'name', label: 'Name', always: true },
-  { key: 'mac', label: 'MAC address' },
-  { key: 'ipv4', label: 'IPv4 address' },
+const COLUMNS: NicColumn[] = [
+  { key: 'name', label: 'Name', always: true, sortValue: (nic) => nic.name },
+  { key: 'mac', label: 'MAC address', sortValue: (nic) => nic.mac?.address },
+  { key: 'ipv4', label: 'IPv4 address', sortValue: (nic) => nic.ip?.address },
   { key: 'networks', label: 'Networks' },
   { key: 'status', label: 'Status' },
-  { key: 'speed', label: 'Speed' },
+  // sorts on the raw bits/s rather than the rendered Mbps text, so 100 Mbps
+  // orders below 1 Gbps; 0 (down/unreported, an em dash in the cell) sinks
+  // to the end alongside the absent ones
+  { key: 'speed', label: 'Speed', sortValue: (nic) => nic.speed || undefined },
 ]
 
 export function HostNicsTab({ hostId, clusterId }: { hostId: string; clusterId?: string }) {
@@ -95,7 +107,13 @@ export function HostNicsTab({ hostId, clusterId }: { hostId: string; clusterId?:
   const [settingUp, setSettingUp] = useState(false)
 
   const prefs = useColumnPrefs('host-nics', COLUMNS)
+  // client-side header sort; no default — the engine list order stands until a
+  // header is clicked (see hooks/useColumnSort)
+  const { sort, thSort } = useColumnSort()
   const visibleColumns = COLUMNS.filter((column) => prefs.isVisible(column.key))
+  const sortedNics = sortRows(nics.data ?? [], sort, (nic, key) =>
+    COLUMNS.find((column) => column.key === key)?.sortValue?.(nic),
+  )
 
   const cellOf = (nic: HostNic, key: string): ReactNode => {
     switch (key) {
@@ -179,12 +197,20 @@ export function HostNicsTab({ hostId, clusterId }: { hostId: string; clusterId?:
           >
             <Thead>
               <Tr>
-                {visibleColumns.map((column) => (
+                {visibleColumns.map((column, index) => (
                   <ResizableTh
                     key={column.key}
                     columnKey={column.key}
                     label={column.label}
                     prefs={prefs}
+                    sort={
+                      column.sortValue !== undefined
+                        ? thSort(
+                            visibleColumns.map((c) => c.key),
+                            index,
+                          )
+                        : undefined
+                    }
                   >
                     {column.label}
                   </ResizableTh>
@@ -192,7 +218,7 @@ export function HostNicsTab({ hostId, clusterId }: { hostId: string; clusterId?:
               </Tr>
             </Thead>
             <Tbody>
-              {nics.data.map((nic: HostNic) => (
+              {sortedNics.map((nic: HostNic) => (
                 <Tr key={nic.id}>
                   {visibleColumns.map((column) => (
                     <Td key={column.key} dataLabel={column.label}>

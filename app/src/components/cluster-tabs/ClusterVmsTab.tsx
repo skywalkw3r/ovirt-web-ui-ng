@@ -10,6 +10,7 @@ const COLUMNS: VmMembershipColumn[] = [
     // (mirrors ClusterHostsTab)
     key: 'description',
     label: 'Description',
+    sortValue: (vm) => vm.description ?? vm.comment ?? undefined,
     modifier: 'truncate',
     title: (vm) => vm.description ?? vm.comment ?? undefined,
     render: (vm) => vm.description ?? vm.comment ?? '—',

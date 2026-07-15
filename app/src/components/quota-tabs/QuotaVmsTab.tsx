@@ -21,11 +21,18 @@ const COLUMNS: ColumnDef[] = [
 ]
 
 // sockets × cores × threads, absent axes counting as 1 — the same product the
-// engine allocates; an absent topology renders an em dash.
-function vcpuCount(vm: Vm): string {
+// engine allocates. Split from the cell so the column sorts numerically rather
+// than lexically on the rendered string; an absent topology sinks (undefined)
+// and still renders an em dash.
+function vcpuValue(vm: Vm): number | undefined {
   const topology = vm.cpu?.topology
-  if (topology === undefined) return '—'
-  return String((topology.sockets ?? 1) * (topology.cores ?? 1) * (topology.threads ?? 1))
+  if (topology === undefined) return undefined
+  return (topology.sockets ?? 1) * (topology.cores ?? 1) * (topology.threads ?? 1)
+}
+
+function vcpuCount(vm: Vm): string {
+  const value = vcpuValue(vm)
+  return value === undefined ? '—' : String(value)
 }
 
 // The VMs consuming this quota. Webadmin's QuotaVmListModel has no REST
@@ -52,12 +59,24 @@ export function QuotaVmsTab({ quotaId }: { quotaId: string }) {
     vcpus: vcpuCount,
   }
 
+  // Mirrors renderOf, but yields the COMPARABLE value (raw bytes, the vCPU
+  // product) rather than the formatted cell, and undefined — not an em dash —
+  // for absent values so they sink. Status is deliberately absent: a state chip
+  // is not a scannable value (same rule as the list pages).
+  const sortOf: Record<string, VmMembershipColumn['sortValue']> = {
+    name: VM_NAME_COLUMN.sortValue,
+    cluster: (vm) => vm.cluster?.name ?? clusterNames.get(vm.cluster?.id ?? '') ?? undefined,
+    memory: (vm) => vm.memory,
+    vcpus: vcpuValue,
+  }
+
   const visibleColumns: VmMembershipColumn[] = COLUMNS.filter((column) =>
     prefs.isVisible(column.key),
   ).map((column) => ({
     key: column.key,
     label: column.label,
     render: renderOf[column.key] ?? (() => '—'),
+    sortValue: sortOf[column.key],
   }))
 
   return (

@@ -12,28 +12,42 @@ import {
 import { Table, Tbody, Td, Thead, Tr } from '@patternfly/react-table'
 import type { HostDevice } from '../../api/schemas/host-device'
 import { useColumnPrefs, type ColumnDef } from '../../hooks/useColumnPrefs'
+import { sortRows, useColumnSort } from '../../hooks/useColumnSort'
 import { useHostDevices } from '../../hooks/useHostDetail'
 import { ColumnPicker } from '../list-toolbar/ColumnPicker'
 import { ResizableTh, resizableTableProps } from '../list-toolbar/ResizableTh'
 
 // vendor/product arrive as { name } on current engines but as a bare string on
-// older ones (the schema accepts both) — resolve either form to a plain label.
+// older ones (the schema accepts both) — resolve either form to the reported
+// value, or undefined when there is none.
+function namedValue(value: HostDevice['vendor']): string | undefined {
+  if (value === undefined) return undefined
+  if (typeof value === 'string') return value || undefined
+  return value.name
+}
+
+// The same resolution rendered as a plain label. sortValue reads namedValue
+// instead, so devices reporting no vendor/product sink to the end of a sort
+// rather than ordering under a literal em dash.
 function named(value: HostDevice['vendor']): string {
-  if (value === undefined) return '—'
-  if (typeof value === 'string') return value || '—'
-  return value.name ?? '—'
+  return namedValue(value) ?? '—'
+}
+
+interface DeviceColumn extends ColumnDef {
+  // opt-in header sort (see hooks/useColumnSort)
+  sortValue?: (device: HostDevice) => string | number | undefined
 }
 
 // >4 columns ⇒ the COLUMNS + useColumnPrefs + ColumnPicker house pattern
 // (Name pinned). Labels stay hardcoded English like the rest of this tab.
 // Headers and cells both map over the same isVisible-filtered array so they
 // can never desync.
-const COLUMNS: ColumnDef[] = [
-  { key: 'name', label: 'Name', always: true },
-  { key: 'capability', label: 'Capability' },
-  { key: 'driver', label: 'Driver' },
-  { key: 'vendor', label: 'Vendor' },
-  { key: 'product', label: 'Product' },
+const COLUMNS: DeviceColumn[] = [
+  { key: 'name', label: 'Name', always: true, sortValue: (device) => device.name },
+  { key: 'capability', label: 'Capability', sortValue: (device) => device.capability || undefined },
+  { key: 'driver', label: 'Driver', sortValue: (device) => device.driver || undefined },
+  { key: 'vendor', label: 'Vendor', sortValue: (device) => namedValue(device.vendor) },
+  { key: 'product', label: 'Product', sortValue: (device) => namedValue(device.product) },
 ]
 
 function cellOf(device: HostDevice, key: string): ReactNode {
@@ -56,7 +70,13 @@ function cellOf(device: HostDevice, key: string): ReactNode {
 export function HostDevicesTab({ hostId }: { hostId: string }) {
   const devices = useHostDevices(hostId)
   const prefs = useColumnPrefs('host-devices', COLUMNS)
+  // client-side header sort; no default — the engine list order stands until a
+  // header is clicked (see hooks/useColumnSort)
+  const { sort, thSort } = useColumnSort()
   const visibleColumns = COLUMNS.filter((column) => prefs.isVisible(column.key))
+  const sortedDevices = sortRows(devices.data ?? [], sort, (device, key) =>
+    COLUMNS.find((column) => column.key === key)?.sortValue?.(device),
+  )
 
   return (
     <>
@@ -105,12 +125,20 @@ export function HostDevicesTab({ hostId }: { hostId: string }) {
             <Table aria-label="Host devices" variant="compact" {...resizableTableProps(prefs)}>
               <Thead>
                 <Tr>
-                  {visibleColumns.map((column) => (
+                  {visibleColumns.map((column, index) => (
                     <ResizableTh
                       key={column.key}
                       columnKey={column.key}
                       label={column.label}
                       prefs={prefs}
+                      sort={
+                        column.sortValue !== undefined
+                          ? thSort(
+                              visibleColumns.map((c) => c.key),
+                              index,
+                            )
+                          : undefined
+                      }
                     >
                       {column.label}
                     </ResizableTh>
@@ -118,7 +146,7 @@ export function HostDevicesTab({ hostId }: { hostId: string }) {
                 </Tr>
               </Thead>
               <Tbody>
-                {devices.data.map((device: HostDevice) => (
+                {sortedDevices.map((device: HostDevice) => (
                   <Tr key={device.id}>
                     {visibleColumns.map((column) => (
                       <Td key={column.key} dataLabel={column.label}>

@@ -9,6 +9,9 @@ export interface VmMembershipColumn {
   label: string
   width?: ThProps['width']
   render: (vm: Vm) => ReactNode
+  // opt-in header sort (see hooks/useColumnSort). Status stays unsortable — it
+  // is a state chip, not a scannable value (same rule as the list pages).
+  sortValue?: (vm: Vm) => string | number | undefined
   // long free-text columns: single line with the full value on hover
   modifier?: 'truncate'
   title?: (vm: Vm) => string | undefined
@@ -21,6 +24,7 @@ export interface VmMembershipColumn {
 export const VM_NAME_COLUMN: VmMembershipColumn = {
   key: 'name',
   label: 'Name',
+  sortValue: (vm) => vm.name,
   render: (vm) => (
     <Link to="/vms/$vmId" params={{ vmId: vm.id }}>
       {vm.name}
