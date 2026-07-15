@@ -70,20 +70,42 @@ export interface ServerEntry {
 }
 
 // Deploy-time login-screen content, shown pre-auth (before any token exists),
-// identical for every user and every configured engine. Unlike the platform
-// settings notice — which is per-engine, admin-set, and only reaches the login
-// page via a per-browser cache after an authenticated visit — this is truly
-// global: it renders straight from config.js on the very first visit.
+// identical for every user and every configured engine — it renders straight
+// from config.js on the very first visit, with no sign-in and no cache.
 export interface LoginConfig {
   // Sign-in notice / banner text. Plain text (rendered escaped, whitespace
   // preserved); '' hides it. Empty by default.
   notice: string
 }
 
+// Message of the day: the announcement banner AppShell pins above page content
+// (components/MotdBanner). Deploy-time, so it is the same for every user of
+// this console — an operator edits config.js and reloads, no rebuild.
+export const MOTD_SEVERITIES = ['info', 'warning', 'danger'] as const
+export type MotdSeverity = (typeof MOTD_SEVERITIES)[number]
+
+export interface MotdConfig {
+  // maps 1:1 to the PF Alert variant the banner renders
+  severity: MotdSeverity
+  // Both are plain text, trimmed and capped here. The banner shows whenever
+  // EITHER is non-empty (title-only and message-only both read fine); '' + ''
+  // — the default — hides it.
+  title: string
+  message: string
+}
+
+// Deploy-time support link, offered in the masthead user menu.
+export interface SupportConfig {
+  // Validated http(s) URL, or '' (the default) to hide the menu entry.
+  url: string
+}
+
 export interface RuntimeConfig {
   monitoring: MonitoringConfig
   servers: ServerEntry[]
   login: LoginConfig
+  motd: MotdConfig
+  support: SupportConfig
 }
 
 export type QueryEntity = keyof MonitoringConfig['queries']
@@ -123,6 +145,22 @@ function safeUrl(url: string | undefined): string | undefined {
   try {
     const parsed = new URL(url)
     return parsed.protocol === 'http:' || parsed.protocol === 'https:' ? url : undefined
+  } catch {
+    return undefined
+  }
+}
+
+// http(s)-only guard for deployer-authored link fields (the support URL). It
+// is the render-time gate too, by construction: the config resolves once at
+// boot, so a `javascript:` URL in config.js is dropped here and can never
+// reach an href. Stricter than safeUrl above — a support link is always an
+// absolute destination, never a same-origin path. Returns the parsed-normal
+// URL string, or undefined.
+function safeHttpUrl(url: string | undefined): string | undefined {
+  const trimmed = url?.trim()
+  if (!trimmed || !/^https?:\/\//i.test(trimmed)) return undefined
+  try {
+    return new URL(trimmed).toString()
   } catch {
     return undefined
   }
@@ -211,6 +249,21 @@ const InjectedConfigSchema = z
         notice: z.string().optional(),
       })
       .optional(),
+    // severity stays a plain string here (not z.enum): this whole parse is
+    // all-or-nothing, so a typo'd severity must not take monitoring/servers
+    // down with it — toMotd narrows it to the union and defaults a miss.
+    motd: z
+      .looseObject({
+        severity: z.string().optional(),
+        title: z.string().optional(),
+        message: z.string().optional(),
+      })
+      .optional(),
+    support: z
+      .looseObject({
+        url: z.string().optional(),
+      })
+      .optional(),
   })
   .optional()
 
@@ -280,6 +333,29 @@ function toLoginNotice(notice: string | undefined): string {
   return (notice ?? '').trim().slice(0, MAX_LOGIN_NOTICE_CHARS)
 }
 
+// Defensive ceilings in the same spirit as the login notice: an announcement
+// is a banner, not a document, and a runaway config.js value must not push the
+// page content off screen.
+const MAX_MOTD_TITLE_CHARS = 200
+const MAX_MOTD_MESSAGE_CHARS = 2000
+
+// Narrow the announcement. An unset/unknown severity reads as 'info' (the
+// quietest of the three) rather than dropping the banner — the text is what
+// the operator wanted shown. Both fields render as escaped text in MotdBanner,
+// so trim + cap is the whole sanitization story.
+function toMotd(injected: { severity?: string; title?: string; message?: string } | undefined): {
+  severity: MotdSeverity
+  title: string
+  message: string
+} {
+  const severity = MOTD_SEVERITIES.find((known) => known === injected?.severity) ?? 'info'
+  return {
+    severity,
+    title: (injected?.title ?? '').trim().slice(0, MAX_MOTD_TITLE_CHARS),
+    message: (injected?.message ?? '').trim().slice(0, MAX_MOTD_MESSAGE_CHARS),
+  }
+}
+
 function resolve(): RuntimeConfig {
   const build = buildDefault()
   const injectedGlobal = typeof window !== 'undefined' ? window.ovirtWebUiConfig : undefined
@@ -300,6 +376,10 @@ function resolve(): RuntimeConfig {
     servers: toServers(parsed.success ? parsed.data?.servers?.list : undefined),
     login: {
       notice: toLoginNotice(parsed.success ? parsed.data?.login?.notice : undefined),
+    },
+    motd: toMotd(parsed.success ? parsed.data?.motd : undefined),
+    support: {
+      url: safeHttpUrl(parsed.success ? parsed.data?.support?.url : undefined) ?? '',
     },
   }
 }

@@ -42,19 +42,43 @@ window.ovirtWebUiConfig = {
   //   ],
   // },
 
-  // Monitoring tab: live utilization always works; this block controls the
-  // Global login-screen notice, shown pre-auth to every user on every engine
-  // — reads straight from this file on the first visit (no sign-in, no
-  // per-browser cache, no admin role needed). This is the truly-global banner;
-  // the per-engine Platform Settings > "sign-in notice" is separate and only
-  // reaches the login page after an authenticated visit in that browser.
-  // Plain text; whitespace/newlines are preserved. Omit or '' to hide.
+  // Login-screen notice, shown pre-auth to every user on every engine — reads
+  // straight from this file on the first visit (no sign-in, no per-browser
+  // cache, no admin role needed). Plain text; whitespace/newlines are
+  // preserved. Omit or '' to hide.
   //
   // login: {
   //   notice: 'Authorized use only. Activity is monitored.',
   // },
 
-  // Grafana / Data-Warehouse HISTORY charts (admin-gated).
+  // Announcement banner ("message of the day"), pinned above the page content
+  // for every signed-in user of this console. Shown as soon as `title` or
+  // `message` is non-empty — omit the block, or blank both fields, to hide it.
+  // Users can dismiss it for their current session; editing the text here
+  // brings it back for everyone (the dismissal remembers the exact wording),
+  // as does the next sign-in.
+  //
+  // `severity` tints the banner: 'info' (default), 'warning' or 'danger'.
+  // Both fields are plain text — `title` is the bold line, `message` the body;
+  // either may stand alone.
+  //
+  // motd: {
+  //   severity: 'warning',
+  //   title: 'Maintenance window Saturday 02:00–04:00 UTC',
+  //   message: 'Hosts will be moved into maintenance one at a time. Running VMs migrate live.',
+  // },
+
+  // Support link added to the masthead user menu (opens in a new tab). Point
+  // it at your help desk / ticket queue / runbook. Must be an absolute http(s)
+  // URL — anything else is ignored and the menu entry stays hidden, which is
+  // also what an omitted or empty value does.
+  //
+  // support: {
+  //   url: 'https://support.example.com/virtualization',
+  // },
+
+  // Monitoring tab: live utilization always works without this block; it
+  // configures the Grafana / Data-Warehouse HISTORY charts (admin-gated).
   //
   // ZERO-CONFIG DEFAULT: the app probes {grafanaBaseUrl}/api/health and shows
   // history automatically when ovirt-engine-grafana (with the Data Warehouse)

@@ -9,7 +9,6 @@ import {
   unassignTag,
   updateTag,
 } from '../api/resources/tags'
-import { isPlatformTag } from '../api/schemas/platform-settings'
 import type { Tag } from '../api/schemas/tag'
 import { useT } from '../i18n/useT'
 import { useNotify } from '../notifications/context'
@@ -119,9 +118,20 @@ export function isEngineRootTag(tag: Tag): boolean {
   return tag.id === ENGINE_ROOT_TAG_ID || (tag.name === 'root' && tag.parent?.id === undefined)
 }
 
-// The reserved 'ui.platform' cluster (platform settings + logo chunks —
-// api/schemas/platform-settings.ts) is infrastructure like 'ui.folders' and
-// the engine root: excluded here so label chips, tag pickers and the tag
+// LEGACY reserved cluster: console settings (announcement banner, branding,
+// support link) once rode a JSON document in a 'ui.platform' tag, with an
+// uploaded logo split across 'ui.platform.logo.<n>' children. That feature is
+// gone — those settings are deploy-time now (config.js, config/runtime.ts) —
+// but engines an older console wrote to still carry the tags, and nothing
+// prunes them. So the filter stays: like 'ui.folders' and the engine root,
+// they are infrastructure, never a label.
+const PLATFORM_TAG_NAME = 'ui.platform'
+const LOGO_CHUNK_PREFIX = 'ui.platform.logo.'
+function isPlatformTag(tag: Pick<Tag, 'name'>): boolean {
+  return tag.name === PLATFORM_TAG_NAME || tag.name.startsWith(LOGO_CHUNK_PREFIX)
+}
+
+// Excludes all three reserved kinds so label chips, tag pickers and the tag
 // manager never offer any of them.
 export function labelTagsOf(tags: Tag[], allTags: Tag[] = tags): Tag[] {
   return tags.filter(

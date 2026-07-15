@@ -27,10 +27,9 @@ import {
 } from '@patternfly/react-core'
 import { ExternalLinkAltIcon, MoonIcon, SunIcon } from '@patternfly/react-icons'
 import { FormattedMessage } from 'react-intl'
-import { safeHttpUrl } from '../api/schemas/platform-settings'
 import { useCapabilities } from '../auth/capabilities'
 import { useAuth } from '../auth/context'
-import { usePlatformSettings } from '../hooks/usePlatformSettings'
+import { useRuntimeConfig } from '../config/runtime'
 import { LOCALE_LABELS } from '../i18n/locales'
 import { useT } from '../i18n/useT'
 import { isLocale, SUPPORTED_LOCALES } from '../settings/context'
@@ -58,10 +57,9 @@ export function UserMenu() {
   const [isOpen, setIsOpen] = useState(false)
   const [activeModal, setActiveModal] = useState<UserModal | null>(null)
 
-  // Admin-set support link (platform settings). safeHttpUrl re-gates the
-  // stored value at render so only http(s) ever reaches an href.
-  const { settings: platform } = usePlatformSettings()
-  const supportHref = safeHttpUrl(platform.supportUrl)
+  // Deploy-time support link (config.js `support.url`); runtime.ts has already
+  // gated it to http(s), so '' is the only "unset" this needs to test.
+  const { support } = useRuntimeConfig()
 
   const open = (modal: UserModal) => {
     setIsOpen(false)
@@ -95,13 +93,13 @@ export function UserMenu() {
           </DropdownItem>
           <Divider component="li" />
           {/* The docs link lives inside the About dialog; the menu keeps only
-              About plus the admin-set support link (hidden while unset). */}
+              About plus the deployer's support link (hidden while unset). */}
           <DropdownItem onClick={() => open('about')}>
             <FormattedMessage id="settings.menu.about" />
           </DropdownItem>
-          {supportHref !== null && (
+          {support.url !== '' && (
             <DropdownItem
-              to={supportHref}
+              to={support.url}
               isExternalLink
               target="_blank"
               rel="noopener noreferrer"

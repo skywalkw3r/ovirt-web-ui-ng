@@ -140,16 +140,3 @@ test('User detail page has no serious accessibility violations as admin', async 
 
   await expectNoSeriousViolations(page)
 })
-
-test('Platform settings page has no serious accessibility violations as admin', async ({
-  page,
-}) => {
-  // The staged form (switch, severity radios, upload control, field-help
-  // popover triggers) plus a live banner preview all land in the tree.
-  await login(page, { path: '/platform-settings' })
-  await expect(page.getByRole('heading', { name: 'Platform settings' })).toBeVisible()
-  await expect(page.getByRole('switch', { name: 'Show announcement banner' })).toBeVisible()
-  await page.getByLabel('Message', { exact: true }).fill('Preview for the axe run')
-
-  await expectNoSeriousViolations(page)
-})

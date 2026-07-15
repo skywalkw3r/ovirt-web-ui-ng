@@ -342,17 +342,6 @@ const tasksRoute = createRoute({
   component: lazyRouteComponent(() => import('../pages/TasksPage'), 'TasksPage'),
 })
 
-// Admin-only global settings (announcement banner, branding, sign-in notice,
-// support link) — form page, no detail route.
-const platformSettingsRoute = createRoute({
-  getParentRoute: () => protectedRoute,
-  path: '/platform-settings',
-  component: lazyRouteComponent(
-    () => import('../pages/PlatformSettingsPage'),
-    'PlatformSettingsPage',
-  ),
-})
-
 const routeTree = rootRoute.addChildren([
   loginRoute,
   vmConsoleRoute,
@@ -397,7 +386,6 @@ const routeTree = rootRoute.addChildren([
     errataDetailRoute,
     volumesRoute,
     tasksRoute,
-    platformSettingsRoute,
   ]),
 ])
 

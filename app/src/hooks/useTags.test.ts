@@ -93,9 +93,10 @@ describe('folderTagsOf / labelTagsOf', () => {
     expect(labelTagsOf([...all, orphan])).toEqual([pciDss, legacy, orphan])
   })
 
-  it('never offers the reserved ui.platform cluster as labels', () => {
-    // The platform-settings root and its logo chunks (api/schemas/
-    // platform-settings.ts) are infrastructure like ui.folders itself.
+  it('never offers the legacy ui.platform cluster as labels', () => {
+    // Engines written to by an older console still carry the removed platform
+    // settings' tag document and its logo chunks (see useTags.ts): they are
+    // infrastructure like ui.folders itself, never labels.
     const platform = tag('t-platform', 'ui.platform', { description: '{"motd":{}}' })
     const chunk = tag('t-chunk-0', 'ui.platform.logo.0', {
       description: 'data:…',

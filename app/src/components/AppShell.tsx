@@ -38,7 +38,6 @@ import { brandAssets } from '../branding/logos'
 import { monitoringPortalUrl } from '../lib/monitoringPortal'
 import { useCapabilities } from '../auth/capabilities'
 import { useNavShortcuts } from '../hooks/useNavShortcuts'
-import { usePlatformSettings } from '../hooks/usePlatformSettings'
 import { useProductBrand } from '../hooks/useProductBrand'
 import { NotificationBell } from '../notifications/NotificationDrawerPanel'
 import { getActiveServer } from '../servers/registry'
@@ -127,7 +126,6 @@ const NAV_GROUPS: readonly NavGroup[] = [
       { labelId: 'nav.schedulingPolicies', to: '/scheduling-policies', adminOnly: true },
       { labelId: 'nav.providers', to: '/providers', adminOnly: true },
       { labelId: 'nav.errata', to: '/errata', adminOnly: true },
-      { labelId: 'nav.platformSettings', to: '/platform-settings', adminOnly: true },
     ],
   },
 ]
@@ -335,17 +333,14 @@ export function AppShell() {
   // keydown listener; gated off while a field or dialog owns the keyboard.
   useNavShortcuts()
 
-  // Branding: an admin-set product name (platform settings) renames the browser
-  // tab; otherwise the detected engine flavour's default (oVirt vs OLVM) does.
-  // index.html's static default holds until either resolves.
-  const { settings: platform } = usePlatformSettings()
+  // Branding: the detected engine flavour (oVirt vs OLVM) names the browser
+  // tab; index.html's static default holds until it resolves.
   const brand = useProductBrand()
-  const brandProductName = brandAssets(brand).productName
-  const productName = platform.productName.trim()
+  const productName = brandAssets(brand).productName
   useEffect(() => {
-    document.title = productName !== '' ? productName : brandProductName
+    document.title = productName
     applyBrandFavicon(brand)
-  }, [productName, brandProductName, brand])
+  }, [productName, brand])
 
   const groups = visibleNavGroups(isAdmin)
 

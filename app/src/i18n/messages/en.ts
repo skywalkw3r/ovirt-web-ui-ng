@@ -3144,10 +3144,15 @@ export const en = {
   'userDetail.tab.tags': 'Tags',
   'userDetail.section.directory': 'Directory',
 
-  // Platform settings (pages/PlatformSettingsPage, components/MotdBanner,
-  // branding in BrandLogo/LoginPage, the user-menu support link). Admin-only
-  // global settings stored in the reserved 'ui.platform' tag cluster —
-  // api/schemas/platform-settings.ts documents the format.
+  // DEAD IDS — the admin Platform Settings page (engine-stored console
+  // settings in a reserved 'ui.platform' tag cluster) was removed; MOTD and
+  // the support link are deploy-time config now (public/config.js →
+  // config/runtime.ts), and the custom-logo / product-name overrides were
+  // dropped. Only 'platform.motd.dismiss' below is still rendered, by
+  // components/MotdBanner. The rest are unreferenced and kept solely because
+  // deleting them across all 11 catalogs is a large mechanical diff with no
+  // upside — unused en ids are harmless (i18n/coverage.test.ts only fails on
+  // locale ids MISSING from en). Prune them opportunistically.
   'nav.platformSettings': 'Platform Settings',
   'platform.title': 'Platform settings',
   'platform.intro':

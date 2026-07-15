@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { obtainToken, revokeToken } from '../api/auth'
-import { clearMotdDismissal } from '../api/resources/platformSettings'
 import { fetchCapabilityProfile } from '../api/resources/users'
 import {
   clearSessionToken,
@@ -13,6 +12,7 @@ import {
   setSessionToken,
   setSessionUsername,
 } from '../api/session'
+import { clearMotdDismissal } from '../lib/motd'
 import { getActiveBase, setActiveBase } from '../servers/registry'
 import { useSettings } from '../settings/SettingsProvider'
 import { readInjectedSession } from './bootstrap'
@@ -125,9 +125,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // ...and the engine the token was issued by (multi-engine): a refresh
       // reconnects here even if another tab re-picks a different server.
       setSessionServerBase(getActiveBase())
-      // A dismissed announcement banner returns at every sign-in while it
-      // stays enabled (platform settings contract) — drop the dismissal
-      // before the shell mounts under the new session.
+      // A dismissed announcement banner returns at every sign-in while
+      // config.js still carries one — drop the dismissal before the shell
+      // mounts under the new session.
       clearMotdDismissal()
       setUsername(user)
       await loadCapabilities()

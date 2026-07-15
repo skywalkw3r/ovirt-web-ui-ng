@@ -43,6 +43,60 @@ describe('getRuntimeConfig', () => {
     expect(getRuntimeConfig().login.notice).toHaveLength(2000)
   })
 
+  it('defaults the announcement to empty/info, which is what hides the banner', () => {
+    inject(undefined)
+    expect(getRuntimeConfig().motd).toEqual({ severity: 'info', title: '', message: '' })
+    inject({ motd: {} })
+    expect(getRuntimeConfig().motd).toEqual({ severity: 'info', title: '', message: '' })
+  })
+
+  it('trims the announcement fields and keeps a known severity', () => {
+    inject({ motd: { severity: 'danger', title: '  Outage  ', message: '  Back at 04:00.  ' } })
+    expect(getRuntimeConfig().motd).toEqual({
+      severity: 'danger',
+      title: 'Outage',
+      message: 'Back at 04:00.',
+    })
+  })
+
+  it('degrades an unknown severity to info rather than dropping the announcement', () => {
+    inject({ motd: { severity: 'critical', message: 'Still worth showing' } })
+    expect(getRuntimeConfig().motd).toEqual({
+      severity: 'info',
+      title: '',
+      message: 'Still worth showing',
+    })
+  })
+
+  it('caps runaway announcement fields', () => {
+    inject({ motd: { title: 'x'.repeat(500), message: 'y'.repeat(5000) } })
+    const { motd } = getRuntimeConfig()
+    expect(motd.title).toHaveLength(200)
+    expect(motd.message).toHaveLength(2000)
+  })
+
+  it('defaults the support URL to empty, which hides the menu entry', () => {
+    inject(undefined)
+    expect(getRuntimeConfig().support.url).toBe('')
+    inject({ support: {} })
+    expect(getRuntimeConfig().support.url).toBe('')
+  })
+
+  it('accepts an http(s) support URL and normalizes it', () => {
+    inject({ support: { url: 'https://help.example.com/portal' } })
+    expect(getRuntimeConfig().support.url).toBe('https://help.example.com/portal')
+    inject({ support: { url: '  http://wiki.local/ ' } })
+    expect(getRuntimeConfig().support.url).toBe('http://wiki.local/')
+  })
+
+  it('drops a non-http(s) support URL so it can never reach an href', () => {
+    // The config resolves once at boot, so this IS the render-time gate.
+    for (const url of ['javascript:alert(1)', 'ftp://files.example.com', 'help.example.com', '']) {
+      inject({ support: { url } })
+      expect(getRuntimeConfig().support.url).toBe('')
+    }
+  })
+
   it('honors a valid injected absolute URL and maps enabled:false to off', () => {
     inject({ monitoring: { grafanaBaseUrl: 'https://grafana.example', enabled: false } })
     const cfg = getRuntimeConfig()

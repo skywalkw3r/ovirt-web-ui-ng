@@ -763,26 +763,11 @@
 }
 
 /* ----------------------------------------------------------------------------
- * Platform settings · logo preview swatch (pages/PlatformSettingsPage).
- * The masthead is a dark strip in BOTH themes (ink chrome in dark; the slate
- * island above), so an uploaded mark must be previewed against dark or a
- * light-on-dark logo (like the shipped one) would vanish on the light page
- * canvas. One slate swatch — the light-mode masthead color — previews both
- * themes closely enough. */
-.app-logo-preview {
-  display: inline-flex;
-  align-items: center;
-  background: #1b2b32; /* matches the light-mode masthead slate */
-  border-radius: var(--pf-t--global--border--radius--small);
-  padding: var(--pf-t--global--spacer--md);
-  max-width: 100%;
-}
-
-/* Login card · logo tile. The sign-in card is near-white in the light theme
+ * Login card · logo tile. The sign-in card is near-white in the light theme
  * (the masthead the mark normally rides is dark in BOTH themes; this card is
- * not), so the light-on-transparent mark — shipped oVirt/OLVM or an uploaded
- * one — sits on the same slate tile the preview uses, keeping its descriptor
- * legible instead of washing out on the white card. */
+ * not), so the light-on-transparent oVirt/OLVM mark sits on a slate tile of
+ * its own, keeping its descriptor legible instead of washing out on the white
+ * card. */
 .app-login-logo {
   display: flex;
   justify-content: center;

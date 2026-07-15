@@ -18,7 +18,6 @@ import {
 } from '@patternfly/react-core'
 import { FormattedMessage, useIntl } from 'react-intl'
 import { Navigate, useNavigate, useSearch } from '@tanstack/react-router'
-import { readPlatformMirror } from '../api/resources/platformSettings'
 import { readBrandMirror } from '../branding/brand'
 import { applyBrandFavicon } from '../branding/favicon'
 import { brandAssets } from '../branding/logos'
@@ -120,25 +119,16 @@ export function LoginPage() {
     const server = servers.find((s) => s.base === activeBase)
     if (server?.profile) setProfile(server.profile)
   }, [servers, activeBase])
-  // Pre-auth branding: no token exists yet, so the custom logo / product
-  // name / sign-in notice come from this browser's mirrored copy of the
-  // platform settings (written on every authenticated visit). A brand-new
-  // browser simply shows the stock oVirt branding until its first session.
-  const [platform] = useState(() => readPlatformMirror())
-  // The engine flavour (oVirt vs OLVM) can't be detected pre-auth either, so it
-  // rides the same mirror pattern: useProductBrand writes it on every
-  // authenticated visit, and a fresh browser defaults to oVirt until then.
+  // Pre-auth branding: no token exists yet, so the engine flavour (oVirt vs
+  // OLVM) can't be detected here — it rides a mirror instead. useProductBrand
+  // writes it on every authenticated visit, and a fresh browser simply shows
+  // the stock oVirt branding until its first session.
   const [brand] = useState(() => readBrandMirror() ?? 'ovirt')
   const assets = brandAssets(brand)
-  const productName =
-    platform !== null && platform.productName.trim() !== ''
-      ? platform.productName
-      : assets.productName
-  // A deploy-time config.js notice is truly global (shown pre-auth, same for
-  // every user/engine, no cache dependency) and takes precedence; failing
-  // that, the per-browser platform-settings mirror (per-engine, populated only
-  // after an authenticated visit) still stands in.
-  const loginNotice = getRuntimeConfig().login.notice || (platform?.loginNotice.trim() ?? '')
+  const productName = assets.productName
+  // The sign-in notice is deploy-time (config.js): shown pre-auth, the same
+  // for every user and engine, with no cache to warm first.
+  const loginNotice = getRuntimeConfig().login.notice
   useEffect(() => {
     document.title = productName
     applyBrandFavicon(brand)
@@ -174,7 +164,7 @@ export function LoginPage() {
               (see .app-login-logo in brand-tokens.css). */}
           <div className="app-login-logo">
             <Brand
-              src={platform?.logoDataUri ?? assets.logo}
+              src={assets.logo}
               alt={productName}
               heights={{ default: '44px' }}
               style={{ display: 'block' }}

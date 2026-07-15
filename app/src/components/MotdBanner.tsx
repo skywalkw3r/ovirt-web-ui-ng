@@ -1,41 +1,37 @@
 import { useState } from 'react'
 import { Alert, AlertActionCloseButton } from '@patternfly/react-core'
-import { dismissMotd, readDismissedMotd } from '../api/resources/platformSettings'
-import { motdSignature, motdWindowState } from '../api/schemas/platform-settings'
-import { usePlatformSettings } from '../hooks/usePlatformSettings'
-import { useNow } from '../hooks/useNow'
+import { useRuntimeConfig } from '../config/runtime'
 import { useT } from '../i18n/useT'
+import { dismissMotd, motdSignature, readDismissedMotd } from '../lib/motd'
 
-// How often the banner re-evaluates its schedule window: a scheduled
-// announcement arms/expires within this much of its boundary without any
-// navigation or refetch (the ticker only forces re-renders, no requests).
-const WINDOW_TICK_MS = 30_000
-
-// The admin-authored announcement (MOTD) banner, pinned above page content in
-// AppShell beside OfflineBanner. Dismissal is per-session: the announcement's
-// content signature lands in sessionStorage and AuthProvider.login() clears
-// it, so the banner returns at every sign-in while it stays enabled — and an
-// EDITED or RESCHEDULED announcement (new signature) resurfaces immediately
-// even for users who dismissed the previous version. Renders nothing while
-// disabled, empty, outside its schedule window, or dismissed.
+// The deploy-time announcement (MOTD) banner, pinned above page content in
+// AppShell beside OfflineBanner. The text comes from config.js (config/
+// runtime.ts MotdConfig) — static per page load, so an operator edits it on
+// the server and users pick it up on their next reload. Dismissal is
+// per-session and keyed on the announcement's content (lib/motd.ts), so a
+// re-worded banner resurfaces even for someone who dismissed the old one.
+// Renders nothing while unset (both fields blank) or dismissed this session.
 export function MotdBanner() {
-  const { settings } = usePlatformSettings()
   const t = useT()
-  const now = useNow(WINDOW_TICK_MS)
+  const { motd } = useRuntimeConfig()
   const [dismissed, setDismissed] = useState<string | null>(() => readDismissedMotd())
 
-  const { motd } = settings
-  if (!motd.enabled || motd.message.trim() === '') return null
-  if (motdWindowState(motd, now) !== 'live') return null
+  // runtime.ts trims both fields, so non-empty here means real content.
+  const hasTitle = motd.title !== ''
+  const hasMessage = motd.message !== ''
+  if (!hasTitle && !hasMessage) return null
 
   const signature = motdSignature(motd)
   if (dismissed === signature) return null
 
-  const hasTitle = motd.title.trim() !== ''
   return (
     <Alert
+      // MotdSeverity is exactly the AlertVariant subset the banner offers
       variant={motd.severity}
       isInline
+      // Either field may stand alone: a message-only announcement rides in the
+      // title slot (PF then renders a bodyless Alert) so it keeps the same
+      // prominence rather than shrinking into body text.
       title={hasTitle ? motd.title : motd.message}
       actionClose={
         <AlertActionCloseButton
@@ -50,7 +46,7 @@ export function MotdBanner() {
         />
       }
     >
-      {hasTitle ? motd.message : undefined}
+      {hasTitle && hasMessage ? motd.message : undefined}
     </Alert>
   )
 }

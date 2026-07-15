@@ -1,5 +1,3 @@
-import { DEFAULT_PRODUCT_NAME } from '../api/schemas/platform-settings'
-
 // The console ships two brand identities and picks between them at runtime from
 // the engine's product_info (api/schemas/system.ts): stock oVirt, and OLVM
 // (Oracle Linux Virtualization Manager), which is oVirt rebadged by Oracle.
@@ -7,9 +5,12 @@ import { DEFAULT_PRODUCT_NAME } from '../api/schemas/platform-settings'
 // logo art it maps to lives in ./logos.
 export type ProductBrand = 'ovirt' | 'olvm'
 
-// Fallback product name per brand — the logo alt text and browser-tab title
-// when no admin custom product name (platform settings) is set. oVirt reuses
-// the shared default so the stock name has one source of truth.
+// The stock oVirt product name, kept as a named constant because it is also
+// index.html's static <title> — the two must agree or the tab renames itself
+// on mount.
+const DEFAULT_PRODUCT_NAME = 'oVirt Console'
+
+// Product name per brand — the logo alt text and the browser-tab title.
 export const PRODUCT_NAMES: Record<ProductBrand, string> = {
   ovirt: DEFAULT_PRODUCT_NAME,
   olvm: 'Oracle Linux Virtualization Manager',
@@ -33,8 +34,7 @@ export function detectBrand(
 //
 // The sign-in screen renders before any token exists, so it cannot read the
 // engine to detect the brand. Every authenticated resolution mirrors the
-// detected brand to localStorage (patterned on the platform-settings mirror in
-// api/resources/platformSettings.ts), letting the login page show the right
+// detected brand to localStorage, letting the login page show the right
 // mark on this browser's return visits. A brand-new browser shows stock oVirt
 // until its first session. The value is a public product identity — the same
 // string the engine hands every user — so nothing sensitive lives here.

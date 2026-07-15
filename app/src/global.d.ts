@@ -46,6 +46,20 @@ interface Window {
     login?: {
       notice?: string
     }
+    // Announcement banner pinned above page content (see config/runtime.ts
+    // MotdConfig). Shown when title or message is non-empty; severity is one
+    // of 'info' | 'warning' | 'danger' (default 'info'), kept permissive here
+    // because runtime.ts narrows an unknown value rather than failing.
+    motd?: {
+      severity?: string
+      title?: string
+      message?: string
+    }
+    // Support link in the masthead user menu (see config/runtime.ts
+    // SupportConfig). http(s) only — runtime.ts drops anything else.
+    support?: {
+      url?: string
+    }
   }
 }
 
