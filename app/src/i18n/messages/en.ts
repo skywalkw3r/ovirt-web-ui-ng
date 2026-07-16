@@ -268,7 +268,6 @@ export const en = {
   'infra.tree.cluster.hostsNotUp.more': '…and {count} more',
   'infra.kind.datacenter': 'Data center',
   'infra.kind.cluster': 'Cluster',
-  'infra.kind.host': 'Host',
   'infra.openDetails': 'Open details',
   // the root banner's inventory totals (see PaneHeader on the tree roots)
   'infra.root.datacenters': '{count, plural, one {# data center} other {# data centers}}',

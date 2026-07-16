@@ -21,16 +21,23 @@ import type { MessageId } from '../i18n/messages/en'
  * on that to hold its VM count back until the VM collection lands rather than
  * claiming zero.
  *
- * `kindId` is optional because the tree ROOTS have no entity kind: "All
- * infrastructure" is an aggregate, and its counts are the whole meta line.
+ * `kindId` is optional, and most banners leave it off. The tree ROOTS have no
+ * entity kind to name ("All infrastructure" is an aggregate, and its counts are
+ * the whole meta line), and the infra banners dropped theirs because the kind
+ * collided with the fact beside it: "Host · COSITE01 · lcositekvm01…" reads as
+ * though COSITE01 were the host, when it is the cluster. The icon tile and the
+ * name already answer "what kind of thing is this?". It survives for the folder
+ * banner, whose facts are counts rather than entity names, so nothing collides.
  */
 
 /**
  * A meta-line fact. The object form prefixes a small icon, for facts that name
  * a DIFFERENT kind of entity than the banner itself — a cluster's data center,
- * a host's cluster. Without it "Cluster · Default · Secure Intel…" gives no
- * clue that the first fact is a data center and the second is a CPU type; the
- * icon says which is which without spending words on it.
+ * a host's cluster. Without it "Default · Secure Intel…" gives no clue that the
+ * first fact is a data center and the second is a CPU type; the icon says which
+ * is which without spending words on it. It carries more weight now that the
+ * banners no longer name their own kind — it is the only thing on the line
+ * saying what a bare name refers to.
  *
  * Give the icon a `title` (PF icons render it as an SVG <title>): it is the
  * only thing naming that kind, so a decorative aria-hidden icon would leave

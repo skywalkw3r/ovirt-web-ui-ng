@@ -65,7 +65,10 @@ export function ClusterHealthBadge({ hosts }: { hosts: Host[] }) {
     >
       {/* The count rides as the accessible name (the glyph is aria-hidden by
           PF); focusable so the tooltip opens on keyboard too, same as
-          VmWarnings. */}
+          VmWarnings. Centring is the caller's job — the badge sits in an
+          inline-flex row beside the name (same as HostedEngineCrown) rather
+          than vertical-align'ing against a text baseline, which left the glyph
+          riding low against the tree row. */}
       <span
         role="img"
         aria-label={label}
@@ -74,9 +77,8 @@ export function ClusterHealthBadge({ hosts }: { hosts: Host[] }) {
           color: failing
             ? 'var(--pf-t--global--icon--color--status--danger--default)'
             : 'var(--pf-t--global--icon--color--status--warning--default)',
-          marginInlineStart: 'var(--pf-t--global--spacer--xs)',
           display: 'inline-flex',
-          verticalAlign: 'middle',
+          alignItems: 'center',
         }}
       >
         <Glyph />

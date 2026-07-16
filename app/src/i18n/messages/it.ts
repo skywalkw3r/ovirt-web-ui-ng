@@ -231,7 +231,6 @@ export const it: LocaleCatalog = {
   'infra.tree.cluster.hostsNotUp.more': '…e altri {count}',
   'infra.kind.datacenter': 'Data center',
   'infra.kind.cluster': 'Cluster',
-  'infra.kind.host': 'Host',
   'infra.openDetails': 'Apri dettagli',
   'infra.root.datacenters': '{count, plural, one {# data center} other {# data center}}',
   'infra.root.clusters': '{count, plural, one {# cluster} other {# cluster}}',

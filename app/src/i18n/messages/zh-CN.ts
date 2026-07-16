@@ -226,7 +226,6 @@ export const zhCN: LocaleCatalog = {
   'infra.tree.cluster.hostsNotUp.more': '…以及另外 {count} 个',
   'infra.kind.datacenter': '数据中心',
   'infra.kind.cluster': '集群',
-  'infra.kind.host': '主机',
   'infra.openDetails': '打开详细信息',
   'infra.root.datacenters': '{count, plural, other {# 个数据中心}}',
   'infra.root.clusters': '{count, plural, other {# 个集群}}',

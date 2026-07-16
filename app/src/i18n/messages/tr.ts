@@ -228,7 +228,6 @@ export const tr: LocaleCatalog = {
   'infra.tree.cluster.hostsNotUp.more': '…ve {count} tane daha',
   'infra.kind.datacenter': 'Veri merkezi',
   'infra.kind.cluster': 'Küme',
-  'infra.kind.host': 'Ana makine',
   'infra.openDetails': 'Ayrıntıları Açın',
   'infra.root.datacenters': '{count, plural, one {# veri merkezi} other {# veri merkezi}}',
   'infra.root.clusters': '{count, plural, one {# küme} other {# küme}}',

@@ -606,7 +606,6 @@ function ClusterPaneHeader({
     <PaneHeader
       icon={<ClusterIcon />}
       name={cluster.name}
-      kindId="infra.kind.cluster"
       // the data center this cluster sits in, marked with the DC icon so it
       // is not read as just another unlabelled fact beside the CPU type
       facts={[
@@ -654,14 +653,17 @@ function HostPaneHeader({
     <PaneHeader
       icon={<ServerIcon />}
       name={host.name}
-      kindId="infra.kind.host"
       // the cluster this host belongs to, marked with the cluster icon (the
-      // address beside it needs no marker — it is self-evidently an address)
+      // address beside it needs no marker — it is self-evidently an address).
+      // Most engines name a host by its FQDN and address it by the same string,
+      // which spent the whole meta line repeating the <h2> above it — so the
+      // address only earns its place when it actually says something new (a
+      // bare name like 'node-01' addressed as node-01.lab.local, or an IP).
       facts={[
         clusterName !== undefined
           ? { icon: <ClusterIcon title={t('infra.kind.cluster')} />, text: clusterName }
           : undefined,
-        host.address,
+        host.address?.toLowerCase() === host.name.toLowerCase() ? undefined : host.address,
       ]}
       badges={<HostStatusCell host={host} updateLabel={t('host.upgrade.available')} />}
       details={
@@ -727,7 +729,6 @@ function DataCenterPaneHeader({ dc, actions }: { dc: DataCenter; actions: ReactN
     <PaneHeader
       icon={<InfrastructureIcon />}
       name={dc.name}
-      kindId="infra.kind.datacenter"
       actions={actions}
       facts={[
         compat !== undefined ? t('infra.compat', { version: compat }) : undefined,
@@ -1425,7 +1426,14 @@ export function HostsClustersPage() {
         // host set, not the name-filtered subset — a filter narrows what you
         // see, it must not talk you out of a warning.
         name: (
-          <span data-infra-ctx={nodeId('cluster', cluster.id)}>
+          <span
+            data-infra-ctx={nodeId('cluster', cluster.id)}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 'var(--pf-t--global--spacer--sm)',
+            }}
+          >
             {cluster.name}
             <ClusterHealthBadge hosts={allClusterHosts} />
           </span>

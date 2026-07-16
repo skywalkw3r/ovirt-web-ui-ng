@@ -229,7 +229,6 @@ export const ja: LocaleCatalog = {
   'infra.tree.cluster.hostsNotUp.more': '…他 {count} 件',
   'infra.kind.datacenter': 'データセンター',
   'infra.kind.cluster': 'クラスター',
-  'infra.kind.host': 'ホスト',
   'infra.openDetails': '詳細を開く',
   'infra.root.datacenters': '{count, plural, other {# 個のデータセンター}}',
   'infra.root.clusters': '{count, plural, other {# 個のクラスター}}',

@@ -233,7 +233,6 @@ export const de: LocaleCatalog = {
   'infra.tree.cluster.hostsNotUp.more': '…und {count} weitere',
   'infra.kind.datacenter': 'Rechenzentrum',
   'infra.kind.cluster': 'Cluster',
-  'infra.kind.host': 'Host',
   'infra.openDetails': 'Details öffnen',
   'infra.root.datacenters': '{count, plural, one {# Rechenzentrum} other {# Rechenzentren}}',
   'infra.root.clusters': '{count, plural, one {# Cluster} other {# Cluster}}',

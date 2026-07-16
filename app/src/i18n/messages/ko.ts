@@ -229,7 +229,6 @@ export const ko: LocaleCatalog = {
   'infra.tree.cluster.hostsNotUp.more': '…외 {count}개',
   'infra.kind.datacenter': '데이터 센터',
   'infra.kind.cluster': '클러스터',
-  'infra.kind.host': '호스트',
   'infra.openDetails': '세부 정보 열기',
   'infra.root.datacenters': '{count, plural, other {데이터 센터 #개}}',
   'infra.root.clusters': '{count, plural, other {클러스터 #개}}',

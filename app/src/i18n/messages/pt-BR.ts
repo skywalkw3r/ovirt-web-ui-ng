@@ -229,7 +229,6 @@ export const ptBR: LocaleCatalog = {
   'infra.tree.cluster.hostsNotUp.more': '…e mais {count}',
   'infra.kind.datacenter': 'Centro de processamento de dados',
   'infra.kind.cluster': 'Cluster',
-  'infra.kind.host': 'Host',
   'infra.openDetails': 'Abrir Detalhes',
   'infra.root.datacenters': '{count, plural, one {# centro de dados} other {# centros de dados}}',
   'infra.root.clusters': '{count, plural, one {# cluster} other {# clusters}}',

@@ -232,7 +232,6 @@ export const ru: LocaleCatalog = {
   'infra.tree.cluster.hostsNotUp.more': '…и ещё {count}',
   'infra.kind.datacenter': 'Центр обработки данных',
   'infra.kind.cluster': 'Кластер',
-  'infra.kind.host': 'Хост',
   'infra.openDetails': 'Открыть подробнее',
   'infra.root.datacenters':
     '{count, plural, one {# дата-центр} few {# дата-центра} many {# дата-центров} other {# дата-центра}}',
