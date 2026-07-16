@@ -106,9 +106,22 @@ test('VMs & Templates view has no serious accessibility violations', async ({ pa
 
 test('Hosts & Clusters view has no serious accessibility violations', async ({ page }) => {
   await login(page, { path: '/hosts-clusters' })
+  // role=tree, not getByLabel: the pane's Tabs carry the same aria-label, so
+  // getByLabel('Infrastructure tree') is ambiguous
   await expect(
-    page.getByLabel('Infrastructure tree').getByText('node-01', { exact: true }),
+    page.getByRole('tree', { name: 'Infrastructure tree' }).getByText('Default').first(),
   ).toBeVisible()
+
+  await expectNoSeriousViolations(page)
+})
+
+// The PaneHeader identity banner (icon tile, h2, meta line, inline Open
+// details) renders only once something is SELECTED — the root pane has no
+// entity to identify — so the root scans above never reach it. This is the
+// scan that covers it, and it is the same primitive all four panes render.
+test('VMs & Templates with a folder selected has no serious violations', async ({ page }) => {
+  await login(page, { path: '/vms-templates?folder=tag-web' })
+  await expect(page.getByRole('heading', { name: 'web', exact: true })).toBeVisible()
 
   await expectNoSeriousViolations(page)
 })

@@ -68,6 +68,7 @@ export const en = {
   'masthead.collapseNav': 'Collapse navigation',
   'masthead.expandNav': 'Expand navigation',
   'masthead.toggleTheme': 'Toggle color theme',
+  'masthead.engineWebUi': 'Open the {engine} web UI in a new tab',
 
   // Global search (masthead box + command palette) ---------------------------
   'search.placeholder': 'Search VMs, hosts, storage…',
@@ -253,6 +254,8 @@ export const en = {
   // Hosts & Clusters structural view (pages/HostsClustersPage) --------------
   'infra.title': 'Hosts & Clusters',
   'infra.tree.ariaLabel': 'Infrastructure tree',
+  'infra.tree.toggle.hide': 'Hide infrastructure tree',
+  'infra.tree.toggle.show': 'Show infrastructure tree',
   'infra.filter.ariaLabel': 'Filter infrastructure by name',
   'infra.filter.hint': 'Filter by name',
   'infra.tree.allLabel': 'All infrastructure',
@@ -260,13 +263,24 @@ export const en = {
   'infra.error.title': 'Could not load infrastructure',
   'infra.empty.title': 'No data centers',
   'infra.empty.body': 'Data centers, clusters and hosts will appear here.',
+  // the cluster-name health marker in the tree (components/ClusterHealthBadge)
+  'infra.tree.cluster.hostsNotUp': '{count, plural, one {# host not Up} other {# hosts not Up}}',
+  'infra.tree.cluster.hostsNotUp.more': '…and {count} more',
   'infra.kind.datacenter': 'Data center',
   'infra.kind.cluster': 'Cluster',
   'infra.kind.host': 'Host',
   'infra.openDetails': 'Open details',
+  // the root banner's inventory totals (see PaneHeader on the tree roots)
+  'infra.root.datacenters': '{count, plural, one {# data center} other {# data centers}}',
+  'infra.root.clusters': '{count, plural, one {# cluster} other {# clusters}}',
+  'infra.root.hosts': '{count, plural, one {# host} other {# hosts}}',
+  'infra.root.vms': '{count, plural, one {# VM} other {# VMs}}',
   'infra.vms.ariaLabel': 'Virtual machines in the selected scope',
   'infra.clusters.ariaLabel': 'Clusters in the selected data center',
   'infra.vms.pagination.ariaLabel': 'Virtual machines pagination',
+  'infra.hosts.pagination.ariaLabel': 'Hosts pagination',
+  'infra.clusters.pagination.ariaLabel': 'Clusters pagination',
+  'infra.datacenters.pagination.ariaLabel': 'Data centers pagination',
   'infra.vms.loading': 'Loading virtual machines',
   'infra.vms.empty.title': 'No virtual machines here',
   'infra.vms.empty.body': 'Nothing runs in the selected scope.',
@@ -523,6 +537,9 @@ export const en = {
   // tree / breadcrumb / move copy live in the folders.* + tags.* namespaces.
   // ==========================================================================
   'vms.title': 'Virtual machines',
+  // create entry point; pairs with hosts.new / clusters.new on the inventory
+  // banners and their tree right-click menus
+  'vms.new': 'New VM',
   'vms.loading': 'Loading virtual machines',
   'vms.error.title': 'Could not load virtual machines',
   'vms.searchEmpty.title': 'No virtual machines match the search',
@@ -2602,9 +2619,6 @@ export const en = {
   'dc.iscsiMultipath.add': 'Add iSCSI bond',
   'dc.field.macPool': 'MAC address pool',
   'search.autocomplete.hint': 'Search syntax',
-  'infra.section.vms': 'Virtual machines ({count})',
-  'infra.section.hosts': 'Hosts ({count})',
-  'infra.section.clusters': 'Clusters ({count})',
   'infra.host.metaSeparator': '·',
 
   // Templates list (pages/TemplatesPage)

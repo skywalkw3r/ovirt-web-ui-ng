@@ -70,15 +70,26 @@ export function ClusterFormModal({
   cluster,
   isOpen,
   onClose,
+  initialDataCenterId,
 }: {
   cluster?: Cluster
   isOpen: boolean
   onClose: () => void
+  // Create mode only: preselects the Data center field, for the surfaces that
+  // open this from inside one data center (its tree node's right-click menu /
+  // banner button). Ignored in edit mode, where the data center comes from the
+  // cluster and the field is not editable anyway.
+  initialDataCenterId?: string
 }) {
   const t = useT()
   const isEdit = cluster !== undefined
+  // A blank create draft, scoped to the data center it was opened from when
+  // there is one. Used by both the initial seed and the re-seed below, so the
+  // preselection survives the modal being pointed at a different entity.
+  const newDraft = (): ClusterDraft =>
+    initialDataCenterId ? { ...blankDraft(), dataCenterId: initialDataCenterId } : blankDraft()
   const [draft, setDraft] = useState<ClusterDraft>(() =>
-    cluster ? clusterToDraft(cluster) : blankDraft(),
+    cluster ? clusterToDraft(cluster) : newDraft(),
   )
   // The migration policy is a built-in with no REST collection, so — like the
   // vNIC form's Public-Use permission — it rides beside the flat draft rather
@@ -92,7 +103,7 @@ export function ClusterFormModal({
   const [seededId, setSeededId] = useState(cluster?.id)
   if (seededId !== cluster?.id) {
     setSeededId(cluster?.id)
-    setDraft(cluster ? clusterToDraft(cluster) : blankDraft())
+    setDraft(cluster ? clusterToDraft(cluster) : newDraft())
     setMigrationPolicyId(cluster?.migration?.policy?.id ?? '')
   }
 

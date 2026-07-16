@@ -65,6 +65,20 @@
   --pf-v6-c-page__sidebar--Width: 4.25rem;
   --pf-v6-c-page__sidebar--xl--Width: 4.25rem;
 }
+/* …but unpin the masthead BRAND column from that shrunken track. At xl PF
+ * subgrids the masthead onto the page grid (page.css: `.pf-v6-c-page >
+ * .pf-v6-c-masthead` swaps GridTemplateColumns to `subgrid`), so the brand
+ * column IS the sidebar track — by design, to align the logo with the sidebar
+ * edge. Collapsing the rail to 4.25rem therefore shrinks the track under the
+ * logo, which overflows into the content column and is painted over by the
+ * search box (the first opaque thing there). A subgrid track takes its size
+ * from the PARENT grid and the parent's track is a fixed length, so no
+ * min-width on the brand item can grow it — the only fix is to stop
+ * subgridding. max-content sizes the column to the logo instead. Scoped to the
+ * collapsed state so the expanded shell keeps PF's sidebar-aligned brand. */
+:root .pf-v6-c-page.app-nav-collapsed > .pf-v6-c-masthead {
+  --pf-v6-c-masthead--m-display-inline--breakpoint--xl--GridTemplateColumns: max-content 1fr;
+}
 /* column layout only so the foot toggle can pin to the bottom (margin-top
  * auto); the nav itself keeps its natural height and PF's own row spacing —
  * do NOT flex-grow it, which stretches and spreads the items. */
@@ -533,6 +547,107 @@
   display: inline-flex;
   align-items: center;
   gap: var(--pf-t--global--spacer--sm);
+}
+
+/*
+ * ─── PaneHeader: the inventory panes' identity banner ────────────────────────
+ * The classes components/PaneHeader emits. Same division of labour as
+ * .app-page-header above (component emits hooks, this file lays them out), but
+ * a tinted banner rather than a bare title row: it identifies the selected
+ * entity for the whole grid beneath it, and as a flat line of text it lost that
+ * fight against a dense table. Secondary ground + a hairline border lift it off
+ * the page without inventing a color; the icon tile sits on the primary ground
+ * so it reads as inset. No divider — the banner's own edge does that job.
+ */
+/* Block padding stays a notch under the inline padding: the banner is two
+ * tight lines of text, so equal padding all round (spacer--md = 1rem, 2rem of
+ * vertical air) made it read as a mostly-empty card. The inline side keeps md
+ * so the icon tile and text are not cramped against the edge. */
+.app-pane-header {
+  display: flex;
+  align-items: center;
+  gap: var(--pf-t--global--spacer--sm);
+  padding-block: var(--pf-t--global--spacer--sm);
+  padding-inline: var(--pf-t--global--spacer--md);
+  margin-block-end: var(--pf-t--global--spacer--sm);
+  background-color: var(--pf-t--global--background--color--secondary--default);
+  border: 1px solid var(--pf-t--global--border--color--default);
+  border-radius: var(--pf-t--global--border--radius--medium);
+}
+/* entity-kind glyph in an inset tile — flex-shrink:0 so a long name can never
+ * squeeze it away (the same trap the Type column's glyph hit) */
+.app-pane-header__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 2rem;
+  block-size: 2rem;
+  flex-shrink: 0;
+  border-radius: var(--pf-t--global--border--radius--small);
+  background-color: var(--pf-t--global--background--color--primary--default);
+  border: 1px solid var(--pf-t--global--border--color--default);
+  color: var(--pf-t--global--icon--color--subtle);
+  font-size: var(--pf-t--global--font--size--lg);
+}
+.app-pane-header__body {
+  flex-grow: 1;
+  min-inline-size: 0;
+}
+.app-pane-header__identity {
+  display: flex;
+  align-items: center;
+  gap: var(--pf-t--global--spacer--sm);
+  flex-wrap: wrap;
+}
+/* the class owns spacing — kill PF Title's residual margin so the two lines
+ * sit tight (same fix .app-page-header needs) */
+.app-pane-header__identity > .pf-v6-c-title {
+  margin-block: 0;
+}
+.app-pane-header__meta {
+  font-size: var(--pf-t--global--font--size--sm);
+  color: var(--pf-t--global--text--color--subtle);
+  margin-block-start: var(--pf-t--global--spacer--xs);
+}
+/* the entity kind leads the meta line and is the one word in it that says what
+ * this thing IS — bold separates it from the locating facts that follow */
+.app-pane-header__kind {
+  font-weight: var(--pf-t--global--font--weight--body--bold);
+}
+/* A fact that names another entity kind (a cluster's data center, a host's
+ * cluster) leads with that kind's icon. inline-flex keeps the icon glued to its
+ * text so the pair never breaks across lines mid-fact; the icon inherits the
+ * meta line's subtle colour and sits a touch smaller than the text so it reads
+ * as a marker, not a control. */
+.app-pane-header__fact {
+  display: inline-flex;
+  gap: var(--pf-t--global--spacer--xs);
+  align-items: baseline;
+}
+.app-pane-header__fact svg {
+  /* baseline-aligned flex items ignore an svg's own baseline, so nudge it onto
+   * the text baseline rather than letting it ride high */
+  align-self: center;
+  font-size: var(--pf-t--global--font--size--xs);
+}
+.app-pane-header__actions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--pf-t--global--spacer--sm);
+  flex-shrink: 0;
+}
+
+/*
+ * ─── InventoryViewSwitcher, toolbar variant ──────────────────────────────────
+ * The switcher wears PF toggle-group classes when it rides InventoryToolbar
+ * (tree collapsed). Those classes are element-agnostic, but they are written
+ * for <button> and the switcher's items are routed <Link>s — so the anchor
+ * underline has to go, and the items need to center against the toolbar's
+ * other controls.
+ */
+.app-view-switcher .pf-v6-c-toggle-group__button {
+  text-decoration: none;
+  align-items: center;
 }
 
 /*

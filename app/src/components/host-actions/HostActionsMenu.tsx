@@ -42,6 +42,7 @@ import { ConfirmModal } from '../ConfirmModal'
 import { ContextMenu, type ContextMenuPosition } from '../context-menu/ContextMenu'
 import { ReinstallHostModal } from '../host-form/ReinstallHostModal'
 import { AssignTagsModal } from '../tags/AssignTagsModal'
+import { CreateVmWizardModal } from '../vm-create/CreateVmWizard'
 import { DiscoverIscsiModal } from './DiscoverIscsiModal'
 
 // Destructive/irreversible-enough actions confirm first (docs/COMPONENTS.md);
@@ -72,14 +73,22 @@ type Confirm =
 // host unmounts it via onClose once the menu is closed and nothing (modal or
 // mutation) is left to wait for. `includeOpenDetails` prepends navigation to
 // the host detail page; only the context-menu usage passes it.
+// `addVmClusterName` is opt-in the same way: it names the cluster this host
+// sits in, which both shows the Add VM item and preselects the wizard's
+// Cluster field. Callers that cannot resolve the name omit it and the item
+// stays hidden — a create dialog that cannot name its own scope is worse than
+// no entry point (the flat /hosts rows and the host detail header do not join
+// clusters, so they pass nothing and keep their current item set).
 export function HostActionsMenu({
   host,
   contextMenu,
   includeOpenDetails,
+  addVmClusterName,
 }: {
   host: Host
   contextMenu?: { position: ContextMenuPosition; onClose: () => void }
   includeOpenDetails?: boolean
+  addVmClusterName?: string
 }) {
   // context mode mounts open at the cursor; kebab mode opens on toggle click
   const [isOpen, setIsOpen] = useState(contextMenu !== undefined)
@@ -87,6 +96,7 @@ export function HostActionsMenu({
   const [reinstalling, setReinstalling] = useState(false)
   const [assigningTags, setAssigningTags] = useState(false)
   const [discoveringIscsi, setDiscoveringIscsi] = useState(false)
+  const [addingVm, setAddingVm] = useState(false)
   const action = useHostAction()
   const fence = useFenceHost()
   const manualFence = useConfirmHostRebooted()
@@ -132,7 +142,8 @@ export function HostActionsMenu({
   // component-owned modal is up AND no mutation is in flight — the hooks
   // toast from useMutation callbacks, which are lost if this unmounts before
   // the response lands.
-  const modalActive = confirm !== null || reinstalling || assigningTags || discoveringIscsi
+  const modalActive =
+    confirm !== null || reinstalling || assigningTags || discoveringIscsi || addingVm
   const onContextClose = contextMenu?.onClose
   useEffect(() => {
     if (!onContextClose || isOpen || modalActive || pending) return
@@ -245,7 +256,19 @@ export function HostActionsMenu({
           {t('infra.openDetails')}
         </DropdownItem>
       )}
-      {includeOpenDetails && <Divider component="li" />}
+      {/* Create, not lifecycle: a VM in THIS host's cluster. Sits with Open
+          details above the host's own verbs rather than among them. */}
+      {addVmClusterName !== undefined && (
+        <DropdownItem
+          onClick={() => {
+            setIsOpen(false)
+            setAddingVm(true)
+          }}
+        >
+          {t('vms.new')}
+        </DropdownItem>
+      )}
+      {(includeOpenDetails || addVmClusterName !== undefined) && <Divider component="li" />}
 
       {showApprove && (
         <DropdownItem
@@ -477,6 +500,15 @@ export function HostActionsMenu({
       {/* Mounted only while open so a typed CHAP password never lingers. */}
       {discoveringIscsi && (
         <DiscoverIscsiModal host={host} onClose={() => setDiscoveringIscsi(false)} />
+      )}
+
+      {/* Remounted per open (like every modal here) so a cancelled wizard
+          never leaks its half-filled state into the next one. */}
+      {addingVm && (
+        <CreateVmWizardModal
+          initialClusterName={addVmClusterName}
+          onClose={() => setAddingVm(false)}
+        />
       )}
     </>
   )

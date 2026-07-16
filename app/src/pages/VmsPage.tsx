@@ -420,7 +420,7 @@ export function VmsPage() {
       toCsv(
         exportColumns.map((column) => column.label),
         sorted.map((vm) =>
-          exportColumns.map((column) => (column.sortValue ?? column.exportValue)?.(vm, columnCtx)),
+          exportColumns.map((column) => (column.exportValue ?? column.sortValue)?.(vm, columnCtx)),
         ),
       ),
     )

@@ -35,6 +35,7 @@ import { FormattedMessage, useIntl } from 'react-intl'
 import { Link, Outlet, useRouterState } from '@tanstack/react-router'
 import { applyBrandFavicon } from '../branding/favicon'
 import { brandAssets } from '../branding/logos'
+import { engineWebUiUrl } from '../lib/engineWebUi'
 import { monitoringPortalUrl } from '../lib/monitoringPortal'
 import { useCapabilities } from '../auth/capabilities'
 import { useNavShortcuts } from '../hooks/useNavShortcuts'
@@ -391,7 +392,11 @@ export function AppShell() {
           min-content, and the logo <img> collapses that track to ~padding
           width, so the search box overlapped the clipped brand. minWidth
           max-content holds the track at the full logo width; the search column
-          takes the rest and shrinks (see GlobalSearchBox) — logo never clips. */}
+          takes the rest and shrinks (see GlobalSearchBox) — logo never clips.
+          This only reaches BELOW xl: at xl the masthead subgrids onto the page
+          grid and the brand track is the sidebar's, a fixed length no min-width
+          can grow — that case is handled in brand-tokens.css (.app-nav-collapsed
+          > .pf-v6-c-masthead). Don't "simplify" the two into one. */}
       <MastheadMain style={{ minWidth: 'max-content' }}>
         {/* No masthead toggle — the sidebar-foot chevron is the single collapse
             control, so there's one obvious affordance rather than two. */}
@@ -419,14 +424,35 @@ export function AppShell() {
                 <ToolbarItem alignSelf="center">
                   {/* which engine this session is signed in to (multi-engine).
                       A compact badge whose tooltip names the Hosted Engine FQDN
-                      (falling back to its URL); the focusable span opens it on
-                      hover and keyboard focus. */}
+                      (falling back to its URL), and which links out to that
+                      engine's own web UI (lib/engineWebUi.ts) — a plain external
+                      anchor, not a router Link, so it leaves the SPA.
+                      The anchor IS the Tooltip's child (not a wrapper around
+                      it): PF's Popper binds a native, non-bubbling 'focus' to
+                      its trigger element, so a focusable ancestor would never
+                      see the anchor's focus — the badge would lose its
+                      keyboard tooltip and grow a second tab stop. */}
                   <Tooltip content={engineTooltip} position="bottom" entryDelay={300}>
-                    <span tabIndex={0} style={{ display: 'inline-flex', whiteSpace: 'nowrap' }}>
-                      <Label isCompact color="blue" variant="outline" icon={<ServerIcon />}>
+                    <a
+                      href={engineWebUiUrl()}
+                      target="_blank"
+                      rel="noopener"
+                      aria-label={intl.formatMessage(
+                        { id: 'masthead.engineWebUi' },
+                        { engine: activeServer.fqdn ?? activeServer.name },
+                      )}
+                      style={{ display: 'inline-flex', whiteSpace: 'nowrap' }}
+                    >
+                      <Label
+                        isCompact
+                        color="blue"
+                        variant="outline"
+                        icon={<ServerIcon />}
+                        isClickable
+                      >
                         {activeServer.name}
                       </Label>
-                    </span>
+                    </a>
                   </Tooltip>
                 </ToolbarItem>
               )}

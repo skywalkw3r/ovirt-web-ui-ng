@@ -56,8 +56,10 @@ test('the infrastructure tree scopes the content pane by host and cluster', asyn
 })
 
 // The scoped-VM table (root/host/DC scope) carries its own column picker
-// (area 'infra-vms'), placed on the 'Virtual machines (N)' heading row; the
-// cluster-node HOSTS table carries a second one (area 'infra-hosts').
+// (area 'infra-vms') on its PaneToolbar; the cluster-node HOSTS table carries a
+// second one (area 'infra-hosts') on its own. One picker per pane is why they
+// live on the pane toolbars rather than one page-level toolbar — a shared one
+// would retarget on every tab switch.
 test('the scoped-VM table has a working column picker', async ({ page }) => {
   await login(page, { path: '/hosts-clusters' })
   await page.getByRole('tab', { name: 'Virtual machines' }).click()
@@ -155,8 +157,12 @@ test('the root pane offers Clusters / Hosts / Virtual machines tabs', async ({ p
   const vmRows = page.locator('table[aria-label="Virtual machines in the selected scope"] tbody tr')
   await expect(vmRows).toHaveCount(10)
 
-  // selecting a host leaves tab-land: the host pane has no tab strip
+  // A host is a leaf: its pane narrows to the single Virtual machines tab. The
+  // strip itself still renders (it did not, before — it vanished, and the grid
+  // under it jumped), so the outer-scope tabs are the only thing that goes.
   const tree = page.getByLabel('Infrastructure tree')
   await tree.getByText('node-01', { exact: true }).click()
   await expect(page.getByRole('tab', { name: 'Clusters', exact: true })).toHaveCount(0)
+  await expect(page.getByRole('tab', { name: 'Hosts', exact: true })).toHaveCount(0)
+  await expect(page.getByRole('tab', { name: 'Virtual machines' })).toBeVisible()
 })

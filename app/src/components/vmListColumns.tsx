@@ -51,7 +51,15 @@ export interface VmListColumn {
   // opt-in header sort: extract the comparable value for this column (see
   // hooks/useColumnSort — missing values sink to the end in both directions)
   sortValue?: (row: VmListRow, ctx: VmListCtx) => string | number | undefined
-  // CSV export value for columns deliberately kept out of header sort (status)
+  // What the CSV export writes for this column. Takes precedence over
+  // sortValue, which the export otherwise falls back to.
+  //
+  // Needed in two cases: a column with no header sort at all (status), and a
+  // column whose sortValue is a RAW machine number that must stay raw to sort
+  // correctly but is unreadable in a spreadsheet — memory in bytes, uptime in
+  // seconds, creation time in epoch millis (which Excel renders as
+  // 1.78367E+12). Those export the same string the cell renders. Return
+  // undefined for "no value" so the cell is empty rather than an em dash.
   exportValue?: (row: VmListRow, ctx: VmListCtx) => string | number | undefined
   cell: (row: VmListRow, ctx: VmListCtx) => ReactNode
 }
@@ -202,7 +210,12 @@ export const VM_LIST_COLUMNS: VmListColumn[] = [
   {
     key: 'memory',
     labelId: 'vms.column.memory',
+    // raw bytes sort correctly; "2 GiB" exports readably
     sortValue: (row) => rowEntity(row).memory,
+    exportValue: (row) => {
+      const memory = rowEntity(row).memory
+      return memory !== undefined ? formatBytes(memory) : undefined
+    },
     defaultHidden: true,
     modifier: 'nowrap',
     cell: (row) => formatBytes(rowEntity(row).memory),
@@ -229,6 +242,14 @@ export const VM_LIST_COLUMNS: VmListColumn[] = [
     labelId: 'vms.column.uptime',
     sortValue: (row) =>
       row.kind === 'vm' && row.vm.status === 'up' ? vmUptimeSeconds(row.vm) : undefined,
+    // seconds sort correctly; "4d 6h 12m" exports readably. Not formatUptime()
+    // straight off sortValue: that renders an em dash for a missing value,
+    // which is table furniture, not data.
+    exportValue: (row) => {
+      if (row.kind !== 'vm' || row.vm.status !== 'up') return undefined
+      const seconds = vmUptimeSeconds(row.vm)
+      return seconds !== undefined ? formatUptime(seconds) : undefined
+    },
     modifier: 'nowrap',
     // elapsed.time statistic (seconds since the current run booted) — NOT
     // start_time, which the engine pins at creation/import; see vmUptimeSeconds
@@ -239,6 +260,16 @@ export const VM_LIST_COLUMNS: VmListColumn[] = [
     key: 'created',
     labelId: 'vms.column.created',
     sortValue: (row) => rowEntity(row).creation_time,
+    // Epoch millis sort correctly but a spreadsheet renders them as
+    // 1.78367E+12. ISO 8601 rather than the cell's toLocaleDateString: an
+    // export outlives the session that made it and gets mailed around, so
+    // 15/06 vs 06/15 must not depend on who opens it — and ISO still sorts
+    // chronologically as plain text. It also keeps the time of day, which the
+    // cell drops for width.
+    exportValue: (row) => {
+      const created = rowEntity(row).creation_time
+      return created !== undefined ? new Date(created).toISOString() : undefined
+    },
     defaultHidden: true,
     modifier: 'nowrap',
     cell: (row) => {

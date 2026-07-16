@@ -1,29 +1,17 @@
+import { useMemo, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from 'react'
 import {
-  Fragment,
-  useMemo,
-  useState,
-  type MouseEvent as ReactMouseEvent,
-  type ReactNode,
-} from 'react'
-import {
+  Badge,
   Button,
-  Content,
-  Divider,
   EmptyState,
   EmptyStateBody,
   Flex,
   FlexItem,
+  Label,
   PageSection,
-  Pagination,
   Skeleton,
   Tab,
   TabTitleText,
   Tabs,
-  Title,
-  Toolbar,
-  ToolbarContent,
-  ToolbarGroup,
-  ToolbarItem,
   TreeView,
   type TreeViewDataItem,
 } from '@patternfly/react-core'
@@ -46,20 +34,21 @@ import {
 import { DataCenterContextMenu } from '../components/datacenter-actions/DataCenterContextMenu'
 import { HostActionsMenu } from '../components/host-actions/HostActionsMenu'
 import { NewHostModal } from '../components/host-form/NewHostModal'
+import { ClusterHealthBadge } from '../components/ClusterHealthBadge'
 import { InventoryTreeSidebar } from '../components/InventoryTreeSidebar'
 import { InventoryViewSwitcher } from '../components/InventoryViewSwitcher'
-import { BookmarkMenu } from '../components/list-toolbar/BookmarkMenu'
-import { ColumnPicker } from '../components/list-toolbar/ColumnPicker'
+import { InventoryToolbar } from '../components/list-toolbar/InventoryToolbar'
+import { PaneToolbar } from '../components/list-toolbar/PaneToolbar'
 import { ResizableTh, resizableTableProps } from '../components/list-toolbar/ResizableTh'
-import { SearchInput } from '../components/list-toolbar/SearchInput'
 import { HostedEngineCrown } from '../components/HostedEngineCrown'
 import { hostStatusColor, hostStatusIcon } from '../components/hostStatus'
 import { HostStatusCell, UsageBar, VmCountCell } from '../components/HostListCells'
 import { ListPageHeader } from '../components/ListPageHeader'
 import { NotPermitted } from '../components/NotPermitted'
-import { RefreshControl } from '../components/RefreshControl'
-import type { StatusBadgeColor } from '../components/StatusBadge'
+import { PaneHeader } from '../components/PaneHeader'
+import { StatusBadge, type StatusBadgeColor } from '../components/StatusBadge'
 import { VmActionsMenu } from '../components/VmActionsMenu'
+import { CreateVmButton } from '../components/vm-create/CreateVmWizard'
 import {
   VM_LIST_COLUMNS,
   type VmListColumn,
@@ -71,6 +60,7 @@ import { sortRows, useColumnSort } from '../hooks/useColumnSort'
 import { useDataCenters, useClustersInventory } from '../hooks/useAdminResources'
 import { useHosts, useHostsUsage } from '../hooks/useHosts'
 import { useVms } from '../hooks/useVms'
+import { downloadCsv, toCsv } from '../lib/csv'
 import { formatBytes, hostSpmText, statusText } from '../lib/format'
 import { hostGauges, hostNetworkPercent } from '../lib/utilization'
 import type { MessageId } from '../i18n/messages/en'
@@ -98,16 +88,7 @@ const INFRA_SELECTED_KEY = 'console-infra-selected'
 type NodeKind = 'datacenter' | 'cluster' | 'host'
 const nodeId = (kind: NodeKind, id: string) => `${kind}:${id}`
 
-type PaneTabKey = 'vms' | 'hosts' | 'clusters'
-
-// Scoped-VM table paging, matching the VMs & Templates view: the root
-// selection of a large install is every VM as a table row, so the table pages
-// instead of rendering thousands of DOM rows at once.
-const PER_PAGE_OPTIONS = [
-  { title: '20', value: 20 },
-  { title: '50', value: 50 },
-  { title: '100', value: 100 },
-]
+type PaneTabKey = 'vms' | 'hosts' | 'clusters' | 'datacenters'
 
 const byName = <T extends { name?: string }>(a: T, b: T) =>
   (a.name ?? '').localeCompare(b.name ?? '')
@@ -374,6 +355,97 @@ const INFRA_HOST_COLUMNS: InfraHostColumn[] = [
 ]
 
 // Drill-down pane for a DATA CENTER selection: its clusters as a grid —
+// Same coloring policy as the flat /datacenters page: only the two states an
+// admin acts on routinely get a signal, everything else stays grey.
+function DataCenterStatusCell({ status }: { status?: string }) {
+  if (!status) return <>—</>
+  const normalized = status.toLowerCase()
+  const color = normalized === 'up' ? 'green' : normalized === 'maintenance' ? 'yellow' : 'grey'
+  return <StatusBadge color={color}>{statusText(status)}</StatusBadge>
+}
+
+// The root pane's Data centers grid (area 'infra-datacenters') — the outermost
+// rung of the drill hierarchy, so it exists only at the root (inside a DC there
+// is nothing to list). Same column set as the flat /datacenters page, which is
+// what lets that page stay out of the nav; the free-text columns pick up the
+// truncate+title treatment the infra grids use. Rows carry no kebab: a click
+// drills the tree into the DC, right-click opens the shared DataCenterContextMenu.
+interface InfraDataCenterColumn {
+  key: string
+  labelId: MessageId
+  always?: boolean
+  defaultHidden?: boolean
+  modifier?: 'truncate'
+  title?: (dc: DataCenter) => string | undefined
+  sortValue?: (dc: DataCenter) => string | number | undefined
+  cell: (dc: DataCenter, t: ReturnType<typeof useT>) => ReactNode
+}
+
+const INFRA_DATACENTER_COLUMNS: InfraDataCenterColumn[] = [
+  {
+    key: 'name',
+    labelId: 'common.field.name',
+    always: true,
+    modifier: 'truncate',
+    title: (dc) => dc.name,
+    sortValue: (dc) => dc.name,
+    cell: (dc) => (
+      <Link to="/datacenters/$dataCenterId" params={{ dataCenterId: dc.id }}>
+        {dc.name}
+      </Link>
+    ),
+  },
+  {
+    key: 'storageType',
+    labelId: 'datacenters.column.storageType',
+    // dc.local: the single-host local-storage kind vs the ordinary shared kind
+    sortValue: (dc) => (dc.local === undefined ? undefined : dc.local ? 'local' : 'shared'),
+    cell: (dc, t) =>
+      dc.local === undefined
+        ? '—'
+        : dc.local
+          ? t('datacenters.storageLocal')
+          : t('datacenters.storageShared'),
+  },
+  {
+    key: 'status',
+    labelId: 'common.field.status',
+    sortValue: (dc) => (dc.status === undefined ? undefined : statusText(dc.status)),
+    cell: (dc) => <DataCenterStatusCell status={dc.status} />,
+  },
+  {
+    key: 'compatVersion',
+    labelId: 'common.field.compatVersion',
+    sortValue: (dc) =>
+      dc.version?.major !== undefined ? `${dc.version.major}.${dc.version.minor ?? 0}` : undefined,
+    cell: (dc) => compatString(dc.version) ?? '—',
+  },
+  {
+    key: 'storageFormat',
+    labelId: 'datacenters.column.storageFormat',
+    defaultHidden: true,
+    sortValue: (dc) => dc.storage_format,
+    cell: (dc) => dc.storage_format ?? '—',
+  },
+  {
+    key: 'comment',
+    labelId: 'common.field.comment',
+    defaultHidden: true,
+    modifier: 'truncate',
+    title: (dc) => dc.comment || undefined,
+    sortValue: (dc) => dc.comment || undefined,
+    cell: (dc) => dc.comment || '—',
+  },
+  {
+    key: 'description',
+    labelId: 'common.field.description',
+    modifier: 'truncate',
+    title: (dc) => dc.description || undefined,
+    sortValue: (dc) => dc.description || undefined,
+    cell: (dc) => dc.description || '—',
+  },
+]
+
 // webadmin's DC → Clusters subtab — completing the tree's drill hierarchy
 // (root → VMs, DC → clusters, cluster → hosts, host → VMs). Host/VM tallies
 // join client-side over the cached inventories through ctx. Rows carry no
@@ -463,45 +535,13 @@ const INFRA_CLUSTER_COLUMNS: InfraClusterColumn[] = [
 type LabeledVmColumn = VmListColumn & { label: string }
 type LabeledHostColumn = InfraHostColumn & { label: string }
 type LabeledClusterColumn = InfraClusterColumn & { label: string }
+type LabeledDataCenterColumn = InfraDataCenterColumn & { label: string }
 type SortHandle = ReturnType<typeof useColumnSort>
 
 // A row click means "drill into this cluster" only when it lands on the row
 // itself — the name link and any future controls keep their own behavior.
 function isInteractiveTarget(target: EventTarget | null): boolean {
   return target instanceof Element && target.closest('a, button, input, label') !== null
-}
-
-// Toolbar mirrors the VMs & Templates view: the tree filter (search +
-// bookmark) on the left, refresh control pinned to the end.
-function InfraFilterToolbar({
-  filter,
-  onFilterChange,
-}: {
-  filter: string
-  onFilterChange: (value: string) => void
-}) {
-  const t = useT()
-  return (
-    <Toolbar style={{ paddingBottom: 'var(--pf-t--global--spacer--md)' }}>
-      <ToolbarContent>
-        <ToolbarItem style={{ width: '22rem' }}>
-          <SearchInput
-            value={filter}
-            onChange={onFilterChange}
-            onCommit={() => {}}
-            hint={t('infra.filter.hint')}
-            ariaLabel={t('infra.filter.ariaLabel')}
-            trailing={<BookmarkMenu area="infra" currentQuery={filter} onApply={onFilterChange} />}
-          />
-        </ToolbarItem>
-        <ToolbarGroup align={{ default: 'alignEnd' }}>
-          <ToolbarItem>
-            <RefreshControl />
-          </ToolbarItem>
-        </ToolbarGroup>
-      </ToolbarContent>
-    </Toolbar>
-  )
 }
 
 // The navigator column: the inventory-view tab strip pinned full-width atop
@@ -548,28 +588,9 @@ function InfraTreePanel({
   )
 }
 
-// The muted meta line under a pane header title: the entity kind first, then
-// each defined locating fact joined by the separator.
-function PaneMeta({ kindId, facts }: { kindId: MessageId; facts: (string | undefined)[] }) {
-  const t = useT()
-  return (
-    <Content component="small">
-      <FormattedMessage id={kindId} />
-      {facts
-        .filter((fact): fact is string => fact !== undefined)
-        .map((fact, index) => (
-          <Fragment key={index}>
-            {' '}
-            {t('infra.host.metaSeparator')} {fact}
-          </Fragment>
-        ))}
-    </Content>
-  )
-}
-
-// Cluster identity header: icon + name + compatibility + Open details inline
-// on line one, the locating facts (kind · data center · cpu model) beneath,
-// the caller's create action pinned right.
+// Cluster identity banner: name + compatibility + Open details on line one,
+// the locating facts (kind · data center · cpu model) beneath, the caller's
+// create action pinned right.
 function ClusterPaneHeader({
   cluster,
   dcName,
@@ -582,143 +603,162 @@ function ClusterPaneHeader({
   const t = useT()
   const compat = compatString(cluster.version)
   return (
-    <>
-      <Flex
-        alignItems={{ default: 'alignItemsCenter' }}
-        gap={{ default: 'gapMd' }}
-        flexWrap={{ default: 'nowrap' }}
-      >
-        <FlexItem grow={{ default: 'grow' }} style={{ minWidth: 0 }}>
-          <Flex alignItems={{ default: 'alignItemsCenter' }} gap={{ default: 'gapSm' }}>
-            <FlexItem>
-              <ClusterIcon />
-            </FlexItem>
-            <FlexItem>
-              <Title headingLevel="h2" size="lg">
-                {cluster.name}
-              </Title>
-            </FlexItem>
-            {compat !== undefined && (
-              <FlexItem>
-                <Content component="small">{t('infra.compat', { version: compat })}</Content>
-              </FlexItem>
-            )}
-            <FlexItem>
-              <Link to="/clusters/$clusterId" params={{ clusterId: cluster.id }}>
-                <FormattedMessage id="infra.openDetails" />
-              </Link>
-            </FlexItem>
-          </Flex>
-          <PaneMeta kindId="infra.kind.cluster" facts={[dcName, cluster.cpu?.type]} />
-        </FlexItem>
-        <FlexItem>{actions}</FlexItem>
-      </Flex>
-      <Divider style={{ margin: 'var(--pf-t--global--spacer--sm) 0' }} />
-    </>
+    <PaneHeader
+      icon={<ClusterIcon />}
+      name={cluster.name}
+      kindId="infra.kind.cluster"
+      // the data center this cluster sits in, marked with the DC icon so it
+      // is not read as just another unlabelled fact beside the CPU type
+      facts={[
+        dcName !== undefined
+          ? { icon: <InfrastructureIcon title={t('infra.kind.datacenter')} />, text: dcName }
+          : undefined,
+        cluster.cpu?.type,
+      ]}
+      actions={actions}
+      badges={
+        // A Label, not bare text: it sits between the h2 and the Open details
+        // link, so unstyled text there reads as part of the link.
+        compat !== undefined ? (
+          <Label isCompact color="grey">
+            {t('infra.compat', { version: compat })}
+          </Label>
+        ) : undefined
+      }
+      details={
+        <Link to="/clusters/$clusterId" params={{ clusterId: cluster.id }}>
+          <FormattedMessage id="infra.openDetails" />
+        </Link>
+      }
+    />
   )
 }
 
-// Host identity header: icon + name + live status on line one, the locating
-// facts (kind · cluster · address) beneath, Open details + the host action
-// kebab pinned right.
-function HostPaneHeader({ host, clusterName }: { host: Host; clusterName: string | undefined }) {
+// Host identity banner: name + live status + Open details on line one, the
+// locating facts (kind · cluster · address) beneath, the host action kebab
+// pinned right. Open details sits inline by the name here, as it already did on
+// the cluster and DC banners — it identifies the entity, it is not an action.
+function HostPaneHeader({
+  host,
+  clusterName,
+  actions,
+}: {
+  host: Host
+  clusterName: string | undefined
+  // the scope's create actions; the host's own kebab is appended here rather
+  // than passed in, so it always sits last
+  actions: ReactNode
+}) {
   const t = useT()
   return (
-    <>
-      <Flex
-        alignItems={{ default: 'alignItemsCenter' }}
-        gap={{ default: 'gapMd' }}
-        flexWrap={{ default: 'nowrap' }}
-      >
-        <FlexItem grow={{ default: 'grow' }} style={{ minWidth: 0 }}>
-          <Flex alignItems={{ default: 'alignItemsCenter' }} gap={{ default: 'gapSm' }}>
-            <FlexItem>
-              <ServerIcon />
-            </FlexItem>
-            <FlexItem>
-              <Title headingLevel="h2" size="lg">
-                {host.name}
-              </Title>
-            </FlexItem>
-            <FlexItem>
-              <HostStatusCell host={host} updateLabel={t('host.upgrade.available')} />
-            </FlexItem>
-          </Flex>
-          <PaneMeta kindId="infra.kind.host" facts={[clusterName, host.address]} />
-        </FlexItem>
-        <FlexItem>
-          <Link to="/hosts/$hostId" params={{ hostId: host.id }}>
-            <FormattedMessage id="infra.openDetails" />
-          </Link>
-        </FlexItem>
-        <FlexItem>
+    <PaneHeader
+      icon={<ServerIcon />}
+      name={host.name}
+      kindId="infra.kind.host"
+      // the cluster this host belongs to, marked with the cluster icon (the
+      // address beside it needs no marker — it is self-evidently an address)
+      facts={[
+        clusterName !== undefined
+          ? { icon: <ClusterIcon title={t('infra.kind.cluster')} />, text: clusterName }
+          : undefined,
+        host.address,
+      ]}
+      badges={<HostStatusCell host={host} updateLabel={t('host.upgrade.available')} />}
+      details={
+        <Link to="/hosts/$hostId" params={{ hostId: host.id }}>
+          <FormattedMessage id="infra.openDetails" />
+        </Link>
+      }
+      actions={
+        <>
+          {actions}
           <HostActionsMenu host={host} />
-        </FlexItem>
-      </Flex>
-      <Divider style={{ margin: 'var(--pf-t--global--spacer--sm) 0' }} />
-    </>
+        </>
+      }
+    />
   )
 }
 
-// Data-center identity header: icon + name + Open details inline on line one,
-// the kind + compatibility/storage facts beneath, the caller's create actions
-// pinned right.
+// The root banner: the whole estate, counted. It stands in for an identity
+// header when nothing is selected (including when a remembered selection no
+// longer resolves), so exactly one banner renders at every layer and the tab
+// strip below never shifts as the tree selection moves.
+//
+// No kind — "All infrastructure" is an aggregate, not an entity. The VM total
+// rides the VM collection, which lands after the three cheap inventory reads
+// that gate this pane, so it is held back rather than reported as zero while
+// it loads or if it failed.
+function InfraRootPaneHeader({
+  dcCount,
+  clusterCount,
+  hostCount,
+  vmCount,
+  actions,
+}: {
+  dcCount: number
+  clusterCount: number
+  hostCount: number
+  vmCount: number | undefined
+  actions: ReactNode
+}) {
+  const t = useT()
+  return (
+    <PaneHeader
+      icon={<InfrastructureIcon />}
+      name={t('infra.tree.allLabel')}
+      facts={[
+        t('infra.root.datacenters', { count: dcCount }),
+        t('infra.root.clusters', { count: clusterCount }),
+        t('infra.root.hosts', { count: hostCount }),
+        vmCount === undefined ? undefined : t('infra.root.vms', { count: vmCount }),
+      ]}
+      actions={actions}
+    />
+  )
+}
+
+// Data-center identity banner: name + Open details on line one, the kind +
+// compatibility/storage facts beneath. Pure identity — see ClusterPaneHeader on
+// where the create actions went.
 function DataCenterPaneHeader({ dc, actions }: { dc: DataCenter; actions: ReactNode }) {
   const t = useT()
   const compat = compatString(dc.version)
   return (
-    <>
-      <Flex
-        alignItems={{ default: 'alignItemsCenter' }}
-        gap={{ default: 'gapMd' }}
-        flexWrap={{ default: 'nowrap' }}
-      >
-        <FlexItem grow={{ default: 'grow' }} style={{ minWidth: 0 }}>
-          <Flex alignItems={{ default: 'alignItemsCenter' }} gap={{ default: 'gapSm' }}>
-            <FlexItem>
-              <InfrastructureIcon />
-            </FlexItem>
-            <FlexItem>
-              <Title headingLevel="h2" size="lg">
-                {dc.name}
-              </Title>
-            </FlexItem>
-            <FlexItem>
-              <Link to="/datacenters/$dataCenterId" params={{ dataCenterId: dc.id }}>
-                <FormattedMessage id="infra.openDetails" />
-              </Link>
-            </FlexItem>
-          </Flex>
-          <PaneMeta
-            kindId="infra.kind.datacenter"
-            facts={[
-              compat !== undefined ? t('infra.compat', { version: compat }) : undefined,
-              dc.storage_format !== undefined
-                ? t('infra.datacenter.storage', { format: dc.storage_format })
-                : undefined,
-            ]}
-          />
-        </FlexItem>
-        <FlexItem>{actions}</FlexItem>
-      </Flex>
-      <Divider style={{ margin: 'var(--pf-t--global--spacer--sm) 0' }} />
-    </>
+    <PaneHeader
+      icon={<InfrastructureIcon />}
+      name={dc.name}
+      kindId="infra.kind.datacenter"
+      actions={actions}
+      facts={[
+        compat !== undefined ? t('infra.compat', { version: compat }) : undefined,
+        dc.storage_format !== undefined
+          ? t('infra.datacenter.storage', { format: dc.storage_format })
+          : undefined,
+      ]}
+      details={
+        <Link to="/datacenters/$dataCenterId" params={{ dataCenterId: dc.id }}>
+          <FormattedMessage id="infra.openDetails" />
+        </Link>
+      }
+    />
   )
 }
 
-// One hosts grid serves the cluster pane and the DC/root Hosts tab — picker
-// (area 'infra-hosts'), header sorts and row kebabs stay identical wherever
-// the section shows.
+// One hosts grid serves the cluster pane and the DC/root Hosts tab — header
+// sorts and row kebabs stay identical wherever the section shows. Its paging,
+// export and column picker (area 'infra-hosts') ride the PaneToolbar the
+// caller renders above it; the tab strip already names the pane, so the grid
+// carries no heading of its own.
 function ScopedHostsSection({
   rows,
-  columns,
   visibleColumns,
   prefs,
   sort,
   ctx,
 }: {
+  // the current page of hosts — paging clamps, so an empty slice means an
+  // empty scope
   rows: Host[]
-  columns: LabeledHostColumn[]
   visibleColumns: LabeledHostColumn[]
   prefs: ColumnPrefs
   sort: SortHandle
@@ -727,31 +767,6 @@ function ScopedHostsSection({
   const t = useT()
   return (
     <>
-      {/* The hosts table's column picker (area 'infra-hosts') rides
-                    the section heading row, same as the scoped-VM table's. */}
-      <Flex
-        justifyContent={{ default: 'justifyContentSpaceBetween' }}
-        alignItems={{ default: 'alignItemsCenter' }}
-        flexWrap={{ default: 'nowrap' }}
-        style={{ marginBottom: 'var(--pf-t--global--spacer--sm)' }}
-      >
-        <FlexItem>
-          <Title headingLevel="h3" size="md">
-            {t('infra.section.hosts', { count: rows.length })}
-          </Title>
-        </FlexItem>
-        {rows.length > 0 && (
-          <FlexItem>
-            <ColumnPicker
-              columns={columns}
-              isVisible={prefs.isVisible}
-              onToggle={prefs.toggle}
-              onReset={prefs.reset}
-            />
-          </FlexItem>
-        )}
-      </Flex>
-
       {rows.length === 0 ? (
         <EmptyState titleText={t('hosts.empty.title')}>
           <EmptyStateBody>{t('hosts.empty.body')}</EmptyStateBody>
@@ -816,9 +831,95 @@ function ScopedHostsSection({
 // One clusters grid serves the DC pane and the root Clusters tab. Clicking a
 // row drills the tree into that cluster; right-click opens the shared cluster
 // menu. Rows carry no kebab — this inventory pane is read/browse only.
+// The root pane's Data centers grid. Clicking a row drills the tree into that
+// data center; right-click opens the shared DC menu. Same read/browse posture
+// as the clusters grid — no row kebab.
+function ScopedDataCentersSection({
+  rows,
+  visibleColumns,
+  prefs,
+  sort,
+  onDrill,
+  onRowContextMenu,
+}: {
+  // the current page of data centers — see ScopedHostsSection on the empty check
+  rows: DataCenter[]
+  visibleColumns: LabeledDataCenterColumn[]
+  prefs: ColumnPrefs
+  sort: SortHandle
+  onDrill: (dcId: string) => void
+  onRowContextMenu: (event: ReactMouseEvent, dc: DataCenter) => void
+}) {
+  const t = useT()
+  return (
+    <>
+      {rows.length === 0 ? (
+        <EmptyState titleText={t('datacenters.empty.title')}>
+          <EmptyStateBody>{t('datacenters.empty.body')}</EmptyStateBody>
+        </EmptyState>
+      ) : (
+        <div className="app-table-viewport">
+          <Table
+            aria-label={t('datacenters.table.ariaLabel')}
+            variant="compact"
+            {...resizableTableProps(prefs)}
+          >
+            <Thead>
+              <Tr>
+                {visibleColumns.map((column, index) => (
+                  <ResizableTh
+                    key={column.key}
+                    columnKey={column.key}
+                    label={column.label}
+                    prefs={prefs}
+                    modifier={column.modifier}
+                    sort={
+                      column.sortValue !== undefined
+                        ? sort.thSort(
+                            visibleColumns.map((c) => c.key),
+                            index,
+                          )
+                        : undefined
+                    }
+                  >
+                    {column.label}
+                  </ResizableTh>
+                ))}
+              </Tr>
+            </Thead>
+            <Tbody>
+              {rows.map((dc) => (
+                <Tr
+                  key={dc.id}
+                  isClickable
+                  onClick={(event) => {
+                    if (isInteractiveTarget(event.target)) return
+                    onDrill(dc.id)
+                  }}
+                  onContextMenu={(event) => onRowContextMenu(event, dc)}
+                >
+                  {visibleColumns.map((column) => (
+                    <Td
+                      key={column.key}
+                      dataLabel={column.label}
+                      modifier={column.modifier}
+                      title={column.title?.(dc)}
+                    >
+                      {column.cell(dc, t)}
+                    </Td>
+                  ))}
+                </Tr>
+              ))}
+            </Tbody>
+          </Table>
+        </div>
+      )}
+    </>
+  )
+}
+
 function ScopedClustersSection({
   rows,
-  columns,
   visibleColumns,
   prefs,
   sort,
@@ -826,8 +927,8 @@ function ScopedClustersSection({
   onDrill,
   onRowContextMenu,
 }: {
+  // the current page of clusters — see ScopedHostsSection on the empty check
   rows: Cluster[]
-  columns: LabeledClusterColumn[]
   visibleColumns: LabeledClusterColumn[]
   prefs: ColumnPrefs
   sort: SortHandle
@@ -838,29 +939,6 @@ function ScopedClustersSection({
   const t = useT()
   return (
     <>
-      <Flex
-        justifyContent={{ default: 'justifyContentSpaceBetween' }}
-        alignItems={{ default: 'alignItemsCenter' }}
-        flexWrap={{ default: 'nowrap' }}
-        style={{ marginBottom: 'var(--pf-t--global--spacer--sm)' }}
-      >
-        <FlexItem>
-          <Title headingLevel="h3" size="md">
-            {t('infra.section.clusters', { count: rows.length })}
-          </Title>
-        </FlexItem>
-        {rows.length > 0 && (
-          <FlexItem>
-            <ColumnPicker
-              columns={columns}
-              isVisible={prefs.isVisible}
-              onToggle={prefs.toggle}
-              onReset={prefs.reset}
-            />
-          </FlexItem>
-        )}
-      </Flex>
-
       {rows.length === 0 ? (
         <EmptyState titleText={t('clusters.empty.title')}>
           <EmptyStateBody>{t('clusters.empty.body')}</EmptyStateBody>
@@ -929,17 +1007,13 @@ function ScopedClustersSection({
 // The scoped-VM pane, shared by every selection layer. It owns its own four
 // states: the tree renders from the cheap inventory reads, so a slow (or
 // failed) VM collection only ever blanks this table, never the whole view.
-// Sort, paging and prefs stay page-owned (props) — the pane remounts when the
-// selection moves it between the bare and tabbed positions.
+// Sort, paging and prefs stay page-owned (props) because the pane unmounts on
+// every tab switch; its paging, export and picker ride the caller's
+// PaneToolbar, which sits above all four states so the chrome holds its place
+// while the rows load.
 function ScopedVmsPane({
   vmsQuery,
-  scopedVms,
   pagedVms,
-  currentPage,
-  perPage,
-  onSetPage,
-  onPerPageSelect,
-  columns,
   visibleColumns,
   prefs,
   sort,
@@ -947,13 +1021,8 @@ function ScopedVmsPane({
   onRowContextMenu,
 }: {
   vmsQuery: ReturnType<typeof useVms>
-  scopedVms: Vm[]
+  // the current page of VMs — see ScopedHostsSection on the empty check
   pagedVms: Vm[]
-  currentPage: number
-  perPage: number
-  onSetPage: (page: number) => void
-  onPerPageSelect: (perPage: number, page: number) => void
-  columns: LabeledVmColumn[]
   visibleColumns: LabeledVmColumn[]
   prefs: ColumnPrefs
   sort: SortHandle
@@ -984,59 +1053,7 @@ function ScopedVmsPane({
 
       {!vmsQuery.isPending && !vmsQuery.isError && (
         <>
-          {/* One section heading for host / DC / root — the scoped VM
-                        count already resolves per selection (host VMs, DC subtree,
-                        or every VM at the root). Pagination + the column picker
-                        ride the same row, pushed to the right edge. */}
-          <Flex
-            justifyContent={{ default: 'justifyContentSpaceBetween' }}
-            alignItems={{ default: 'alignItemsCenter' }}
-            flexWrap={{ default: 'nowrap' }}
-            style={{ marginBottom: 'var(--pf-t--global--spacer--sm)' }}
-          >
-            <FlexItem>
-              <Title headingLevel="h3" size="md">
-                {t('infra.section.vms', { count: scopedVms.length })}
-              </Title>
-            </FlexItem>
-            {scopedVms.length > 0 && (
-              <FlexItem>
-                <Flex
-                  alignItems={{ default: 'alignItemsCenter' }}
-                  gap={{ default: 'gapSm' }}
-                  flexWrap={{ default: 'nowrap' }}
-                >
-                  <FlexItem>
-                    <Pagination
-                      isCompact
-                      variant="top"
-                      itemCount={scopedVms.length}
-                      page={currentPage}
-                      perPage={perPage}
-                      perPageOptions={PER_PAGE_OPTIONS}
-                      onSetPage={(_event, nextPage) => onSetPage(nextPage)}
-                      onPerPageSelect={(_event, nextPerPage, nextPage) =>
-                        onPerPageSelect(nextPerPage, nextPage)
-                      }
-                      titles={{
-                        paginationAriaLabel: t('infra.vms.pagination.ariaLabel'),
-                      }}
-                    />
-                  </FlexItem>
-                  <FlexItem>
-                    <ColumnPicker
-                      columns={columns}
-                      isVisible={prefs.isVisible}
-                      onToggle={prefs.toggle}
-                      onReset={prefs.reset}
-                    />
-                  </FlexItem>
-                </Flex>
-              </FlexItem>
-            )}
-          </Flex>
-
-          {scopedVms.length === 0 ? (
+          {pagedVms.length === 0 ? (
             <EmptyState titleText={t('infra.vms.empty.title')}>
               <EmptyStateBody>
                 <FormattedMessage id="infra.vms.empty.body" />
@@ -1133,11 +1150,22 @@ function InfraTreeMenu({
   const { ctx, position, token } = target
   if (ctx.kind === 'host') {
     const host = allHosts.find((candidate) => candidate.id === ctx.host.id) ?? ctx.host
+    // The host's cluster ref may be a bare id stub, so resolve the display name
+    // against the clusters inventory (same join the header meta line does) —
+    // that name is what shows the Add VM item and seeds the wizard's Cluster
+    // field. Unresolvable → no item, rather than a wizard that cannot say
+    // which cluster it is creating into.
+    const clusterName =
+      host.cluster?.name ??
+      (host.cluster?.id !== undefined
+        ? allClusters.find((candidate) => candidate.id === host.cluster?.id)?.name
+        : undefined)
     return (
       <HostActionsMenu
         key={`host-${host.id}-${token}`}
         host={host}
         includeOpenDetails
+        addVmClusterName={clusterName}
         contextMenu={{ position, onClose }}
       />
     )
@@ -1186,36 +1214,51 @@ export function HostsClustersPage() {
     const stored = sessionStorage.getItem(INFRA_SELECTED_KEY)
     return stored !== null && parseNodeId(stored) !== null ? stored : null
   })
-  // scoped-VM table paging; every new selection starts back at page 1
+  // One paging state per pane: each tab has its own row set and its own
+  // PaneToolbar, so a page-2 VM list must not drag the Hosts tab to page 2.
+  // Every new selection starts all three back at page 1.
   const [page, setPage] = useState(1)
   const [perPage, setPerPage] = useState(50)
+  const [hostPage, setHostPage] = useState(1)
+  const [hostPerPage, setHostPerPage] = useState(50)
+  const [clusterPage, setClusterPage] = useState(1)
+  const [clusterPerPage, setClusterPerPage] = useState(50)
+  const [dcPage, setDcPage] = useState(1)
+  const [dcPerPage, setDcPerPage] = useState(50)
   const setSelectedId = (id: string | null) => {
     setSelectedIdState(id)
     setPage(1)
+    setHostPage(1)
+    setClusterPage(1)
+    setDcPage(1)
     if (id === null) sessionStorage.removeItem(INFRA_SELECTED_KEY)
     else sessionStorage.setItem(INFRA_SELECTED_KEY, id)
   }
   // client-side tree name filter (hosts/clusters/DCs) — bookmarkable
   const [filter, setFilter] = useState('')
+  const [isTreeOpen, setIsTreeOpen] = useState(true)
   const [creatingCluster, setCreatingCluster] = useState(false)
   const [creatingHost, setCreatingHost] = useState(false)
 
   // The selected node drives the content pane (resolved to entities below).
   // Parsed before the usage query so its enabled flag can key off the kind.
   const selection = selectedId === null ? null : parseNodeId(selectedId)
-  // Browse tabs at EVERY layer (webadmin's per-level subtabs): the content
-  // pane offers Virtual machines / Hosts / Clusters scoped to the selection.
-  // Order: Clusters, Hosts, Virtual machines (outermost scope first). A host
-  // has only VMs, a cluster adds Hosts, a DC/root adds Clusters. The active
-  // tab defaults to the leftmost available and clamps back to it whenever the
-  // current tab leaves the set (e.g. leaving a DC's Clusters tab for a host).
-  const [paneTab, setPaneTab] = useState<PaneTabKey>('clusters')
+  // Browse tabs at EVERY layer (webadmin's per-level subtabs), scoped to the
+  // selection and ordered outermost-first. Each rung drops the tab it is now
+  // inside of: the root lists Data centers, a DC is already one so it starts at
+  // Clusters, a cluster starts at Hosts, and a host is a leaf with only VMs.
+  // The active tab defaults to the leftmost available and clamps back to it
+  // whenever the current tab leaves the set (e.g. leaving the root's Data
+  // centers tab for a host).
+  const [paneTab, setPaneTab] = useState<PaneTabKey>('datacenters')
   const paneTabs: ReadonlyArray<PaneTabKey> =
     selection?.kind === 'host'
       ? ['vms']
       : selection?.kind === 'cluster'
         ? ['hosts', 'vms']
-        : ['clusters', 'hosts', 'vms']
+        : selection?.kind === 'datacenter'
+          ? ['clusters', 'hosts', 'vms']
+          : ['datacenters', 'clusters', 'hosts', 'vms']
   const activePaneTab = paneTabs.includes(paneTab) ? paneTab : paneTabs[0]
   // Usage gauges (Memory/CPU/Network columns) render only in the hosts grid,
   // so the statistics + per-NIC-statistics read — the heaviest host query the
@@ -1241,8 +1284,15 @@ export function HostsClustersPage() {
     [t],
   )
   const infraClusterPrefs = useColumnPrefs('infra-clusters', infraClusterColumns)
+  const infraDcColumns = useMemo(
+    () => INFRA_DATACENTER_COLUMNS.map((column) => ({ ...column, label: t(column.labelId) })),
+    [t],
+  )
+  const infraDcPrefs = useColumnPrefs('infra-datacenters', infraDcColumns)
   // DC pane clusters grid sort — Name ascending mirrors the tree's order
   const clusterSort = useColumnSort({ key: 'name', direction: 'asc' })
+  // root pane data-centers grid sort — likewise
+  const dcSort = useColumnSort({ key: 'name', direction: 'asc' })
 
   // One context-menu state for the whole tree: right-clicking a host, cluster,
   // or data center node name opens the matching action menu at the cursor
@@ -1260,11 +1310,27 @@ export function HostsClustersPage() {
   // header is clicked.
   const vmSort = useColumnSort({ key: 'name', direction: 'asc' })
   const hostSort = useColumnSort({ key: 'name', direction: 'asc' })
-  // a sort change re-orders the whole scoped list — start back at page 1
+  // a sort change re-orders the whole scoped list — start that pane back at
+  // page 1 (one guard per pane, since each pages independently)
   const [prevVmSort, setPrevVmSort] = useState(vmSort.sort)
   if (vmSort.sort !== prevVmSort) {
     setPrevVmSort(vmSort.sort)
     setPage(1)
+  }
+  const [prevHostSort, setPrevHostSort] = useState(hostSort.sort)
+  if (hostSort.sort !== prevHostSort) {
+    setPrevHostSort(hostSort.sort)
+    setHostPage(1)
+  }
+  const [prevClusterSort, setPrevClusterSort] = useState(clusterSort.sort)
+  if (clusterSort.sort !== prevClusterSort) {
+    setPrevClusterSort(clusterSort.sort)
+    setClusterPage(1)
+  }
+  const [prevDcSort, setPrevDcSort] = useState(dcSort.sort)
+  if (dcSort.sort !== prevDcSort) {
+    setPrevDcSort(dcSort.sort)
+    setDcPage(1)
   }
 
   const dcs = dataCenters.data ?? EMPTY
@@ -1347,13 +1413,23 @@ export function HostsClustersPage() {
     }
 
     const clusterItem = (cluster: (typeof allClusters)[number]): TreeViewDataItem | null => {
-      const clusterHosts = (hostsByCluster.get(cluster.id) ?? [])
+      const allClusterHosts = hostsByCluster.get(cluster.id) ?? []
+      const clusterHosts = allClusterHosts
         .filter((host) => nameMatches(cluster.name) || nameMatches(host.name))
         .sort(byName)
       if (!nameMatches(cluster.name) && clusterHosts.length === 0) return null
       return {
         id: nodeId('cluster', cluster.id),
-        name: <span data-infra-ctx={nodeId('cluster', cluster.id)}>{cluster.name}</span>,
+        // The health badge trails the name (leading it would ragged-edge the
+        // cluster names against each other) and reads the cluster's *whole*
+        // host set, not the name-filtered subset — a filter narrows what you
+        // see, it must not talk you out of a warning.
+        name: (
+          <span data-infra-ctx={nodeId('cluster', cluster.id)}>
+            {cluster.name}
+            <ClusterHealthBadge hosts={allClusterHosts} />
+          </span>
+        ),
         icon: <ClusterIcon />,
         // Collapsed by default (large host estates); auto-open while filtering
         // so search reveals matching hosts inside.
@@ -1545,6 +1621,62 @@ export function HostsClustersPage() {
           ?.sortValue?.(cluster, infraClusterCtx),
       )
 
+  // Per-pane paging — same clamp-don't-reset posture as the VM pane above, so
+  // a poll that shrinks a scope can't strand the grid on a dead page.
+  const hostLastPage = Math.max(1, Math.ceil(scopedHosts.length / hostPerPage))
+  const hostCurrentPage = Math.min(hostPage, hostLastPage)
+  const pagedHosts = scopedHosts.slice(
+    (hostCurrentPage - 1) * hostPerPage,
+    hostCurrentPage * hostPerPage,
+  )
+  const clusterLastPage = Math.max(1, Math.ceil(scopedClusters.length / clusterPerPage))
+  const clusterCurrentPage = Math.min(clusterPage, clusterLastPage)
+  const pagedClusters = scopedClusters.slice(
+    (clusterCurrentPage - 1) * clusterPerPage,
+    clusterCurrentPage * clusterPerPage,
+  )
+  // Data centers only ever list at the root, so this grid has no scoping to do
+  // beyond the header sort.
+  const infraDcVisibleColumns = infraDcColumns.filter((column) =>
+    infraDcPrefs.isVisible(column.key),
+  )
+  const sortedDcs = sortRows(dcs, dcSort.sort, (dc, key) =>
+    infraDcColumns.find((column) => column.key === key)?.sortValue?.(dc),
+  )
+  const dcLastPage = Math.max(1, Math.ceil(sortedDcs.length / dcPerPage))
+  const dcCurrentPage = Math.min(dcPage, dcLastPage)
+  const pagedDcs = sortedDcs.slice((dcCurrentPage - 1) * dcPerPage, dcCurrentPage * dcPerPage)
+
+  // CSV export, one per pane: every row of the current scope (not just the
+  // page) × its visible machine-readable columns. sortValue doubles as the
+  // export value where a column has one; exportValue covers the columns that
+  // render a badge rather than a sortable scalar (Status). Same rule as the
+  // VMs & Templates export, so the two views' CSVs agree — see lib/csv.ts for
+  // the quoting and formula-injection posture.
+  const exportRows = <TRow, TCtx>(
+    filename: string,
+    columns: {
+      label: string
+      sortValue?: (row: TRow, ctx: TCtx) => string | number | undefined
+      exportValue?: (row: TRow, ctx: TCtx) => string | number | undefined
+    }[],
+    rows: TRow[],
+    ctx: TCtx,
+  ) => {
+    const exportColumns = columns.filter(
+      (column) => column.sortValue !== undefined || column.exportValue !== undefined,
+    )
+    downloadCsv(
+      `${filename}-${new Date().toISOString().slice(0, 10)}.csv`,
+      toCsv(
+        exportColumns.map((column) => column.label),
+        rows.map((row) =>
+          exportColumns.map((column) => (column.exportValue ?? column.sortValue)?.(row, ctx)),
+        ),
+      ),
+    )
+  }
+
   // Right-click delegation for the whole tree: ANYWHERE on a node's row —
   // status icon, VM-count badge, expand toggle, padding — opens its action
   // menu, not just the name text. The name spans carry the kind-namespaced id
@@ -1568,63 +1700,148 @@ export function HostsClustersPage() {
     }
   }
 
-  // The VM pane is a plain const rendered in one of two positions (bare for a
-  // host leaf, inside the tab strip everywhere else): scopedVms already
-  // resolves per selection (host VMs, or every VM at the root).
-  const vmsPane = (
-    <ScopedVmsPane
-      vmsQuery={vms}
-      scopedVms={scopedVms}
-      pagedVms={pagedVms}
-      currentPage={currentPage}
-      perPage={perPage}
-      onSetPage={setPage}
-      onPerPageSelect={(nextPerPage, nextPage) => {
-        setPerPage(nextPerPage)
-        setPage(nextPage)
-      }}
-      columns={infraVmColumns}
-      visibleColumns={infraVisibleColumns}
-      prefs={infraVmPrefs}
-      sort={vmSort}
-      ctx={infraVmCtx}
-      onRowContextMenu={vmRowMenu.open}
-    />
-  )
-
-  // New cluster / New host — global create actions. They ride the pane
-  // identity header (right side, where Open details used to sit) when a data
-  // center or cluster is selected, and fall back to the page header only at
-  // the root (a host is a leaf — no create action belongs on its pane).
+  // Create actions ride the identity banner's right-aligned actions slot, keyed
+  // to the SCOPE rather than the active tab: a cluster offers New host, a data
+  // center and the root offer both. They can sit there now because every layer
+  // has a banner — the root one included — which is what the old absolute
+  // overlay pinned over the tab strip was working around.
+  //
+  // The button labels reuse the ids the flat /clusters and /hosts lists render,
+  // so the two entry points to the same modal can never drift apart.
   const newClusterButton = (
     <Button variant="secondary" onClick={() => setCreatingCluster(true)}>
-      New cluster
+      {t('clusters.new')}
     </Button>
   )
   const newHostButton = (
     <Button variant="secondary" onClick={() => setCreatingHost(true)}>
-      New host
+      {t('hosts.new')}
     </Button>
   )
-  // root / data-center panes offer both; a cluster pane offers only New host
-  // (you are already inside a cluster — New cluster belongs a level up)
+  // Add VM owns its own trigger + wizard (CreateVmButton), so unlike the two
+  // above it needs no page-level modal state.
+  //
+  // One expression covers every scope because only a cluster or a host names
+  // ONE cluster: a cluster selection is itself, a host selection is its
+  // cluster, and the data-center / root scopes span several — where both
+  // resolve to undefined and the wizard's Cluster select opens on its
+  // placeholder for the user to pick.
+  const addVmButton = (
+    <CreateVmButton
+      variant="secondary"
+      label={t('vms.new')}
+      initialClusterName={selectedCluster?.name ?? selectedHostClusterName}
+    />
+  )
   const newInfraButtons = (
-    <Flex gap={{ default: 'gapSm' }} flexWrap={{ default: 'nowrap' }}>
-      <FlexItem>{newClusterButton}</FlexItem>
-      <FlexItem>{newHostButton}</FlexItem>
-    </Flex>
+    <>
+      {newClusterButton}
+      {newHostButton}
+      {addVmButton}
+    </>
+  )
+
+  // A tab's label + its scope total. The badge rides the tab's TITLE rather
+  // than PF's `actions` slot: actions render as a bare sibling of the tab
+  // button inside a stretch-aligned <li>, so the count neither centres against
+  // the label nor counts as part of the button you click. Inside the title it
+  // is a flex child of .pf-v6-c-tabs__link, which already centres its children
+  // and gaps them — and clicking the count selects the tab, as it should.
+  // `count` is undefined while a collection is still loading, which drops the
+  // badge instead of flashing a 0 that is not the real total.
+  const tabTitle = (labelId: MessageId, count: number | undefined) => (
+    <>
+      <TabTitleText>{t(labelId)}</TabTitleText>
+      {count !== undefined && <Badge isRead>{count}</Badge>}
+    </>
+  )
+  // hosts/clusters come from the cheap reads that already gate this pane, so
+  // their totals are always truthful; the VM collection lands later.
+  const vmBadgeCount = vms.isPending || vms.isError ? undefined : scopedVms.length
+
+  // The scoped-VM pane: scopedVms already resolves per selection (host VMs, a
+  // DC's subtree, or every VM at the root). Its PaneToolbar sits above all four
+  // of the pane's states, so the chrome holds still while the rows load.
+  const vmsPane = (
+    <>
+      <PaneToolbar
+        pagination={{
+          itemCount: scopedVms.length,
+          page: currentPage,
+          perPage,
+          onSetPage: setPage,
+          onPerPageSelect: (nextPerPage, nextPage) => {
+            setPerPage(nextPerPage)
+            setPage(nextPage)
+          },
+          ariaLabelId: 'infra.vms.pagination.ariaLabel',
+        }}
+        // the shared VM-list columns read the { kind: 'vm' } row shape, not a
+        // bare Vm — same wrap the table cells do
+        onExportCsv={() =>
+          exportRows(
+            'vms',
+            infraVisibleColumns,
+            scopedVms.map((vm): VmListRow => ({ kind: 'vm', vm })),
+            infraVmCtx,
+          )
+        }
+        columns={infraVmColumns}
+        prefs={infraVmPrefs}
+      />
+      <ScopedVmsPane
+        vmsQuery={vms}
+        pagedVms={pagedVms}
+        visibleColumns={infraVisibleColumns}
+        prefs={infraVmPrefs}
+        sort={vmSort}
+        ctx={infraVmCtx}
+        onRowContextMenu={vmRowMenu.open}
+      />
+    </>
   )
 
   return (
     <PageSection>
-      {/* Creation entry points live in the header so the flat /hosts and
-          /clusters lists can retire from the nav — same modals those pages
-          mount. */}
-      <ListPageHeader title={<FormattedMessage id="infra.title" />} actions={undefined} />
-      <ClusterFormModal isOpen={creatingCluster} onClose={() => setCreatingCluster(false)} />
-      {creatingHost && <NewHostModal isOpen onClose={() => setCreatingHost(false)} />}
+      {/* The header row is just the title; page-scoped controls (tree toggle,
+          filter, refresh) ride the shared tier-1 toolbar and everything that
+          targets a grid rides that pane's PaneToolbar. The create modals here
+          are the same ones the flat /hosts and /clusters lists mount, which is
+          what lets those pages stay out of the nav. */}
+      <ListPageHeader title={<FormattedMessage id="infra.title" />} />
+      {/* Both mount per open, not persistently: each seeds its draft from the
+          scope the banner button was pressed in, and a draft is only seeded on
+          mount — a modal kept mounted across selections would hold the scope it
+          first saw. Remounting also drops a cancelled form's half-filled state.
+          Scope resolves to undefined on the banners that do not offer the
+          button (a cluster banner has no New cluster), so these follow the
+          selection without a second source of truth. */}
+      {creatingCluster && (
+        <ClusterFormModal
+          isOpen
+          initialDataCenterId={selectedDc?.id}
+          onClose={() => setCreatingCluster(false)}
+        />
+      )}
+      {creatingHost && (
+        <NewHostModal
+          isOpen
+          initialClusterId={selectedCluster?.id}
+          onClose={() => setCreatingHost(false)}
+        />
+      )}
 
-      <InfraFilterToolbar filter={filter} onFilterChange={setFilter} />
+      <InventoryToolbar
+        view="infra"
+        isTreeOpen={isTreeOpen}
+        onToggleTree={() => setIsTreeOpen((open) => !open)}
+        treeToggleLabelIds={{ hide: 'infra.tree.toggle.hide', show: 'infra.tree.toggle.show' }}
+        filter={filter}
+        onFilterChange={setFilter}
+        bookmarkArea="infra"
+        hintId="infra.filter.hint"
+        ariaLabelId="infra.filter.ariaLabel"
+      />
 
       {treePending && (
         <>
@@ -1666,99 +1883,187 @@ export function HostsClustersPage() {
           alignItems={{ default: 'alignItemsStretch' }}
           spaceItems={{ default: 'spaceItemsLg' }}
         >
-          <InfraTreePanel
-            treeData={treeData}
-            filtering={needle !== ''}
-            selectedId={selectedId}
-            onSelect={setSelectedId}
-            onTreeContextMenu={onTreeContextMenu}
-          />
+          {isTreeOpen && (
+            <InfraTreePanel
+              treeData={treeData}
+              filtering={needle !== ''}
+              selectedId={selectedId}
+              onSelect={setSelectedId}
+              onTreeContextMenu={onTreeContextMenu}
+            />
+          )}
           <FlexItem grow={{ default: 'grow' }} style={{ minWidth: 0 }}>
-            {/* Identity header for the selection (none at the root), then the
-                per-layer browse tabs below it. */}
-            {selectedCluster && (
+            {/* Identity banner for the selection, then the per-layer browse
+                tabs below it. One chain, not four independent conditions: the
+                root banner is the else-branch, so exactly one always renders —
+                including for a remembered selection that no longer resolves,
+                which falls through to the root scope the VM pane already uses. */}
+            {selectedCluster ? (
+              // Edit / Upgrade / Remove live on the cluster DETAIL page (Open
+              // details, inline by the name). Only New host here — New cluster
+              // belongs a level up, on the DC / root banners.
               <ClusterPaneHeader
                 cluster={selectedCluster}
                 dcName={selectedClusterDcName}
-                // Edit / Upgrade / Remove live on the cluster DETAIL page
-                // (Open details, inline by the name). Only New host here —
-                // New cluster belongs a level up (the DC / root panes).
-                actions={newHostButton}
+                actions={
+                  <>
+                    {newHostButton}
+                    {addVmButton}
+                  </>
+                }
+              />
+            ) : selectedHost ? (
+              // A host holds no clusters, but it does sit IN one — so the only
+              // thing creatable from here is a VM, in that cluster. Its kebab
+              // follows the button (HostPaneHeader appends it).
+              <HostPaneHeader
+                host={selectedHost}
+                clusterName={selectedHostClusterName}
+                actions={addVmButton}
+              />
+            ) : selectedDc ? (
+              <DataCenterPaneHeader dc={selectedDc} actions={newInfraButtons} />
+            ) : (
+              <InfraRootPaneHeader
+                dcCount={dcs.length}
+                clusterCount={allClusters.length}
+                hostCount={allHosts.length}
+                vmCount={vms.isPending || vms.isError ? undefined : allVms.length}
+                actions={newInfraButtons}
               />
             )}
 
-            {selectedHost && (
-              <HostPaneHeader host={selectedHost} clusterName={selectedHostClusterName} />
-            )}
-
-            {selectedDc && <DataCenterPaneHeader dc={selectedDc} actions={newInfraButtons} />}
-
-            {/* A host has only VMs — render the pane bare; every other layer
-                gets the tab strip (VMs always, Hosts for cluster/DC/root,
-                Clusters for DC/root). */}
-            {paneTabs.length === 1 ? (
-              vmsPane
-            ) : (
-              <div style={{ position: 'relative' }}>
-                {selection === null && (
-                  <div
-                    style={{
-                      position: 'absolute',
-                      insetInlineEnd: 0,
-                      top: 0,
-                      zIndex: 1,
-                    }}
-                  >
-                    {newInfraButtons}
-                  </div>
-                )}
-                <Tabs
-                  activeKey={activePaneTab}
-                  onSelect={(_event, key) => setPaneTab(key as PaneTabKey)}
-                  aria-label={t('infra.tree.ariaLabel')}
-                  style={{ marginBottom: 'var(--pf-t--global--spacer--sm)' }}
+            {/* The tab strip renders at every layer, including a host leaf —
+                where the set is just Virtual machines. A lone tab reads a
+                little thin, but it keeps the pane labelled and stops the strip
+                (and the grid under it) from jumping as the selection moves
+                between a host and its cluster. */}
+            <Tabs
+              activeKey={activePaneTab}
+              onSelect={(_event, key) => setPaneTab(key as PaneTabKey)}
+              aria-label={t('infra.tree.ariaLabel')}
+              style={{ marginBottom: 'var(--pf-t--global--spacer--sm)' }}
+            >
+              {paneTabs.includes('datacenters') && (
+                <Tab eventKey="datacenters" title={tabTitle('datacenters.title', sortedDcs.length)}>
+                  {activePaneTab === 'datacenters' && (
+                    <>
+                      <PaneToolbar
+                        pagination={{
+                          itemCount: sortedDcs.length,
+                          page: dcCurrentPage,
+                          perPage: dcPerPage,
+                          onSetPage: setDcPage,
+                          onPerPageSelect: (nextPerPage, nextPage) => {
+                            setDcPerPage(nextPerPage)
+                            setDcPage(nextPage)
+                          },
+                          ariaLabelId: 'infra.datacenters.pagination.ariaLabel',
+                        }}
+                        onExportCsv={() =>
+                          exportRows('datacenters', infraDcVisibleColumns, sortedDcs, t)
+                        }
+                        columns={infraDcColumns}
+                        prefs={infraDcPrefs}
+                      />
+                      <ScopedDataCentersSection
+                        rows={pagedDcs}
+                        visibleColumns={infraDcVisibleColumns}
+                        prefs={infraDcPrefs}
+                        sort={dcSort}
+                        onDrill={(dcId) => setSelectedId(nodeId('datacenter', dcId))}
+                        onRowContextMenu={(event, dataCenter) =>
+                          treeMenu.open(event, { kind: 'datacenter', dataCenter })
+                        }
+                      />
+                    </>
+                  )}
+                </Tab>
+              )}
+              {paneTabs.includes('clusters') && (
+                <Tab
+                  eventKey="clusters"
+                  // the scope's total, not the current page's — the badge
+                  // answers "how much is in here?" before you open the tab
+                  title={tabTitle('clusters.title', scopedClusters.length)}
                 >
-                  {paneTabs.includes('clusters') && (
-                    <Tab
-                      eventKey="clusters"
-                      title={<TabTitleText>{t('clusters.title')}</TabTitleText>}
-                    >
-                      {activePaneTab === 'clusters' && (
-                        <ScopedClustersSection
-                          rows={scopedClusters}
-                          columns={infraClusterColumns}
-                          visibleColumns={infraClusterVisibleColumns}
-                          prefs={infraClusterPrefs}
-                          sort={clusterSort}
-                          ctx={infraClusterCtx}
-                          onDrill={(clusterId) => setSelectedId(nodeId('cluster', clusterId))}
-                          onRowContextMenu={(event, cluster) =>
-                            treeMenu.open(event, { kind: 'cluster', cluster })
-                          }
-                        />
-                      )}
-                    </Tab>
+                  {activePaneTab === 'clusters' && (
+                    <>
+                      <PaneToolbar
+                        pagination={{
+                          itemCount: scopedClusters.length,
+                          page: clusterCurrentPage,
+                          perPage: clusterPerPage,
+                          onSetPage: setClusterPage,
+                          onPerPageSelect: (nextPerPage, nextPage) => {
+                            setClusterPerPage(nextPerPage)
+                            setClusterPage(nextPage)
+                          },
+                          ariaLabelId: 'infra.clusters.pagination.ariaLabel',
+                        }}
+                        onExportCsv={() =>
+                          exportRows(
+                            'clusters',
+                            infraClusterVisibleColumns,
+                            scopedClusters,
+                            infraClusterCtx,
+                          )
+                        }
+                        columns={infraClusterColumns}
+                        prefs={infraClusterPrefs}
+                      />
+                      <ScopedClustersSection
+                        rows={pagedClusters}
+                        visibleColumns={infraClusterVisibleColumns}
+                        prefs={infraClusterPrefs}
+                        sort={clusterSort}
+                        ctx={infraClusterCtx}
+                        onDrill={(clusterId) => setSelectedId(nodeId('cluster', clusterId))}
+                        onRowContextMenu={(event, cluster) =>
+                          treeMenu.open(event, { kind: 'cluster', cluster })
+                        }
+                      />
+                    </>
                   )}
-                  {paneTabs.includes('hosts') && (
-                    <Tab eventKey="hosts" title={<TabTitleText>{t('hosts.title')}</TabTitleText>}>
-                      {activePaneTab === 'hosts' && (
-                        <ScopedHostsSection
-                          rows={scopedHosts}
-                          columns={infraHostColumns}
-                          visibleColumns={infraHostVisibleColumns}
-                          prefs={infraHostPrefs}
-                          sort={hostSort}
-                          ctx={infraHostCtx}
-                        />
-                      )}
-                    </Tab>
+                </Tab>
+              )}
+              {paneTabs.includes('hosts') && (
+                <Tab eventKey="hosts" title={tabTitle('hosts.title', scopedHosts.length)}>
+                  {activePaneTab === 'hosts' && (
+                    <>
+                      <PaneToolbar
+                        pagination={{
+                          itemCount: scopedHosts.length,
+                          page: hostCurrentPage,
+                          perPage: hostPerPage,
+                          onSetPage: setHostPage,
+                          onPerPageSelect: (nextPerPage, nextPage) => {
+                            setHostPerPage(nextPerPage)
+                            setHostPage(nextPage)
+                          },
+                          ariaLabelId: 'infra.hosts.pagination.ariaLabel',
+                        }}
+                        onExportCsv={() =>
+                          exportRows('hosts', infraHostVisibleColumns, scopedHosts, infraHostCtx)
+                        }
+                        columns={infraHostColumns}
+                        prefs={infraHostPrefs}
+                      />
+                      <ScopedHostsSection
+                        rows={pagedHosts}
+                        visibleColumns={infraHostVisibleColumns}
+                        prefs={infraHostPrefs}
+                        sort={hostSort}
+                        ctx={infraHostCtx}
+                      />
+                    </>
                   )}
-                  <Tab eventKey="vms" title={<TabTitleText>{t('vms.title')}</TabTitleText>}>
-                    {activePaneTab === 'vms' && vmsPane}
-                  </Tab>
-                </Tabs>
-              </div>
-            )}
+                </Tab>
+              )}
+              <Tab eventKey="vms" title={tabTitle('vms.title', vmBadgeCount)}>
+                {activePaneTab === 'vms' && vmsPane}
+              </Tab>
+            </Tabs>
           </FlexItem>
         </Flex>
       )}

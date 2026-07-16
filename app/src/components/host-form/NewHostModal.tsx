@@ -281,7 +281,18 @@ function GeneralSection({
 // SECURITY: mount this conditionally ({creating && <NewHostModal …>}) — the
 // root password lives in this component's state, so unmounting on close
 // drops it instead of retaining it behind a hidden modal.
-export function NewHostModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+export function NewHostModal({
+  isOpen,
+  onClose,
+  initialClusterId,
+}: {
+  isOpen: boolean
+  onClose: () => void
+  // Preselects the Cluster field for surfaces that open this from inside one
+  // cluster (its tree node's right-click menu / banner button). Only a default:
+  // the select stays free, and picking another cluster wins (see clusterId).
+  initialClusterId?: string
+}) {
   const [draft, setDraft] = useState<NewHostDraft>(blankNewHostDraft)
 
   // Stable updater so sections don't re-render on every keystroke elsewhere.
@@ -292,9 +303,13 @@ export function NewHostModal({ isOpen, onClose }: { isOpen: boolean; onClose: ()
   // Webadmin's newEntity preselects the first data center's cluster; the
   // catalog list is flat here, so the first cluster stands in until the user
   // picks one. Derived rather than seeded into state so a slow clusters load
-  // can't leave the select stuck on the empty placeholder.
+  // can't leave the select stuck on the empty placeholder — which is also why
+  // initialClusterId belongs in this chain rather than in the draft. Order is
+  // the precedence: an explicit pick beats the scope this was opened from,
+  // which beats the first-cluster stand-in.
   const clusters = useClusters()
-  const clusterId = draft.clusterId !== '' ? draft.clusterId : (clusters.data?.[0]?.id ?? '')
+  const clusterId =
+    draft.clusterId !== '' ? draft.clusterId : (initialClusterId ?? clusters.data?.[0]?.id ?? '')
 
   const add = useAddHost()
   const pending = add.isPending

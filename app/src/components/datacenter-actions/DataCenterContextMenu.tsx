@@ -12,9 +12,12 @@ import { useNavigate } from '@tanstack/react-router'
 import type { DataCenter } from '../../api/schemas/datacenter'
 import { useDeleteDataCenter } from '../../hooks/useDataCenterMutations'
 import { useT } from '../../i18n/useT'
+import { ClusterFormModal } from '../cluster-form/ClusterFormModal'
 import { ConfirmModal } from '../ConfirmModal'
 import { ContextMenu, type ContextMenuPosition } from '../context-menu/ContextMenu'
 import { DataCenterFormModal } from '../datacenter-form/DataCenterFormModal'
+import { NewHostModal } from '../host-form/NewHostModal'
+import { CreateVmWizardModal } from '../vm-create/CreateVmWizard'
 
 // Right-click menu for a data center node in the Hosts & Clusters tree: Open
 // details / Edit / Remove. Reuses DataCenterFormModal and useDeleteDataCenter,
@@ -46,9 +49,13 @@ export function DataCenterContextMenu({
   // non-null while the remove confirm is up; holds the typed-name gate
   // (docs/COMPONENTS.md: typed-name confirm for delete)
   const [removing, setRemoving] = useState<{ nameInput: string } | null>(null)
+  // create-under-this-data-center modals
+  const [addingCluster, setAddingCluster] = useState(false)
+  const [addingHost, setAddingHost] = useState(false)
+  const [addingVm, setAddingVm] = useState(false)
   const deleteMutation = useDeleteDataCenter()
 
-  const modalActive = editing || removing !== null
+  const modalActive = editing || removing !== null || addingCluster || addingHost || addingVm
   useEffect(() => {
     if (isOpen || modalActive || deleteMutation.isPending) return
     onClose()
@@ -74,6 +81,37 @@ export function DataCenterContextMenu({
           >
             {t('infra.openDetails')}
           </DropdownItem>
+          <Divider component="li" />
+          {/* Create what can live under a data center — the same three verbs
+              this DC's banner offers. Only New cluster can name its scope from
+              here: a DC holds many clusters, so New host and Add VM open on
+              their own defaults and let the user pick (see the modals'
+              initial-scope props). */}
+          <DropdownItem
+            onClick={() => {
+              setIsOpen(false)
+              setAddingCluster(true)
+            }}
+          >
+            {t('clusters.new')}
+          </DropdownItem>
+          <DropdownItem
+            onClick={() => {
+              setIsOpen(false)
+              setAddingHost(true)
+            }}
+          >
+            {t('hosts.new')}
+          </DropdownItem>
+          <DropdownItem
+            onClick={() => {
+              setIsOpen(false)
+              setAddingVm(true)
+            }}
+          >
+            {t('vms.new')}
+          </DropdownItem>
+          <Divider component="li" />
           <DropdownItem
             onClick={() => {
               setIsOpen(false)
@@ -100,6 +138,19 @@ export function DataCenterContextMenu({
       {editing && (
         <DataCenterFormModal dataCenter={dataCenter} isOpen onClose={() => setEditing(false)} />
       )}
+
+      {/* The same create modals the pane banners and the flat lists mount. */}
+      {addingCluster && (
+        <ClusterFormModal
+          isOpen
+          initialDataCenterId={dataCenter.id}
+          onClose={() => setAddingCluster(false)}
+        />
+      )}
+
+      {addingHost && <NewHostModal isOpen onClose={() => setAddingHost(false)} />}
+
+      {addingVm && <CreateVmWizardModal onClose={() => setAddingVm(false)} />}
 
       {/* Copy matches DataCenterDetailPage's Remove confirm verbatim (that
           surface hardcodes English; minting new i18n ids is out of scope for

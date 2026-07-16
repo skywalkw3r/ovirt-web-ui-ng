@@ -53,6 +53,19 @@ interface CreateVmButtonProps {
    * name always resolves to a selectable row.
    */
   initialTemplateName?: string
+  /**
+   * Preselects the wizard's General step Cluster field. Pass a cluster NAME
+   * from the shared ['clusters'] query — the select's options are keyed by
+   * name, so a name from that list always resolves to a real option (anything
+   * else falls back to the "Select a cluster" placeholder, leaving the step
+   * invalid rather than submitting a cluster that does not exist).
+   *
+   * Callers pass this when the VM is being created from a scope that names one
+   * unambiguous cluster: a cluster node, or a host (its own cluster). The root
+   * and data-center scopes span several clusters, so they pass nothing and the
+   * user picks.
+   */
+  initialClusterName?: string
   variant?: ButtonProps['variant']
   size?: ButtonProps['size']
   label?: string
@@ -60,6 +73,7 @@ interface CreateVmButtonProps {
 
 export function CreateVmButton({
   initialTemplateName,
+  initialClusterName,
   variant = 'primary',
   size,
   label = 'Create virtual machine',
@@ -76,6 +90,7 @@ export function CreateVmButton({
       {isOpen && (
         <CreateVmWizardModal
           initialTemplateName={initialTemplateName}
+          initialClusterName={initialClusterName}
           onClose={() => setIsOpen(false)}
         />
       )}
@@ -88,9 +103,13 @@ export function CreateVmButton({
 // sibling, instead of the button+modal CreateVmButton convenience wrapper.
 export function CreateVmWizardModal({
   initialTemplateName,
+  initialClusterName,
   onClose,
 }: {
   initialTemplateName?: string
+  // see CreateVmButtonProps.initialClusterName — a cluster NAME, matching the
+  // Cluster select's option values
+  initialClusterName?: string
   onClose: () => void
 }) {
   const templates = useTemplates()
@@ -105,7 +124,10 @@ export function CreateVmWizardModal({
   const [name, setName] = useState('')
   const [nameTouched, setNameTouched] = useState(false)
   const [description, setDescription] = useState('')
-  const [clusterName, setClusterName] = useState('')
+  // Seeded from the scope the wizard was opened from (a cluster or a host's
+  // cluster); '' leaves the select on its placeholder and the General step
+  // invalid until the user picks, which is the root/data-center case.
+  const [clusterName, setClusterName] = useState(initialClusterName ?? '')
   // '' while the input is cleared mid-edit; blur snaps it back to a number
   const [memoryGib, setMemoryGib] = useState<number | ''>(DEFAULT_MEMORY_GIB)
   const [initEnabled, setInitEnabled] = useState(false)

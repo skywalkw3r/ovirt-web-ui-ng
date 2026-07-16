@@ -5,28 +5,16 @@ import {
   Breadcrumb,
   BreadcrumbItem,
   Button,
-  Content,
   EmptyState,
   EmptyStateBody,
   Flex,
   FlexItem,
   PageSection,
-  Pagination,
   Skeleton,
-  Title,
-  Toolbar,
-  ToolbarContent,
-  ToolbarGroup,
   ToolbarItem,
 } from '@patternfly/react-core'
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table'
-import {
-  BarsIcon,
-  DownloadIcon,
-  FolderIcon,
-  LayerGroupIcon,
-  VirtualMachineIcon,
-} from '@patternfly/react-icons'
+import { FolderIcon, LayerGroupIcon, VirtualMachineIcon } from '@patternfly/react-icons'
 import { useNavigate } from '@tanstack/react-router'
 import { FormattedMessage } from 'react-intl'
 import type { Vm } from '../api/schemas/vm'
@@ -35,11 +23,10 @@ import { useContextMenu } from '../components/context-menu/ContextMenu'
 import { InventoryTreeSidebar } from '../components/InventoryTreeSidebar'
 import { InventoryViewSwitcher } from '../components/InventoryViewSwitcher'
 import { ListPageHeader } from '../components/ListPageHeader'
-import { BookmarkMenu } from '../components/list-toolbar/BookmarkMenu'
-import { ColumnPicker } from '../components/list-toolbar/ColumnPicker'
+import { InventoryToolbar } from '../components/list-toolbar/InventoryToolbar'
+import { PaneToolbar } from '../components/list-toolbar/PaneToolbar'
 import { ResizableTh, resizableTableProps } from '../components/list-toolbar/ResizableTh'
-import { SearchInput } from '../components/list-toolbar/SearchInput'
-import { RefreshControl } from '../components/RefreshControl'
+import { PaneHeader } from '../components/PaneHeader'
 import { FolderTreePanel } from '../components/tags/FolderTreePanel'
 import { TagManagerButton } from '../components/tags/TagManagerModal'
 import { TemplateActionsMenu } from '../components/template-actions/TemplateActionsMenu'
@@ -63,12 +50,6 @@ import { useHosts } from '../hooks/useHosts'
 import { useVms } from '../hooks/useVms'
 import { useT } from '../i18n/useT'
 import { downloadCsv, toCsv } from '../lib/csv'
-
-const PER_PAGE_OPTIONS = [
-  { title: '20', value: 20 },
-  { title: '50', value: 50 },
-  { title: '100', value: 100 },
-]
 
 // session-scoped view memory for the folder selection (see the restore effect)
 const FOLDER_MEMORY_KEY = 'console-inventory-folder'
@@ -334,7 +315,7 @@ export function VmsAndTemplatesPage() {
       toCsv(
         exportColumns.map((column) => column.label),
         sorted.map((row) =>
-          exportColumns.map((column) => (column.sortValue ?? column.exportValue)?.(row, ctx)),
+          exportColumns.map((column) => (column.exportValue ?? column.sortValue)?.(row, ctx)),
         ),
       ),
     )
@@ -544,103 +525,22 @@ export function VmsAndTemplatesPage() {
 
   return (
     <PageSection>
-      {/* The header row is just the title now — the view switcher moved to sit
-          above the left tree. Every action button lives in the toolbar row
-          beside the search box so all controls sit on one line. */}
+      {/* The header row is just the title — the view switcher sits above the
+          left tree. Page-scoped controls (tree toggle, filter, refresh) ride
+          the shared tier-1 toolbar; everything that targets the table itself
+          lives in the PaneToolbar directly above it. */}
       <ListPageHeader title={<FormattedMessage id="inventory.title" />} />
-      <Toolbar style={{ paddingBottom: 'var(--pf-t--global--spacer--md)' }}>
-        <ToolbarContent>
-          {/* With the tree collapsed the above-tree switcher would vanish, so
-              it rides along here beside the hamburger and never disappears. */}
-          {!isTreeOpen && (
-            <ToolbarItem>
-              <InventoryViewSwitcher active="inventory" />
-            </ToolbarItem>
-          )}
-          <ToolbarItem>
-            <Button
-              variant="plain"
-              aria-label={t(isTreeOpen ? 'folders.tree.toggle.hide' : 'folders.tree.toggle.show')}
-              icon={<BarsIcon />}
-              onClick={() => setIsTreeOpen((open) => !open)}
-            />
-          </ToolbarItem>
-          <ToolbarItem style={{ width: '22rem' }}>
-            <SearchInput
-              value={filter}
-              onChange={setFilter}
-              onCommit={() => {}}
-              hint={t('inventory.filter.hint')}
-              ariaLabel={t('inventory.filter.ariaLabel')}
-              trailing={<BookmarkMenu area="inventory" currentQuery={filter} onApply={setFilter} />}
-            />
-          </ToolbarItem>
-          {selectedRows.length > 0 && (
-            <>
-              <ToolbarItem alignSelf="center">
-                <span>{t('bulk.selected', { count: selectedRows.length })}</span>
-              </ToolbarItem>
-              <ToolbarItem alignSelf="center">
-                <Button variant="link" isInline onClick={clearSelection}>
-                  {t('bulk.clear')}
-                </Button>
-              </ToolbarItem>
-            </>
-          )}
-          {/* Same admin-gated Tag/Import entries as VmsPage — this combined
-              view is still a VM-inventory surface even though row-level
-              lifecycle actions live on the rows. */}
-          {isAdmin && (
-            <ToolbarGroup>
-              <ToolbarItem>
-                <TagManagerButton />
-              </ToolbarItem>
-              <ToolbarItem>
-                <ImportVmButton />
-              </ToolbarItem>
-            </ToolbarGroup>
-          )}
-          <ToolbarGroup align={{ default: 'alignEnd' }}>
-            <ToolbarItem variant="pagination">
-              <Pagination
-                isCompact
-                variant="top"
-                itemCount={visible.length}
-                page={currentPage}
-                perPage={perPage}
-                perPageOptions={PER_PAGE_OPTIONS}
-                onSetPage={(_event, nextPage) => setPage(nextPage)}
-                onPerPageSelect={(_event, nextPerPage, nextPage) => {
-                  setPerPage(nextPerPage)
-                  setPage(nextPage)
-                }}
-                titles={{ paginationAriaLabel: t('inventory.pagination.ariaLabel') }}
-              />
-            </ToolbarItem>
-            <ToolbarItem>
-              <Button
-                variant="link"
-                icon={<DownloadIcon />}
-                onClick={exportCsv}
-                isDisabled={sorted.length === 0}
-              >
-                {t('action.exportCsv')}
-              </Button>
-            </ToolbarItem>
-            <ToolbarItem>
-              <ColumnPicker
-                columns={columns}
-                isVisible={prefs.isVisible}
-                onToggle={prefs.toggle}
-                onReset={prefs.reset}
-              />
-            </ToolbarItem>
-            <ToolbarItem>
-              <RefreshControl />
-            </ToolbarItem>
-          </ToolbarGroup>
-        </ToolbarContent>
-      </Toolbar>
+      <InventoryToolbar
+        view="inventory"
+        isTreeOpen={isTreeOpen}
+        onToggleTree={() => setIsTreeOpen((open) => !open)}
+        treeToggleLabelIds={{ hide: 'folders.tree.toggle.hide', show: 'folders.tree.toggle.show' }}
+        filter={filter}
+        onFilterChange={setFilter}
+        bookmarkArea="inventory"
+        hintId="inventory.filter.hint"
+        ariaLabelId="inventory.filter.ariaLabel"
+      />
 
       <Flex
         flexWrap={{ default: 'nowrap' }}
@@ -690,29 +590,64 @@ export function VmsAndTemplatesPage() {
               )}
             </Breadcrumb>
           )}
-          {/* Compact two-line header echoing the infra tree panes: folder icon
-              + name, then a muted meta line with the visible VM/template
-              counts. No divider — the toolbar already sits directly above. */}
+          {/* The same identity banner the infra tree panes render, so both
+              inventory surfaces answer "what am I looking at?" the same way. */}
           {selectedFolder !== undefined && (
-            <div style={{ marginBottom: 'var(--pf-t--global--spacer--md)' }}>
-              <Flex alignItems={{ default: 'alignItemsCenter' }} gap={{ default: 'gapSm' }}>
-                <FlexItem>
-                  <FolderIcon />
-                </FlexItem>
-                <FlexItem>
-                  <Title headingLevel="h2" size="lg">
-                    {selectedFolder.name}
-                  </Title>
-                </FlexItem>
-              </Flex>
-              <Content component="small">
-                {t('inventory.folder.kind')} {t('infra.host.metaSeparator')}{' '}
-                {t('inventory.folder.vms', { count: visibleVmCount })}{' '}
-                {t('infra.host.metaSeparator')}{' '}
-                {t('inventory.folder.templates', { count: visibleTemplateCount })}
-              </Content>
-            </div>
+            <PaneHeader
+              icon={<FolderIcon />}
+              name={selectedFolder.name}
+              kindId="inventory.folder.kind"
+              facts={[
+                t('inventory.folder.vms', { count: visibleVmCount }),
+                t('inventory.folder.templates', { count: visibleTemplateCount }),
+              ]}
+            />
           )}
+          {/* Tier 2: what targets the table below — the admin-gated Tag/Import
+              entries that produce its rows, its paging, export and columns.
+              Same slot order as the Hosts & Clusters panes. */}
+          <PaneToolbar
+            actions={
+              isAdmin ? (
+                <>
+                  <ToolbarItem>
+                    <TagManagerButton />
+                  </ToolbarItem>
+                  <ToolbarItem>
+                    <ImportVmButton />
+                  </ToolbarItem>
+                </>
+              ) : undefined
+            }
+            bulk={
+              selectedRows.length > 0 ? (
+                <>
+                  <ToolbarItem alignSelf="center">
+                    <span>{t('bulk.selected', { count: selectedRows.length })}</span>
+                  </ToolbarItem>
+                  <ToolbarItem alignSelf="center">
+                    <Button variant="link" isInline onClick={clearSelection}>
+                      {t('bulk.clear')}
+                    </Button>
+                  </ToolbarItem>
+                </>
+              ) : undefined
+            }
+            pagination={{
+              itemCount: visible.length,
+              page: currentPage,
+              perPage,
+              onSetPage: setPage,
+              onPerPageSelect: (nextPerPage, nextPage) => {
+                setPerPage(nextPerPage)
+                setPage(nextPage)
+              },
+              ariaLabelId: 'inventory.pagination.ariaLabel',
+            }}
+            onExportCsv={exportCsv}
+            columns={columns}
+            prefs={prefs}
+          />
           {table}
         </FlexItem>
       </Flex>

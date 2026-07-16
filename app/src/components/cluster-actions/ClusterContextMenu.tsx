@@ -7,6 +7,8 @@ import { useT } from '../../i18n/useT'
 import { ClusterFormModal } from '../cluster-form/ClusterFormModal'
 import { ClusterUpgradeModal } from '../cluster-upgrade/ClusterUpgradeModal'
 import { ContextMenu, type ContextMenuPosition } from '../context-menu/ContextMenu'
+import { NewHostModal } from '../host-form/NewHostModal'
+import { CreateVmWizardModal } from '../vm-create/CreateVmWizard'
 import { RemoveClusterConfirm } from './RemoveClusterConfirm'
 
 // Right-click menu for a cluster node in the Hosts & Clusters tree: Open
@@ -39,9 +41,12 @@ export function ClusterContextMenu({
   // true while the typed-name remove confirm is up (the gate itself lives in
   // RemoveClusterConfirm, shared with ClusterActionsBar)
   const [removing, setRemoving] = useState(false)
+  // create-under-this-cluster modals, both scoped to it
+  const [addingHost, setAddingHost] = useState(false)
+  const [addingVm, setAddingVm] = useState(false)
   const deleteMutation = useDeleteCluster()
 
-  const modalActive = editing || upgrading || removing
+  const modalActive = editing || upgrading || removing || addingHost || addingVm
   useEffect(() => {
     if (isOpen || modalActive || deleteMutation.isPending) return
     onClose()
@@ -64,6 +69,27 @@ export function ClusterContextMenu({
           >
             {t('infra.openDetails')}
           </DropdownItem>
+          <Divider component="li" />
+          {/* Create what can live under a cluster, scoped to this one — the
+              same two verbs the cluster's banner offers, so the tree and the
+              banner never drift. */}
+          <DropdownItem
+            onClick={() => {
+              setIsOpen(false)
+              setAddingHost(true)
+            }}
+          >
+            {t('hosts.new')}
+          </DropdownItem>
+          <DropdownItem
+            onClick={() => {
+              setIsOpen(false)
+              setAddingVm(true)
+            }}
+          >
+            {t('vms.new')}
+          </DropdownItem>
+          <Divider component="li" />
           <DropdownItem
             onClick={() => {
               setIsOpen(false)
@@ -96,6 +122,16 @@ export function ClusterContextMenu({
       {/* Edit reuses the cluster form modal, mounted per open so each edit
           drafts from the freshest cluster. */}
       {editing && <ClusterFormModal cluster={cluster} isOpen onClose={() => setEditing(false)} />}
+
+      {/* Both create modals are the same ones the flat lists and the pane
+          banners mount — only the preselected scope differs. */}
+      {addingHost && (
+        <NewHostModal isOpen initialClusterId={cluster.id} onClose={() => setAddingHost(false)} />
+      )}
+
+      {addingVm && (
+        <CreateVmWizardModal initialClusterName={cluster.name} onClose={() => setAddingVm(false)} />
+      )}
 
       {upgrading && (
         <ClusterUpgradeModal
