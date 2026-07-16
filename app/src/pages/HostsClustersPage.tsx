@@ -1709,10 +1709,15 @@ export function HostsClustersPage() {
   }
 
   // Create actions ride the identity banner's right-aligned actions slot, keyed
-  // to the SCOPE rather than the active tab: a cluster offers New host, a data
-  // center and the root offer both. They can sit there now because every layer
-  // has a banner — the root one included — which is what the old absolute
-  // overlay pinned over the tab strip was working around.
+  // to the SCOPE rather than the active tab, and each level offers exactly the
+  // child it can name: a data center makes clusters, a cluster makes hosts, a
+  // host makes VMs. The root banner is the deliberate exception — "All
+  // infrastructure" is the catch-all, so it keeps all three rather than
+  // stranding a create behind a hunt for the right node. Same set as the tree's
+  // right-click menus at each level, so the two never drift.
+  // They can sit there now because every layer has a banner — the root one
+  // included — which is what the old absolute overlay pinned over the tab strip
+  // was working around.
   //
   // The button labels reuse the ids the flat /clusters and /hosts lists render,
   // so the two entry points to the same modal can never drift apart.
@@ -1909,16 +1914,11 @@ export function HostsClustersPage() {
             {selectedCluster ? (
               // Edit / Upgrade / Remove live on the cluster DETAIL page (Open
               // details, inline by the name). Only New host here — New cluster
-              // belongs a level up, on the DC / root banners.
+              // belongs a level up, New VM a level down.
               <ClusterPaneHeader
                 cluster={selectedCluster}
                 dcName={selectedClusterDcName}
-                actions={
-                  <>
-                    {newHostButton}
-                    {addVmButton}
-                  </>
-                }
+                actions={newHostButton}
               />
             ) : selectedHost ? (
               // A host holds no clusters, but it does sit IN one — so the only
@@ -1930,7 +1930,10 @@ export function HostsClustersPage() {
                 actions={addVmButton}
               />
             ) : selectedDc ? (
-              <DataCenterPaneHeader dc={selectedDc} actions={newInfraButtons} />
+              // A data center makes clusters; New host / New VM could not name
+              // a scope from here anyway (a DC holds many clusters), so they
+              // live at the levels that can — and on the root banner.
+              <DataCenterPaneHeader dc={selectedDc} actions={newClusterButton} />
             ) : (
               <InfraRootPaneHeader
                 dcCount={dcs.length}

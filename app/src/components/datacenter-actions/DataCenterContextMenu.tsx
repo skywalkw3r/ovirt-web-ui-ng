@@ -16,8 +16,6 @@ import { ClusterFormModal } from '../cluster-form/ClusterFormModal'
 import { ConfirmModal } from '../ConfirmModal'
 import { ContextMenu, type ContextMenuPosition } from '../context-menu/ContextMenu'
 import { DataCenterFormModal } from '../datacenter-form/DataCenterFormModal'
-import { NewHostModal } from '../host-form/NewHostModal'
-import { CreateVmWizardModal } from '../vm-create/CreateVmWizard'
 
 // Right-click menu for a data center node in the Hosts & Clusters tree: Open
 // details / Edit / Remove. Reuses DataCenterFormModal and useDeleteDataCenter,
@@ -49,13 +47,11 @@ export function DataCenterContextMenu({
   // non-null while the remove confirm is up; holds the typed-name gate
   // (docs/COMPONENTS.md: typed-name confirm for delete)
   const [removing, setRemoving] = useState<{ nameInput: string } | null>(null)
-  // create-under-this-data-center modals
+  // create-under-this-data-center modal
   const [addingCluster, setAddingCluster] = useState(false)
-  const [addingHost, setAddingHost] = useState(false)
-  const [addingVm, setAddingVm] = useState(false)
   const deleteMutation = useDeleteDataCenter()
 
-  const modalActive = editing || removing !== null || addingCluster || addingHost || addingVm
+  const modalActive = editing || removing !== null || addingCluster
   useEffect(() => {
     if (isOpen || modalActive || deleteMutation.isPending) return
     onClose()
@@ -82,11 +78,13 @@ export function DataCenterContextMenu({
             {t('infra.openDetails')}
           </DropdownItem>
           <Divider component="li" />
-          {/* Create what can live under a data center — the same three verbs
-              this DC's banner offers. Only New cluster can name its scope from
-              here: a DC holds many clusters, so New host and Add VM open on
-              their own defaults and let the user pick (see the modals'
-              initial-scope props). */}
+          {/* A level creates its own child and nothing else: a data center
+              makes clusters. New host / New VM used to sit here too, but they
+              could not name a scope from a DC (it holds many clusters), so
+              they opened on their own defaults and made the user pick anyway —
+              offering them here only asked the question twice. They live on
+              the cluster and host levels, and on the root banner, which stays
+              the catch-all. */}
           <DropdownItem
             onClick={() => {
               setIsOpen(false)
@@ -94,22 +92,6 @@ export function DataCenterContextMenu({
             }}
           >
             {t('clusters.new')}
-          </DropdownItem>
-          <DropdownItem
-            onClick={() => {
-              setIsOpen(false)
-              setAddingHost(true)
-            }}
-          >
-            {t('hosts.new')}
-          </DropdownItem>
-          <DropdownItem
-            onClick={() => {
-              setIsOpen(false)
-              setAddingVm(true)
-            }}
-          >
-            {t('vms.new')}
           </DropdownItem>
           <Divider component="li" />
           <DropdownItem
@@ -139,7 +121,9 @@ export function DataCenterContextMenu({
         <DataCenterFormModal dataCenter={dataCenter} isOpen onClose={() => setEditing(false)} />
       )}
 
-      {/* The same create modals the pane banners and the flat lists mount. */}
+      {/* The same create modal the pane banners and the flat lists mount —
+          scoped to this DC, which is the whole reason the action belongs at
+          this level. */}
       {addingCluster && (
         <ClusterFormModal
           isOpen
@@ -147,10 +131,6 @@ export function DataCenterContextMenu({
           onClose={() => setAddingCluster(false)}
         />
       )}
-
-      {addingHost && <NewHostModal isOpen onClose={() => setAddingHost(false)} />}
-
-      {addingVm && <CreateVmWizardModal onClose={() => setAddingVm(false)} />}
 
       {/* Copy matches DataCenterDetailPage's Remove confirm verbatim (that
           surface hardcodes English; minting new i18n ids is out of scope for
