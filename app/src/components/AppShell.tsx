@@ -33,8 +33,7 @@ import {
 } from '@patternfly/react-icons'
 import { FormattedMessage, useIntl } from 'react-intl'
 import { Link, Outlet, useRouterState } from '@tanstack/react-router'
-import { applyBrandFavicon } from '../branding/favicon'
-import { brandAssets } from '../branding/logos'
+import { useBrandedTab } from '../branding/useBrandedTab'
 import { engineWebUiUrl } from '../lib/engineWebUi'
 import { monitoringPortalUrl } from '../lib/monitoringPortal'
 import { useCapabilities } from '../auth/capabilities'
@@ -336,12 +335,7 @@ export function AppShell() {
 
   // Branding: the detected engine flavour (oVirt vs OLVM) names the browser
   // tab; index.html's static default holds until it resolves.
-  const brand = useProductBrand()
-  const productName = brandAssets(brand).productName
-  useEffect(() => {
-    document.title = productName
-    applyBrandFavicon(brand)
-  }, [productName, brand])
+  useBrandedTab(useProductBrand())
 
   const groups = visibleNavGroups(isAdmin)
 

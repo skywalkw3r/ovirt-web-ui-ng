@@ -18,10 +18,10 @@ import {
 } from '@patternfly/react-core'
 import { FormattedMessage, useIntl } from 'react-intl'
 import { Navigate, useNavigate, useSearch } from '@tanstack/react-router'
-import { readBrandMirror } from '../branding/brand'
-import { applyBrandFavicon } from '../branding/favicon'
 import { brandAssets } from '../branding/logos'
+import { useBrandedTab } from '../branding/useBrandedTab'
 import { useAuth } from '../auth/context'
+import { useProductBrand } from '../hooks/useProductBrand'
 import { getActiveBase, getServers, setActiveBase, useActiveBase } from '../servers/registry'
 import { getRuntimeConfig } from '../config/runtime'
 
@@ -120,19 +120,16 @@ export function LoginPage() {
     if (server?.profile) setProfile(server.profile)
   }, [servers, activeBase])
   // Pre-auth branding: no token exists yet, so the engine flavour (oVirt vs
-  // OLVM) can't be detected here — it rides a mirror instead. useProductBrand
-  // writes it on every authenticated visit, and a fresh browser simply shows
-  // the stock oVirt branding until its first session.
-  const [brand] = useState(() => readBrandMirror() ?? 'ovirt')
+  // OLVM) can't be detected here — { live: false } parks the engine query and
+  // rides the mirror written by every authenticated visit. A fresh browser
+  // simply shows the stock oVirt branding until its first session.
+  const brand = useProductBrand({ live: false })
   const assets = brandAssets(brand)
   const productName = assets.productName
+  useBrandedTab(brand)
   // The sign-in notice is deploy-time (config.js): shown pre-auth, the same
   // for every user and engine, with no cache to warm first.
   const loginNotice = getRuntimeConfig().login.notice
-  useEffect(() => {
-    document.title = productName
-    applyBrandFavicon(brand)
-  }, [productName, brand])
 
   const effectiveProfile = profile === CUSTOM_PROFILE ? customProfile.trim() : profile
   // The composed user@profile principal the SSO grant actually receives.

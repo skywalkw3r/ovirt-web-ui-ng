@@ -12,8 +12,10 @@ import {
 } from '../api/session'
 import { ApiError } from '../api/transport'
 import { onLogoutBroadcast } from '../auth/sessionChannel'
+import { useBrandedTab } from '../branding/useBrandedTab'
 import { setActiveBase } from '../servers/registry'
 import { NovncConsole } from '../components/console/NovncConsole'
+import { useProductBrand } from '../hooks/useProductBrand'
 import { useT } from '../i18n/useT'
 import { vmConsoleRoute } from '../routes/router'
 
@@ -49,6 +51,13 @@ export function VmConsolePage() {
     if (window.opener) return 'authenticating'
     return getSessionToken() ? 'ready' : 'authenticating'
   })
+
+  // This tab brands itself (title + favicon) exactly like the app tab — an
+  // OLVM engine must not spawn oVirt-titled console tabs. Live detection
+  // can't run before the handshake above delivers a token, so until 'ready'
+  // the last-session mirror stands in — the same pre-auth fallback the login
+  // screen uses.
+  useBrandedTab(useProductBrand({ live: phase === 'ready' }))
 
   // End this console's session for good: the token it rode in on is the app
   // tab's token, and on sign-out the app tab revokes it — so drop the local

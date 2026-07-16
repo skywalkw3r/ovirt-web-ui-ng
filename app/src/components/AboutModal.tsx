@@ -12,6 +12,8 @@ import { ExternalLinkAltIcon } from '@patternfly/react-icons'
 import { FormattedMessage } from 'react-intl'
 import { useQuery } from '@tanstack/react-query'
 import { fetchApiInfo } from '../api/resources/system'
+import { brandAssets } from '../branding/logos'
+import { useProductBrand } from '../hooks/useProductBrand'
 import { APP_VERSION, COMPONENT_VERSIONS } from '../lib/version'
 
 // Engine facts share the dashboard's cache entry: same key/fn pair as
@@ -39,6 +41,12 @@ export function AboutDialog({ isOpen, onClose }: { isOpen: boolean; onClose: () 
   // engine cost and shares the cache when it does open.
   const apiInfo = useApiInfo()
 
+  // The header carries the console's brand-resolved product identity (same
+  // resolution as the masthead and tab title — OLVM engines must not read
+  // "oVirt Console" here); the "Engine product" row below reports the
+  // engine's raw product_info string.
+  const brandName = brandAssets(useProductBrand()).productName
+
   const productName = engineValue(apiInfo, (root) => root.product_info.name)
   const engineVersion = engineValue(apiInfo, (root) => root.product_info.version?.full_version)
 
@@ -54,7 +62,7 @@ export function AboutDialog({ isOpen, onClose }: { isOpen: boolean; onClose: () 
   // build components on the right; both stack on a narrow viewport.
   return (
     <Modal variant="medium" isOpen={isOpen} onClose={onClose} aria-labelledby="about-title">
-      <ModalHeader title="oVirt Console" labelId="about-title" />
+      <ModalHeader title={brandName} labelId="about-title" />
       <ModalBody>
         <Grid hasGutter>
           <GridItem md={hasComponents ? 6 : 12}>

@@ -64,3 +64,18 @@ test('opens the in-browser console in a new tab and renders the toolbar', async 
   await closed
   expect(consolePage.isClosed()).toBe(true)
 })
+
+// The console tab brands itself (title + favicon) through the same resolution
+// as the app tab. The mock engine always resolves to stock oVirt, so the
+// dynamic path is asserted via the pre-auth mirror instead: seed the OLVM
+// brand and land on the console route cold (no opener, no token — the tab
+// parks in its 'unavailable' state). The tab must still title itself OLVM,
+// proving branding rides the mirror rather than waiting on a session.
+test('console tab brands from the mirrored engine flavour before auth', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('console-brand', 'olvm'))
+  await page.goto('/vms/vm-03/console')
+
+  await expect(page.getByText('Console session unavailable')).toBeVisible()
+  await expect(page).toHaveTitle('Oracle Linux Virtualization Manager')
+  await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', /favicon-olvm\.svg$/)
+})
