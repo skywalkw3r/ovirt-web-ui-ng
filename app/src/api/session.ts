@@ -2,9 +2,9 @@
 // by sessionStorage so a PAGE REFRESH does not bounce an authenticated user
 // back to /login.
 //
-// This was originally memory-only by design (docs/PLAN.md §1.3). Revisited
-// deliberately: sessionStorage is per-tab and dies with it — nothing ever
-// lands in localStorage or survives the browsing session — and an XSS payload
+// This was originally memory-only by design. Revisited deliberately:
+// sessionStorage is per-tab and dies with it — nothing ever lands in
+// localStorage or survives the browsing session — and an XSS payload
 // able to enumerate sessionStorage could equally hook fetch and lift the
 // token off the wire, so the practical exposure delta is ~nil while the
 // refresh-logout was a real, everyday usability failure. The tradeoff is
@@ -87,6 +87,35 @@ export function clearSessionToken(): void {
   storageRemove(USERNAME_KEY)
   storageRemove(TIER_KEY)
   storageRemove(SERVER_KEY)
+  clearSessionScopedStorage()
+}
+
+// Everything else this app parks in sessionStorage belongs to the session that
+// just ended, not to the browser: which folder was open, which host was
+// selected, whether the announcement was dismissed. Left behind, the next
+// person to sign in on this tab inherits the last one's view — and the entity
+// IDs that go with it.
+//
+// Prefix sweep rather than an import list: sessionStorage is per-tab and every
+// key this app writes there is by definition session-scoped, so a new one is
+// covered the day it is added instead of the day someone remembers to add it
+// here. Durable PREFERENCES deliberately live in localStorage and are NOT
+// touched — theme, column widths, bookmarks and the rest belong to the browser
+// profile and survive sign-out on purpose (see docs/SECURITY.md).
+const SESSION_KEY_PREFIX = 'console-'
+
+function clearSessionScopedStorage(): void {
+  try {
+    const doomed: string[] = []
+    for (let i = 0; i < sessionStorage.length; i += 1) {
+      const key = sessionStorage.key(i)
+      if (key !== null && key.startsWith(SESSION_KEY_PREFIX)) doomed.push(key)
+    }
+    // collected first — removing while indexing would skip entries
+    for (const key of doomed) sessionStorage.removeItem(key)
+  } catch {
+    // storage unavailable (see the note above); memory state is already clear
+  }
 }
 
 // Whether the current session is a SERVER-VERIFIED admin (set by AuthProvider

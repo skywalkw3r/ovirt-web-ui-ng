@@ -11,7 +11,20 @@ import { getActiveBase } from '../servers/registry'
 // fixed enginesso build or the packaging/engine-cors/ Apache drop-in.
 const SSO_TOKEN_PATH =
   '/ovirt-engine/sso/oauth/token?grant_type=urn:ovirt:params:oauth:grant-type:http&scope=ovirt-app-api'
-const SSO_REVOKE_PATH = '/ovirt-engine/sso/oauth/revoke'
+const SSO_SCOPE = 'ovirt-app-api'
+
+// Sign-out revocation. NOT /ovirt-engine/sso/oauth/revoke: that servlet
+// authenticates the CLIENT (OAuthRevokeServlet → getClientIdClientSecret throws
+// invalid_request when client_id/client_secret are absent), and a browser SPA
+// has no client secret to send — every call from here came back
+// `400 {"error":"invalid_request","error_description":"Missing parameter:
+// 'client_id'"}`, which the old code discarded, so sign-out silently left the
+// token live server-side until it expired on its own.
+// /services/sso-logout is the engine's own token-scoped alias — it takes
+// scope + token and authenticates the caller BY the token being revoked, which
+// is exactly what both the Go and Python oVirt SDKs use. Verified against a
+// live 4.5 engine: 200 {}.
+const SSO_LOGOUT_PATH = '/ovirt-engine/services/sso-logout'
 
 const TokenResponseSchema = z.looseObject({ access_token: z.string() })
 const SsoErrorSchema = z.looseObject({
@@ -62,16 +75,40 @@ export async function obtainToken(username: string, password: string): Promise<s
   return token.data.access_token
 }
 
-// Best-effort RFC 7009 revocation; the in-memory token is gone regardless,
-// this just shortens its server-side lifetime. Never throws.
-export async function revokeToken(token: string): Promise<void> {
+// Kills the token server-side at sign-out. The client-side token is gone
+// regardless, so this never throws — but it DOES report, because a silent
+// failure here is the difference between "signed out" and "still signed in
+// from anyone holding the token". Returns false when the engine did not
+// confirm the revoke, so the caller can say so out loud.
+//
+// oVirt reports SSO failures in the BODY (`{"error": ...}`), sometimes under a
+// 200 — the SDKs check the payload, not the status, and so must we: HTTP-ok
+// alone is not evidence of revocation. Success is `{}`.
+//
+// keepalive:true so clicking Sign out and immediately closing the tab still
+// lands the revoke; a plain fetch is cancelled on unload.
+export async function revokeToken(token: string): Promise<boolean> {
   try {
-    await fetch(`${getActiveBase()}${SSO_REVOKE_PATH}`, {
+    const response = await fetch(`${getActiveBase()}${SSO_LOGOUT_PATH}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ token }),
+      body: new URLSearchParams({ scope: SSO_SCOPE, token }),
+      keepalive: true,
     })
+    const payload: unknown = await response.json().catch(() => undefined)
+    const error = SsoErrorSchema.safeParse(payload)
+    if (!response.ok || (error.success && error.data.error !== undefined)) {
+      console.warn(
+        'SSO token revoke was not confirmed by the engine — the token may stay valid until it expires server-side.',
+        { status: response.status, error: error.success ? error.data.error : undefined },
+      )
+      return false
+    }
+    return true
   } catch {
-    // token still cleared client-side; nothing actionable
+    // Offline / engine unreachable. Nothing actionable beyond the local clear
+    // the caller already did; the token dies with its own expiry.
+    console.warn('SSO token revoke could not reach the engine; token cleared locally only.')
+    return false
   }
 }

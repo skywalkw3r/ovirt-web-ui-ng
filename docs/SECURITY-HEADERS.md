@@ -108,11 +108,12 @@ hardening posture:
 
 API calls are **Bearer-token** (`Authorization` header), which are inherently
 CSRF-safe — a cross-site form can't forge a custom header. The token lives in
-memory only (never a cookie), so there is no ambient credential for CSRF to
-abuse and no `SameSite` cookie policy to reason about for our own calls. The
-engine's own SSO session cookie is out of our scope; the same-origin
-deployment means it is never sent cross-origin from our pages. See PLAN.md
-Phase 4 for the full token-lifecycle threat model.
+JS memory plus a per-tab `sessionStorage` mirror and never in a cookie, so
+there is no ambient credential for CSRF to abuse and no `SameSite` cookie
+policy to reason about for our own calls. The engine's own SSO session cookie
+is out of our scope; the same-origin deployment means it is never sent
+cross-origin from our pages. See `SECURITY.md` §1 (assets) and §2 (controls)
+for the token-lifecycle model, including sign-out revocation.
 
 ## Deployment note
 

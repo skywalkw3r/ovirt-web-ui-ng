@@ -74,17 +74,47 @@ describe('obtainToken', () => {
 })
 
 describe('revokeToken', () => {
-  it('posts the token as form data and never throws', async () => {
+  it('posts scope + token to the token-scoped logout endpoint', async () => {
     const fetchMock = mockFetch(200, {})
-    await revokeToken('tok-1')
+    await expect(revokeToken('tok-1')).resolves.toBe(true)
 
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit]
-    expect(url).toBe('/ovirt-engine/sso/oauth/revoke')
-    expect(String(init.body)).toBe('token=tok-1')
+    // NOT /sso/oauth/revoke: that servlet demands client_id + client_secret,
+    // which a browser has none of — see the regression test below.
+    expect(url).toBe('/ovirt-engine/services/sso-logout')
+    expect(String(init.body)).toBe('scope=ovirt-app-api&token=tok-1')
+    // survives the tab closing right after the user clicks Sign out
+    expect(init.keepalive).toBe(true)
   })
 
-  it('swallows network failures', async () => {
+  // The bug this endpoint choice exists to prevent: the old code posted to
+  // /sso/oauth/revoke with token only, got 400 invalid_request back on EVERY
+  // sign-out, and discarded the response — so a token nobody had revoked
+  // looked revoked. Whatever the engine says, an unconfirmed revoke must
+  // report false rather than pass silently.
+  it('reports failure when the engine rejects the revoke', async () => {
+    mockFetch(400, {
+      error: 'invalid_request',
+      error_description: "Missing parameter: 'client_id'",
+    })
+    await expect(revokeToken('tok-1')).resolves.toBe(false)
+  })
+
+  // oVirt signals SSO faults in the BODY, sometimes under a 200 — status alone
+  // is not evidence of revocation.
+  it('reports failure on an error body served with a 200', async () => {
+    mockFetch(200, { error: 'invalid_grant', error_description: 'token not found' })
+    await expect(revokeToken('tok-1')).resolves.toBe(false)
+  })
+
+  it('reports failure but never throws when the engine is unreachable', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')))
-    await expect(revokeToken('tok-1')).resolves.toBeUndefined()
+    await expect(revokeToken('tok-1')).resolves.toBe(false)
+  })
+
+  it('treats an empty success body as revoked', async () => {
+    // the live engine answers `200 { }`
+    mockFetch(200, {})
+    await expect(revokeToken('tok-1')).resolves.toBe(true)
   })
 })

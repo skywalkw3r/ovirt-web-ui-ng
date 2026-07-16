@@ -38,6 +38,18 @@ export interface RequestOptions {
   correlationId?: string
 }
 
+// A real 401 from the engine means this session is over — the token expired or
+// was revoked (possibly by another tab). AuthProvider registers here so that
+// ANY request discovering it tears the session down immediately, rather than
+// the app sitting there authenticated-looking, rendering per-query errors,
+// until the 60s keep-alive happens to notice. Registered rather than imported
+// to keep transport free of a dependency on React/auth state.
+let unauthorizedHandler: (() => void) | null = null
+
+export function setUnauthorizedHandler(handler: (() => void) | null): void {
+  unauthorizedHandler = handler
+}
+
 // oVirt error envelope: { fault: { reason, detail } }
 function extractFault(payload: unknown): { reason?: string; detail?: string } {
   if (typeof payload !== 'object' || payload === null) return {}
@@ -80,6 +92,10 @@ export async function request(path: string, opts: RequestOptions = {}): Promise<
   if (!response.ok) {
     const payload: unknown = await response.json().catch(() => undefined)
     const { reason, detail } = extractFault(payload)
+    // 401 only — 403 is an authorization verdict on a live session (the engine
+    // rejecting Filter:false, a permission the user lacks), and logging out on
+    // one would turn a single forbidden read into a sign-out.
+    if (response.status === 401) unauthorizedHandler?.()
     throw new ApiError(response.status, reason, detail)
   }
 

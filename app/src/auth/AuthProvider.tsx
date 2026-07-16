@@ -12,6 +12,7 @@ import {
   setSessionToken,
   setSessionUsername,
 } from '../api/session'
+import { setUnauthorizedHandler } from '../api/transport'
 import { clearMotdDismissal } from '../lib/motd'
 import { getActiveBase, setActiveBase } from '../servers/registry'
 import { useSettings } from '../settings/SettingsProvider'
@@ -19,6 +20,7 @@ import { readInjectedSession } from './bootstrap'
 import { CapabilitiesContext, DEFAULT_CAPABILITIES, type CapabilitiesValue } from './capabilities'
 import { AuthContext, type AuthContextValue } from './context'
 import { startKeepalive, type KeepaliveController } from './keepalive'
+import { broadcastLogout, onLogoutBroadcast } from './sessionChannel'
 import { useIdleLogout } from './useIdleLogout'
 
 // Mock mode short-circuits the real engine (transport/auth import the same
@@ -147,22 +149,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setCapabilities(DEFAULT_CAPABILITIES)
   }, [])
 
-  const logout = useCallback(async () => {
-    const token = getSessionToken()
-    resetSession()
-    try {
-      if (token) await revokeToken(token)
-    } finally {
-      // Cached queries are per-session state: without this, a re-login
-      // within gcTime hands the next session the previous user's data
-      // synchronously (e.g. the notification bell would seed its unread
-      // watermark from the old session's cached events, and the drawer
-      // would flash them until the refetch under the new token lands).
-      // Deferred past the revoke await so the state flush above has
-      // already unmounted the shell — no live observer refetches tokenless.
-      queryClient.clear()
-    }
-  }, [queryClient, resetSession])
+  // `broadcast` is false when we are REACTING to another tab's sign-out —
+  // each tab still revokes its own token (they differ per tab), but must not
+  // echo the message back and bounce it around the origin forever.
+  const logout = useCallback(
+    async (broadcast = true) => {
+      const token = getSessionToken()
+      resetSession()
+      if (broadcast) broadcastLogout()
+      try {
+        // Best-effort, but no longer blind: revokeToken reports (and warns)
+        // when the engine does not confirm, so a token left alive server-side
+        // is visible instead of silent.
+        if (token) await revokeToken(token)
+      } finally {
+        // Cached queries are per-session state: without this, a re-login
+        // within gcTime hands the next session the previous user's data
+        // synchronously (e.g. the notification bell would seed its unread
+        // watermark from the old session's cached events, and the drawer
+        // would flash them until the refetch under the new token lands).
+        // Deferred past the revoke await so the state flush above has
+        // already unmounted the shell — no live observer refetches tokenless.
+        queryClient.clear()
+      }
+    },
+    [queryClient, resetSession],
+  )
 
   // The keep-alive detected an expired SSO session (401). Drop to a
   // logged-out state so the router redirects to /login; no revoke — the
@@ -175,9 +187,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Idle timeout (Preferences → Session timeout, default 1h): after N minutes
   // without interaction, sign out fully — logout() also revokes the token
-  // server-side, so an abandoned session can't be replayed from the tab.
+  // server-side, so an abandoned session can't be replayed from the tab. Note
+  // this is a client-side courtesy on TOP of the engine's own idle expiry,
+  // which the keep-alive no longer suppresses for an idle tab (auth/keepalive)
+  // — whichever fires first ends the session.
   const { sessionTimeoutMinutes } = useSettings()
   useIdleLogout(username !== null, sessionTimeoutMinutes, () => void logout())
+
+  // Any request that meets a real 401 ends the session here and now, instead
+  // of the app staying mounted and authenticated-looking until the keep-alive
+  // notices up to a minute later. No revoke: a 401 means the token is already
+  // dead server-side.
+  useEffect(() => {
+    if (username === null) return
+    setUnauthorizedHandler(handleSessionExpired)
+    return () => {
+      setUnauthorizedHandler(null)
+    }
+  }, [username, handleSessionExpired])
+
+  // Another tab signed out → sign this one out too, revoking this tab's own
+  // token, without re-broadcasting.
+  useEffect(() => {
+    if (username === null) return
+    return onLogoutBroadcast(() => {
+      void logout(false)
+    })
+  }, [username, logout])
 
   // Engine-injected session (production): the token + username were seeded
   // synchronously in the useState initializer (seedInjectedSession) so render
@@ -207,10 +243,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [username, handleSessionExpired])
 
-  // Hand the in-memory token to a console tab this app opened. The console
-  // opens in its own browser tab (ConsoleButton → window.open) which, being a
-  // fresh document, has no token — the token is memory-only and never
-  // persisted (docs/SECURITY.md §3), so it cannot read one from storage. The
+  // Hand this session's token to a console tab this app opened. The console
+  // opens in its own browser tab (ConsoleButton → window.open) which may start
+  // with no token: the store is per-tab `sessionStorage` (docs/SECURITY.md §1)
+  // and only some browsers copy it into a window.open'd tab. The
   // tab postMessages its opener (this window) an 'ovirt-console-auth-request';
   // we reply, same-origin only, with the current token. Guards:
   //   - origin must equal our own (rejects cross-origin frames/tabs)

@@ -591,34 +591,40 @@ export function VmsAndTemplatesPage() {
             </Breadcrumb>
           )}
           {/* The same identity banner the infra tree panes render, so both
-              inventory surfaces answer "what am I looking at?" the same way. */}
-          {selectedFolder !== undefined && (
-            <PaneHeader
-              icon={<FolderIcon />}
-              name={selectedFolder.name}
-              kindId="inventory.folder.kind"
-              facts={[
-                t('inventory.folder.vms', { count: visibleVmCount }),
-                t('inventory.folder.templates', { count: visibleTemplateCount }),
-              ]}
-            />
-          )}
-          {/* Tier 2: what targets the table below — the admin-gated Tag/Import
-              entries that produce its rows, its paging, export and columns.
-              Same slot order as the Hosts & Clusters panes. */}
-          <PaneToolbar
+              inventory surfaces answer "what am I looking at?" the same way —
+              including at the ROOT, which reads the tree's own "all" label
+              rather than going bannerless (mirrors InfraRootPaneHeader). Only
+              a real folder names its kind; the root is an aggregate, so it has
+              none. The admin-gated create actions ride the banner's actions
+              slot, exactly as New cluster / New host / New VM do on the infra
+              panes — and because the banner is unconditional they stay
+              reachable at the root too. */}
+          <PaneHeader
+            icon={<FolderIcon />}
+            name={selectedFolder?.name ?? t('inventory.tree.allLabel')}
+            kindId={selectedFolder !== undefined ? 'inventory.folder.kind' : undefined}
+            // Each count waits for its own collection: PaneHeader drops an
+            // undefined fact, so a still-loading banner says nothing rather
+            // than flashing "0 VMs" at someone who has ten (same reason
+            // InfraRootPaneHeader holds its VM count back).
+            facts={[
+              vms.isPending ? undefined : t('inventory.folder.vms', { count: visibleVmCount }),
+              templates.isPending
+                ? undefined
+                : t('inventory.folder.templates', { count: visibleTemplateCount }),
+            ]}
             actions={
               isAdmin ? (
                 <>
-                  <ToolbarItem>
-                    <TagManagerButton />
-                  </ToolbarItem>
-                  <ToolbarItem>
-                    <ImportVmButton />
-                  </ToolbarItem>
+                  <TagManagerButton />
+                  <ImportVmButton />
                 </>
               ) : undefined
             }
+          />
+          {/* Tier 2: what targets the table below — its paging, export and
+              columns. Same slot order as the Hosts & Clusters panes. */}
+          <PaneToolbar
             bulk={
               selectedRows.length > 0 ? (
                 <>

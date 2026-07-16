@@ -32,10 +32,11 @@ const loginRoute = createRoute({
 })
 
 // The in-browser VM console opens in its own browser tab. It lives OUTSIDE
-// Protected on purpose: a freshly-opened tab has no in-memory token yet (the
-// token is memory-only and never persisted), so the Protected guard would
-// bounce it to /login before VmConsolePage can complete its postMessage
-// handshake with the opener. The page authenticates itself instead.
+// Protected on purpose: the token store is per-tab `sessionStorage` and only
+// some browsers copy it into a window.open'd tab, so the new tab may start
+// with no token at all — the Protected guard would bounce it to /login before
+// VmConsolePage can complete its postMessage handshake with the opener. The
+// page authenticates itself instead.
 export const vmConsoleRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/vms/$vmId/console',
