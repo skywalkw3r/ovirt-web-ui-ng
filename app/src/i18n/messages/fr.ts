@@ -3527,7 +3527,6 @@ export const fr: LocaleCatalog = {
   'macPools.remove.defaultReason': 'Le pool Default intégré ne peut pas être supprimé.',
   'macPools.table.ariaLabel': "Pools d'adresses MAC",
   'macPools.title': "Pools d'adresses MAC",
-  'migrate.host.label.v9': 'Hôte',
   'moreTabs.ariaLabel': "Plus d'onglets",
   'moreTabs.label': 'Plus',
   'networkClusters.action.markRequired': 'Marquer comme requis',
@@ -3855,7 +3854,6 @@ export const fr: LocaleCatalog = {
   'setupNetworks.validation.prefixV6': 'Saisissez une longueur de préfixe IPv6 (0–128)',
   'setupNetworks.validation.qosValue': 'Saisissez un nombre entier non négatif',
   SKIP: '80',
-  'SKIP.v7': '00:1a:4a:00:00:ff',
   'storage.action.activate': 'Activer',
   'storage.action.attachToDc': 'Attacher à un centre de données',
   'storage.action.destroy': 'Détruire',
@@ -4008,11 +4006,11 @@ export const fr: LocaleCatalog = {
   'tags.assign.noneDefined.body':
     "Créez des étiquettes dans le gestionnaire d'étiquettes sur la liste des machines virtuelles, puis attribuez-les ici.",
   'tags.assign.noneDefined.title': 'Aucune étiquette définie',
-  'tags.assignTags.title / tags.assignTags.titleNoName':
-    "Attribuer des étiquettes à {entityName}` / 'Attribuer des étiquettes'",
   'tags.assignVm.partial': 'Sur {attachedTo} des {length}',
-  'tags.assignVm.title.single / tags.assignVm.title.batch':
-    'Ajouter des étiquettes à {name}` / `Ajouter des étiquettes à {length} VMs',
+  'tags.assignTags.title': 'Attribuer des étiquettes à {entityName}',
+  'tags.assignTags.titleNoName': 'Attribuer des étiquettes',
+  'tags.assignVm.title.single': 'Ajouter des étiquettes à {name}',
+  'tags.assignVm.title.batch': 'Ajouter des étiquettes à {count} VMs',
   'tasks.action.clearFinished': 'Effacer les tâches terminées',
   'tasks.badge.overCap': 'Tâches — plus de {BADGE_CAP} en cours',
   'tasks.column.correlationId': 'ID de corrélation',

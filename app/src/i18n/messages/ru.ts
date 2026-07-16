@@ -3607,7 +3607,6 @@ export const ru: LocaleCatalog = {
   'macPools.title': 'Пулы MAC-адресов',
 
   // migrate
-  'migrate.host.label.v9': 'Хост',
 
   // moreTabs
   'moreTabs.ariaLabel': 'Ещё вкладки',
@@ -3978,7 +3977,6 @@ export const ru: LocaleCatalog = {
 
   // SKIP (non-translatable placeholder values mirrored verbatim from en)
   SKIP: '80',
-  'SKIP.v7': '00:1a:4a:00:00:ff',
   // storage
   'storage.action.activate': 'Активировать',
   'storage.action.attachToDc': 'Прикрепить к дата-центру',
@@ -4135,11 +4133,11 @@ export const ru: LocaleCatalog = {
   'tags.assign.noneDefined.body':
     'Создайте метки в диспетчере меток в списке виртуальных машин, затем назначьте их здесь.',
   'tags.assign.noneDefined.title': 'Метки не определены',
-  'tags.assignTags.title / tags.assignTags.titleNoName':
-    "Назначить метки для {entityName}` / 'Назначить метки'",
   'tags.assignVm.partial': 'На {attachedTo} из {length}',
-  'tags.assignVm.title.single / tags.assignVm.title.batch':
-    'Добавить метки для {name}` / `Добавить метки для {length} ВМ',
+  'tags.assignTags.title': 'Назначить метки для {entityName}',
+  'tags.assignTags.titleNoName': 'Назначить метки',
+  'tags.assignVm.title.single': 'Добавить метки для {name}',
+  'tags.assignVm.title.batch': 'Добавить метки для {count} ВМ',
 
   // tasks
   'tasks.action.clearFinished': 'Очистить завершённые',

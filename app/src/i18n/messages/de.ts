@@ -3540,7 +3540,6 @@ export const de: LocaleCatalog = {
   'macPools.remove.defaultReason': 'Der integrierte Standard-Pool kann nicht entfernt werden.',
   'macPools.table.ariaLabel': 'MAC-Adresspools',
   'macPools.title': 'MAC-Adresspools',
-  'migrate.host.label.v9': 'Host',
   'moreTabs.ariaLabel': 'Weitere Registerkarten',
   'moreTabs.label': 'Mehr',
   'networkClusters.action.markRequired': 'Als erforderlich markieren',
@@ -3870,7 +3869,6 @@ export const de: LocaleCatalog = {
   'setupNetworks.validation.prefixV6': 'Geben Sie eine IPv6-Präfixlänge (0–128) ein',
   'setupNetworks.validation.qosValue': 'Geben Sie eine nicht-negative ganze Zahl ein',
   SKIP: '80',
-  'SKIP.v7': '00:1a:4a:00:00:ff',
   'storage.action.activate': 'Aktivieren',
   'storage.action.attachToDc': 'An Rechenzentrum anhängen',
   'storage.action.destroy': 'Zerstören',
@@ -4025,11 +4023,11 @@ export const de: LocaleCatalog = {
   'tags.assign.noneDefined.body':
     'Erstellen Sie Tags im Tag-Manager in der Liste der virtuellen Maschinen und weisen Sie sie dann hier zu.',
   'tags.assign.noneDefined.title': 'Keine Tags definiert',
-  'tags.assignTags.title / tags.assignTags.titleNoName':
-    "Tags zu {entityName} zuweisen` / 'Tags zuweisen'",
   'tags.assignVm.partial': 'Auf {attachedTo} von {length}',
-  'tags.assignVm.title.single / tags.assignVm.title.batch':
-    'Tags zu {name} hinzufügen` / `Tags zu {length} VMs hinzufügen',
+  'tags.assignTags.title': 'Tags zu {entityName} zuweisen',
+  'tags.assignTags.titleNoName': 'Tags zuweisen',
+  'tags.assignVm.title.single': 'Tags zu {name} hinzufügen',
+  'tags.assignVm.title.batch': 'Tags zu {count} VMs hinzufügen',
   'tasks.action.clearFinished': 'Abgeschlossene löschen',
   'tasks.badge.overCap': 'Aufgaben — mehr als {BADGE_CAP} laufen',
   'tasks.column.correlationId': 'Korrelations-ID',

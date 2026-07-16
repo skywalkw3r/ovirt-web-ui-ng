@@ -3482,7 +3482,6 @@ export const ja: LocaleCatalog = {
   'macPools.remove.defaultReason': '組み込みのデフォルトプールは削除できません。',
   'macPools.table.ariaLabel': 'MACアドレスプール',
   'macPools.title': 'MACアドレスプール',
-  'migrate.host.label.v9': 'ホスト',
   'moreTabs.ariaLabel': 'その他のタブ',
   'moreTabs.label': 'その他',
   'networkClusters.action.markRequired': '必須にする',
@@ -3803,7 +3802,6 @@ export const ja: LocaleCatalog = {
   'setupNetworks.validation.prefixV6': 'IPv6プレフィックス長（0〜128）を入力してください',
   'setupNetworks.validation.qosValue': '0以上の整数を入力してください',
   SKIP: '80',
-  'SKIP.v7': '00:1a:4a:00:00:ff',
   'storage.action.activate': '有効化',
   'storage.action.attachToDc': 'データセンターに接続',
   'storage.action.destroy': '破棄',
@@ -3954,11 +3952,11 @@ export const ja: LocaleCatalog = {
   'tags.assign.noneDefined.body':
     '仮想マシンリストのタグマネージャーでタグを作成してから、ここで割り当ててください。',
   'tags.assign.noneDefined.title': 'タグが定義されていません',
-  'tags.assignTags.title / tags.assignTags.titleNoName':
-    "{entityName}にタグを割り当て` / 'タグを割り当て'",
   'tags.assignVm.partial': '{length}件中{attachedTo}件に付与',
-  'tags.assignVm.title.single / tags.assignVm.title.batch':
-    '{name}にタグを追加` / `{length} 台のVMにタグを追加',
+  'tags.assignTags.title': '{entityName} にタグを割り当て',
+  'tags.assignTags.titleNoName': 'タグを割り当て',
+  'tags.assignVm.title.single': '{name} にタグを追加',
+  'tags.assignVm.title.batch': '{count} VMにタグを追加',
   'tasks.action.clearFinished': '完了をクリア',
   'tasks.badge.overCap': 'タスク — {BADGE_CAP}件以上が実行中',
   'tasks.column.correlationId': '相関ID',

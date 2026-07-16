@@ -3979,7 +3979,6 @@ export const en = {
   'macPools.table.ariaLabel': 'MAC address pools',
   'macPools.title': 'MAC address pools',
   // migrate.* -----------------------------------------------------
-  'migrate.host.label.v9': 'Host',
   // moreTabs.* ----------------------------------------------------
   'moreTabs.ariaLabel': 'More tabs',
   'moreTabs.label': 'More',
@@ -4320,7 +4319,6 @@ export const en = {
   'setupNetworks.validation.qosValue': 'Enter a non-negative whole number',
   // SKIP.* --------------------------------------------------------
   SKIP: '80',
-  'SKIP.v7': '00:1a:4a:00:00:ff',
   // storage.* -----------------------------------------------------
   'storage.action.activate': 'Activate',
   'storage.action.attachToDc': 'Attach to data center',
@@ -4472,11 +4470,11 @@ export const en = {
   'tags.assign.noneDefined.body':
     'Create tags in the Tag Manager on the Virtual Machines list, then assign them here.',
   'tags.assign.noneDefined.title': 'No tags defined',
-  'tags.assignTags.title / tags.assignTags.titleNoName':
-    "Assign tags to {entityName}` / 'Assign tags'",
+  'tags.assignTags.title': 'Assign tags to {entityName}',
+  'tags.assignTags.titleNoName': 'Assign tags',
+  'tags.assignVm.title.single': 'Add tags to {name}',
+  'tags.assignVm.title.batch': 'Add tags to {count} VMs',
   'tags.assignVm.partial': 'On {attachedTo} of {length}',
-  'tags.assignVm.title.single / tags.assignVm.title.batch':
-    'Add tags to {name}` / `Add tags to {length} VMs',
   // tasks.* -------------------------------------------------------
   'tasks.action.clearFinished': 'Clear finished',
   'tasks.badge.overCap': 'Tasks — more than {BADGE_CAP} running',

@@ -152,7 +152,11 @@ export function AssignVmTagsModal({ vms, onClose }: { vms: readonly Vm[]; onClos
       aria-describedby="assign-vm-tags-body"
     >
       <ModalHeader
-        title={vms.length === 1 ? `Add tags to ${vms[0].name}` : `Add tags to ${vms.length} VMs`}
+        title={
+          vms.length === 1
+            ? t('tags.assignVm.title.single', { name: vms[0].name })
+            : t('tags.assignVm.title.batch', { count: vms.length })
+        }
         labelId="assign-vm-tags-title"
       />
       <ModalBody id="assign-vm-tags-body">

@@ -3506,7 +3506,6 @@ export const ptBR: LocaleCatalog = {
   'macPools.remove.defaultReason': 'O pool Padrão interno não pode ser removido.',
   'macPools.table.ariaLabel': 'Pools de endereços MAC',
   'macPools.title': 'Pools de endereços MAC',
-  'migrate.host.label.v9': 'Host',
   'moreTabs.ariaLabel': 'Mais abas',
   'moreTabs.label': 'Mais',
   'networkClusters.action.markRequired': 'Marcar como obrigatória',
@@ -3833,7 +3832,6 @@ export const ptBR: LocaleCatalog = {
   'setupNetworks.validation.prefixV6': 'Digite um comprimento de prefixo IPv6 (0–128)',
   'setupNetworks.validation.qosValue': 'Digite um número inteiro não negativo',
   SKIP: '80',
-  'SKIP.v7': '00:1a:4a:00:00:ff',
   'storage.action.activate': 'Ativar',
   'storage.action.attachToDc': 'Anexar ao data center',
   'storage.action.destroy': 'Destruir',
@@ -3987,11 +3985,11 @@ export const ptBR: LocaleCatalog = {
   'tags.assign.noneDefined.body':
     'Crie marcadores no Gerenciador de Marcadores na lista de Máquinas Virtuais e depois atribua-os aqui.',
   'tags.assign.noneDefined.title': 'Nenhum marcador definido',
-  'tags.assignTags.title / tags.assignTags.titleNoName':
-    "Atribuir marcadores a {entityName}` / 'Atribuir marcadores'",
   'tags.assignVm.partial': 'Em {attachedTo} de {length}',
-  'tags.assignVm.title.single / tags.assignVm.title.batch':
-    'Adicionar marcadores a {name}` / `Adicionar marcadores a {length} VMs',
+  'tags.assignTags.title': 'Atribuir marcadores a {entityName}',
+  'tags.assignTags.titleNoName': 'Atribuir marcadores',
+  'tags.assignVm.title.single': 'Adicionar marcadores a {name}',
+  'tags.assignVm.title.batch': 'Adicionar marcadores a {count} VMs',
   'tasks.action.clearFinished': 'Limpar concluídas',
   'tasks.badge.overCap': 'Tarefas — mais de {BADGE_CAP} em execução',
   'tasks.column.correlationId': 'ID de correlação',

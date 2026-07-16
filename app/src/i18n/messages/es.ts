@@ -2758,7 +2758,6 @@ export const es: LocaleCatalog = {
 
   // Backfill: newly-added message ids (see i18n manifest)
   SKIP: '80',
-  'SKIP.v7': '00:1a:4a:00:00:ff',
   'addUser.description': 'Busque principales en un directorio y añádalos al motor.',
   'addUser.domains.error': 'No se pudieron cargar los dominios: {message}',
   'addUser.domains.loading': 'Cargando dominios',
@@ -3526,7 +3525,6 @@ export const es: LocaleCatalog = {
   'macPools.remove.defaultReason': 'El pool Default integrado no se puede eliminar.',
   'macPools.table.ariaLabel': 'Pools de direcciones MAC',
   'macPools.title': 'Pools de direcciones MAC',
-  'migrate.host.label.v9': 'Host',
   'moreTabs.ariaLabel': 'Más pestañas',
   'moreTabs.label': 'Más',
   'networkClusters.action.markRequired': 'Marcar como requerida',
@@ -4007,11 +4005,11 @@ export const es: LocaleCatalog = {
   'tags.assign.noneDefined.body':
     'Cree etiquetas en el Administrador de etiquetas de la lista de Máquinas virtuales y luego asígnelas aquí.',
   'tags.assign.noneDefined.title': 'No hay etiquetas definidas',
-  'tags.assignTags.title / tags.assignTags.titleNoName':
-    "Asignar etiquetas a {entityName}` / 'Asignar etiquetas'",
   'tags.assignVm.partial': 'En {attachedTo} de {length}',
-  'tags.assignVm.title.single / tags.assignVm.title.batch':
-    'Añadir etiquetas a {name}` / `Añadir etiquetas a {length} VMs',
+  'tags.assignTags.title': 'Asignar etiquetas a {entityName}',
+  'tags.assignTags.titleNoName': 'Asignar etiquetas',
+  'tags.assignVm.title.single': 'Añadir etiquetas a {name}',
+  'tags.assignVm.title.batch': 'Añadir etiquetas a {count} VMs',
   'tasks.action.clearFinished': 'Limpiar finalizadas',
   'tasks.badge.overCap': 'Tareas — más de {BADGE_CAP} en ejecución',
   'tasks.column.correlationId': 'ID de correlación',

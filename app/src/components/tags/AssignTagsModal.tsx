@@ -133,7 +133,9 @@ export function AssignTagsModal({
       aria-describedby="assign-tags-body"
     >
       <ModalHeader
-        title={entityName ? `Assign tags to ${entityName}` : 'Assign tags'}
+        title={
+          entityName ? t('tags.assignTags.title', { entityName }) : t('tags.assignTags.titleNoName')
+        }
         labelId="assign-tags-title"
       />
       <ModalBody id="assign-tags-body">

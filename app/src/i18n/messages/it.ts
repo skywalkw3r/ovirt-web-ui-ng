@@ -3009,7 +3009,6 @@ export const it: LocaleCatalog = {
   'dcStorage.maintenance.confirm.title': 'Spostare {name} in manutenzione?',
   'dcStorage.table.ariaLabel': 'Domini di archiviazione',
   SKIP: '80',
-  'SKIP.v7': '00:1a:4a:00:00:ff',
   'discoverIscsi.address': 'Indirizzo del target',
   'discoverIscsi.address.aria': 'Indirizzo del target iSCSI',
   'discoverIscsi.chapPassword': 'Password CHAP',
@@ -3527,7 +3526,6 @@ export const it: LocaleCatalog = {
   'macPools.remove.defaultReason': 'Il pool Default integrato non può essere rimosso.',
   'macPools.table.ariaLabel': 'Pool di indirizzi MAC',
   'macPools.title': 'Pool di indirizzi MAC',
-  'migrate.host.label.v9': 'Host',
   'moreTabs.ariaLabel': 'Altre schede',
   'moreTabs.label': 'Altro',
   'networkClusters.action.markRequired': 'Contrassegna come obbligatoria',
@@ -4007,11 +4005,11 @@ export const it: LocaleCatalog = {
   'tags.assign.noneDefined.body':
     "Crea tag nel Gestore tag nell'elenco delle macchine virtuali, quindi assegnali qui.",
   'tags.assign.noneDefined.title': 'Nessun tag definito',
-  'tags.assignTags.title / tags.assignTags.titleNoName':
-    "Assegna tag a {entityName}` / 'Assegna tag'",
   'tags.assignVm.partial': 'Su {attachedTo} di {length}',
-  'tags.assignVm.title.single / tags.assignVm.title.batch':
-    'Aggiungi tag a {name}` / `Aggiungi tag a {length} VM',
+  'tags.assignTags.title': 'Assegna tag a {entityName}',
+  'tags.assignTags.titleNoName': 'Assegna tag',
+  'tags.assignVm.title.single': 'Aggiungi tag a {name}',
+  'tags.assignVm.title.batch': 'Aggiungi tag a {count} VM',
   'tasks.action.clearFinished': 'Cancella completati',
   'tasks.badge.overCap': 'Attività — più di {BADGE_CAP} in esecuzione',
   'tasks.column.correlationId': 'ID di correlazione',
