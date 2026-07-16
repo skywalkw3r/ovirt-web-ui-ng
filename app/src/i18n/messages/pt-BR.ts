@@ -1729,6 +1729,8 @@ export const ptBR: LocaleCatalog = {
   'vmConsole.noVnc.body':
     'Esta VM não expõe nenhum console VNC. Use o download .vv do menu Console para SPICE.',
   'vmConsole.noVnc.error': 'Esta VM não tem console VNC',
+  'vmConsole.ended.title': 'Sessão encerrada',
+  'vmConsole.ended.body': 'Você foi desconectado. Este console está desconectado.',
   'vmActions.deleteProtected.tooltip':
     'Esta VM está protegida contra exclusão. Desative a proteção contra exclusão em Editar antes de removê-la.',
   'vmActions.confirm.title': '{action} {name}?',

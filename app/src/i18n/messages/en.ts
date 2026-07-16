@@ -2041,6 +2041,10 @@ export const en = {
   'vmConsole.noVnc.body':
     "This VM exposes no VNC console. Use the Console menu's .vv download for SPICE.",
   'vmConsole.noVnc.error': 'This VM has no VNC console',
+  // shown when the app tab signs out (or the token expires) while this console
+  // tab is open — its session is over, so the live view is torn down
+  'vmConsole.ended.title': 'Session ended',
+  'vmConsole.ended.body': 'You have been signed out. This console is disconnected.',
 
   // ==========================================================================
   // VM ACTIONS MENU (components/VmActionsMenu) — the kebab-only extras (Remove,

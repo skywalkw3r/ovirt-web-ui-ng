@@ -4,11 +4,14 @@ import { FormattedMessage } from 'react-intl'
 import { buildConsoleConnection, listGraphicsConsoles } from '../api/resources/consoles'
 import type { GraphicsConsole } from '../api/schemas/console'
 import {
+  clearSessionToken,
   getSessionToken,
   setSessionAdmin,
   setSessionServerBase,
   setSessionToken,
 } from '../api/session'
+import { ApiError } from '../api/transport'
+import { onLogoutBroadcast } from '../auth/sessionChannel'
 import { setActiveBase } from '../servers/registry'
 import { NovncConsole } from '../components/console/NovncConsole'
 import { useT } from '../i18n/useT'
@@ -23,7 +26,12 @@ const MOCK_WS_URL = 'wss://mock.invalid/websockify'
 // immediately), others don't — so the fallback asks the opener — the app
 // tab — for the token over an origin-checked postMessage. Either way the
 // token never touches localStorage or the URL (see docs/SECURITY.md §3).
-type AuthPhase = 'authenticating' | 'ready' | 'unavailable'
+//
+// 'ended' is the sign-out state: this tab holds a token but no username, so
+// none of AuthProvider's session teardown runs for it (idle logout, keep-alive
+// and the cross-tab logout listener all gate on username !== null). It ends
+// its own session instead — see the logout subscription below.
+type AuthPhase = 'authenticating' | 'ready' | 'unavailable' | 'ended'
 
 export function VmConsolePage() {
   const t = useT()
@@ -42,8 +50,29 @@ export function VmConsolePage() {
     return getSessionToken() ? 'ready' : 'authenticating'
   })
 
+  // End this console's session for good: the token it rode in on is the app
+  // tab's token, and on sign-out the app tab revokes it — so drop the local
+  // copy and unmount the live view (which closes its WebSocket). Shared by the
+  // cross-tab sign-out below and the 401 path in FullWindowConsole.
+  const endSession = useCallback(() => {
+    clearSessionToken()
+    setPhase('ended')
+  }, [])
+
+  // A sign-out in ANY app tab on this origin reaches here (BroadcastChannel is
+  // document-independent, so it works even though this tab has no username and
+  // AuthProvider's own listener is dormant). That is the whole point: a
+  // signed-out user must not be left staring at a live VM screen until the
+  // ~120s proxy ticket lapses.
+  useEffect(() => onLogoutBroadcast(endSession), [endSession])
+
   useEffect(() => {
-    if (phase === 'ready') return
+    // Only the initial credential resolution belongs here. Terminal phases
+    // ('ready', 'unavailable', and crucially 'ended') must be left alone — this
+    // effect re-runs on every phase change, and a bare `phase === 'ready'`
+    // guard let a sign-out's 'ended' fall through to the no-opener branch below
+    // and get clobbered straight back to 'unavailable'.
+    if (phase !== 'authenticating') return
     const opener = window.opener as Window | null
     if (!opener) {
       // no opener to ask — a restored token was already handled by the phase
@@ -78,6 +107,17 @@ export function VmConsolePage() {
     return () => window.removeEventListener('message', onMessage)
   }, [phase])
 
+  if (phase === 'ended') {
+    return (
+      <Bullseye style={{ height: '100vh' }}>
+        <EmptyState titleText={t('vmConsole.ended.title')} status="info">
+          <EmptyStateBody>
+            <FormattedMessage id="vmConsole.ended.body" />
+          </EmptyStateBody>
+        </EmptyState>
+      </Bullseye>
+    )
+  }
   if (phase === 'unavailable') {
     return (
       <Bullseye style={{ height: '100vh' }}>
@@ -96,10 +136,10 @@ export function VmConsolePage() {
       </Bullseye>
     )
   }
-  return <FullWindowConsole vmId={vmId} />
+  return <FullWindowConsole vmId={vmId} onSessionEnded={endSession} />
 }
 
-function FullWindowConsole({ vmId }: { vmId: string }) {
+function FullWindowConsole({ vmId, onSessionEnded }: { vmId: string; onSessionEnded: () => void }) {
   const t = useT()
   // undefined = loading the console list; null = the list SUCCEEDED and holds
   // no VNC console. A failed fetch is its own state — conflating it with null
@@ -120,12 +160,20 @@ function FullWindowConsole({ vmId }: { vmId: string }) {
       })
       .catch((error: unknown) => {
         if (cancelled) return
+        // A 401 here is the token having died (expired, or revoked by a
+        // sign-out this tab didn't see the broadcast for) — that's session
+        // end, not a "couldn't load consoles" error with a Retry that can
+        // only 401 again.
+        if (error instanceof ApiError && error.status === 401) {
+          onSessionEnded()
+          return
+        }
         setListError(error instanceof Error ? error.message : t('vmConsole.listError.fallback'))
       })
     return () => {
       cancelled = true
     }
-  }, [vmId, attempt, t])
+  }, [vmId, attempt, t, onSessionEnded])
 
   // Fresh tickets on every (re)connect — the RFB/proxy tickets expire in ~120s.
   const resolveConnection = useCallback(() => {

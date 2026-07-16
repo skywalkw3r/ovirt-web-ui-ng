@@ -1732,6 +1732,8 @@ export const ru: LocaleCatalog = {
   'vmConsole.noVnc.body':
     'Эта ВМ не предоставляет консоль VNC. Используйте скачивание .vv из меню «Консоль» для SPICE.',
   'vmConsole.noVnc.error': 'У этой ВМ нет консоли VNC',
+  'vmConsole.ended.title': 'Сеанс завершён',
+  'vmConsole.ended.body': 'Вы вышли из системы. Эта консоль отключена.',
   'vmActions.deleteProtected.tooltip':
     'Эта ВМ защищена от удаления. Отключите защиту от удаления в разделе «Изменить», прежде чем удалять её.',
   'vmActions.confirm.title': '{action} {name}?',

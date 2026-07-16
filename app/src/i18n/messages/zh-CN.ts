@@ -1662,6 +1662,8 @@ export const zhCN: LocaleCatalog = {
   'vmConsole.noVnc.title': '没有浏览器内控制台',
   'vmConsole.noVnc.body': '此虚拟机未提供 VNC 控制台。请使用“控制台”菜单的 .vv 下载来使用 SPICE。',
   'vmConsole.noVnc.error': '此虚拟机没有 VNC 控制台',
+  'vmConsole.ended.title': '会话已结束',
+  'vmConsole.ended.body': '您已退出登录。此控制台已断开连接。',
   'vmActions.deleteProtected.tooltip': '此虚拟机已启用删除保护。移除前请先在“编辑”中关闭删除保护。',
   'vmActions.confirm.title': '{action} {name}？',
   'vmActions.remove.confirm.title': '移除 {name}？',

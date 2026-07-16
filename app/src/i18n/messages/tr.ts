@@ -1713,6 +1713,8 @@ export const tr: LocaleCatalog = {
   'vmConsole.noVnc.body':
     'Bu VM hiçbir VNC konsolu sunmuyor. SPICE için Konsol menüsündeki .vv indirmesini kullanın.',
   'vmConsole.noVnc.error': 'Bu VM’nin VNC konsolu yok',
+  'vmConsole.ended.title': 'Oturum sona erdi',
+  'vmConsole.ended.body': 'Oturumunuz kapatıldı. Bu konsolun bağlantısı kesildi.',
   'vmActions.deleteProtected.tooltip':
     'Bu VM silinmeye karşı korumalı. Kaldırmadan önce Düzenle’de silme korumasını kapatın.',
   'vmActions.confirm.title': '{action} {name}?',

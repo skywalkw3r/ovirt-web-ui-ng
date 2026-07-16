@@ -1740,6 +1740,8 @@ export const fr: LocaleCatalog = {
   'vmConsole.noVnc.body':
     "Cette VM n'expose aucune console VNC. Utilisez le téléchargement .vv du menu Console pour SPICE.",
   'vmConsole.noVnc.error': "Cette VM n'a pas de console VNC",
+  'vmConsole.ended.title': 'Session terminée',
+  'vmConsole.ended.body': 'Vous avez été déconnecté. Cette console est déconnectée.',
   'vmActions.deleteProtected.tooltip':
     'Cette VM est protégée contre la suppression. Désactivez la protection contre la suppression dans Modifier avant de la supprimer.',
   'vmActions.confirm.title': '{action} {name} ?',

@@ -1747,6 +1747,8 @@ export const de: LocaleCatalog = {
   'vmConsole.noVnc.body':
     'Diese VM stellt keine VNC-Konsole bereit. Verwenden Sie den .vv-Download aus dem Konsolenmenü für SPICE.',
   'vmConsole.noVnc.error': 'Diese VM hat keine VNC-Konsole',
+  'vmConsole.ended.title': 'Sitzung beendet',
+  'vmConsole.ended.body': 'Sie wurden abgemeldet. Diese Konsole ist getrennt.',
   'vmActions.deleteProtected.tooltip':
     'Diese VM ist löschgeschützt. Deaktivieren Sie den Löschschutz unter Bearbeiten, bevor Sie sie entfernen.',
   'vmActions.confirm.title': '{action} {name}?',

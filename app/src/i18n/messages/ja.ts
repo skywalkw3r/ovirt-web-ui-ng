@@ -1720,6 +1720,8 @@ export const ja: LocaleCatalog = {
   'vmConsole.noVnc.body':
     'このVMはVNCコンソールを公開していません。SPICEにはコンソールメニューの.vvダウンロードを使用してください。',
   'vmConsole.noVnc.error': 'このVMにはVNCコンソールがありません',
+  'vmConsole.ended.title': 'セッションが終了しました',
+  'vmConsole.ended.body': 'サインアウトしました。このコンソールは切断されています。',
   'vmActions.deleteProtected.tooltip':
     'このVMは削除保護されています。削除する前に、編集で削除保護をオフにしてください。',
   'vmActions.confirm.title': '{name}を{action}しますか？',

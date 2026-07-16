@@ -1701,6 +1701,8 @@ export const ko: LocaleCatalog = {
   'vmConsole.noVnc.body':
     '이 VM은 VNC 콘솔을 제공하지 않습니다. SPICE의 경우 콘솔 메뉴의 .vv 다운로드를 사용하십시오.',
   'vmConsole.noVnc.error': '이 VM에는 VNC 콘솔이 없습니다',
+  'vmConsole.ended.title': '세션이 종료됨',
+  'vmConsole.ended.body': '로그아웃되었습니다. 이 콘솔은 연결이 끊어졌습니다.',
   'vmActions.deleteProtected.tooltip':
     '이 VM은 삭제 보호되어 있습니다. 제거하기 전에 편집에서 삭제 보호를 끄십시오.',
   'vmActions.confirm.title': '{action} {name}?',
