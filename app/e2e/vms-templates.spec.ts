@@ -115,10 +115,12 @@ test('clicking a column header sorts the rows', async ({ page }) => {
   const firstDesc = await rows.first().locator('td[data-label="Name"]').innerText()
   expect(firstDesc).not.toBe(firstAsc)
 
-  // sorting by another column moves the arrow there and deactivates Name
-  const statusHeader = table.getByRole('columnheader', { name: 'Status' })
-  await statusHeader.getByRole('button').click()
-  await expect(statusHeader).toHaveAttribute('aria-sort', 'ascending')
+  // sorting by another column moves the arrow there and deactivates Name.
+  // Status is deliberately export-only (exportValue, no sortValue — see
+  // vmListColumns.tsx), so its header carries no sort button; Cluster does.
+  const clusterHeader = table.getByRole('columnheader', { name: 'Cluster' })
+  await clusterHeader.getByRole('button').click()
+  await expect(clusterHeader).toHaveAttribute('aria-sort', 'ascending')
   await expect(nameHeader).not.toHaveAttribute('aria-sort', 'descending')
 })
 
