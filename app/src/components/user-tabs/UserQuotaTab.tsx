@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import { listUserQuotas, type UserQuotaGrant } from '../../api/resources/users'
 import { useCapabilities } from '../../auth/capabilities'
-import { useAdminResourcePollInterval, useDataCenters } from '../../hooks/useAdminResources'
+import { useDataCenters } from '../../hooks/useAdminResources'
 import { useT } from '../../i18n/useT'
 
 // The quotas this user can consume — webadmin's user Quota subtab
@@ -15,17 +15,22 @@ import { useT } from '../../i18n/useT'
 // object link over REST, so this cannot be a pure client-side join).
 //
 // Inlined useQuery per the user-tabs house pattern, keyed under the user
-// detail namespace; admin/parity collection, so the poll honors the admin
-// floor and the query stays disabled until the profile confirms admin.
+// detail namespace; admin/parity collection, so the query stays disabled until
+// the profile confirms admin.
 export function UserQuotaTab({ userId }: { userId: string }) {
   const t = useT()
   const { isAdmin } = useCapabilities()
-  const refetchInterval = useAdminResourcePollInterval()
 
   const grants = useQuery({
     queryKey: ['user', userId, 'quotas'],
     queryFn: () => listUserQuotas(userId),
-    refetchInterval,
+    // No poll: listUserQuotas fans out one permissions read per quota (on top of
+    // listQuotas' per-DC fan-out), and quota grants change rarely — polling this
+    // at the 60s admin cadence while the tab is open would be ~1 req/quota/min
+    // per viewer. RefreshControl still refetches on demand (it invalidates every
+    // query); the 5-min staleTime avoids a refetch on each tab revisit.
+    refetchInterval: false,
+    staleTime: 5 * 60_000,
     enabled: isAdmin,
   })
 

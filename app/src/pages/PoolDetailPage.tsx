@@ -4,7 +4,9 @@ import {
   BreadcrumbItem,
   Button,
   EmptyState,
+  EmptyStateActions,
   EmptyStateBody,
+  EmptyStateFooter,
   FormGroup,
   PageSection,
   Skeleton,
@@ -82,9 +84,13 @@ export function PoolDetailPage() {
           <EmptyStateBody>
             No pool with ID {poolId} is visible to you — it may have been removed.
           </EmptyStateBody>
-          <Button variant="primary" onClick={() => void navigate({ to: '/pools' })}>
-            {t('poolDetail.breadcrumb')}
-          </Button>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="primary" onClick={() => void navigate({ to: '/pools' })}>
+                {t('poolDetail.breadcrumb')}
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 
@@ -93,9 +99,13 @@ export function PoolDetailPage() {
           <EmptyStateBody>
             {pool.error instanceof Error ? pool.error.message : t('common.error.unknown')}
           </EmptyStateBody>
-          <Button variant="primary" onClick={() => void pool.refetch()}>
-            {t('common.action.retry')}
-          </Button>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="primary" onClick={() => void pool.refetch()}>
+                {t('common.action.retry')}
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 

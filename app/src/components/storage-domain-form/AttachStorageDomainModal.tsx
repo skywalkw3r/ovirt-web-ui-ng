@@ -16,6 +16,7 @@ import {
 import type { StorageDomain } from '../../api/schemas/storage-domain'
 import { useDataCenters } from '../../hooks/useAdminResources'
 import { useAttachStorageDomain } from '../../hooks/useStorageDomainMutations'
+import { useT } from '../../i18n/useT'
 
 // The Attach-to-Data-Center modal. An unattached domain (or an ISO domain,
 // attachable to additional data centers) is activated in a chosen data center
@@ -31,6 +32,7 @@ export function AttachStorageDomainModal({
   isOpen: boolean
   onClose: () => void
 }) {
+  const t = useT()
   const [dataCenterId, setDataCenterId] = useState('')
   const dataCenters = useDataCenters()
   const attach = useAttachStorageDomain()
@@ -52,22 +54,33 @@ export function AttachStorageDomainModal({
       aria-labelledby="attach-storage-domain-title"
       aria-describedby="attach-storage-domain-body"
     >
-      <ModalHeader title={`Attach ${domain.name}`} labelId="attach-storage-domain-title" />
+      <ModalHeader
+        title={t('storage.attach.title', { name: domain.name })}
+        labelId="attach-storage-domain-title"
+      />
       <ModalBody id="attach-storage-domain-body">
         <Form onSubmit={(event) => event.preventDefault()}>
           {/* Four states on the source list: a failed fetch would otherwise
               leave Attach permanently disabled with no explanation or retry. */}
-          <FormGroup label="Data center" isRequired fieldId="attach-storage-domain-data-center">
+          <FormGroup
+            label={t('storageForm.field.dataCenter')}
+            isRequired
+            fieldId="attach-storage-domain-data-center"
+          >
             <FormSelect
               id="attach-storage-domain-data-center"
-              aria-label="Data center"
+              aria-label={t('storageForm.field.dataCenter')}
               value={dataCenterId}
               isDisabled={dataCenters.isPending || dataCenters.isError}
               onChange={(_event, value) => setDataCenterId(value)}
             >
               <FormSelectOption
                 value=""
-                label={dataCenters.isPending ? 'Loading data centers…' : 'Select a data center'}
+                label={
+                  dataCenters.isPending
+                    ? t('storageForm.dataCenter.loading')
+                    : t('storageForm.dataCenter.select')
+                }
                 isDisabled
               />
               {(dataCenters.data ?? []).map((dataCenter) => (
@@ -82,9 +95,9 @@ export function AttachStorageDomainModal({
               <FormHelperText>
                 <HelperText>
                   <HelperTextItem variant="error">
-                    Could not load data centers.{' '}
+                    {t('storageForm.dataCenter.error')}{' '}
                     <Button variant="link" isInline onClick={() => void dataCenters.refetch()}>
-                      Retry
+                      {t('common.action.retry')}
                     </Button>
                   </HelperTextItem>
                 </HelperText>
@@ -100,10 +113,10 @@ export function AttachStorageDomainModal({
           isLoading={pending}
           isDisabled={pending || dataCenterId === ''}
         >
-          Attach
+          {t('common.action.attach')}
         </Button>
         <Button variant="secondary" onClick={onClose} isDisabled={pending}>
-          Cancel
+          {t('common.action.cancel')}
         </Button>
       </ModalFooter>
     </Modal>

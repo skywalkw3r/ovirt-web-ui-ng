@@ -85,8 +85,18 @@ function formatBitrate(bps: number | undefined): string {
   return `${value >= 100 ? Math.round(value) : value.toFixed(1)} ${units[unit]}`
 }
 
+// Per-NIC statistics fan out one request per rendered NIC row (Rx and Tx share
+// a key, so K NICs multiply the cadence) — an 8-NIC VM is the app's heaviest
+// screen at the raw user interval. Floor every observer of these keys at 30s:
+// the cells here AND the sort observer in NicsTab must carry the SAME floor,
+// because TanStack polls a key at the SHORTEST interval among its observers, so
+// one shorter observer would quietly undo the floor. The better long-term shape
+// — a single nics?follow=statistics read for the whole collection — is deferred
+// pending api-model verification of the followed sub-collection.
+const NIC_STATS_MIN_INTERVAL_MS = 30_000
+
 // Live Rx or Tx cell content for one NIC row. VM NICs have no batch statistics
-// endpoint, so each row polls its own /nics/{id}/statistics at the VM cadence —
+// endpoint, so each row polls its own /nics/{id}/statistics (floored above).
 // NIC counts per VM are small, and the Rx/Tx cells share one queryKey so
 // TanStack dedupes them into a single request. A NIC mutation invalidates
 // ['vm', id, 'nics'], a prefix of this key, so add/edit/remove also refresh
@@ -105,7 +115,7 @@ function NicRateCell({
   const stats = useQuery({
     queryKey: ['vm', vmId, 'nics', nicId, 'statistics'],
     queryFn: () => listVmNicStatistics(vmId, nicId),
-    refetchInterval: refreshIntervalMs,
+    refetchInterval: Math.max(refreshIntervalMs, NIC_STATS_MIN_INTERVAL_MS),
   })
   const { rxBps, txBps } = nicThroughput(stats.data ?? [])
   if (stats.isPending) {
@@ -187,6 +197,7 @@ export function NicsTab({ vmId }: { vmId: string }) {
       body: t('vmNics.confirm.remove.body'),
     },
   }
+  const { refreshIntervalMs } = useSettings()
   const nics = useVmNics(vmId)
   // guest-agent IPs keyed by MAC for the per-NIC IP column
   const reportedDevices = useVmReportedDevices(vmId)
@@ -244,14 +255,17 @@ export function NicsTab({ vmId }: { vmId: string }) {
 
   // Sorting Rx/Tx needs the rates in this scope, but each NicRateCell owns its
   // own statistics query. Observing the SAME per-NIC keys here shares those
-  // cache entries: no extra requests, and no interval of our own — the cells
-  // drive the polling and this observer just re-renders the tab when a rate
-  // actually changes, which is what keeps a rate-sorted table in the order its
-  // cells show. Results ride in the queries array's order.
+  // cache entries — no extra requests, the queries dedupe by key. It carries
+  // the SAME 30s floor as the cells (NIC_STATS_MIN_INTERVAL_MS): TanStack polls
+  // a key at the shortest interval among its observers, so every observer must
+  // honor the floor or one would undercut it. This observer re-renders the tab
+  // when a rate changes, keeping a rate-sorted table in the order its cells
+  // show; results ride in the queries array's order.
   const nicStats = useQueries({
     queries: (nics.data ?? []).map((nic) => ({
       queryKey: ['vm', vmId, 'nics', nic.id, 'statistics'],
       queryFn: () => listVmNicStatistics(vmId, nic.id),
+      refetchInterval: Math.max(refreshIntervalMs, NIC_STATS_MIN_INTERVAL_MS),
     })),
   })
   const throughputByNicId = new Map<string, NicThroughput>(

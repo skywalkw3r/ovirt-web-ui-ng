@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import {
   Alert,
   AlertActionLink,
@@ -20,6 +20,7 @@ import {
   Timestamp,
   Toolbar,
   ToolbarContent,
+  ToolbarGroup,
   ToolbarItem,
   Tooltip,
 } from '@patternfly/react-core'
@@ -40,13 +41,17 @@ import {
   useRestoreSnapshot,
   useSnapshots,
 } from '../../hooks/useSnapshots'
+import { useColumnPrefs } from '../../hooks/useColumnPrefs'
 import { useNow } from '../../hooks/useNow'
 import { useVm } from '../../hooks/useVm'
 import { useVmDisks } from '../../hooks/useVmStorage'
 import { useT } from '../../i18n/useT'
+import type { MessageId } from '../../i18n/messages/en'
 import { formatBytes, statusText } from '../../lib/format'
 import { useNotify } from '../../notifications/context'
 import { vmNameError } from '../edit-vm/editVmDraft'
+import { ColumnPicker } from '../list-toolbar/ColumnPicker'
+import { ResizableTh, resizableTableProps } from '../list-toolbar/ResizableTh'
 import { ConfirmModal } from '../ConfirmModal'
 
 // Clone-from-snapshot's save mutation. POST /vms (Add.FromSnapshot) rebuilds a
@@ -105,6 +110,25 @@ function snapshotName(snapshot: Snapshot): string {
   return snapshot.description ?? snapshot.id
 }
 
+// >4 columns ⇒ the COLUMNS + useColumnPrefs + ColumnPicker house pattern
+// (Description pinned as the identity column). Labels resolve per-locale in the
+// component; headers and cells both map over the same isVisible-filtered array
+// so they can never desync. The actions kebab renders unconditionally outside
+// the pickable set. Snapshots keep the engine's list order (the 'active'
+// snapshot rides at the top and its kebab is hidden), so no header sort is
+// wired.
+const COLUMNS: {
+  key: string
+  labelId: MessageId
+  always?: boolean
+}[] = [
+  { key: 'description', labelId: 'common.field.description', always: true },
+  { key: 'type', labelId: 'common.field.type' },
+  { key: 'status', labelId: 'common.field.status' },
+  { key: 'created', labelId: 'vmSnapshots.column.created' },
+  { key: 'memory', labelId: 'vmSnapshots.column.memory' },
+]
+
 type ConfirmAction = 'restore' | 'delete' | 'preview' | 'commit' | 'undo'
 
 export function SnapshotsTab({ vmId }: { vmId: string }) {
@@ -148,6 +172,15 @@ export function SnapshotsTab({ vmId }: { vmId: string }) {
   // non-null while the Clone-from-snapshot dialog is open (its target snapshot)
   const [cloning, setCloning] = useState<Snapshot | null>(null)
 
+  // Resolve column labels for the active locale; identity is stable per locale
+  // (t is memoized on intl) so useColumnPrefs' seeding stays sound.
+  const columns = useMemo(
+    () => COLUMNS.map((column) => ({ ...column, label: t(column.labelId) })),
+    [t],
+  )
+  const prefs = useColumnPrefs('vm-snapshots', columns)
+  const visibleColumns = columns.filter((column) => prefs.isVisible(column.key))
+
   const mutating =
     create.isPending ||
     restore.isPending ||
@@ -187,6 +220,33 @@ export function SnapshotsTab({ vmId }: { vmId: string }) {
           ? t('vmSnapshots.blocked.imageLocked')
           : undefined
 
+  const cellOf = (snapshot: Snapshot, key: string): ReactNode => {
+    switch (key) {
+      case 'description':
+        return snapshot.description || '—'
+      case 'type':
+        return statusText(snapshot.snapshot_type)
+      case 'status':
+        return (
+          <StatusBadge color={STATUS_COLOR[snapshot.snapshot_status ?? ''] ?? 'grey'}>
+            {statusText(snapshot.snapshot_status ?? 'unknown')}
+          </StatusBadge>
+        )
+      case 'created':
+        return snapshot.date !== undefined ? (
+          <Timestamp date={new Date(snapshot.date)} tooltip={{ variant: 'default' }}>
+            {relativeTime(snapshot.date, now)}
+          </Timestamp>
+        ) : (
+          '—'
+        )
+      case 'memory':
+        return snapshot.persist_memorystate ? t('common.yes') : t('common.no')
+      default:
+        return '—'
+    }
+  }
+
   return (
     <>
       <Toolbar>
@@ -206,6 +266,16 @@ export function SnapshotsTab({ vmId }: { vmId: string }) {
               </Button>
             )}
           </ToolbarItem>
+          <ToolbarGroup align={{ default: 'alignEnd' }}>
+            <ToolbarItem>
+              <ColumnPicker
+                columns={columns}
+                isVisible={prefs.isVisible}
+                onToggle={prefs.toggle}
+                onReset={prefs.reset}
+              />
+            </ToolbarItem>
+          </ToolbarGroup>
         </ToolbarContent>
       </Toolbar>
 
@@ -262,84 +332,81 @@ export function SnapshotsTab({ vmId }: { vmId: string }) {
       )}
 
       {snapshots.isSuccess && snapshots.data.length > 0 && (
-        <Table aria-label={t('vmSnapshots.table.ariaLabel')} variant="compact">
-          <Thead>
-            <Tr>
-              <Th>{t('common.field.description')}</Th>
-              <Th>{t('common.field.type')}</Th>
-              <Th>{t('common.field.status')}</Th>
-              <Th>{t('vmSnapshots.column.created')}</Th>
-              <Th>{t('vmSnapshots.column.memory')}</Th>
-              <Th screenReaderText={t('common.field.actions')} />
-            </Tr>
-          </Thead>
-          <Tbody>
-            {snapshots.data.map((snapshot) => (
-              <Tr key={snapshot.id}>
-                <Td dataLabel={t('common.field.description')}>{snapshot.description || '—'}</Td>
-                <Td dataLabel={t('common.field.type')}>{statusText(snapshot.snapshot_type)}</Td>
-                <Td dataLabel={t('common.field.status')}>
-                  <StatusBadge color={STATUS_COLOR[snapshot.snapshot_status ?? ''] ?? 'grey'}>
-                    {statusText(snapshot.snapshot_status ?? 'unknown')}
-                  </StatusBadge>
-                </Td>
-                <Td dataLabel={t('vmSnapshots.column.created')}>
-                  {snapshot.date !== undefined ? (
-                    <Timestamp date={new Date(snapshot.date)} tooltip={{ variant: 'default' }}>
-                      {relativeTime(snapshot.date, now)}
-                    </Timestamp>
-                  ) : (
-                    '—'
-                  )}
-                </Td>
-                <Td dataLabel={t('vmSnapshots.column.memory')}>
-                  {snapshot.persist_memorystate ? t('common.yes') : t('common.no')}
-                </Td>
-                <Td dataLabel={t('common.field.actions')} isActionCell>
-                  {/* the engine's one 'active' snapshot per VM can never be
-                      restored or deleted — hide the kebab, keep the cell so
-                      the column keeps its shape */}
-                  {snapshot.snapshot_type !== 'active' && (
-                    <ActionsColumn
-                      isDisabled={mutating}
-                      items={[
-                        {
-                          title: t('vmSnapshots.action.preview'),
-                          // engine: previews need a down VM and only one runs
-                          // at a time — the row explains itself when blocked
-                          isDisabled: !isDown || previewing !== undefined,
-                          description: !isDown
-                            ? t('vmSnapshots.preview.disabled.down')
-                            : previewing !== undefined
-                              ? t('vmSnapshots.preview.disabled.inProgress')
-                              : undefined,
-                          onClick: () => setConfirming({ action: 'preview', snapshot }),
-                        },
-                        {
-                          title: t('vmSnapshots.action.restore'),
-                          onClick: () => setConfirming({ action: 'restore', snapshot }),
-                        },
-                        {
-                          title: t('vmSnapshots.clone.action'),
-                          // engine: only settled regular snapshots clone — the
-                          // row explains itself when blocked
-                          isDisabled: cloneBlockedReason(snapshot) !== undefined,
-                          description: cloneBlockedReason(snapshot),
-                          onClick: () => setCloning(snapshot),
-                        },
-                        {
-                          title: t('common.action.delete'),
-                          isDanger: true,
-                          onClick: () => setConfirming({ action: 'delete', snapshot }),
-                        },
-                      ]}
-                    />
-                  )}
-                </Td>
+        <div className="app-table-viewport">
+          <Table
+            aria-label={t('vmSnapshots.table.ariaLabel')}
+            variant="compact"
+            {...resizableTableProps(prefs)}
+          >
+            <Thead>
+              <Tr>
+                {visibleColumns.map((column) => (
+                  <ResizableTh
+                    key={column.key}
+                    columnKey={column.key}
+                    label={column.label}
+                    prefs={prefs}
+                  >
+                    {column.label}
+                  </ResizableTh>
+                ))}
+                <Th screenReaderText={t('common.field.actions')} />
               </Tr>
-            ))}
-          </Tbody>
-        </Table>
+            </Thead>
+            <Tbody>
+              {snapshots.data.map((snapshot) => (
+                <Tr key={snapshot.id}>
+                  {visibleColumns.map((column) => (
+                    <Td key={column.key} dataLabel={column.label}>
+                      {cellOf(snapshot, column.key)}
+                    </Td>
+                  ))}
+                  <Td dataLabel={t('common.field.actions')} isActionCell>
+                    {/* the engine's one 'active' snapshot per VM can never be
+                        restored or deleted — hide the kebab, keep the cell so
+                        the column keeps its shape */}
+                    {snapshot.snapshot_type !== 'active' && (
+                      <ActionsColumn
+                        isDisabled={mutating}
+                        items={[
+                          {
+                            title: t('vmSnapshots.action.preview'),
+                            // engine: previews need a down VM and only one runs
+                            // at a time — the row explains itself when blocked
+                            isDisabled: !isDown || previewing !== undefined,
+                            description: !isDown
+                              ? t('vmSnapshots.preview.disabled.down')
+                              : previewing !== undefined
+                                ? t('vmSnapshots.preview.disabled.inProgress')
+                                : undefined,
+                            onClick: () => setConfirming({ action: 'preview', snapshot }),
+                          },
+                          {
+                            title: t('vmSnapshots.action.restore'),
+                            onClick: () => setConfirming({ action: 'restore', snapshot }),
+                          },
+                          {
+                            title: t('vmSnapshots.clone.action'),
+                            // engine: only settled regular snapshots clone — the
+                            // row explains itself when blocked
+                            isDisabled: cloneBlockedReason(snapshot) !== undefined,
+                            description: cloneBlockedReason(snapshot),
+                            onClick: () => setCloning(snapshot),
+                          },
+                          {
+                            title: t('common.action.delete'),
+                            isDanger: true,
+                            onClick: () => setConfirming({ action: 'delete', snapshot }),
+                          },
+                        ]}
+                      />
+                    )}
+                  </Td>
+                </Tr>
+              ))}
+            </Tbody>
+          </Table>
+        </div>
       )}
 
       {isCreateOpen && (

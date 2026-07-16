@@ -8,25 +8,33 @@ import {
 import { listClusters } from './clusters'
 
 // Gluster volumes only exist as a per-cluster subcollection, so the flat
-// list the UI wants is the concatenation across every cluster. Virt-only
-// clusters answer 404 for the whole subcollection — that means "no Gluster
-// here", not a failure.
+// list the UI wants is the concatenation across every cluster.
 export async function listGlusterVolumes(): Promise<GlusterVolume[]> {
   const clusters = await listClusters()
-  const perCluster = await Promise.all(
+  // Per-cluster tolerance (Promise.allSettled): virt-only clusters answer 404
+  // for the whole subcollection ("no Gluster here"), and a transient 5xx on one
+  // cluster shouldn't fail (and, on the query retry, re-issue) the entire
+  // fan-out — either way that branch is dropped. An auth verdict (401/403) is
+  // the session breaking, not one cluster, so it propagates immediately (mirror
+  // listProviders).
+  const settled = await Promise.allSettled(
     clusters.map(async (cluster) => {
-      try {
-        const data = GlusterVolumeListSchema.parse(
-          await request(`/clusters/${encodeURIComponent(cluster.id)}/glustervolumes`),
-        )
-        return data.gluster_volume ?? []
-      } catch (error) {
-        if (error instanceof ApiError && error.status === 404) return []
-        throw error
-      }
+      const data = GlusterVolumeListSchema.parse(
+        await request(`/clusters/${encodeURIComponent(cluster.id)}/glustervolumes`),
+      )
+      return data.gluster_volume ?? []
     }),
   )
-  return perCluster.flat()
+
+  const authFailure = settled.find(
+    (result) =>
+      result.status === 'rejected' &&
+      result.reason instanceof ApiError &&
+      (result.reason.status === 401 || result.reason.status === 403),
+  )
+  if (authFailure?.status === 'rejected') throw authFailure.reason
+
+  return settled.flatMap((result) => (result.status === 'fulfilled' ? result.value : []))
 }
 
 // ─── Bricks ──────────────────────────────────────────────────────────────────

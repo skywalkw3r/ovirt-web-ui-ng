@@ -4,7 +4,9 @@ import {
   BreadcrumbItem,
   Button,
   EmptyState,
+  EmptyStateActions,
   EmptyStateBody,
+  EmptyStateFooter,
   PageSection,
   Skeleton,
   Tab,
@@ -65,9 +67,13 @@ export function DiskDetailPage() {
       {disk.isError && notFound && (
         <EmptyState titleText={t('diskDetail.notFound.title')} status="warning">
           <EmptyStateBody>{t('diskDetail.notFound.body', { id: diskId })}</EmptyStateBody>
-          <Button variant="primary" onClick={() => void navigate({ to: '/disks' })}>
-            {t('diskDetail.notFound.back')}
-          </Button>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="primary" onClick={() => void navigate({ to: '/disks' })}>
+                {t('diskDetail.notFound.back')}
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 
@@ -76,9 +82,13 @@ export function DiskDetailPage() {
           <EmptyStateBody>
             {disk.error instanceof Error ? disk.error.message : t('common.error.unknown')}
           </EmptyStateBody>
-          <Button variant="primary" onClick={() => void disk.refetch()}>
-            {t('common.action.retry')}
-          </Button>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="primary" onClick={() => void disk.refetch()}>
+                {t('common.action.retry')}
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 
@@ -128,8 +138,10 @@ export function DiskDetailPage() {
                 <DiskStorageDomainsTab disk={disk.data} />
               </TabContentBody>
             </Tab>
-            {/* Title hardcoded English pending the i18n pass. */}
-            <Tab eventKey="snapshots" title={<TabTitleText>Snapshots</TabTitleText>}>
+            <Tab
+              eventKey="snapshots"
+              title={<TabTitleText>{t('diskDetail.tab.snapshots')}</TabTitleText>}
+            >
               <TabContentBody hasPadding>
                 <DiskSnapshotsTab disk={disk.data} />
               </TabContentBody>

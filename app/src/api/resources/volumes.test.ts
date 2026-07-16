@@ -7,6 +7,7 @@ import {
   isReplicatedType,
   listGlusterBricks,
   listGlusterVolumeOptions,
+  listGlusterVolumes,
   migrateGlusterBricks,
   rebalanceGlusterVolume,
   removeGlusterBricks,
@@ -38,10 +39,118 @@ function mockFetch(status: number, payload?: unknown) {
   return fn
 }
 
+// Path-dispatching stub for listGlusterVolumes' fan-out (GET /clusters, then
+// per-cluster /clusters/{id}/glustervolumes). Each route carries an explicit
+// status so a test can fail ONE cluster branch (a virt-only 404, a transient
+// 5xx, or an auth 401/403) while the rest answer 200 — exercising the
+// allSettled tolerance. An unrouted path 404s.
+function mockFetchStatusByPath(routes: Record<string, { status: number; body?: unknown }>) {
+  const fn = vi.fn().mockImplementation((url: string) => {
+    const path = url.replace('/ovirt-engine/api', '').split('?')[0] ?? ''
+    const route = routes[path]
+    if (route === undefined) {
+      return Promise.resolve({
+        ok: false,
+        status: 404,
+        json: () => Promise.resolve({ fault: { reason: 'Not Found' } }),
+      })
+    }
+    return Promise.resolve({
+      ok: route.status >= 200 && route.status < 300,
+      status: route.status,
+      json: () =>
+        route.body === undefined
+          ? Promise.resolve({ fault: { reason: 'Operation Failed' } })
+          : Promise.resolve(route.body),
+    })
+  })
+  vi.stubGlobal('fetch', fn)
+  return fn
+}
+
 beforeEach(() => setSessionToken('tok-123'))
 afterEach(() => {
   clearSessionToken()
   vi.unstubAllGlobals()
+})
+
+describe('listGlusterVolumes', () => {
+  const twoClusters = {
+    '/clusters': {
+      status: 200,
+      body: {
+        cluster: [
+          { id: 'cl-01', name: 'gluster' },
+          { id: 'cl-02', name: 'virt' },
+        ],
+      },
+    },
+  }
+
+  it('flattens gluster volumes across every cluster', async () => {
+    mockFetchStatusByPath({
+      ...twoClusters,
+      '/clusters/cl-01/glustervolumes': {
+        status: 200,
+        body: { gluster_volume: [{ id: 'gv1', name: 'data' }] },
+      },
+      '/clusters/cl-02/glustervolumes': {
+        status: 200,
+        body: { gluster_volume: [{ id: 'gv2', name: 'engine' }] },
+      },
+    })
+    const volumes = await listGlusterVolumes()
+    expect(volumes.map((v) => v.id)).toEqual(['gv1', 'gv2'])
+  })
+
+  // M-6: the per-cluster fan-out is failure-tolerant (allSettled) — a single
+  // cluster's read blowing up drops that branch, not the whole list (which the
+  // query retry would otherwise re-issue in full).
+  it('skips a cluster whose volumes read fails (non-auth) rather than failing the list', async () => {
+    mockFetchStatusByPath({
+      ...twoClusters,
+      '/clusters/cl-01/glustervolumes': {
+        status: 200,
+        body: { gluster_volume: [{ id: 'gv1', name: 'data' }] },
+      },
+      '/clusters/cl-02/glustervolumes': {
+        status: 500,
+        body: { fault: { reason: 'Operation Failed' } },
+      },
+    })
+    const volumes = await listGlusterVolumes()
+    expect(volumes.map((v) => v.id)).toEqual(['gv1'])
+  })
+
+  it('still tolerates a 404 branch (a virt-only cluster) as empty', async () => {
+    mockFetchStatusByPath({
+      ...twoClusters,
+      '/clusters/cl-01/glustervolumes': {
+        status: 200,
+        body: { gluster_volume: [{ id: 'gv1', name: 'data' }] },
+      },
+      '/clusters/cl-02/glustervolumes': { status: 404, body: { fault: { reason: 'Not Found' } } },
+    })
+    const volumes = await listGlusterVolumes()
+    expect(volumes.map((v) => v.id)).toEqual(['gv1'])
+  })
+
+  it('propagates an auth verdict (401) immediately instead of degrading', async () => {
+    mockFetchStatusByPath({
+      ...twoClusters,
+      '/clusters/cl-01/glustervolumes': {
+        status: 200,
+        body: { gluster_volume: [{ id: 'gv1', name: 'data' }] },
+      },
+      '/clusters/cl-02/glustervolumes': {
+        status: 401,
+        body: { fault: { reason: 'Unauthorized' } },
+      },
+    })
+    const error = await listGlusterVolumes().catch((e: unknown) => e)
+    expect(error).toBeInstanceOf(ApiError)
+    expect(error).toMatchObject({ status: 401 })
+  })
 })
 
 const baseDraft = (): CreateVolumeDraft => ({

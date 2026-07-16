@@ -2,7 +2,9 @@ import { useMemo, useState, type ReactNode } from 'react'
 import {
   Button,
   EmptyState,
+  EmptyStateActions,
   EmptyStateBody,
+  EmptyStateFooter,
   FormGroup,
   PageSection,
   Pagination,
@@ -290,21 +292,19 @@ export function ClustersPage() {
       {removing && (
         <ConfirmModal
           isOpen
-          // Hardcoded English: no clusters.remove.confirm.* ids are pre-seeded
-          // (the detail page hardcodes the same copy).
-          title={`Remove ${removing.cluster.name}?`}
+          title={t('clusters.remove.confirm.title', { name: removing.cluster.name })}
           body={
             <Stack hasGutter>
-              <StackItem>The cluster will be permanently removed. This cannot be undone.</StackItem>
+              <StackItem>{t('clusters.remove.confirm.body')}</StackItem>
               <StackItem>
                 <FormGroup
-                  label={`Type "${removing.cluster.name}" to confirm`}
+                  label={t('clusters.remove.confirm.typeLabel', { name: removing.cluster.name })}
                   isRequired
                   fieldId="clusters-remove-confirm-name"
                 >
                   <TextInput
                     id="clusters-remove-confirm-name"
-                    aria-label="Type the cluster name to confirm removal"
+                    aria-label={t('clusters.remove.confirm.inputAria')}
                     value={removing.nameInput}
                     onChange={(_event, value) =>
                       setRemoving((prev) => (prev ? { ...prev, nameInput: value } : prev))
@@ -338,9 +338,13 @@ export function ClustersPage() {
           <EmptyStateBody>
             {clusters.error instanceof Error ? clusters.error.message : t('common.error.unknown')}
           </EmptyStateBody>
-          <Button variant="primary" onClick={() => void clusters.refetch()}>
-            {t('common.action.retry')}
-          </Button>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="primary" onClick={() => void clusters.refetch()}>
+                {t('common.action.retry')}
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 
@@ -352,9 +356,13 @@ export function ClustersPage() {
             {query !== '' ? t('clusters.emptyFiltered.body') : t('clusters.empty.body')}
           </EmptyStateBody>
           {query !== '' && (
-            <Button variant="link" onClick={() => apply('')}>
-              {t('common.action.clearSearch')}
-            </Button>
+            <EmptyStateFooter>
+              <EmptyStateActions>
+                <Button variant="link" onClick={() => apply('')}>
+                  {t('common.action.clearSearch')}
+                </Button>
+              </EmptyStateActions>
+            </EmptyStateFooter>
           )}
         </EmptyState>
       )}

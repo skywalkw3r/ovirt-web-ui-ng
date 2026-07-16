@@ -3,7 +3,9 @@ import {
   Badge,
   Button,
   EmptyState,
+  EmptyStateActions,
   EmptyStateBody,
+  EmptyStateFooter,
   Flex,
   FlexItem,
   Label,
@@ -1044,11 +1046,15 @@ function ScopedVmsPane({
       {!vmsQuery.isPending && vmsQuery.isError && (
         <EmptyState titleText={t('infra.error.title')} status="danger">
           <EmptyStateBody>
-            {vmsQuery.error instanceof Error ? vmsQuery.error.message : 'Unknown error'}
+            {vmsQuery.error instanceof Error ? vmsQuery.error.message : t('common.error.unknown')}
           </EmptyStateBody>
-          <Button variant="primary" onClick={() => void vmsQuery.refetch()}>
-            <FormattedMessage id="action.retry" />
-          </Button>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="primary" onClick={() => void vmsQuery.refetch()}>
+                <FormattedMessage id="action.retry" />
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 
@@ -1545,7 +1551,7 @@ export function HostsClustersPage() {
   if (loaded && !isAdmin) {
     return (
       <PageSection>
-        <NotPermitted what="Hosts & Clusters" />
+        <NotPermitted what={t('infra.title')} />
       </PageSection>
     )
   }
@@ -1867,18 +1873,22 @@ export function HostsClustersPage() {
       {!treePending && treeError && (
         <EmptyState titleText={t('infra.error.title')} status="danger">
           <EmptyStateBody>
-            {treeErrorValue instanceof Error ? treeErrorValue.message : 'Unknown error'}
+            {treeErrorValue instanceof Error ? treeErrorValue.message : t('common.error.unknown')}
           </EmptyStateBody>
-          <Button
-            variant="primary"
-            onClick={() => {
-              void dataCenters.refetch()
-              void clusters.refetch()
-              void hosts.refetch()
-            }}
-          >
-            <FormattedMessage id="action.retry" />
-          </Button>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button
+                variant="primary"
+                onClick={() => {
+                  void dataCenters.refetch()
+                  void clusters.refetch()
+                  void hosts.refetch()
+                }}
+              >
+                <FormattedMessage id="action.retry" />
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 

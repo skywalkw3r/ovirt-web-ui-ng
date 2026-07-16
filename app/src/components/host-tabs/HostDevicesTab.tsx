@@ -1,8 +1,10 @@
-import type { ReactNode } from 'react'
+import { useMemo, type ReactNode } from 'react'
 import {
   Button,
   EmptyState,
+  EmptyStateActions,
   EmptyStateBody,
+  EmptyStateFooter,
   Skeleton,
   Toolbar,
   ToolbarContent,
@@ -11,9 +13,11 @@ import {
 } from '@patternfly/react-core'
 import { Table, Tbody, Td, Thead, Tr } from '@patternfly/react-table'
 import type { HostDevice } from '../../api/schemas/host-device'
-import { useColumnPrefs, type ColumnDef } from '../../hooks/useColumnPrefs'
+import { useColumnPrefs } from '../../hooks/useColumnPrefs'
 import { sortRows, useColumnSort } from '../../hooks/useColumnSort'
 import { useHostDevices } from '../../hooks/useHostDetail'
+import type { MessageId } from '../../i18n/messages/en'
+import { useT } from '../../i18n/useT'
 import { ColumnPicker } from '../list-toolbar/ColumnPicker'
 import { ResizableTh, resizableTableProps } from '../list-toolbar/ResizableTh'
 
@@ -33,21 +37,40 @@ function named(value: HostDevice['vendor']): string {
   return namedValue(value) ?? '—'
 }
 
-interface DeviceColumn extends ColumnDef {
+interface DeviceColumn {
+  key: string
+  labelId: MessageId
+  always?: boolean
   // opt-in header sort (see hooks/useColumnSort)
   sortValue?: (device: HostDevice) => string | number | undefined
 }
 
 // >4 columns ⇒ the COLUMNS + useColumnPrefs + ColumnPicker house pattern
-// (Name pinned). Labels stay hardcoded English like the rest of this tab.
-// Headers and cells both map over the same isVisible-filtered array so they
-// can never desync.
+// (Name pinned). Labels resolve per-locale in the component (the DisksTab
+// idiom). Headers and cells both map over the same isVisible-filtered array so
+// they can never desync.
 const COLUMNS: DeviceColumn[] = [
-  { key: 'name', label: 'Name', always: true, sortValue: (device) => device.name },
-  { key: 'capability', label: 'Capability', sortValue: (device) => device.capability || undefined },
-  { key: 'driver', label: 'Driver', sortValue: (device) => device.driver || undefined },
-  { key: 'vendor', label: 'Vendor', sortValue: (device) => namedValue(device.vendor) },
-  { key: 'product', label: 'Product', sortValue: (device) => namedValue(device.product) },
+  { key: 'name', labelId: 'common.field.name', always: true, sortValue: (device) => device.name },
+  {
+    key: 'capability',
+    labelId: 'vmHostDevices.column.capability',
+    sortValue: (device) => device.capability || undefined,
+  },
+  {
+    key: 'driver',
+    labelId: 'hostDevices.column.driver',
+    sortValue: (device) => device.driver || undefined,
+  },
+  {
+    key: 'vendor',
+    labelId: 'vmHostDevices.column.vendor',
+    sortValue: (device) => namedValue(device.vendor),
+  },
+  {
+    key: 'product',
+    labelId: 'vmHostDevices.column.product',
+    sortValue: (device) => namedValue(device.product),
+  },
 ]
 
 function cellOf(device: HostDevice, key: string): ReactNode {
@@ -68,12 +91,19 @@ function cellOf(device: HostDevice, key: string): ReactNode {
 }
 
 export function HostDevicesTab({ hostId }: { hostId: string }) {
+  const t = useT()
   const devices = useHostDevices(hostId)
-  const prefs = useColumnPrefs('host-devices', COLUMNS)
+  // Resolve column labels for the active locale; identity is stable per locale
+  // (t is memoized on intl) so useColumnPrefs' seeding stays sound.
+  const columns = useMemo(
+    () => COLUMNS.map((column) => ({ ...column, label: t(column.labelId) })),
+    [t],
+  )
+  const prefs = useColumnPrefs('host-devices', columns)
   // client-side header sort; no default — the engine list order stands until a
   // header is clicked (see hooks/useColumnSort)
   const { sort, thSort } = useColumnSort()
-  const visibleColumns = COLUMNS.filter((column) => prefs.isVisible(column.key))
+  const visibleColumns = columns.filter((column) => prefs.isVisible(column.key))
   const sortedDevices = sortRows(devices.data ?? [], sort, (device, key) =>
     COLUMNS.find((column) => column.key === key)?.sortValue?.(device),
   )
@@ -84,24 +114,28 @@ export function HostDevicesTab({ hostId }: { hostId: string }) {
         <>
           <Skeleton height="2.5rem" style={{ marginBottom: '0.5rem' }} />
           <Skeleton height="2.5rem" style={{ marginBottom: '0.5rem' }} />
-          <Skeleton height="2.5rem" screenreaderText="Loading host devices" />
+          <Skeleton height="2.5rem" screenreaderText={t('vmHostDevices.loading')} />
         </>
       )}
 
       {devices.isError && (
-        <EmptyState titleText="Could not load host devices" status="danger">
+        <EmptyState titleText={t('vmHostDevices.error.title')} status="danger">
           <EmptyStateBody>
-            {devices.error instanceof Error ? devices.error.message : 'Unknown error'}
+            {devices.error instanceof Error ? devices.error.message : t('common.error.unknown')}
           </EmptyStateBody>
-          <Button variant="primary" onClick={() => void devices.refetch()}>
-            Retry
-          </Button>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="primary" onClick={() => void devices.refetch()}>
+                {t('common.action.retry')}
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 
       {devices.isSuccess && devices.data.length === 0 && (
-        <EmptyState titleText="No host devices">
-          <EmptyStateBody>This host reports no PCI or USB devices.</EmptyStateBody>
+        <EmptyState titleText={t('vmHostDevices.empty.title')}>
+          <EmptyStateBody>{t('hostDevices.empty.body')}</EmptyStateBody>
         </EmptyState>
       )}
 
@@ -112,7 +146,7 @@ export function HostDevicesTab({ hostId }: { hostId: string }) {
               <ToolbarGroup align={{ default: 'alignEnd' }}>
                 <ToolbarItem>
                   <ColumnPicker
-                    columns={COLUMNS}
+                    columns={columns}
                     isVisible={prefs.isVisible}
                     onToggle={prefs.toggle}
                     onReset={prefs.reset}
@@ -122,7 +156,11 @@ export function HostDevicesTab({ hostId }: { hostId: string }) {
             </ToolbarContent>
           </Toolbar>
           <div className="app-table-viewport">
-            <Table aria-label="Host devices" variant="compact" {...resizableTableProps(prefs)}>
+            <Table
+              aria-label={t('hostDevices.table.ariaLabel')}
+              variant="compact"
+              {...resizableTableProps(prefs)}
+            >
               <Thead>
                 <Tr>
                   {visibleColumns.map((column, index) => (

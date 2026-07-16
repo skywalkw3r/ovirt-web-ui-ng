@@ -124,9 +124,13 @@ export function HostDevicesTab({ vmId }: { vmId: string }) {
           <EmptyStateBody>
             {devices.error instanceof Error ? devices.error.message : t('common.error.unknown')}
           </EmptyStateBody>
-          <Button variant="primary" onClick={() => void devices.refetch()}>
-            {t('common.action.retry')}
-          </Button>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="primary" onClick={() => void devices.refetch()}>
+                {t('common.action.retry')}
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 
@@ -403,9 +407,9 @@ function mdevLabel(device: MediatedDevice): string {
 
 // vGPU (mediated devices) attached to the VM (GET /vms/{id}/mediateddevices).
 // Admin-only surface (the parent gates on isAdmin). Read + add + remove: lists
-// the configured mdev specs and drives an Add modal and per-row Remove. Strings
-// are hardcoded English — a later i18n pass externalizes them.
+// the configured mdev specs and drives an Add modal and per-row Remove.
 function VGpuSection({ vmId }: { vmId: string }) {
+  const t = useT()
   const queryClient = useQueryClient()
   const { notify } = useNotify()
   const { refreshIntervalMs } = useSettings()
@@ -439,37 +443,38 @@ function VGpuSection({ vmId }: { vmId: string }) {
         size="md"
         style={{ marginBottom: 'var(--pf-t--global--spacer--sm)' }}
       >
-        vGPU (mediated devices)
+        {t('vmHostDevices.vgpu.heading')}
       </Title>
 
       {mdevs.isPending && (
         <>
           <Skeleton height="2.5rem" style={{ marginBottom: '0.5rem' }} />
-          <Skeleton height="2.5rem" screenreaderText="Loading vGPU devices" />
+          <Skeleton height="2.5rem" screenreaderText={t('vmHostDevices.vgpu.loading')} />
         </>
       )}
 
       {mdevs.isError && (
-        <EmptyState titleText="Could not load vGPU devices" status="danger">
+        <EmptyState titleText={t('vmHostDevices.vgpu.error.title')} status="danger">
           <EmptyStateBody>
-            {mdevs.error instanceof Error ? mdevs.error.message : 'Unknown error'}
+            {mdevs.error instanceof Error ? mdevs.error.message : t('common.error.unknown')}
           </EmptyStateBody>
-          <Button variant="primary" onClick={() => void mdevs.refetch()}>
-            Retry
-          </Button>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="primary" onClick={() => void mdevs.refetch()}>
+                {t('common.action.retry')}
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 
       {mdevs.isSuccess && mdevs.data.length === 0 && (
-        <EmptyState titleText="No vGPU devices">
-          <EmptyStateBody>
-            No mediated (vGPU) devices are configured on this VM. Add one to assign a slice of a
-            host GPU.
-          </EmptyStateBody>
+        <EmptyState titleText={t('vmHostDevices.vgpu.empty.title')}>
+          <EmptyStateBody>{t('vmHostDevices.vgpu.empty.body')}</EmptyStateBody>
           <EmptyStateFooter>
             <EmptyStateActions>
               <Button variant="primary" onClick={() => setAddOpen(true)}>
-                Add vGPU
+                {t('vmHostDevices.vgpu.add')}
               </Button>
             </EmptyStateActions>
           </EmptyStateFooter>
@@ -482,33 +487,35 @@ function VGpuSection({ vmId }: { vmId: string }) {
             <ToolbarContent>
               <ToolbarItem>
                 <Button variant="secondary" onClick={() => setAddOpen(true)}>
-                  Add vGPU
+                  {t('vmHostDevices.vgpu.add')}
                 </Button>
               </ToolbarItem>
             </ToolbarContent>
           </Toolbar>
-          <Table aria-label="vGPU mediated devices" variant="compact">
+          <Table aria-label={t('vmHostDevices.vgpu.table.ariaLabel')} variant="compact">
             <Thead>
               <Tr>
-                <Th>mdev type</Th>
-                <Th>Framebuffer console</Th>
-                <Th aria-label="Actions" />
+                <Th>{t('vmHostDevices.vgpu.column.mdevType')}</Th>
+                <Th>{t('vmHostDevices.vgpu.column.framebuffer')}</Th>
+                <Th aria-label={t('common.field.actions')} />
               </Tr>
             </Thead>
             <Tbody>
               {mdevs.data.map((device, i) => (
                 <Tr key={device.id ?? i}>
-                  <Td dataLabel="mdev type">{mdevLabel(device)}</Td>
+                  <Td dataLabel={t('vmHostDevices.vgpu.column.mdevType')}>{mdevLabel(device)}</Td>
                   {/* spec_params 'nodisplay'=true means the mdev does NOT drive the
                       framebuffer console; absent → the engine default (enabled). */}
-                  <Td dataLabel="Framebuffer console">{specParamDisplay(device)}</Td>
-                  <Td dataLabel="Actions" isActionCell>
+                  <Td dataLabel={t('vmHostDevices.vgpu.column.framebuffer')}>
+                    {specParamDisplay(device, t)}
+                  </Td>
+                  <Td dataLabel={t('common.field.actions')} isActionCell>
                     <Button
                       variant="secondary"
                       isDisabled={removeMutation.isPending}
                       onClick={() => setRemoving(device)}
                     >
-                      Remove
+                      {t('common.action.remove')}
                     </Button>
                   </Td>
                 </Tr>
@@ -524,9 +531,13 @@ function VGpuSection({ vmId }: { vmId: string }) {
 
       <ConfirmModal
         isOpen={removing !== null}
-        title={removing ? `Remove vGPU ${mdevLabel(removing)}?` : ''}
-        body="The mediated device is released from this VM. The change applies the next time the VM starts."
-        confirmLabel="Remove"
+        title={
+          removing
+            ? t('vmHostDevices.vgpu.remove.confirm.title', { name: mdevLabel(removing) })
+            : ''
+        }
+        body={t('vmHostDevices.vgpu.remove.confirm.body')}
+        confirmLabel={t('common.action.remove')}
         onConfirm={() => {
           if (removing) removeMutation.mutate(removing)
           setRemoving(null)
@@ -539,9 +550,9 @@ function VGpuSection({ vmId }: { vmId: string }) {
 
 // The framebuffer-console cell: spec_params 'nodisplay'=true disables it,
 // anything else (or absent) leaves the engine default (enabled).
-function specParamDisplay(device: MediatedDevice): string {
+function specParamDisplay(device: MediatedDevice, t: ReturnType<typeof useT>): string {
   const value = (device.spec_params?.property ?? []).find((p) => p.name === 'nodisplay')?.value
-  return value === 'true' ? 'Disabled' : 'Enabled'
+  return value === 'true' ? t('common.disabled') : t('common.enabled')
 }
 
 // Add a vGPU mediated device. The mdev type is discovered from the VM's run-on

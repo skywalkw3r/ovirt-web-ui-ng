@@ -7,8 +7,8 @@ metadata:
 spec:
   # Omit `host:` to take the cluster default
   # (ovirt-web-ui-ng-<namespace>.apps.<cluster>). NOTE: whatever host this
-  # resolves to IS the console's origin — the engines' CORSAllowedOrigins /
-  # engine-cors drop-in must list exactly https://<this host>.
+  # resolves to IS the console's origin — direct-connection engines'
+  # CORSAllowedOrigins allowlists must list exactly https://<this host>.
   # host: console.apps.cluster.example.com
   to:
     kind: Service

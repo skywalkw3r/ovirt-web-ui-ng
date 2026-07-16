@@ -4,15 +4,18 @@ import { listIsoImages } from '../api/resources/storageDomains'
 import type { Vm } from '../api/schemas/vm'
 import { useNotify } from '../notifications/context'
 
-// The ISO catalog is shared across VMs and rarely changes mid-session, so a
-// generous staleTime avoids refetching it every time the dialog opens. The
-// picker still shows a fresh list on a hard reload.
+// The ISO picker assembles its dropdown from full /disks + full /storagedomains
+// plus a per-ISO-domain /files read on every Change-CD / Run-Once open —
+// MB-scale on big installs. ISO catalogs drift slowly, so cache 5 min
+// (staleTime) and hold the entry 10 min (gcTime) so back-to-back dialog opens
+// reuse it instead of reassembling; a hard reload still shows a fresh list.
 export function useIsoImages(enabled: boolean) {
   return useQuery({
     queryKey: ['isoImages'],
     queryFn: () => listIsoImages(),
     enabled,
-    staleTime: 60_000,
+    staleTime: 5 * 60_000,
+    gcTime: 10 * 60_000,
   })
 }
 

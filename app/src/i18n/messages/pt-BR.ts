@@ -2526,55 +2526,6 @@ export const ptBR: LocaleCatalog = {
   'volumes.bricks.server': 'Servidor',
   'volumes.bricks.directory': 'Diretório do brick',
   'volumes.bricks.addBricks': 'Adicionar bricks',
-  'guide.button': 'Guie-me',
-  'guide.dc.title': 'Guie-me — {name}',
-  'guide.cluster.title': 'Guie-me — {name}',
-  'guide.dc.intro': 'Siga estas etapas para colocar este data center em funcionamento.',
-  'guide.cluster.intro': 'Siga estas etapas para colocar este cluster em funcionamento.',
-  'guide.summary.done': 'Todas as etapas obrigatórias foram concluídas.',
-  'guide.summary.remaining':
-    '{count, plural, one {# etapa obrigatória restante} other {# etapas obrigatórias restantes}}.',
-  'guide.error.title': 'Não foi possível ler o estado da configuração',
-  'guide.error.body':
-    'O guia precisa dos clusters, hosts e armazenamento atuais para determinar o que falta.',
-  'guide.loading': 'Carregando etapas de configuração',
-  'guide.close': 'Fechar',
-  'guide.optional': '(opcional)',
-  'guide.count.aria': '{count} configurado(s)',
-  'guide.aria.complete': 'Concluído',
-  'guide.aria.required': 'Obrigatório',
-  'guide.aria.optional': 'Opcional',
-  'guide.step.clusters.title': 'Configurar clusters',
-  'guide.step.clusters.desc':
-    'Um data center precisa de pelo menos um cluster antes que os hosts possam ingressar nele.',
-  'guide.step.clusters.action': 'Novo cluster',
-  'guide.step.hosts.title': 'Configurar hosts',
-  'guide.step.hosts.action': 'Novo host',
-  'guide.step.dc.hosts.desc':
-    'Adicione um host a um dos clusters deste data center para executar máquinas virtuais.',
-  'guide.step.cluster.hosts.desc':
-    'Adicione um host a este cluster para que ele possa executar máquinas virtuais.',
-  'guide.blocked.needCluster': 'Adicione um cluster primeiro',
-  'guide.blocked.needUpHost': 'Precisa de um host que esteja Ativo',
-  'guide.blocked.needHost': 'Adicione um host primeiro',
-  'guide.blocked.noDc': 'O cluster não está anexado a um data center',
-  'guide.step.dataStorage.title': 'Anexar armazenamento de dados',
-  'guide.step.dataStorage.desc':
-    'Anexe e ative um domínio de armazenamento de dados para que o data center possa ser ativado.',
-  'guide.step.dataStorage.action': 'Anexar armazenamento',
-  'guide.step.iso.title': 'Anexar uma biblioteca ISO',
-  'guide.step.iso.desc':
-    'Opcional: anexe um domínio de armazenamento ISO para inicializar VMs a partir de mídia de instalação.',
-  'guide.step.iso.action': 'Anexar biblioteca ISO',
-  'guide.step.upHost.title': 'Ativar um host',
-  'guide.step.upHost.desc':
-    'Pelo menos um host deve atingir o estado Ativo para agendar cargas de trabalho.',
-  'guide.step.clusterStorage.title': 'Alcançar armazenamento de dados',
-  'guide.step.clusterStorage.desc.hasDc':
-    'O data center do cluster precisa de um domínio de armazenamento de dados ativo.',
-  'guide.step.clusterStorage.desc.noDc':
-    'Anexe este cluster a um data center com armazenamento de dados ativo.',
-  'guide.step.clusterStorage.action': 'Ir para o data center',
   'infra.compat': 'Compatibilidade {version}',
   'infra.datacenter.storage': 'Armazenamento {format}',
   'inventory.folder.kind': 'Pasta',

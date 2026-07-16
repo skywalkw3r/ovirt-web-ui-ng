@@ -23,29 +23,27 @@ import { SearchInput } from '../components/list-toolbar/SearchInput'
 import { MacPoolFormModal } from '../components/mac-pool-form/MacPoolFormModal'
 import { useDeleteMacPool, useMacPools } from '../hooks/useMacPools'
 import { sortRows, useColumnSort } from '../hooks/useColumnSort'
-
-// The engine's built-in Default pool cannot be removed (webadmin forbids it, and
-// a DELETE 409s). The per-row Remove is disabled with this reason for it.
-const DEFAULT_POOL_REMOVE_REASON = 'The built-in Default pool cannot be removed.'
+import { useT } from '../i18n/useT'
 
 // Human-readable ranges cell: the count, plus the single range inline when there
 // is exactly one (the common case), so the table conveys the addresses at a
 // glance without a detail drill-down.
-function rangesSummary(pool: MacPool): string {
+function rangesSummary(pool: MacPool, t: ReturnType<typeof useT>): string {
   const ranges = pool.ranges?.range ?? []
-  if (ranges.length === 0) return 'No ranges'
+  if (ranges.length === 0) return t('macPools.ranges.none')
   if (ranges.length === 1) {
     const [only] = ranges
     const from = only.from ?? '?'
     const to = only.to ?? '?'
     return `${from} – ${to}`
   }
-  return `${ranges.length} ranges`
+  return t('macPools.ranges.count', { count: ranges.length })
 }
 
 const MAC_POOL_KEYS = ['name', 'description', 'duplicates', 'ranges'] as const
 
 export function MacPoolsPage() {
+  const t = useT()
   const { loaded, isAdmin } = useCapabilities()
   const pools = useMacPools()
   const remove = useDeleteMacPool()
@@ -67,7 +65,7 @@ export function MacPoolsPage() {
   if (loaded && !isAdmin) {
     return (
       <PageSection>
-        <NotPermitted what="MAC address pools" />
+        <NotPermitted what={t('macPools.notPermitted')} />
       </PageSection>
     )
   }
@@ -95,11 +93,11 @@ export function MacPoolsPage() {
   return (
     <PageSection>
       <ListPageHeader
-        title="MAC address pools"
+        title={t('macPools.title')}
         actions={
           loaded && pools.isSuccess && items.length > 0 ? (
             <Button variant="primary" onClick={() => setCreating(true)}>
-              New pool
+              {t('macPools.new')}
             </Button>
           ) : undefined
         }
@@ -111,8 +109,8 @@ export function MacPoolsPage() {
               value={filter}
               onChange={setFilter}
               onCommit={() => {}}
-              hint="Filter by name"
-              ariaLabel="Filter MAC address pools by name"
+              hint={t('macPools.filter.hint')}
+              ariaLabel={t('macPools.filter.ariaLabel')}
             />
           </ToolbarItem>
           <ToolbarGroup align={{ default: 'alignEnd' }}>
@@ -127,7 +125,7 @@ export function MacPoolsPage() {
         <>
           <Skeleton height="2.5rem" style={{ marginBottom: '0.5rem' }} />
           <Skeleton height="2.5rem" style={{ marginBottom: '0.5rem' }} />
-          <Skeleton height="2.5rem" screenreaderText="Loading MAC address pools" />
+          <Skeleton height="2.5rem" screenreaderText={t('macPools.loading')} />
         </>
       )}
 
@@ -135,28 +133,32 @@ export function MacPoolsPage() {
         <>
           <Skeleton height="2.5rem" style={{ marginBottom: '0.5rem' }} />
           <Skeleton height="2.5rem" style={{ marginBottom: '0.5rem' }} />
-          <Skeleton height="2.5rem" screenreaderText="Loading MAC address pools" />
+          <Skeleton height="2.5rem" screenreaderText={t('macPools.loading')} />
         </>
       )}
 
       {loaded && pools.isError && (
-        <EmptyState titleText="Could not load MAC address pools" status="danger">
+        <EmptyState titleText={t('macPools.error.title')} status="danger">
           <EmptyStateBody>
-            {pools.error instanceof Error ? pools.error.message : 'Unknown error'}
+            {pools.error instanceof Error ? pools.error.message : t('common.error.unknown')}
           </EmptyStateBody>
-          <Button variant="primary" onClick={() => void pools.refetch()}>
-            Retry
-          </Button>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="primary" onClick={() => void pools.refetch()}>
+                {t('common.action.retry')}
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 
       {loaded && pools.isSuccess && items.length === 0 && (
-        <EmptyState titleText="No MAC address pools">
-          <EmptyStateBody>MAC address pools defined on the engine appear here.</EmptyStateBody>
+        <EmptyState titleText={t('macPools.empty.title')}>
+          <EmptyStateBody>{t('macPools.empty.body')}</EmptyStateBody>
           <EmptyStateFooter>
             <EmptyStateActions>
               <Button variant="primary" onClick={() => setCreating(true)}>
-                New pool
+                {t('macPools.new')}
               </Button>
             </EmptyStateActions>
           </EmptyStateFooter>
@@ -164,43 +166,50 @@ export function MacPoolsPage() {
       )}
 
       {loaded && pools.isSuccess && items.length > 0 && sortedPools.length === 0 && (
-        <EmptyState titleText="Nothing matches the filter">
-          <EmptyStateBody>
-            <Button variant="link" isInline onClick={() => setFilter('')}>
-              Clear filter
-            </Button>
-          </EmptyStateBody>
+        <EmptyState titleText={t('common.state.searchEmpty.title')}>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="link" isInline onClick={() => setFilter('')}>
+                {t('common.action.clearFilter')}
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 
       {loaded && pools.isSuccess && items.length > 0 && sortedPools.length > 0 && (
-        <Table aria-label="MAC address pools" variant="compact">
+        <Table aria-label={t('macPools.table.ariaLabel')} variant="compact">
           <Thead>
             <Tr>
-              <Th sort={thSort(MAC_POOL_KEYS, 0)}>Name</Th>
-              <Th sort={thSort(MAC_POOL_KEYS, 1)}>Description</Th>
-              <Th sort={thSort(MAC_POOL_KEYS, 2)}>Allow duplicates</Th>
-              <Th sort={thSort(MAC_POOL_KEYS, 3)}>Ranges</Th>
-              <Th screenReaderText="Actions" />
+              <Th sort={thSort(MAC_POOL_KEYS, 0)}>{t('common.field.name')}</Th>
+              <Th sort={thSort(MAC_POOL_KEYS, 1)}>{t('common.field.description')}</Th>
+              <Th sort={thSort(MAC_POOL_KEYS, 2)}>{t('macPools.column.allowDuplicates')}</Th>
+              <Th sort={thSort(MAC_POOL_KEYS, 3)}>{t('macPools.column.ranges')}</Th>
+              <Th screenReaderText={t('common.field.actions')} />
             </Tr>
           </Thead>
           <Tbody>
             {sortedPools.map((pool) => {
+              // The engine's built-in Default pool cannot be removed (webadmin
+              // forbids it, and a DELETE 409s). The per-row Remove is disabled
+              // with this reason for it.
               const removeReason =
-                pool.default_pool === true ? DEFAULT_POOL_REMOVE_REASON : undefined
+                pool.default_pool === true ? t('macPools.remove.defaultReason') : undefined
               return (
                 <Tr key={pool.id}>
-                  <Td dataLabel="Name">{pool.name ?? pool.id}</Td>
-                  <Td dataLabel="Description">{pool.description || '—'}</Td>
-                  <Td dataLabel="Allow duplicates">{pool.allow_duplicates ? 'Yes' : 'No'}</Td>
-                  <Td dataLabel="Ranges">{rangesSummary(pool)}</Td>
-                  <Td dataLabel="Actions" isActionCell>
+                  <Td dataLabel={t('common.field.name')}>{pool.name ?? pool.id}</Td>
+                  <Td dataLabel={t('common.field.description')}>{pool.description || '—'}</Td>
+                  <Td dataLabel={t('macPools.column.allowDuplicates')}>
+                    {pool.allow_duplicates ? t('common.yes') : t('common.no')}
+                  </Td>
+                  <Td dataLabel={t('macPools.column.ranges')}>{rangesSummary(pool, t)}</Td>
+                  <Td dataLabel={t('common.field.actions')} isActionCell>
                     <ActionsColumn
                       isDisabled={remove.isPending}
                       items={[
-                        { title: 'Edit', onClick: () => setEditing(pool) },
+                        { title: t('common.action.edit'), onClick: () => setEditing(pool) },
                         {
-                          title: 'Remove',
+                          title: t('common.action.remove'),
                           isDanger: true,
                           isDisabled: removeReason !== undefined,
                           description: removeReason,
@@ -221,9 +230,9 @@ export function MacPoolsPage() {
       {removing && (
         <ConfirmModal
           isOpen
-          title={`Remove MAC pool '${removing.name ?? removing.id}'?`}
-          body="The pool is permanently removed. A pool still assigned to a cluster cannot be removed — reassign those clusters first, or the engine rejects the removal. This cannot be undone."
-          confirmLabel="Remove"
+          title={t('macPools.remove.confirm.title', { name: removing.name ?? removing.id })}
+          body={t('macPools.remove.confirm.body')}
+          confirmLabel={t('common.action.remove')}
           isConfirmDisabled={remove.isPending}
           onConfirm={() => {
             const target = removing

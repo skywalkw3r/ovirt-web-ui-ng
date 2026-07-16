@@ -67,7 +67,9 @@ configMapGenerator name, an engine-list change in Git rolls the pods on sync.
    space-separated — it feeds both the CSP response header and the `<meta>`
    CSP baked into `index.html` (swapped at serve time via nginx `sub_filter`).
 3. Each direct-connection engine gets the one-time CORS enablement:
-   `packaging/engine-cors/README.md` (engine-config for the API + web.xml fix
-   or Apache drop-in for SSO).
+   `engine-config -s CORSSupport=true -s CORSAllowedOrigins=https://<console-origin>`
+   for the API, plus an engine build with the fixed enginesso CORS mapping for
+   SSO. Engines reached through a same-origin `/e/<slug>` proxy path need
+   neither.
 4. The Route host is the console's origin — that exact `https://` origin is
    what goes into each engine's `CORSAllowedOrigins` / drop-in allowlist.

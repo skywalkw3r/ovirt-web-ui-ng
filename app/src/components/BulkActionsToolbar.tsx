@@ -29,7 +29,7 @@ import type { VmAction } from '../api/resources/vms'
 import type { Vm } from '../api/schemas/vm'
 import { useCapabilities } from '../auth/capabilities'
 import { useBulkVmAction } from '../hooks/useBulkVmActions'
-import { VM_ACTION_LABELS } from '../hooks/useVmActions'
+import { VM_ACTION_LABEL_IDS } from '../hooks/useVmActions'
 import { useHosts } from '../hooks/useHosts'
 import type { MessageId } from '../i18n/messages/en'
 import { useT } from '../i18n/useT'
@@ -40,11 +40,8 @@ import { MoveToFolderModal } from './tags/MoveToFolderModal'
 interface BulkAction {
   action: VmAction
   allowed: (status: string | undefined) => boolean
-  // body copy for the confirmation modal — either an i18n id (existing catalog
-  // entries) or a hardcoded English string for actions added this wave (the
-  // i18n catalogs are read-only). Absent on both means fire immediately.
+  // body copy id for the confirmation modal; absent means fire immediately
   confirmBody?: MessageId
-  confirmText?: string
 }
 
 // Unlike the per-row menu (which hides disallowed items), bulk buttons stay
@@ -53,12 +50,7 @@ interface BulkAction {
 const BULK_ACTIONS: BulkAction[] = [
   { action: 'start', allowed: canStart },
   { action: 'shutdown', allowed: canShutdown, confirmBody: 'bulk.confirm.shutdown' },
-  {
-    action: 'stop',
-    allowed: canShutdown,
-    confirmText:
-      'Power off forcibly cuts virtual power — the guest OS does not shut down cleanly and unsaved data may be lost.',
-  },
+  { action: 'stop', allowed: canShutdown, confirmBody: 'bulk.confirm.stop' },
   { action: 'reboot', allowed: canRestart, confirmBody: 'bulk.confirm.reboot' },
   { action: 'suspend', allowed: canSuspend },
 ]
@@ -74,7 +66,7 @@ export function BulkActionsToolbar({ selected, onClear }: { selected: Vm[]; onCl
   if (selected.length === 0) return null
 
   const select = (item: BulkAction) => {
-    if (item.confirmBody || item.confirmText) {
+    if (item.confirmBody) {
       setConfirming(item)
     } else {
       run(selected, item.action)
@@ -103,7 +95,7 @@ export function BulkActionsToolbar({ selected, onClear }: { selected: Vm[]; onCl
                   isDisabled={pending || !selected.every((vm) => item.allowed(vm.status))}
                   onClick={() => select(item)}
                 >
-                  {VM_ACTION_LABELS[item.action]}
+                  {t(VM_ACTION_LABEL_IDS[item.action])}
                 </Button>
               </ToolbarItem>
             ))}
@@ -114,7 +106,7 @@ export function BulkActionsToolbar({ selected, onClear }: { selected: Vm[]; onCl
                   isDisabled={pending || !allUp}
                   onClick={() => setIsMigrateOpen(true)}
                 >
-                  Migrate
+                  <FormattedMessage id="common.action.migrate" />
                 </Button>
               </ToolbarItem>
             )}
@@ -151,14 +143,12 @@ export function BulkActionsToolbar({ selected, onClear }: { selected: Vm[]; onCl
         <ConfirmModal
           isOpen
           title={t('bulk.confirm.title', {
-            action: VM_ACTION_LABELS[confirming.action],
+            action: t(VM_ACTION_LABEL_IDS[confirming.action]),
             countLabel,
           })}
           body={
             <Stack hasGutter>
-              <StackItem>
-                {confirming.confirmBody ? t(confirming.confirmBody) : confirming.confirmText}
-              </StackItem>
+              <StackItem>{confirming.confirmBody && t(confirming.confirmBody)}</StackItem>
               <StackItem>
                 <List>
                   {selected.map((vm) => (
@@ -168,7 +158,7 @@ export function BulkActionsToolbar({ selected, onClear }: { selected: Vm[]; onCl
               </StackItem>
             </Stack>
           }
-          confirmLabel={VM_ACTION_LABELS[confirming.action]}
+          confirmLabel={t(VM_ACTION_LABEL_IDS[confirming.action])}
           onConfirm={() => {
             setConfirming(null)
             run(selected, confirming.action)

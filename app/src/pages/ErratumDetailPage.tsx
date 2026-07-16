@@ -9,7 +9,9 @@ import {
   DescriptionListGroup,
   DescriptionListTerm,
   EmptyState,
+  EmptyStateActions,
   EmptyStateBody,
+  EmptyStateFooter,
   List,
   ListItem,
   PageSection,
@@ -87,9 +89,13 @@ export function ErratumDetailPage() {
           <EmptyStateBody>
             {erratum.error instanceof Error ? erratum.error.message : t('common.error.unknown')}
           </EmptyStateBody>
-          <Button variant="primary" onClick={() => void erratum.refetch()}>
-            {t('common.action.retry')}
-          </Button>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="primary" onClick={() => void erratum.refetch()}>
+                {t('common.action.retry')}
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 

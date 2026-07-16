@@ -1,8 +1,10 @@
-import { useState, type ReactNode } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import {
   Button,
   EmptyState,
+  EmptyStateActions,
   EmptyStateBody,
+  EmptyStateFooter,
   PageSection,
   Pagination,
   Skeleton,
@@ -29,6 +31,8 @@ import { useColumnPrefs } from '../hooks/useColumnPrefs'
 import { sortRows, useColumnSort } from '../hooks/useColumnSort'
 import { useNetworks } from '../hooks/useNetworks'
 import { useDeleteVnicProfile } from '../hooks/useVnicProfileMutations'
+import { useT } from '../i18n/useT'
+import type { MessageId } from '../i18n/messages/en'
 
 const PER_PAGE_OPTIONS = [
   { title: '20', value: 20 },
@@ -47,11 +51,12 @@ interface VnicProfileColumnCtx {
   // the owning data center's compatibility version — see the compatVersion column
   compatVersion: (networkId: string | undefined) => string | undefined
   profileName: (profileId: string | undefined) => string | undefined
+  t: ReturnType<typeof useT>
 }
 
 interface VnicProfileColumn {
   key: string
-  label: string
+  labelId: MessageId
   always?: boolean
   defaultHidden?: boolean
   // opt-in header sort (see hooks/useColumnSort)
@@ -60,11 +65,12 @@ interface VnicProfileColumn {
 }
 
 // Headers and cells both map over the same isVisible-filtered array so they
-// can never desync.
+// can never desync. Labels ride as i18n ids, resolved for the active locale
+// in the component body.
 const COLUMNS: VnicProfileColumn[] = [
   {
     key: 'name',
-    label: 'Name',
+    labelId: 'common.field.name',
     sortValue: (profile) => profile.name,
     always: true,
     cell: (profile) => (
@@ -75,20 +81,20 @@ const COLUMNS: VnicProfileColumn[] = [
   },
   {
     key: 'network',
-    label: 'Network',
+    labelId: 'vnicProfiles.column.network',
     sortValue: (profile, ctx) => ctx.networkName(profile.network?.id),
     cell: (profile, ctx) => ctx.networkName(profile.network?.id) ?? '—',
   },
   {
     key: 'datacenter',
-    label: 'Data Center',
+    labelId: 'vnicProfiles.column.datacenter',
     sortValue: (profile, ctx) => ctx.dataCenterName(profile.network?.id),
     defaultHidden: true,
     cell: (profile, ctx) => ctx.dataCenterName(profile.network?.id) ?? '—',
   },
   {
     key: 'compatVersion',
-    label: 'Compatibility Version',
+    labelId: 'common.field.compatVersion',
     sortValue: (profile, ctx) => ctx.compatVersion(profile.network?.id),
     // webadmin's VnicProfileView.compatibilityVersion is the owning data
     // center's compat version (vnic_profiles_view maps
@@ -100,29 +106,36 @@ const COLUMNS: VnicProfileColumn[] = [
   },
   {
     key: 'portMirroring',
-    label: 'Port Mirroring',
+    labelId: 'vnicProfiles.column.portMirroring',
     sortValue: (profile) =>
       profile.port_mirroring === undefined ? undefined : profile.port_mirroring ? 1 : 0,
-    cell: (profile) =>
-      profile.port_mirroring === undefined ? '—' : profile.port_mirroring ? 'Yes' : 'No',
+    cell: (profile, ctx) =>
+      profile.port_mirroring === undefined
+        ? '—'
+        : profile.port_mirroring
+          ? ctx.t('common.yes')
+          : ctx.t('common.no'),
   },
   {
     key: 'passthrough',
-    label: 'Passthrough',
+    labelId: 'vnicProfiles.column.passthrough',
     sortValue: (profile) => ((profile.pass_through?.mode ?? 'disabled') !== 'disabled' ? 1 : 0),
     // absent pass_through means the record predates SR-IOV support — disabled
-    cell: (profile) => ((profile.pass_through?.mode ?? 'disabled') !== 'disabled' ? 'Yes' : 'No'),
+    cell: (profile, ctx) =>
+      (profile.pass_through?.mode ?? 'disabled') !== 'disabled'
+        ? ctx.t('common.yes')
+        : ctx.t('common.no'),
   },
   {
     key: 'failover',
-    label: 'Failover vNIC Profile',
+    labelId: 'vnicProfiles.column.failover',
     sortValue: (profile, ctx) => ctx.profileName(profile.failover?.id),
     defaultHidden: true,
     cell: (profile, ctx) => ctx.profileName(profile.failover?.id) ?? '—',
   },
   {
     key: 'description',
-    label: 'Description',
+    labelId: 'common.field.description',
     sortValue: (profile) => profile.description || undefined,
     cell: (profile) => profile.description || '—',
   },
@@ -135,12 +148,16 @@ const COLUMNS: VnicProfileColumn[] = [
 // Mounted only for the admin tier (gate below), so user tier never fires the
 // /vnicprofiles request the engine would answer with a permission fault.
 function VnicProfilesTable() {
+  const t = useT()
   const profiles = useVnicProfiles()
   const networks = useNetworks()
   // already-admin-gated cache shared with the other list pages; only feeds
   // the defaultHidden Data Center column, so render is not blocked on it
   const dataCenters = useDataCenters()
-  const prefs = useColumnPrefs('vnic-profiles', COLUMNS)
+  // Resolve column labels for the active locale; identity is stable per locale
+  // (t is memoized on intl) so useColumnPrefs' seeding stays sound.
+  const columns = useMemo(() => COLUMNS.map((c) => ({ ...c, label: t(c.labelId) })), [t])
+  const prefs = useColumnPrefs('vnic-profiles', columns)
   // client-side header sort; no default — the engine list order stands
   // until a header is clicked (see hooks/useColumnSort)
   const { sort, thSort } = useColumnSort()
@@ -170,6 +187,7 @@ function VnicProfilesTable() {
       return version.minor === undefined ? `${version.major}` : `${version.major}.${version.minor}`
     },
     profileName: (profileId) => profiles.data?.find((entry) => entry.id === profileId)?.name,
+    t,
   }
 
   const allProfiles = profiles.data ?? []
@@ -182,7 +200,7 @@ function VnicProfilesTable() {
       (columnCtx.networkName(profile.network?.id) ?? '').toLowerCase().includes(needle),
   )
   const items = sortRows(filtered, sort, (row, key) =>
-    COLUMNS.find((column) => column.key === key)?.sortValue?.(row, columnCtx),
+    columns.find((column) => column.key === key)?.sortValue?.(row, columnCtx),
   )
 
   // a new filter starts back at page 1 (guarded setState during render, like
@@ -198,15 +216,15 @@ function VnicProfilesTable() {
   const currentPage = Math.min(page, lastPage)
   const paged = items.slice((currentPage - 1) * perPage, currentPage * perPage)
 
-  const visibleColumns = COLUMNS.filter((column) => prefs.isVisible(column.key))
+  const visibleColumns = columns.filter((column) => prefs.isVisible(column.key))
 
   return (
     <>
       <ListPageHeader
-        title="vNIC profiles"
+        title={t('vnicProfiles.title')}
         actions={
           <Button variant="primary" onClick={() => setCreating(true)}>
-            New profile
+            {t('vnicProfiles.new')}
           </Button>
         }
       />
@@ -217,8 +235,8 @@ function VnicProfilesTable() {
               value={filter}
               onChange={setFilter}
               onCommit={() => {}}
-              hint="Filter by name"
-              ariaLabel="Filter vNIC profiles by name"
+              hint={t('vnicProfiles.filter.hint')}
+              ariaLabel={t('vnicProfiles.filter.ariaLabel')}
             />
           </ToolbarItem>
           <ToolbarGroup align={{ default: 'alignEnd' }}>
@@ -235,12 +253,12 @@ function VnicProfilesTable() {
                   setPerPage(nextPerPage)
                   setPage(nextPage)
                 }}
-                titles={{ paginationAriaLabel: 'vNIC profiles pagination' }}
+                titles={{ paginationAriaLabel: t('vnicProfiles.pagination.ariaLabel') }}
               />
             </ToolbarItem>
             <ToolbarItem>
               <ColumnPicker
-                columns={COLUMNS}
+                columns={columns}
                 isVisible={prefs.isVisible}
                 onToggle={prefs.toggle}
                 onReset={prefs.reset}
@@ -260,9 +278,9 @@ function VnicProfilesTable() {
       {removing && (
         <ConfirmModal
           isOpen
-          title={`Remove vNIC profile '${removing.name}'?`}
-          body="The profile is permanently removed. A profile still attached to any VM or template vNIC cannot be removed."
-          confirmLabel="Remove"
+          title={t('vnicProfiles.remove.confirm.title', { name: removing.name })}
+          body={t('vnicProfiles.remove.confirm.body')}
+          confirmLabel={t('common.action.remove')}
           isConfirmDisabled={remove.isPending}
           onConfirm={() => {
             const target = removing
@@ -280,26 +298,28 @@ function VnicProfilesTable() {
         <>
           <Skeleton height="2.5rem" style={{ marginBottom: '0.5rem' }} />
           <Skeleton height="2.5rem" style={{ marginBottom: '0.5rem' }} />
-          <Skeleton height="2.5rem" screenreaderText="Loading vNIC profiles" />
+          <Skeleton height="2.5rem" screenreaderText={t('vnicProfiles.loading')} />
         </>
       )}
 
       {profiles.isError && (
-        <EmptyState titleText="Could not load vNIC profiles" status="danger">
+        <EmptyState titleText={t('vnicProfiles.error.title')} status="danger">
           <EmptyStateBody>
-            {profiles.error instanceof Error ? profiles.error.message : 'Unknown error'}
+            {profiles.error instanceof Error ? profiles.error.message : t('common.error.unknown')}
           </EmptyStateBody>
-          <Button variant="primary" onClick={() => void profiles.refetch()}>
-            Retry
-          </Button>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="primary" onClick={() => void profiles.refetch()}>
+                {t('common.action.retry')}
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 
       {profiles.isSuccess && !networks.isPending && allProfiles.length === 0 && (
-        <EmptyState titleText="No vNIC profiles">
-          <EmptyStateBody>
-            vNIC profiles you have permission to see will appear here.
-          </EmptyStateBody>
+        <EmptyState titleText={t('vnicProfiles.empty.title')}>
+          <EmptyStateBody>{t('vnicProfiles.empty.body')}</EmptyStateBody>
         </EmptyState>
       )}
 
@@ -307,18 +327,24 @@ function VnicProfilesTable() {
         !networks.isPending &&
         allProfiles.length > 0 &&
         items.length === 0 && (
-          <EmptyState titleText="Nothing matches the filter">
-            <EmptyStateBody>
-              <Button variant="link" isInline onClick={() => setFilter('')}>
-                Clear filter
-              </Button>
-            </EmptyStateBody>
+          <EmptyState titleText={t('common.state.searchEmpty.title')}>
+            <EmptyStateFooter>
+              <EmptyStateActions>
+                <Button variant="link" isInline onClick={() => setFilter('')}>
+                  {t('common.action.clearFilter')}
+                </Button>
+              </EmptyStateActions>
+            </EmptyStateFooter>
           </EmptyState>
         )}
 
       {profiles.isSuccess && !networks.isPending && items.length > 0 && (
         <div className="app-table-viewport">
-          <Table aria-label="vNIC profiles" variant="compact" {...resizableTableProps(prefs)}>
+          <Table
+            aria-label={t('vnicProfiles.table.ariaLabel')}
+            variant="compact"
+            {...resizableTableProps(prefs)}
+          >
             <Thead>
               <Tr>
                 {visibleColumns.map((column, index) => (
@@ -339,7 +365,7 @@ function VnicProfilesTable() {
                     {column.label}
                   </ResizableTh>
                 ))}
-                <Th screenReaderText="Actions" />
+                <Th screenReaderText={t('common.field.actions')} />
               </Tr>
             </Thead>
             <Tbody>
@@ -350,13 +376,13 @@ function VnicProfilesTable() {
                       {column.cell(profile, columnCtx)}
                     </Td>
                   ))}
-                  <Td dataLabel="Actions" isActionCell>
+                  <Td dataLabel={t('common.field.actions')} isActionCell>
                     <ActionsColumn
                       isDisabled={remove.isPending}
                       items={[
-                        { title: 'Edit', onClick: () => setEditing(profile) },
+                        { title: t('common.action.edit'), onClick: () => setEditing(profile) },
                         {
-                          title: 'Remove',
+                          title: t('common.action.remove'),
                           isDanger: true,
                           onClick: () => setRemoving(profile),
                         },
@@ -374,6 +400,7 @@ function VnicProfilesTable() {
 }
 
 export function VnicProfilesPage() {
+  const t = useT()
   // Admin-gated (AppShell marks /vnic-profiles adminOnly). Skeletons cover
   // the pre-profile window (loaded=false) instead of flashing the lock at
   // users who will turn out to be admins.
@@ -391,17 +418,17 @@ export function VnicProfilesPage() {
 
   return (
     <PageSection>
-      <ListPageHeader title="vNIC profiles" />
+      <ListPageHeader title={t('vnicProfiles.title')} />
 
       {!loaded && (
         <>
           <Skeleton height="2.5rem" style={{ marginBottom: '0.5rem' }} />
           <Skeleton height="2.5rem" style={{ marginBottom: '0.5rem' }} />
-          <Skeleton height="2.5rem" screenreaderText="Loading vNIC profiles" />
+          <Skeleton height="2.5rem" screenreaderText={t('vnicProfiles.loading')} />
         </>
       )}
 
-      {loaded && !isAdmin && <NotPermitted what="vNIC profiles" />}
+      {loaded && !isAdmin && <NotPermitted what={t('vnicProfiles.notPermitted')} />}
     </PageSection>
   )
 }

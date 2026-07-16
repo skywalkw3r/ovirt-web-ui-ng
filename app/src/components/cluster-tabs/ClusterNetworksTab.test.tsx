@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { renderToStaticMarkup } from 'react-dom/server'
 import type { ReactNode } from 'react'
 import { IntlProvider } from 'react-intl'
@@ -34,6 +34,7 @@ vi.mock('@patternfly/react-core', () => ({
   ),
   Toolbar: ({ children }: { children?: ReactNode }) => <div>{children}</div>,
   ToolbarContent: ({ children }: { children?: ReactNode }) => <div>{children}</div>,
+  ToolbarGroup: ({ children }: { children?: ReactNode }) => <div>{children}</div>,
   ToolbarItem: ({ children }: { children?: ReactNode }) => <div>{children}</div>,
 }))
 
@@ -55,6 +56,39 @@ vi.mock('@patternfly/react-table', () => ({
 vi.mock('@tanstack/react-router', () => ({
   Link: ({ children }: { children?: ReactNode }) => <a>{children}</a>,
 }))
+
+// The column picker is a dropdown (not reachable under renderToStaticMarkup);
+// stub it away — useColumnPrefs' all-visible default keeps every cell
+// assertable below. Resizable headers reduce to plain <th> so the existing
+// '<th>Roles</th>' assertion keeps passing (the DisksTab.test.tsx pattern).
+vi.mock('../list-toolbar/ColumnPicker', () => ({ ColumnPicker: () => null }))
+
+vi.mock('../list-toolbar/ResizableTh', () => ({
+  resizableTableProps: () => ({}),
+  ResizableTh: ({ children }: { children?: ReactNode }) => <th>{children}</th>,
+}))
+
+// useColumnPrefs reads localStorage on mount; vitest runs in a node
+// environment, so stub the minimal surface columnPrefs.ts touches, backed by
+// an in-memory map (the bookmarks.test.ts pattern).
+let storage: Map<string, string>
+
+beforeEach(() => {
+  storage = new Map()
+  vi.stubGlobal('localStorage', {
+    getItem: (key: string) => storage.get(key) ?? null,
+    setItem: (key: string, value: string) => {
+      storage.set(key, value)
+    },
+    removeItem: (key: string) => {
+      storage.delete(key)
+    },
+  })
+})
+
+afterEach(() => {
+  vi.unstubAllGlobals()
+})
 
 const state = vi.hoisted(() => ({
   networks: {} as UseQueryResult<Network[], Error>,

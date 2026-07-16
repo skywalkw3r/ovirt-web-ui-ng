@@ -1,5 +1,4 @@
 import { useState, type Ref } from 'react'
-import { FormattedMessage } from 'react-intl'
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -8,7 +7,9 @@ import {
   DropdownItem,
   DropdownList,
   EmptyState,
+  EmptyStateActions,
   EmptyStateBody,
+  EmptyStateFooter,
   FormGroup,
   MenuToggle,
   PageSection,
@@ -28,12 +29,12 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { ApiError } from '../api/transport'
 import { cleanFinishedTasks, deleteDataCenter } from '../api/resources/datacenters'
 import { useCapabilities } from '../auth/capabilities'
+import { useT } from '../i18n/useT'
 import { ConfirmModal } from '../components/ConfirmModal'
 import { ListPageHeader } from '../components/ListPageHeader'
 import { StatusBadge } from '../components/StatusBadge'
 import { NotPermitted } from '../components/NotPermitted'
 import { DataCenterFormModal } from '../components/datacenter-form/DataCenterFormModal'
-import { DataCenterGuideModal } from '../components/guide-me/DataCenterGuideModal'
 import { useDeleteDataCenter } from '../hooks/useDataCenterMutations'
 import { useNotify } from '../notifications/context'
 import { DataCenterClustersTab } from '../components/datacenter-tabs/DataCenterClustersTab'
@@ -75,13 +76,13 @@ function DataCenterStatusLabel({ status }: { status?: string }) {
 }
 
 export function DataCenterDetailPage() {
+  const t = useT()
   const { dataCenterId } = dataCenterDetailRoute.useParams()
   const { loaded, isAdmin } = useCapabilities()
   const dataCenter = useDataCenter(dataCenterId)
   const navigate = useNavigate()
   const [activeKey, setActiveKey] = useState<string | number>('general')
   const [editing, setEditing] = useState(false)
-  const [guiding, setGuiding] = useState(false)
   const [kebabOpen, setKebabOpen] = useState(false)
   const [reinitializing, setReinitializing] = useState(false)
   // non-null while the remove / force-remove confirm is up; each holds the
@@ -134,7 +135,7 @@ export function DataCenterDetailPage() {
   if (loaded && !isAdmin) {
     return (
       <PageSection>
-        <NotPermitted what="Data centers" />
+        <NotPermitted what={t('datacenters.title')} />
       </PageSection>
     )
   }
@@ -147,31 +148,39 @@ export function DataCenterDetailPage() {
             width="30%"
             height="2rem"
             style={{ marginBottom: '1rem' }}
-            screenreaderText="Loading data center"
+            screenreaderText={t('dcDetail.loading')}
           />
           <Skeleton height="12rem" />
         </>
       )}
 
       {dataCenter.isError && notFound && (
-        <EmptyState titleText="Data center not found" status="warning">
-          <EmptyStateBody>
-            No data center with ID {dataCenterId} is visible to you — it may have been removed.
-          </EmptyStateBody>
-          <Button variant="primary" onClick={() => void navigate({ to: '/datacenters' })}>
-            Back to data centers
-          </Button>
+        <EmptyState titleText={t('dcDetail.notFound.title')} status="warning">
+          <EmptyStateBody>{t('dcDetail.notFound.body', { id: dataCenterId })}</EmptyStateBody>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="primary" onClick={() => void navigate({ to: '/datacenters' })}>
+                {t('dcDetail.notFound.back')}
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 
       {dataCenter.isError && !notFound && (
-        <EmptyState titleText="Could not load data center" status="danger">
+        <EmptyState titleText={t('dcDetail.error.title')} status="danger">
           <EmptyStateBody>
-            {dataCenter.error instanceof Error ? dataCenter.error.message : 'Unknown error'}
+            {dataCenter.error instanceof Error
+              ? dataCenter.error.message
+              : t('common.error.unknown')}
           </EmptyStateBody>
-          <Button variant="primary" onClick={() => void dataCenter.refetch()}>
-            Retry
-          </Button>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="primary" onClick={() => void dataCenter.refetch()}>
+                {t('common.action.retry')}
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 
@@ -185,7 +194,7 @@ export function DataCenterDetailPage() {
                 <BreadcrumbItem
                   render={({ className }) => (
                     <Link to="/datacenters" className={className}>
-                      Data centers
+                      {t('datacenters.title')}
                     </Link>
                   )}
                 />
@@ -194,11 +203,8 @@ export function DataCenterDetailPage() {
             }
             actions={
               <>
-                <Button variant="secondary" onClick={() => setGuiding(true)}>
-                  <FormattedMessage id="guide.button" />
-                </Button>
                 <Button variant="secondary" onClick={() => setEditing(true)}>
-                  Edit
+                  {t('common.action.edit')}
                 </Button>
                 <Button
                   variant="secondary"
@@ -206,7 +212,7 @@ export function DataCenterDetailPage() {
                   isDisabled={deleteMutation.isPending}
                   onClick={() => setRemoving({ nameInput: '' })}
                 >
-                  Remove
+                  {t('common.action.remove')}
                 </Button>
                 <Button
                   variant="secondary"
@@ -214,7 +220,7 @@ export function DataCenterDetailPage() {
                   isDisabled={forceDeleteMutation.isPending}
                   onClick={() => setForcing({ nameInput: '' })}
                 >
-                  Force remove
+                  {t('datacenters.forceRemove.action')}
                 </Button>
                 <Dropdown
                   isOpen={kebabOpen}
@@ -223,7 +229,9 @@ export function DataCenterDetailPage() {
                   toggle={(toggleRef: Ref<MenuToggleElement>) => (
                     <MenuToggle
                       ref={toggleRef}
-                      aria-label={`More actions for ${dataCenter.data.name}`}
+                      aria-label={t('common.action.moreActionsFor', {
+                        name: dataCenter.data.name,
+                      })}
                       variant="plain"
                       icon={<EllipsisVIcon />}
                       onClick={() => setKebabOpen(!kebabOpen)}
@@ -240,7 +248,7 @@ export function DataCenterDetailPage() {
                           setReinitializing(true)
                         }}
                       >
-                        Re-Initialize Data Center
+                        {t('dcDetail.action.reinitialize')}
                       </DropdownItem>
                     )}
                     <DropdownItem
@@ -252,7 +260,7 @@ export function DataCenterDetailPage() {
                         })
                       }}
                     >
-                      Clean finished tasks
+                      {t('dcDetail.action.cleanTasks')}
                     </DropdownItem>
                   </DropdownList>
                 </Dropdown>
@@ -266,14 +274,6 @@ export function DataCenterDetailPage() {
             onClose={() => setEditing(false)}
           />
 
-          {guiding && (
-            <DataCenterGuideModal
-              dataCenter={dataCenter.data}
-              onClose={() => setGuiding(false)}
-              onGoToStorage={() => setActiveKey('storage')}
-            />
-          )}
-
           {reinitializing && (
             <ReinitializeDataCenterModal
               dataCenterId={dataCenterId}
@@ -286,21 +286,21 @@ export function DataCenterDetailPage() {
           {removing && (
             <ConfirmModal
               isOpen
-              title={`Remove ${dataCenter.data.name}?`}
+              title={t('datacenters.remove.confirm.title', { name: dataCenter.data.name })}
               body={
                 <Stack hasGutter>
-                  <StackItem>
-                    The data center will be permanently removed. This cannot be undone.
-                  </StackItem>
+                  <StackItem>{t('datacenters.remove.confirm.body')}</StackItem>
                   <StackItem>
                     <FormGroup
-                      label={`Type "${dataCenter.data.name}" to confirm`}
+                      label={t('datacenters.remove.confirm.typeLabel', {
+                        name: dataCenter.data.name,
+                      })}
                       isRequired
                       fieldId="remove-confirm-name"
                     >
                       <TextInput
                         id="remove-confirm-name"
-                        aria-label="Type the data center name to confirm removal"
+                        aria-label={t('datacenters.remove.confirm.inputAria')}
                         value={removing.nameInput}
                         onChange={(_event, value) => setRemoving({ nameInput: value })}
                       />
@@ -308,7 +308,7 @@ export function DataCenterDetailPage() {
                   </StackItem>
                 </Stack>
               }
-              confirmLabel="Remove"
+              confirmLabel={t('common.action.remove')}
               isConfirmDisabled={removing.nameInput !== dataCenter.data.name}
               onConfirm={() => {
                 setRemoving(null)
@@ -324,22 +324,21 @@ export function DataCenterDetailPage() {
           {forcing && (
             <ConfirmModal
               isOpen
-              title={`Force remove data center '${dataCenter.data.name}'?`}
+              title={t('datacenters.forceRemove.confirm.title', { name: dataCenter.data.name })}
               body={
                 <Stack hasGutter>
-                  <StackItem>
-                    Removes the data center from the engine even when its storage is unreachable.
-                    Storage contents are NOT cleaned up and may need manual recovery before reuse.
-                  </StackItem>
+                  <StackItem>{t('datacenters.forceRemove.confirm.body')}</StackItem>
                   <StackItem>
                     <FormGroup
-                      label={`Type "${dataCenter.data.name}" to confirm`}
+                      label={t('datacenters.remove.confirm.typeLabel', {
+                        name: dataCenter.data.name,
+                      })}
                       isRequired
                       fieldId="force-remove-confirm-name"
                     >
                       <TextInput
                         id="force-remove-confirm-name"
-                        aria-label="Type the data center name to confirm force removal"
+                        aria-label={t('datacenters.forceRemove.confirm.inputAria')}
                         value={forcing.nameInput}
                         onChange={(_event, value) => setForcing({ nameInput: value })}
                       />
@@ -347,7 +346,7 @@ export function DataCenterDetailPage() {
                   </StackItem>
                 </Stack>
               }
-              confirmLabel="Force remove"
+              confirmLabel={t('datacenters.forceRemove.action')}
               isConfirmDisabled={forcing.nameInput !== dataCenter.data.name}
               onConfirm={() => {
                 setForcing(null)
@@ -367,44 +366,62 @@ export function DataCenterDetailPage() {
             onSelect={(_event, tabKey) => setActiveKey(tabKey)}
             mountOnEnter
             unmountOnExit
-            aria-label="data center details tabs"
+            aria-label={t('dcDetail.tabs.ariaLabel')}
           >
-            <Tab eventKey="general" title={<TabTitleText>General</TabTitleText>}>
+            <Tab
+              eventKey="general"
+              title={<TabTitleText>{t('dcDetail.tab.general')}</TabTitleText>}
+            >
               <TabContentBody hasPadding>
                 <DataCenterGeneralTab dataCenter={dataCenter.data} />
               </TabContentBody>
             </Tab>
-            <Tab eventKey="storage" title={<TabTitleText>Storage</TabTitleText>}>
+            <Tab
+              eventKey="storage"
+              title={<TabTitleText>{t('dcDetail.tab.storage')}</TabTitleText>}
+            >
               <TabContentBody hasPadding>
                 <DataCenterStorageActionsTab dataCenterId={dataCenterId} />
               </TabContentBody>
             </Tab>
-            <Tab eventKey="networks" title={<TabTitleText>Logical Networks</TabTitleText>}>
+            <Tab
+              eventKey="networks"
+              title={<TabTitleText>{t('dcDetail.tab.networks')}</TabTitleText>}
+            >
               <TabContentBody hasPadding>
                 <DataCenterNetworksTab dataCenterId={dataCenterId} />
               </TabContentBody>
             </Tab>
-            <Tab eventKey="iscsi-multipath" title={<TabTitleText>iSCSI Multipathing</TabTitleText>}>
+            <Tab
+              eventKey="iscsi-multipath"
+              title={<TabTitleText>{t('dc.iscsiMultipath.tab')}</TabTitleText>}
+            >
               <TabContentBody hasPadding>
                 <IscsiMultipathTab dataCenterId={dataCenterId} />
               </TabContentBody>
             </Tab>
-            <Tab eventKey="clusters" title={<TabTitleText>Clusters</TabTitleText>}>
+            <Tab
+              eventKey="clusters"
+              title={<TabTitleText>{t('dcDetail.tab.clusters')}</TabTitleText>}
+            >
               <TabContentBody hasPadding>
                 <DataCenterClustersTab dataCenterId={dataCenterId} />
               </TabContentBody>
             </Tab>
-            <Tab eventKey="qos" title={<TabTitleText>QoS</TabTitleText>}>
+            <Tab eventKey="qos" title={<TabTitleText>{t('dcDetail.tab.qos')}</TabTitleText>}>
               <TabContentBody hasPadding>
                 <DataCenterQosTab dataCenterId={dataCenterId} />
               </TabContentBody>
             </Tab>
-            <Tab eventKey="quota" title={<TabTitleText>Quota</TabTitleText>}>
+            <Tab eventKey="quota" title={<TabTitleText>{t('dcDetail.tab.quota')}</TabTitleText>}>
               <TabContentBody hasPadding>
                 <DataCenterQuotasTab dataCenterId={dataCenterId} />
               </TabContentBody>
             </Tab>
-            <Tab eventKey="permissions" title={<TabTitleText>Permissions</TabTitleText>}>
+            <Tab
+              eventKey="permissions"
+              title={<TabTitleText>{t('dcDetail.tab.permissions')}</TabTitleText>}
+            >
               <TabContentBody hasPadding>
                 <DataCenterPermissionsTab dataCenterId={dataCenterId} />
               </TabContentBody>

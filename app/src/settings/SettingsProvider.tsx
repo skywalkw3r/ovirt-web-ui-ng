@@ -35,6 +35,20 @@ export {
 
 const STORAGE_KEY = 'console-settings'
 
+// The smallest cadence the UI itself offers (UserMenu REFRESH_INTERVAL_OPTIONS_MS
+// = [5s, 10s, 30s, 60s]). A corrupted or hand-edited localStorage value below
+// this (e.g. 100) would otherwise drive every raw-cadence poll hook at 100ms —
+// a single-browser engine DoS. Clamping up to 5s never contradicts a legitimate
+// user choice, so we enforce it on read AND on set.
+const MIN_REFRESH_INTERVAL_MS = 5_000
+
+// A non-finite/non-positive cadence is meaningless (not merely too small), so it
+// resets to the default; a valid-but-too-small one clamps up to the floor.
+function clampRefreshInterval(value: unknown, fallback: number): number {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) return fallback
+  return Math.max(value, MIN_REFRESH_INTERVAL_MS)
+}
+
 interface StoredSettings {
   refreshIntervalMs: number
   preferredConsole: PreferredConsole
@@ -58,12 +72,7 @@ function initialSettings(): StoredSettings {
     if (typeof parsed !== 'object' || parsed === null) return defaults
     const stored = parsed as Partial<Record<keyof StoredSettings, unknown>>
     return {
-      refreshIntervalMs:
-        typeof stored.refreshIntervalMs === 'number' &&
-        Number.isFinite(stored.refreshIntervalMs) &&
-        stored.refreshIntervalMs > 0
-          ? stored.refreshIntervalMs
-          : defaults.refreshIntervalMs,
+      refreshIntervalMs: clampRefreshInterval(stored.refreshIntervalMs, defaults.refreshIntervalMs),
       preferredConsole:
         stored.preferredConsole === 'vnc' || stored.preferredConsole === 'spice'
           ? stored.preferredConsole
@@ -86,7 +95,10 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   }, [settings])
 
   const setRefreshIntervalMs = useCallback((refreshIntervalMs: number) => {
-    setSettings((current) => ({ ...current, refreshIntervalMs }))
+    setSettings((current) => ({
+      ...current,
+      refreshIntervalMs: clampRefreshInterval(refreshIntervalMs, DEFAULT_REFRESH_INTERVAL_MS),
+    }))
   }, [])
 
   const setPreferredConsole = useCallback((preferredConsole: PreferredConsole) => {

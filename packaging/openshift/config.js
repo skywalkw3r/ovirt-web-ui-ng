@@ -12,10 +12,10 @@ window.ovirtWebUiConfig = {
   //    the "default" engine.
   //
   //  - url = an engine's own origin: the browser talks to that engine
-  //    DIRECTLY. That engine needs the one-time CORS enablement
-  //    (packaging/engine-cors/README.md) and its origin must be added to
-  //    CSP_CONNECT_EXTRA in deployment.yaml; users' browsers must trust its
-  //    TLS certificate.
+  //    DIRECTLY. That engine needs the one-time CORS enablement (engine-config
+  //    CORSSupport/CORSAllowedOrigins for the API + a CORS-fixed enginesso
+  //    build for SSO) and its origin must be added to CSP_CONNECT_EXTRA in
+  //    deployment.yaml; users' browsers must trust its TLS certificate.
   servers: {
     list: [
       { name: 'HE 1 (default)', url: 'https://console.apps.cluster.example.com' },

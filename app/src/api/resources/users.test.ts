@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   addUserEventSubscription,
+  fetchCapabilityProfile,
   getUser,
   listGroups,
   listUserEventSubscriptions,
@@ -159,6 +160,70 @@ function mockFetchByPath(routes: Record<string, unknown>) {
   return fn
 }
 
+// Like mockFetchByPath but each route carries an explicit status, so a test can
+// make ONE branch of a fan-out fail (a transient 5xx, or an auth 401/403) while
+// the rest answer 200 — exercising the allSettled tolerance. An unrouted path
+// 404s with a fault envelope.
+function mockFetchStatusByPath(routes: Record<string, { status: number; body?: unknown }>) {
+  const fn = vi.fn().mockImplementation((url: string) => {
+    const path = url.replace('/ovirt-engine/api', '').split('?')[0] ?? ''
+    const route = routes[path]
+    if (route === undefined) {
+      return Promise.resolve({
+        ok: false,
+        status: 404,
+        json: () => Promise.resolve({ fault: { reason: 'Not Found' } }),
+      })
+    }
+    return Promise.resolve({
+      ok: route.status >= 200 && route.status < 300,
+      status: route.status,
+      json: () =>
+        route.body === undefined
+          ? Promise.resolve({ fault: { reason: 'Operation Failed' } })
+          : Promise.resolve(route.body),
+    })
+  })
+  vi.stubGlobal('fetch', fn)
+  return fn
+}
+
+describe('fetchCapabilityProfile', () => {
+  // M-11: the admin-name fast path is MOCK-only (IS_MOCK is false under Vitest —
+  // proven by every other test here reaching real fetch). On a live engine an
+  // 'admin*'-named non-admin must fall THROUGH to the real /permissions probe
+  // rather than being client-tagged admin, which would flip the transport
+  // Filter header to false and get every collection read rejected.
+  it('ignores an admin-prefixed user_name and probes /permissions on a live engine', async () => {
+    const fetchMock = mockFetchByPath({
+      '': { authenticated_user: { user_name: 'admin_ro' } },
+      '/permissions': { permission: [{ role: { name: 'UserRole', administrative: 'false' } }] },
+    })
+    const profile = await fetchCapabilityProfile()
+    expect(profile).toMatchObject({ tier: 'user', isAdmin: false, username: 'admin_ro' })
+    // the probe actually happened — the fast path did not short-circuit it
+    expect(fetchMock.mock.calls.some(([url]) => String(url).includes('/permissions'))).toBe(true)
+  })
+
+  it('detects a real system admin from an administrative role on /permissions', async () => {
+    mockFetchByPath({
+      '': { authenticated_user: { user_name: 'admin' } },
+      '/permissions': { permission: [{ role: { name: 'SuperUser', administrative: 'true' } }] },
+    })
+    const profile = await fetchCapabilityProfile()
+    expect(profile).toMatchObject({ tier: 'admin', isAdmin: true, username: 'admin' })
+  })
+
+  it('falls back to least-privilege when the permissions probe is forbidden', async () => {
+    mockFetchStatusByPath({
+      '': { status: 200, body: { authenticated_user: { user_name: 'jdoe' } } },
+      '/permissions': { status: 403, body: { fault: { reason: 'Forbidden' } } },
+    })
+    const profile = await fetchCapabilityProfile()
+    expect(profile).toMatchObject({ tier: 'user', isAdmin: false, username: 'jdoe' })
+  })
+})
+
 describe('listUserQuotas', () => {
   it('keeps quotas whose permissions carry a QuotaConsumer grant for the user, a group, or Everyone', async () => {
     mockFetchByPath({
@@ -226,6 +291,53 @@ describe('listUserQuotas', () => {
       // /users/.../groups and /quotas/quota-01/permissions both 404 → empty
     })
     await expect(listUserQuotas('user-04')).resolves.toEqual([])
+  })
+
+  // M-5: the per-quota permissions fan-out is failure-tolerant (allSettled) —
+  // one quota's read blowing up drops that quota, not the whole join.
+  it('skips a quota whose permissions read fails (non-auth) rather than failing the whole join', async () => {
+    mockFetchStatusByPath({
+      '/datacenters': { status: 200, body: { data_center: [{ id: 'dc-01', name: 'Default' }] } },
+      '/datacenters/dc-01/quotas': {
+        status: 200,
+        body: {
+          quota: [
+            { id: 'quota-01', name: 'default', data_center: { id: 'dc-01' } },
+            { id: 'quota-02', name: 'dev-quota', data_center: { id: 'dc-01' } },
+          ],
+        },
+      },
+      '/users/user-04/groups': { status: 200, body: { group: [] } },
+      '/quotas/quota-01/permissions': {
+        status: 200,
+        body: {
+          permission: [{ id: 'p1', role: { id: QUOTA_CONSUMER_ROLE_ID }, user: { id: 'user-04' } }],
+        },
+      },
+      // quota-02's permissions read answers a transient 5xx — its branch is
+      // dropped, quota-01 still surfaces
+      '/quotas/quota-02/permissions': {
+        status: 500,
+        body: { fault: { reason: 'Operation Failed' } },
+      },
+    })
+    const grants = await listUserQuotas('user-04')
+    expect(grants.map((g) => g.quota.id)).toEqual(['quota-01'])
+  })
+
+  it('propagates a 403 from a quota permissions read immediately', async () => {
+    mockFetchStatusByPath({
+      '/datacenters': { status: 200, body: { data_center: [{ id: 'dc-01', name: 'Default' }] } },
+      '/datacenters/dc-01/quotas': {
+        status: 200,
+        body: { quota: [{ id: 'quota-01', name: 'default', data_center: { id: 'dc-01' } }] },
+      },
+      '/users/user-04/groups': { status: 200, body: { group: [] } },
+      '/quotas/quota-01/permissions': { status: 403, body: { fault: { reason: 'Forbidden' } } },
+    })
+    const error = await listUserQuotas('user-04').catch((e: unknown) => e)
+    expect(error).toBeInstanceOf(ApiError)
+    expect(error).toMatchObject({ status: 403 })
   })
 })
 

@@ -8,7 +8,8 @@ import {
 } from '@patternfly/react-core'
 import { PowerOffIcon } from '@patternfly/react-icons'
 import type { Vm } from '../api/schemas/vm'
-import { VM_ACTION_LABELS, useVmAction } from '../hooks/useVmActions'
+import { VM_ACTION_LABEL_IDS, useVmAction } from '../hooks/useVmActions'
+import { useT } from '../i18n/useT'
 import { ConfirmModal } from './ConfirmModal'
 import { POWER_ACTIONS, type PowerAction } from './vm-power-actions'
 
@@ -20,12 +21,13 @@ export function VmPowerMenu({ vm }: { vm: Vm }) {
   const [isOpen, setIsOpen] = useState(false)
   const [confirming, setConfirming] = useState<PowerAction | null>(null)
   const mutation = useVmAction()
+  const t = useT()
 
   const items = POWER_ACTIONS.filter((item) => item.allowed(vm.status))
 
   const select = (item: PowerAction) => {
     setIsOpen(false)
-    if (item.confirmBody) {
+    if (item.confirmBodyId) {
       setConfirming(item)
     } else {
       mutation.mutate({ vm, action: item.action })
@@ -49,7 +51,7 @@ export function VmPowerMenu({ vm }: { vm: Vm }) {
             isExpanded={isOpen}
             isDisabled={items.length === 0 || mutation.isPending}
           >
-            Power
+            {t('power.menu.label')}
           </MenuToggle>
         )}
       >
@@ -59,10 +61,10 @@ export function VmPowerMenu({ vm }: { vm: Vm }) {
               key={item.action}
               icon={item.icon}
               isDanger={item.isDanger}
-              tooltipProps={{ content: item.description, position: 'left' }}
+              tooltipProps={{ content: t(item.descriptionId), position: 'left' }}
               onClick={() => select(item)}
             >
-              {VM_ACTION_LABELS[item.action]}
+              {t(VM_ACTION_LABEL_IDS[item.action])}
             </DropdownItem>
           ))}
         </DropdownList>
@@ -71,9 +73,12 @@ export function VmPowerMenu({ vm }: { vm: Vm }) {
       {confirming && (
         <ConfirmModal
           isOpen
-          title={`${VM_ACTION_LABELS[confirming.action]} ${vm.name}?`}
-          body={confirming.confirmBody}
-          confirmLabel={VM_ACTION_LABELS[confirming.action]}
+          title={t('vmActions.confirm.title', {
+            action: t(VM_ACTION_LABEL_IDS[confirming.action]),
+            name: vm.name,
+          })}
+          body={confirming.confirmBodyId ? t(confirming.confirmBodyId) : undefined}
+          confirmLabel={t(VM_ACTION_LABEL_IDS[confirming.action])}
           onConfirm={() => {
             setConfirming(null)
             mutation.mutate({ vm, action: confirming.action })

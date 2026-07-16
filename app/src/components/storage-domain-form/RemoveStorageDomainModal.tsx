@@ -20,6 +20,7 @@ import {
 import type { StorageDomain } from '../../api/schemas/storage-domain'
 import { useHosts } from '../../hooks/useHosts'
 import { useRemoveStorageDomain } from '../../hooks/useStorageDomainMutations'
+import { useT } from '../../i18n/useT'
 
 // The Remove modal (webadmin RemoveStorageModel). A named host detaches,
 // optionally formats, and deletes the backing storage, so DELETE
@@ -41,6 +42,7 @@ export function RemoveStorageDomainModal({
   // list (the list page just relies on the invalidation dropping the row).
   onRemoved?: () => void
 }) {
+  const t = useT()
   const [hostName, setHostName] = useState('')
   const [format, setFormat] = useState(false)
   const [nameInput, setNameInput] = useState('')
@@ -74,31 +76,34 @@ export function RemoveStorageDomainModal({
       aria-describedby="remove-storage-domain-body"
     >
       <ModalHeader
-        title={`Remove ${domain.name}?`}
+        title={t('storage.remove.title', { name: domain.name })}
         titleIconVariant="warning"
         labelId="remove-storage-domain-title"
       />
       <ModalBody id="remove-storage-domain-body">
         <Form onSubmit={(event) => event.preventDefault()}>
           <Stack hasGutter>
-            <StackItem>
-              The domain will be removed from the system. Choose the host that will detach it, and
-              whether to format (erase) the backing storage. This cannot be undone.
-            </StackItem>
+            <StackItem>{t('storage.remove.body')}</StackItem>
             <StackItem>
               {/* Four states on the host list: a failed fetch would otherwise
                   leave Remove permanently disabled with no explanation. */}
-              <FormGroup label="Host" isRequired fieldId="remove-storage-domain-host">
+              <FormGroup
+                label={t('storage.remove.hostLabel')}
+                isRequired
+                fieldId="remove-storage-domain-host"
+              >
                 <FormSelect
                   id="remove-storage-domain-host"
-                  aria-label="Host to perform the removal"
+                  aria-label={t('storage.remove.hostAria')}
                   value={hostName}
                   isDisabled={hosts.isPending || hosts.isError}
                   onChange={(_event, value) => setHostName(value)}
                 >
                   <FormSelectOption
                     value=""
-                    label={hosts.isPending ? 'Loading hosts…' : 'Select a host'}
+                    label={
+                      hosts.isPending ? t('storageForm.host.loading') : t('storageForm.host.select')
+                    }
                     isDisabled
                   />
                   {(hosts.data ?? []).map((host) => (
@@ -109,9 +114,9 @@ export function RemoveStorageDomainModal({
                   <FormHelperText>
                     <HelperText>
                       <HelperTextItem variant="error">
-                        Could not load hosts.{' '}
+                        {t('storageForm.host.error')}{' '}
                         <Button variant="link" isInline onClick={() => void hosts.refetch()}>
-                          Retry
+                          {t('common.action.retry')}
                         </Button>
                       </HelperTextItem>
                     </HelperText>
@@ -122,22 +127,22 @@ export function RemoveStorageDomainModal({
             <StackItem>
               <Checkbox
                 id="remove-storage-domain-format"
-                label="Format Domain"
-                description="Erase all data on the backing storage. Leave unchecked to keep the data recoverable."
-                aria-label="Format domain"
+                label={t('storage.remove.format')}
+                description={t('storage.remove.formatDesc')}
+                aria-label={t('storage.remove.formatAria')}
                 isChecked={format}
                 onChange={(_event, checked) => setFormat(checked)}
               />
             </StackItem>
             <StackItem>
               <FormGroup
-                label={`Type "${domain.name}" to confirm`}
+                label={t('storage.confirmName.typeLabel', { name: domain.name })}
                 isRequired
                 fieldId="remove-storage-domain-confirm-name"
               >
                 <TextInput
                   id="remove-storage-domain-confirm-name"
-                  aria-label="Type the storage domain name to confirm removal"
+                  aria-label={t('storage.remove.confirmAria')}
                   value={nameInput}
                   onChange={(_event, value) => setNameInput(value)}
                 />
@@ -153,10 +158,10 @@ export function RemoveStorageDomainModal({
           isLoading={pending}
           isDisabled={pending || hostMissing || nameMismatch}
         >
-          Remove
+          {t('common.action.remove')}
         </Button>
         <Button variant="link" onClick={onClose} isDisabled={pending}>
-          Cancel
+          {t('common.action.cancel')}
         </Button>
       </ModalFooter>
     </Modal>

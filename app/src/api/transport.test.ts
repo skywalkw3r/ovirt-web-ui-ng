@@ -109,4 +109,43 @@ describe('request', () => {
     expect((error as ApiError).status).toBe(401)
     expect(fetchMock).not.toHaveBeenCalled()
   })
+
+  it('applies a default timeout signal even when the caller passes none', async () => {
+    const fetchMock = mockFetch(200, {})
+    await request('/vms')
+
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit]
+    expect(init.signal).toBeInstanceOf(AbortSignal)
+  })
+
+  it('composes the caller signal with the timeout so either can abort', async () => {
+    const controller = new AbortController()
+    const fetchMock = mockFetch(200, {})
+    await request('/vms', { signal: controller.signal })
+
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit]
+    // AbortSignal.any returns a fresh dependent signal, not the caller's own,
+    // so cancel-on-unmount AND the timeout both still feed the abort.
+    expect(init.signal).toBeInstanceOf(AbortSignal)
+    expect(init.signal).not.toBe(controller.signal)
+  })
+
+  it('never lets a caller header clobber the transport security headers', async () => {
+    const fetchMock = mockFetch(200, {})
+    await request('/vms', {
+      headers: {
+        Authorization: 'Bearer attacker',
+        Filter: 'false',
+        Accept: 'application/xml',
+      },
+    })
+
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit]
+    const headers = init.headers as Record<string, string>
+    // Authorization + Filter are transport-owned and must survive the clobber.
+    expect(headers.Authorization).toBe('Bearer tok-123')
+    expect(headers.Filter).toBe('true')
+    // Accept stays a caller-overridable semantic default.
+    expect(headers.Accept).toBe('application/xml')
+  })
 })

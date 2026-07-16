@@ -21,7 +21,7 @@ import { ApiError } from '../api/transport'
 import type { Vm } from '../api/schemas/vm'
 import { useCapabilities } from '../auth/capabilities'
 import { useT } from '../i18n/useT'
-import { VM_ACTION_LABELS, useVmAction } from '../hooks/useVmActions'
+import { VM_ACTION_LABEL_IDS, useVmAction } from '../hooks/useVmActions'
 import { canCancelMigration, canRemove } from '../lib/vm-status'
 import { useNotify } from '../notifications/context'
 import { ChangeCdModalItem } from './ChangeCdModal'
@@ -159,7 +159,7 @@ export function VmActionsMenu({
 
   const select = (item: PowerAction) => {
     setIsOpen(false)
-    if (item.confirmBody) {
+    if (item.confirmBodyId) {
       setConfirming(item)
     } else {
       mutation.mutate({ vm, action: item.action })
@@ -192,7 +192,7 @@ export function VmActionsMenu({
             mutation.mutate({ vm, action: 'cancelmigration' })
           }}
         >
-          {VM_ACTION_LABELS.cancelmigration}
+          {t(VM_ACTION_LABEL_IDS.cancelmigration)}
         </DropdownItem>
       )}
       {items.map((item) => (
@@ -200,10 +200,10 @@ export function VmActionsMenu({
           key={item.action}
           icon={item.icon}
           isDanger={item.isDanger}
-          tooltipProps={{ content: item.description, position: 'left' }}
+          tooltipProps={{ content: t(item.descriptionId), position: 'left' }}
           onClick={() => select(item)}
         >
-          {VM_ACTION_LABELS[item.action]}
+          {t(VM_ACTION_LABEL_IDS[item.action])}
         </DropdownItem>
       ))}
       {showMigrate && (
@@ -300,11 +300,11 @@ export function VmActionsMenu({
         <ConfirmModal
           isOpen
           title={t('vmActions.confirm.title', {
-            action: VM_ACTION_LABELS[confirming.action],
+            action: t(VM_ACTION_LABEL_IDS[confirming.action]),
             name: vm.name,
           })}
-          body={confirming.confirmBody}
-          confirmLabel={VM_ACTION_LABELS[confirming.action]}
+          body={confirming.confirmBodyId ? t(confirming.confirmBodyId) : undefined}
+          confirmLabel={t(VM_ACTION_LABEL_IDS[confirming.action])}
           onConfirm={() => {
             setConfirming(null)
             mutation.mutate({ vm, action: confirming.action })

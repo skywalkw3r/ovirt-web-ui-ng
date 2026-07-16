@@ -18,6 +18,7 @@ import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table'
 import type { StorageDomain } from '../../api/schemas/storage-domain'
 import { reduceStorageDomainLuns } from '../../api/resources/storageDomains'
 import { useNotify } from '../../notifications/context'
+import { useT } from '../../i18n/useT'
 import { formatBytes } from '../../lib/format'
 import { ConfirmModal } from '../ConfirmModal'
 
@@ -30,8 +31,7 @@ import { ConfirmModal } from '../ConfirmModal'
 // canReduceLuns (block domain, MAINTENANCE, metadata format newer than V1 —
 // the BLL validate() preconditions); this dialog additionally blocks removing
 // EVERY LUN, which the backend rejects. Data is moved, not lost, but removing
-// devices is consequential enough for the danger confirmation. Strings are
-// hardcoded English pending the externalization pass.
+// devices is consequential enough for the danger confirmation.
 export function ReduceLunsModal({
   domain,
   isOpen,
@@ -41,6 +41,7 @@ export function ReduceLunsModal({
   isOpen: boolean
   onClose: () => void
 }) {
+  const t = useT()
   const { notify } = useNotify()
   const queryClient = useQueryClient()
 
@@ -99,15 +100,15 @@ export function ReduceLunsModal({
         aria-labelledby="reduce-luns-title"
         aria-describedby="reduce-luns-body"
       >
-        <ModalHeader title={`Remove LUNs from ${domain.name}`} labelId="reduce-luns-title" />
+        <ModalHeader
+          title={t('storage.reduceLuns.title', { name: domain.name })}
+          labelId="reduce-luns-title"
+        />
         <ModalBody id="reduce-luns-body">
           <Stack hasGutter>
             <StackItem>
               <HelperText>
-                <HelperTextItem>
-                  Data on the removed LUNs is moved to the remaining LUNs before they are detached
-                  from the domain. At least one LUN must remain.
-                </HelperTextItem>
+                <HelperTextItem>{t('storage.reduceLuns.intro')}</HelperTextItem>
               </HelperText>
             </StackItem>
             <StackItem>
@@ -115,21 +116,21 @@ export function ReduceLunsModal({
                   so there is no loading/error state to design here — only
                   empty vs populated. */}
               {luns.length === 0 ? (
-                <EmptyState titleText="No LUNs reported">
-                  <EmptyStateBody>
-                    The domain read did not include its backing LUNs. Refresh the domain and try
-                    again.
-                  </EmptyStateBody>
+                <EmptyState titleText={t('storage.reduceLuns.empty.title')}>
+                  <EmptyStateBody>{t('storage.reduceLuns.empty.body')}</EmptyStateBody>
                 </EmptyState>
               ) : (
-                <Table aria-label={`LUNs backing ${domain.name}`} variant="compact">
+                <Table
+                  aria-label={t('storage.reduceLuns.tableAria', { name: domain.name })}
+                  variant="compact"
+                >
                   <Thead>
                     <Tr>
-                      <Th screenReaderText="Select LUN" />
-                      <Th>LUN ID</Th>
-                      <Th>Product</Th>
-                      <Th>Size</Th>
-                      <Th>Serial</Th>
+                      <Th screenReaderText={t('storage.lun.selectColumn')} />
+                      <Th>{t('storage.lun.column.lunId')}</Th>
+                      <Th>{t('storage.lun.column.product')}</Th>
+                      <Th>{t('storage.lun.column.size')}</Th>
+                      <Th>{t('storage.lun.column.serial')}</Th>
                     </Tr>
                   </Thead>
                   <Tbody>
@@ -143,12 +144,12 @@ export function ReduceLunsModal({
                             onSelect: (_event, selecting) => toggle(lun.id, selecting),
                           }}
                         />
-                        <Td dataLabel="LUN ID">{lun.id}</Td>
-                        <Td dataLabel="Product">
+                        <Td dataLabel={t('storage.lun.column.lunId')}>{lun.id}</Td>
+                        <Td dataLabel={t('storage.lun.column.product')}>
                           {[lun.vendor_id, lun.product_id].filter(Boolean).join(' ') || '—'}
                         </Td>
-                        <Td dataLabel="Size">{formatBytes(lun.size)}</Td>
-                        <Td dataLabel="Serial">{lun.serial ?? '—'}</Td>
+                        <Td dataLabel={t('storage.lun.column.size')}>{formatBytes(lun.size)}</Td>
+                        <Td dataLabel={t('storage.lun.column.serial')}>{lun.serial ?? '—'}</Td>
                       </Tr>
                     ))}
                   </Tbody>
@@ -160,7 +161,7 @@ export function ReduceLunsModal({
                 <FormHelperText>
                   <HelperText>
                     <HelperTextItem variant="error">
-                      A block domain cannot lose all of its LUNs — leave at least one unselected.
+                      {t('storage.reduceLuns.allSelectedError')}
                     </HelperTextItem>
                   </HelperText>
                 </FormHelperText>
@@ -175,24 +176,24 @@ export function ReduceLunsModal({
             isLoading={pending}
             isDisabled={pending || !canReduce}
           >
-            Remove LUNs
+            {t('storage.reduceLuns.action')}
           </Button>
           <Button variant="secondary" onClick={onClose} isDisabled={pending}>
-            Cancel
+            {t('common.action.cancel')}
           </Button>
         </ModalFooter>
       </Modal>
 
       <ConfirmModal
         isOpen={confirming}
-        title={`Remove ${selectedIds.length} LUN${selectedIds.length === 1 ? '' : 's'} from ${domain.name}?`}
-        confirmLabel="Remove LUNs"
+        title={t('storage.reduceLuns.confirm.title', {
+          count: selectedIds.length,
+          name: domain.name,
+        })}
+        confirmLabel={t('storage.reduceLuns.action')}
         body={
           <Stack hasGutter>
-            <StackItem>
-              The engine moves the data off the selected LUNs onto the remaining ones, then detaches
-              them from the domain. This can take a while and cannot be interrupted.
-            </StackItem>
+            <StackItem>{t('storage.reduceLuns.confirm.body')}</StackItem>
             <StackItem>
               <ul>
                 {selectedIds.map((id) => (

@@ -31,17 +31,27 @@ export function useRoles() {
   })
 }
 
+// Principals (users + groups) drift slowly and their names only feed a
+// client-side join (the PermissionsPanel pattern), so the full '' directory
+// reads cache for 5 min — same window as the roles catalog above. Without it,
+// the Permissions tab on ~10 entity types refetches BOTH list-all reads on
+// every tab visit or window refocus, and directory-backed engines return
+// thousands of principals.
+export const PRINCIPALS_STALE_MS = 5 * 60_000
+
 // Picker queries for the Add Permission modal. Unlike useUsers
 // (useAdminResources), these are NOT capability-gated: the VM Permissions tab
 // is user-visible by design, and the engine's Filter header scopes/rejects
 // server-side. The committed search rides in the key so each term caches
-// separately; '' = list all (webadmin's empty-Go semantics). No poll — the
-// results refresh when the search resubmits or the modal remounts.
+// separately; '' = list all (webadmin's empty-Go semantics). No poll; the
+// PRINCIPALS_STALE_MS window keeps a resubmitted search or a remount inside it
+// from refetching.
 export function usePermissionUsers(search = '') {
   return useQuery({
     // shares the ['users', search] cache entries useUsers registers
     queryKey: ['users', search],
     queryFn: () => listUsers({ search: search || undefined }),
+    staleTime: PRINCIPALS_STALE_MS,
   })
 }
 
@@ -49,6 +59,7 @@ export function useGroups(search = '') {
   return useQuery({
     queryKey: ['groups', search],
     queryFn: () => listGroups({ search: search || undefined }),
+    staleTime: PRINCIPALS_STALE_MS,
   })
 }
 

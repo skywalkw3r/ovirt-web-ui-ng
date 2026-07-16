@@ -146,7 +146,7 @@ export function StorageDomainActions({
         toggle={(toggleRef: Ref<MenuToggleElement>) => (
           <MenuToggle
             ref={toggleRef}
-            aria-label={`Actions for ${domain.name}`}
+            aria-label={t('common.action.actionsFor', { name: domain.name })}
             variant="plain"
             icon={<EllipsisVIcon />}
             onClick={() => setIsOpen(!isOpen)}
@@ -156,12 +156,16 @@ export function StorageDomainActions({
         )}
       >
         <DropdownList>
-          <DropdownItem onClick={() => pick(() => setDialog('edit'))}>Manage domain</DropdownItem>
+          <DropdownItem onClick={() => pick(() => setDialog('edit'))}>
+            {t('storage.action.manageDomain')}
+          </DropdownItem>
 
           <DropdownItem
             isAriaDisabled={!activateEnabled}
             tooltipProps={
-              activateEnabled ? undefined : { content: DISABLED_REASONS.activate, position: 'left' }
+              activateEnabled
+                ? undefined
+                : { content: t(DISABLED_REASONS.activate), position: 'left' }
             }
             onClick={() =>
               pick(
@@ -175,7 +179,7 @@ export function StorageDomainActions({
               )
             }
           >
-            Activate
+            {t('storage.action.activate')}
           </DropdownItem>
 
           <DropdownItem
@@ -183,31 +187,31 @@ export function StorageDomainActions({
             tooltipProps={
               maintenanceEnabled
                 ? undefined
-                : { content: DISABLED_REASONS.maintenance, position: 'left' }
+                : { content: t(DISABLED_REASONS.maintenance), position: 'left' }
             }
             onClick={() => pick(() => setConfirm('maintenance'))}
           >
-            Maintenance
+            {t('storage.action.maintenance')}
           </DropdownItem>
 
           <DropdownItem
             isAriaDisabled={!detachEnabled}
             tooltipProps={
-              detachEnabled ? undefined : { content: DISABLED_REASONS.detach, position: 'left' }
+              detachEnabled ? undefined : { content: t(DISABLED_REASONS.detach), position: 'left' }
             }
             onClick={() => pick(() => setConfirm('detach'))}
           >
-            Detach
+            {t('common.action.detach')}
           </DropdownItem>
 
           <DropdownItem
             isAriaDisabled={!attachEnabled}
             tooltipProps={
-              attachEnabled ? undefined : { content: DISABLED_REASONS.attach, position: 'left' }
+              attachEnabled ? undefined : { content: t(DISABLED_REASONS.attach), position: 'left' }
             }
             onClick={() => pick(() => setDialog('attach'))}
           >
-            Attach to data center
+            {t('storage.action.attachToDc')}
           </DropdownItem>
 
           <DropdownItem
@@ -215,7 +219,7 @@ export function StorageDomainActions({
             tooltipProps={
               updateOvfsEnabled
                 ? undefined
-                : { content: DISABLED_REASONS.updateOvfs, position: 'left' }
+                : { content: t(DISABLED_REASONS.updateOvfs), position: 'left' }
             }
             onClick={() => pick(() => setConfirm('updateOvfs'))}
           >
@@ -227,7 +231,7 @@ export function StorageDomainActions({
             tooltipProps={
               refreshLunsEnabled
                 ? undefined
-                : { content: DISABLED_REASONS.refreshLuns, position: 'left' }
+                : { content: t(DISABLED_REASONS.refreshLuns), position: 'left' }
             }
             onClick={() => pick(() => setConfirm('refreshLuns'))}
           >
@@ -239,11 +243,11 @@ export function StorageDomainActions({
             tooltipProps={
               extendLunsEnabled
                 ? undefined
-                : { content: DISABLED_REASONS.extendLuns, position: 'left' }
+                : { content: t(DISABLED_REASONS.extendLuns), position: 'left' }
             }
             onClick={() => pick(() => setDialog('extendLuns'))}
           >
-            Add LUNs (extend)
+            {t('storage.action.extendLuns')}
           </DropdownItem>
 
           <DropdownItem
@@ -251,11 +255,11 @@ export function StorageDomainActions({
             tooltipProps={
               reduceLunsEnabled
                 ? undefined
-                : { content: DISABLED_REASONS.reduceLuns, position: 'left' }
+                : { content: t(DISABLED_REASONS.reduceLuns), position: 'left' }
             }
             onClick={() => pick(() => setDialog('reduceLuns'))}
           >
-            Remove LUNs (reduce)
+            {t('storage.action.reduceLuns')}
           </DropdownItem>
 
           <DropdownItem
@@ -264,17 +268,17 @@ export function StorageDomainActions({
             isDanger={removeEnabled}
             isAriaDisabled={!removeEnabled}
             tooltipProps={
-              removeEnabled ? undefined : { content: DISABLED_REASONS.remove, position: 'left' }
+              removeEnabled ? undefined : { content: t(DISABLED_REASONS.remove), position: 'left' }
             }
             onClick={() => pick(() => setDialog('remove'))}
           >
-            Remove
+            {t('common.action.remove')}
           </DropdownItem>
 
           {/* Destroy is never status-gated — it is the last-resort DB purge for
               an unreachable domain, behind a typed-name confirm. */}
           <DropdownItem isDanger onClick={() => pick(() => setDialog('destroy'))}>
-            Destroy
+            {t('storage.action.destroy')}
           </DropdownItem>
         </DropdownList>
       </Dropdown>
@@ -311,14 +315,11 @@ export function StorageDomainActions({
       {confirm === 'maintenance' && dcId !== undefined && (
         <ConfirmModal
           isOpen
-          title={`Move ${domain.name} to maintenance?`}
-          confirmLabel="Move to maintenance"
+          title={t('storage.maintenance.confirm.title', { name: domain.name })}
+          confirmLabel={t('storage.maintenance.confirm.label')}
           body={
             <Stack hasGutter>
-              <StackItem>
-                Virtual machines with disks on this domain lose access to that storage while it is
-                in maintenance. Make sure nothing critical is running against it first.
-              </StackItem>
+              <StackItem>{t('storage.maintenance.confirm.body')}</StackItem>
             </Stack>
           }
           onConfirm={() => {
@@ -336,13 +337,11 @@ export function StorageDomainActions({
       {confirm === 'detach' && dcId !== undefined && (
         <ConfirmModal
           isOpen
-          title={`Detach ${domain.name}?`}
-          confirmLabel="Detach"
+          title={t('storage.detach.confirm.title', { name: domain.name })}
+          confirmLabel={t('common.action.detach')}
           body={
             <Stack hasGutter>
-              <StackItem>
-                The domain leaves this data center but its data is kept — you can reattach it later.
-              </StackItem>
+              <StackItem>{t('storage.detach.confirm.body')}</StackItem>
             </Stack>
           }
           onConfirm={() => {

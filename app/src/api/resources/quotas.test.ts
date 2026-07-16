@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   addQuotaConsumer,
   listQuotaPermissions,
+  listQuotas,
   quotaConsumers,
   removeQuotaConsumer,
 } from './quotas'
@@ -23,10 +24,99 @@ function mockFetch(status: number, payload?: unknown) {
   return fn
 }
 
+// Path-dispatching stub for listQuotas' fan-out (GET /datacenters, then per-DC
+// /datacenters/{id}/quotas). Each route carries an explicit status so a test can
+// fail ONE DC branch (a transient 5xx, or an auth 401/403) while the rest answer
+// 200 — exercising the allSettled tolerance. An unrouted path 404s.
+function mockFetchStatusByPath(routes: Record<string, { status: number; body?: unknown }>) {
+  const fn = vi.fn().mockImplementation((url: string) => {
+    const path = url.replace('/ovirt-engine/api', '').split('?')[0] ?? ''
+    const route = routes[path]
+    if (route === undefined) {
+      return Promise.resolve({
+        ok: false,
+        status: 404,
+        json: () => Promise.resolve({ fault: { reason: 'Not Found' } }),
+      })
+    }
+    return Promise.resolve({
+      ok: route.status >= 200 && route.status < 300,
+      status: route.status,
+      json: () =>
+        route.body === undefined
+          ? Promise.resolve({ fault: { reason: 'Operation Failed' } })
+          : Promise.resolve(route.body),
+    })
+  })
+  vi.stubGlobal('fetch', fn)
+  return fn
+}
+
 beforeEach(() => setSessionToken('tok-123'))
 afterEach(() => {
   clearSessionToken()
   vi.unstubAllGlobals()
+})
+
+describe('listQuotas', () => {
+  const twoDataCenters = {
+    '/datacenters': {
+      status: 200,
+      body: {
+        data_center: [
+          { id: 'dc-01', name: 'Default' },
+          { id: 'dc-02', name: 'Edge' },
+        ],
+      },
+    },
+  }
+
+  it('flattens quotas across every data center', async () => {
+    mockFetchStatusByPath({
+      ...twoDataCenters,
+      '/datacenters/dc-01/quotas': { status: 200, body: { quota: [{ id: 'q1', name: 'a' }] } },
+      '/datacenters/dc-02/quotas': { status: 200, body: { quota: [{ id: 'q2', name: 'b' }] } },
+    })
+    const quotas = await listQuotas()
+    expect(quotas.map((q) => q.id)).toEqual(['q1', 'q2'])
+  })
+
+  // M-6: the per-DC fan-out is failure-tolerant (allSettled) — a single DC's
+  // read blowing up drops that branch, not the whole list (which the query
+  // retry would otherwise re-issue in full).
+  it('skips a data center whose quotas read fails (non-auth) rather than failing the list', async () => {
+    mockFetchStatusByPath({
+      ...twoDataCenters,
+      '/datacenters/dc-01/quotas': { status: 200, body: { quota: [{ id: 'q1', name: 'a' }] } },
+      '/datacenters/dc-02/quotas': {
+        status: 500,
+        body: { fault: { reason: 'Operation Failed' } },
+      },
+    })
+    const quotas = await listQuotas()
+    expect(quotas.map((q) => q.id)).toEqual(['q1'])
+  })
+
+  it('still tolerates a 404 branch (a DC that vanished mid-flight) as empty', async () => {
+    mockFetchStatusByPath({
+      ...twoDataCenters,
+      '/datacenters/dc-01/quotas': { status: 200, body: { quota: [{ id: 'q1', name: 'a' }] } },
+      '/datacenters/dc-02/quotas': { status: 404, body: { fault: { reason: 'Not Found' } } },
+    })
+    const quotas = await listQuotas()
+    expect(quotas.map((q) => q.id)).toEqual(['q1'])
+  })
+
+  it('propagates an auth verdict (403) immediately instead of degrading', async () => {
+    mockFetchStatusByPath({
+      ...twoDataCenters,
+      '/datacenters/dc-01/quotas': { status: 200, body: { quota: [{ id: 'q1', name: 'a' }] } },
+      '/datacenters/dc-02/quotas': { status: 403, body: { fault: { reason: 'Forbidden' } } },
+    })
+    const error = await listQuotas().catch((e: unknown) => e)
+    expect(error).toBeInstanceOf(ApiError)
+    expect(error).toMatchObject({ status: 403 })
+  })
 })
 
 describe('listQuotaPermissions', () => {

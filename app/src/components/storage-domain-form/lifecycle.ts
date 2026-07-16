@@ -1,4 +1,5 @@
 import type { StorageDomain } from '../../api/schemas/storage-domain'
+import type { MessageId } from '../../i18n/messages/en'
 
 // Status-gating logic shared by the list-row kebab and the detail-header menu,
 // so the two entry points can never drift. Verified against the oVirt BLL
@@ -133,15 +134,17 @@ export function canReduceLuns(domain: StorageDomain): boolean {
 
 // The disabled-reason tooltip shown when a gated action is unavailable, so the
 // admin learns the precondition instead of a dead menu item. Keyed by action.
+// Values are catalog MessageIds (storage.disabled.*) — this module is plain
+// logic with no intl context, so consumers resolve them with t(...) at the
+// tooltip call site.
 export const DISABLED_REASONS = {
-  attach: 'Already attached to a data center',
-  activate: 'Only an inactive or maintenance domain can be activated',
-  maintenance: 'Only an active domain can be moved to maintenance',
-  detach: 'Move the domain to maintenance before detaching it',
-  remove: 'Move the domain to maintenance before removing it',
-  updateOvfs: 'Only an active data domain can update its OVF store',
-  refreshLuns: 'Only an iSCSI or FCP block domain has LUNs to refresh',
-  extendLuns: 'Only an active iSCSI or FCP block domain can be extended with new LUNs',
-  reduceLuns:
-    'Only an iSCSI or FCP block domain in maintenance (metadata format v2 or newer) can remove LUNs',
-} as const
+  attach: 'storage.disabled.attach',
+  activate: 'storage.disabled.activate',
+  maintenance: 'storage.disabled.maintenance',
+  detach: 'storage.disabled.detach',
+  remove: 'storage.disabled.remove',
+  updateOvfs: 'storage.disabled.updateOvfs',
+  refreshLuns: 'storage.disabled.refreshLuns',
+  extendLuns: 'storage.disabled.extendLuns',
+  reduceLuns: 'storage.disabled.reduceLuns',
+} as const satisfies Record<string, MessageId>

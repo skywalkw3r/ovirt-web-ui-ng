@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { Link } from '@tanstack/react-router'
 import { LayerGroupIcon, VirtualMachineIcon } from '@patternfly/react-icons'
+import { isFollowDenied } from '../api/followDegrade'
 import type { Template } from '../api/schemas/template'
 import type { Vm } from '../api/schemas/vm'
 import { followedTagsOf } from '../hooks/useTags'
@@ -136,7 +137,17 @@ export const VM_LIST_COLUMNS: VmListColumn[] = [
       // VMs keep the per-VM query fallback; template rows only render chips when
       // the list read embedded the tags (a per-template fallback would hit the
       // wrong endpoint)
-      if (row.kind === 'vm') return <VmLabels vmId={entity.id} tags={entityTags} />
+      if (row.kind === 'vm') {
+        // After a degraded VM list read (5xx on ?follow=tags,statistics) NO row
+        // carries the tags wrapper, so followedTagsOf is undefined for every
+        // one; passing that through would make each row's VmLabels fire its own
+        // per-VM tags query — the exact N+1 the followed list read exists to
+        // avoid. Serve [] instead so rows render honestly (no chips) without
+        // re-probing the struggling engine per row. Detail contexts (no list
+        // read, so the denial is unset) keep the legitimate per-VM fallback.
+        const tags = entityTags ?? (isFollowDenied('vms.list:tags,statistics') ? [] : undefined)
+        return <VmLabels vmId={entity.id} tags={tags} />
+      }
       return entityTags !== undefined ? <VmLabels vmId={entity.id} tags={entityTags} /> : '—'
     },
   },

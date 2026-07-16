@@ -37,7 +37,7 @@ app↔engine boundary onto one origin: there is no CORS surface, and the SSO
 session cookie is never sent cross-origin from our pages. In containerized
 deploys an nginx reverse proxy sits between the browser and the engine
 (`packaging/nginx-sample.conf`) — that nginx→engine hop is its own trust
-boundary and is a **known residual risk** (see §4, TLS verification).
+boundary, secured by default with upstream TLS verification (see §4).
 
 ---
 
@@ -67,10 +67,10 @@ residual risk that remains after the mitigation.
 
 | Category | Threat | Mitigation | Residual risk |
 | --- | --- | --- | --- |
-| **Spoofing** | Attacker forges a session or spoofs an admin identity to see admin UI/data. | Auth is a server-issued SSO bearer token; the engine authenticates every request. Client `isAdmin` is a *presentation-only* tier. | The client `isAdmin` heuristic is name-based and spoofable (`app/src/api/resources/users.ts:34`, `username.startsWith('admin')`). **Today it only unlocks cosmetic UI** — admin data requests are still `Filter`-scoped/403'd by the engine — so spoofing it exposes no data. Latent risk if it ever gates a security decision (see §4). |
-| **Tampering** | A caller (or future resource module) overrides a security-critical request header, defeating auth or permission scoping. | `transport.ts` sets `Authorization` and `Filter: 'true'` on every request. | `...opts.headers` is spread **last** (`transport.ts:58`), after `Authorization`/`Filter`, so a caller *could* clobber them. **Not attacker-reachable today** — only first-party modules set `opts.headers` and none pass those keys — but it's a defense-in-depth gap; spread caller headers first so security headers win. |
+| **Spoofing** | Attacker forges a session or spoofs an admin identity to see admin UI/data. | Auth is a server-issued SSO bearer token; the engine authenticates every request. Client `isAdmin` is a *presentation-only* tier. | On a real engine `isAdmin` is **server-verified** — `fetchCapabilityProfile` (`app/src/api/resources/users.ts`) derives it from the system administrative-role check `GET /permissions?follow=role`, not from the name; the `username.startsWith('admin')` fast path is **gated to mock mode** and never runs against a live engine. Either way `isAdmin` only unlocks cosmetic UI — admin data requests are still `Filter`-scoped/403'd by the engine — so it cannot widen access. Latent risk only if it were ever wired to gate a security decision (see §4). |
+| **Tampering** | A caller (or future resource module) overrides a security-critical request header, defeating auth or permission scoping. | `transport.ts` sets `Authorization` and the `Filter` scope on every request, AFTER the caller-header spread so they always win. | **Resolved (was a defense-in-depth gap).** `...opts.headers` is now spread BEFORE the transport-owned `Authorization`/`Filter` (`transport.ts` request builder), so a caller can no longer clobber the bearer token or downgrade the `Filter` scope. (Even before the fix it was not attacker-reachable — only first-party modules set `opts.headers`, none passing those keys.) |
 | **Repudiation** | — (the frontend is not the system of record; audit lives in the engine.) | Engine-side audit trails all privileged actions against the authenticated token. | Out of scope for the SPA; no client-side action log is claimed or relied on. |
-| **Info disclosure** | The live bearer token leaks into the rendered page and is read by screenshots / extensions / session-replay. | Token is confined to memory + per-tab `sessionStorage` and never intentionally rendered. | **Medium, plausible:** `seedInjectedSession()` (`app/src/auth/AuthProvider.tsx:27`) returns the **token** (not the username) on any *second* invocation, because its idempotency guard returns `getSessionToken()`. Under `<StrictMode>` the happy path is unaffected, but any remount while the module-singleton token is set would seed `username` with the raw token — which is rendered verbatim in the masthead/account modal (`UserMenu.tsx:63,102`). Fix: make the initializer pure, return `readInjectedSession()?.username`, never the token. |
+| **Info disclosure** | The live bearer token leaks into the rendered page and is read by screenshots / extensions / session-replay. | Token is confined to memory + per-tab `sessionStorage` and never intentionally rendered. | **Resolved (was medium/plausible).** The `seedInjectedSession` `useState` initializer (`app/src/auth/AuthProvider.tsx`) now derives `username` ONLY from the injected session (`readInjectedSession()?.username`) or the persisted username — never from the token store — so no remount or `<StrictMode>` double-invoke can seed `username` with the raw bearer token. The token is written once and re-derivation stays username-only. (Was: the old idempotency guard returned `getSessionToken()`, which a remount could render verbatim in the masthead/account modal.) |
 | **DoS** | — (no server-side capacity we own; the engine owns rate/quota.) | Poll hooks read a user-tunable interval and floor infra/admin collections at 30–60s (`CLAUDE.md` §hooks) so the client doesn't hammer the engine. | Client can't meaningfully DoS itself; engine-side quotas are out of scope. Reliability defect (not DoS): the `.vv` download revokes its blob URL synchronously (`app/src/hooks/useConsoles.ts:33`), which can race the download and silently drop the file — defer the revoke. |
 | **Elevation of privilege** | A non-admin gets **unscoped, all-tenant data** by influencing the client to drop permission scoping. | `Filter` is `false` only for a session whose admin status came from the engine's own `/permissions` response, and the engine independently rejects `Filter:false` from real non-admins. | **Resolved (was medium/plausible).** `Filter` is now per-request (`transport.ts` ← `session.ts` `isSessionAdmin`), driven off the server-verified capability profile, not a name heuristic. Even a tampered client that forces `isSessionAdmin` → sends `Filter:false` gains nothing: the engine returns an error / still-scoped data for a real non-admin. The engine remains the sole authZ enforcer; the client flag only chooses a *request* the engine must still authorize. |
 
@@ -82,8 +82,8 @@ These are accepted or deferred by design. They are stated so future work
 doesn't silently regress them.
 
 - **Client RBAC is cosmetic, not enforcement — by design.** `auth/capabilities.ts`
-  / `isAdmin` (`app/src/api/resources/users.ts:34`) only hide nav entries and
-  skip "doomed" admin requests as a UX nicety. The code comments frame this
+  / `isAdmin` (`fetchCapabilityProfile`, `app/src/api/resources/users.ts`) only
+  hide nav entries and skip "doomed" admin requests as a UX nicety. The code comments frame this
   honestly (`app/src/hooks/useHosts.ts:12`; `HostsPage.tsx:133` deep-link guard
   = "hiding, not enforcement"). **Hard rule:** the client capability tier MUST
   NOT select the `Filter` header value or gate any request the engine does not
@@ -105,14 +105,13 @@ doesn't silently regress them.
 
 - **The app trusts the engine.** A compromised engine, a compromised SSO
   server, or a MITM on the app↔engine path is **out of scope** for the SPA's
-  own threat model — but the deployment must not *introduce* such a MITM:
-  the shipped nginx template disables upstream TLS verification
-  (`packaging/nginx-sample.conf:102`, `proxy_ssl_verify off`) and is baked into
-  the container image as the default (`packaging/Containerfile:40,50`). An
-  attacker on the nginx→engine network path could then present any cert and
-  read/inject the bearer-token traffic. **This is a low-severity but real
-  ship-default gap** — production deploys must set `proxy_ssl_verify on` with
-  the engine CA; the relaxed setting should be an explicit lab-only opt-in.
+  own threat model — and the deployment does not *introduce* such a MITM: the
+  shipped nginx templates verify upstream TLS by default
+  (`packaging/nginx-sample.conf`, `proxy_ssl_verify on` against the engine CA
+  at `/etc/pki/ovirt-engine/ca.pem`), so an attacker on the nginx→engine path
+  cannot present a forged cert to read or inject bearer-token traffic. The
+  relaxed `proxy_ssl_verify off` is a **commented lab-only opt-in**, never the
+  shipped default.
 
 - **The open-redirect check is string-prefix, not allowlist.**
   `redirectTarget()` (`app/src/pages/LoginPage.tsx:27`) blocks `//evil` but not
@@ -152,19 +151,24 @@ proxy topology being known):
   Apache/nginx response, not just the `<meta>` subset — `frame-ancestors` and
   HSTS exist **only** in the header form. Keep `app/index.html`'s `<meta>` in
   sync when the policy changes.
-- [ ] **Fix the `Filter`/RBAC design before wiring admin data paths.** Amend
-  PLAN.md §3.6 so `Filter` is chosen from the server-verified role only, and
-  replace the name-based `isAdmin` heuristic with the planned
-  `GET /users/{id}/permissions` derivation *before* any security-relevant
-  consumer is added.
-- [ ] **Fix the `seedInjectedSession()` token-in-username defect**
-  (`AuthProvider.tsx:27`) before the injected-session path meets a real engine
-  where remounts are plausible.
-- [ ] **Harden the nginx template default** to `proxy_ssl_verify on` (engine CA
-  trusted), with the relaxed setting gated behind an explicit
-  `ENGINE_INSECURE`-style toggle.
-- [ ] **Set `proxy_ssl_verify off` header spread + download-revoke fixes** as
-  low-risk cleanups (transport header ordering; defer `.vv` blob revoke).
+- [x] **Done — `Filter` is chosen from the server-verified role only.**
+  `transport.ts` sets `Filter` from `isSessionAdmin` (`session.ts`), which is
+  set only after the server-verified capability profile resolves; admin
+  detection on a real engine is the `GET /permissions?follow=role`
+  administrative-role check (`fetchCapabilityProfile`), and the name-based
+  `username.startsWith('admin')` fast path is gated to mock mode.
+- [x] **Done — the `seedInjectedSession()` token-in-username defect is fixed.**
+  The initializer (`AuthProvider.tsx`) now returns only the injected or
+  persisted username, never `getSessionToken()`, so a remount cannot render
+  the raw token.
+- [x] **Done — the nginx templates default to `proxy_ssl_verify on`** (engine
+  CA at `/etc/pki/ovirt-engine/ca.pem`); the relaxed `off` is a commented
+  lab-only opt-in, never the shipped default.
+- [ ] **Defer the `.vv` blob revoke** — `URL.revokeObjectURL` fires
+  synchronously right after the anchor click (`useConsoles.ts:33`), which can
+  race the download; defer it. (The sibling transport header-ordering cleanup
+  is already done — caller headers now spread before `Authorization`/`Filter`
+  in `transport.ts`.)
 - [ ] **Pen-test checklist reference.** Add a report endpoint
   (`report-uri`/`report-to`) to catch CSP violations in the field before a
   public launch, and run an external pen-test pass covering: token-in-DOM

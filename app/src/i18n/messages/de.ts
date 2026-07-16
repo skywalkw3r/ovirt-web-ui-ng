@@ -2549,57 +2549,6 @@ export const de: LocaleCatalog = {
   'volumes.bricks.server': 'Server',
   'volumes.bricks.directory': 'Brick-Verzeichnis',
   'volumes.bricks.addBricks': 'Bricks hinzufügen',
-  'guide.button': 'Anleitung',
-  'guide.dc.title': 'Anleitung — {name}',
-  'guide.cluster.title': 'Anleitung — {name}',
-  'guide.dc.intro':
-    'Arbeiten Sie diese Schritte ab, um dieses Rechenzentrum betriebsbereit zu machen.',
-  'guide.cluster.intro':
-    'Arbeiten Sie diese Schritte ab, um diesen Cluster betriebsbereit zu machen.',
-  'guide.summary.done': 'Alle erforderlichen Schritte sind abgeschlossen.',
-  'guide.summary.remaining':
-    '{count, plural, one {# erforderlicher Schritt} other {# erforderliche Schritte}} übrig.',
-  'guide.error.title': 'Konfigurationsstatus konnte nicht gelesen werden',
-  'guide.error.body':
-    'Die Anleitung benötigt die aktuellen Cluster, Hosts und den Speicher, um zu ermitteln, was noch offen ist.',
-  'guide.loading': 'Konfigurationsschritte werden geladen',
-  'guide.close': 'Schließen',
-  'guide.optional': '(optional)',
-  'guide.count.aria': '{count} konfiguriert',
-  'guide.aria.complete': 'Abgeschlossen',
-  'guide.aria.required': 'Erforderlich',
-  'guide.aria.optional': 'Optional',
-  'guide.step.clusters.title': 'Cluster konfigurieren',
-  'guide.step.clusters.desc':
-    'Ein Rechenzentrum benötigt mindestens einen Cluster, bevor Hosts ihm beitreten können.',
-  'guide.step.clusters.action': 'Neuer Cluster',
-  'guide.step.hosts.title': 'Hosts konfigurieren',
-  'guide.step.hosts.action': 'Neuer Host',
-  'guide.step.dc.hosts.desc':
-    'Fügen Sie einen Host zu einem der Cluster dieses Rechenzentrums hinzu, um virtuelle Maschinen auszuführen.',
-  'guide.step.cluster.hosts.desc':
-    'Fügen Sie diesem Cluster einen Host hinzu, damit er virtuelle Maschinen ausführen kann.',
-  'guide.blocked.needCluster': 'Zuerst einen Cluster hinzufügen',
-  'guide.blocked.needUpHost': 'Benötigt einen Host im Status Up',
-  'guide.blocked.needHost': 'Zuerst einen Host hinzufügen',
-  'guide.blocked.noDc': 'Cluster ist keinem Rechenzentrum zugeordnet',
-  'guide.step.dataStorage.title': 'Datenspeicher anhängen',
-  'guide.step.dataStorage.desc':
-    'Hängen Sie eine Datenspeicherdomäne an und aktivieren Sie sie, damit das Rechenzentrum hochfahren kann.',
-  'guide.step.dataStorage.action': 'Speicher anhängen',
-  'guide.step.iso.title': 'ISO-Bibliothek anhängen',
-  'guide.step.iso.desc':
-    'Optional: Hängen Sie eine ISO-Speicherdomäne an, um VMs von Installationsmedien zu booten.',
-  'guide.step.iso.action': 'ISO-Bibliothek anhängen',
-  'guide.step.upHost.title': 'Einen Host hochfahren',
-  'guide.step.upHost.desc':
-    'Mindestens ein Host muss den Status Up erreichen, um Workloads einzuplanen.',
-  'guide.step.clusterStorage.title': 'Datenspeicher erreichen',
-  'guide.step.clusterStorage.desc.hasDc':
-    'Das Rechenzentrum des Clusters benötigt eine aktive Datenspeicherdomäne.',
-  'guide.step.clusterStorage.desc.noDc':
-    'Hängen Sie diesen Cluster an ein Rechenzentrum mit aktivem Datenspeicher an.',
-  'guide.step.clusterStorage.action': 'Zum Rechenzentrum',
 
   'infra.compat': 'Kompatibilität {version}',
   'infra.datacenter.storage': 'Speicher {format}',

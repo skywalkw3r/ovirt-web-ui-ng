@@ -2540,55 +2540,6 @@ export const es: LocaleCatalog = {
   'volumes.bricks.server': 'Servidor',
   'volumes.bricks.directory': 'Directorio del brick',
   'volumes.bricks.addBricks': 'Añadir bricks',
-  'guide.button': 'Guíame',
-  'guide.dc.title': 'Guíame — {name}',
-  'guide.cluster.title': 'Guíame — {name}',
-  'guide.dc.intro': 'Complete estos pasos para poner en marcha este centro de datos.',
-  'guide.cluster.intro': 'Complete estos pasos para poner en marcha este clúster.',
-  'guide.summary.done': 'Todos los pasos obligatorios están completos.',
-  'guide.summary.remaining':
-    'Quedan {count, plural, one {# paso obligatorio} other {# pasos obligatorios}}.',
-  'guide.error.title': 'No se pudo leer el estado de configuración',
-  'guide.error.body':
-    'La guía necesita los clústeres, hosts y almacenamiento actuales para determinar lo que falta.',
-  'guide.loading': 'Cargando pasos de configuración',
-  'guide.close': 'Cerrar',
-  'guide.optional': '(opcional)',
-  'guide.count.aria': '{count} configurados',
-  'guide.aria.complete': 'Completo',
-  'guide.aria.required': 'Obligatorio',
-  'guide.aria.optional': 'Opcional',
-  'guide.step.clusters.title': 'Configurar clústeres',
-  'guide.step.clusters.desc':
-    'Un centro de datos necesita al menos un clúster antes de que los hosts puedan unirse a él.',
-  'guide.step.clusters.action': 'Nuevo clúster',
-  'guide.step.hosts.title': 'Configurar hosts',
-  'guide.step.hosts.action': 'Nuevo host',
-  'guide.step.dc.hosts.desc':
-    'Añada un host a uno de los clústeres de este centro de datos para ejecutar máquinas virtuales.',
-  'guide.step.cluster.hosts.desc':
-    'Añada un host a este clúster para que pueda ejecutar máquinas virtuales.',
-  'guide.blocked.needCluster': 'Añada primero un clúster',
-  'guide.blocked.needUpHost': 'Necesita un host que esté activo',
-  'guide.blocked.needHost': 'Añada primero un host',
-  'guide.blocked.noDc': 'El clúster no está asociado a un centro de datos',
-  'guide.step.dataStorage.title': 'Adjuntar almacenamiento de datos',
-  'guide.step.dataStorage.desc':
-    'Adjunte y active un dominio de almacenamiento de datos para que el centro de datos pueda activarse.',
-  'guide.step.dataStorage.action': 'Adjuntar almacenamiento',
-  'guide.step.iso.title': 'Adjuntar una biblioteca de ISO',
-  'guide.step.iso.desc':
-    'Opcional: adjunte un dominio de almacenamiento de ISO para arrancar las VMs desde medios de instalación.',
-  'guide.step.iso.action': 'Adjuntar biblioteca de ISO',
-  'guide.step.upHost.title': 'Poner un host en marcha',
-  'guide.step.upHost.desc':
-    'Al menos un host debe alcanzar el estado activo para programar cargas de trabajo.',
-  'guide.step.clusterStorage.title': 'Alcanzar el almacenamiento de datos',
-  'guide.step.clusterStorage.desc.hasDc':
-    'El centro de datos del clúster necesita un dominio de almacenamiento de datos activo.',
-  'guide.step.clusterStorage.desc.noDc':
-    'Adjunte este clúster a un centro de datos con almacenamiento de datos activo.',
-  'guide.step.clusterStorage.action': 'Ir al centro de datos',
 
   'infra.compat': 'Compatibilidad {version}',
   'infra.datacenter.storage': 'Almacenamiento {format}',

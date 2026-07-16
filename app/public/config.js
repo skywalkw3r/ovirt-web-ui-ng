@@ -20,8 +20,8 @@ window.ovirtWebUiConfig = {
   //                      -s CORSAllowedOrigins=https://<this-console-origin>
   //      (then systemctl restart ovirt-engine)
   //   2. SSO login CORS: an engine build with the fixed enginesso CORS
-  //      mapping, OR the Apache drop-in from packaging/engine-cors/ installed
-  //      on the engine host.
+  //      mapping — or skip CORS entirely by fronting the engine with a
+  //      same-origin '/e/<slug>' proxy path instead (the preferred model).
   //   3. The CSP connect-src served with THIS app must include the engine's
   //      origin (see docs/SECURITY-HEADERS.md "Multi-engine deployments").
   //   4. Users' browsers must trust the engine's TLS certificate.

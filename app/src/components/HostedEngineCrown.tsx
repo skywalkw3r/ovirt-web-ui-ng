@@ -19,8 +19,12 @@ export function HostedEngineCrown({
   hostId: string
 }) {
   const t = useT()
-  const engineHostId = useHostedEngineHostId()
   const heCapable = hostedEngine?.active === true || hostedEngine?.configured === true
+  // Gate the hosted-engine-host probe on heCapable so only HE hosts subscribe
+  // it — a non-HE install enables it nowhere and pays zero requests. Called
+  // unconditionally (rules of hooks); the id is unused for non-capable hosts,
+  // which return null just below.
+  const engineHostId = useHostedEngineHostId(heCapable)
   if (!heCapable) return null
   // While the VM list is still loading (or the engine VM is down/migrating)
   // no host can claim the gold crown — everyone reads standby, never two golds.

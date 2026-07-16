@@ -15,24 +15,33 @@ import { PermissionListSchema, PermissionSchema, type Permission } from './permi
 import { QUOTA_CONSUMER_ROLE_ID } from './roles'
 
 // Quotas only exist as a per-data-center subcollection, so the flat list the
-// UI wants is the concatenation across every DC. A per-DC 404 (e.g. the DC
-// vanished between the two requests) just means "no quotas there".
+// UI wants is the concatenation across every DC.
 export async function listQuotas(): Promise<Quota[]> {
   const dataCenters = await listDataCenters()
-  const perDataCenter = await Promise.all(
+  // Per-DC tolerance (Promise.allSettled): a single data center whose quotas
+  // read fails — a 404 for a DC that vanished between the two requests, or a
+  // transient 5xx — drops that branch rather than failing (and, on the query
+  // retry, re-issuing) the whole fan-out. An auth verdict (401/403) is the
+  // session breaking, not one branch, so it propagates immediately (mirror
+  // listProviders).
+  const settled = await Promise.allSettled(
     dataCenters.map(async (dc) => {
-      try {
-        const data = QuotaListSchema.parse(
-          await request(`/datacenters/${encodeURIComponent(dc.id)}/quotas`),
-        )
-        return data.quota ?? []
-      } catch (error) {
-        if (error instanceof ApiError && error.status === 404) return []
-        throw error
-      }
+      const data = QuotaListSchema.parse(
+        await request(`/datacenters/${encodeURIComponent(dc.id)}/quotas`),
+      )
+      return data.quota ?? []
     }),
   )
-  return perDataCenter.flat()
+
+  const authFailure = settled.find(
+    (result) =>
+      result.status === 'rejected' &&
+      result.reason instanceof ApiError &&
+      (result.reason.status === 401 || result.reason.status === 403),
+  )
+  if (authFailure?.status === 'rejected') throw authFailure.reason
+
+  return settled.flatMap((result) => (result.status === 'fulfilled' ? result.value : []))
 }
 
 // Webadmin-style create: quotas are minted under their owning data center

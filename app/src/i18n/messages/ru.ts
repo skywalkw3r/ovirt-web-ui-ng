@@ -2528,55 +2528,6 @@ export const ru: LocaleCatalog = {
   'volumes.bricks.server': 'Сервер',
   'volumes.bricks.directory': 'Каталог кирпича',
   'volumes.bricks.addBricks': 'Добавить кирпичи',
-  'guide.button': 'Помочь настроить',
-  'guide.dc.title': 'Помощь в настройке — {name}',
-  'guide.cluster.title': 'Помощь в настройке — {name}',
-  'guide.dc.intro': 'Выполните эти шаги, чтобы этот дата-центр заработал.',
-  'guide.cluster.intro': 'Выполните эти шаги, чтобы этот кластер заработал.',
-  'guide.summary.done': 'Все обязательные шаги выполнены.',
-  'guide.summary.remaining':
-    'Осталось {count, plural, one {# обязательный шаг} few {# обязательных шага} many {# обязательных шагов} other {# обязательных шагов}}.',
-  'guide.error.title': 'Не удалось прочитать состояние конфигурации',
-  'guide.error.body':
-    'Чтобы определить, что осталось сделать, помощнику нужны текущие кластеры, хосты и хранилище.',
-  'guide.loading': 'Загрузка шагов настройки',
-  'guide.close': 'Закрыть',
-  'guide.optional': '(необязательно)',
-  'guide.count.aria': 'Настроено: {count}',
-  'guide.aria.complete': 'Выполнено',
-  'guide.aria.required': 'Обязательно',
-  'guide.aria.optional': 'Необязательно',
-  'guide.step.clusters.title': 'Настройте кластеры',
-  'guide.step.clusters.desc':
-    'Дата-центру нужен хотя бы один кластер, прежде чем к нему смогут присоединиться хосты.',
-  'guide.step.clusters.action': 'Новый кластер',
-  'guide.step.hosts.title': 'Настройте хосты',
-  'guide.step.hosts.action': 'Новый хост',
-  'guide.step.dc.hosts.desc':
-    'Добавьте хост в один из кластеров этого дата-центра, чтобы запускать виртуальные машины.',
-  'guide.step.cluster.hosts.desc':
-    'Добавьте хост в этот кластер, чтобы он мог запускать виртуальные машины.',
-  'guide.blocked.needCluster': 'Сначала добавьте кластер',
-  'guide.blocked.needUpHost': 'Нужен хост в состоянии Up',
-  'guide.blocked.needHost': 'Сначала добавьте хост',
-  'guide.blocked.noDc': 'Кластер не привязан к дата-центру',
-  'guide.step.dataStorage.title': 'Подключите хранилище данных',
-  'guide.step.dataStorage.desc':
-    'Подключите и активируйте домен хранения данных, чтобы дата-центр мог запуститься.',
-  'guide.step.dataStorage.action': 'Подключить хранилище',
-  'guide.step.iso.title': 'Подключите библиотеку ISO',
-  'guide.step.iso.desc':
-    'Необязательно: подключите домен хранения ISO для загрузки ВМ с установочных носителей.',
-  'guide.step.iso.action': 'Подключить библиотеку ISO',
-  'guide.step.upHost.title': 'Поднимите хост',
-  'guide.step.upHost.desc':
-    'Хотя бы один хост должен перейти в состояние Up для планирования нагрузок.',
-  'guide.step.clusterStorage.title': 'Обеспечьте хранилище данных',
-  'guide.step.clusterStorage.desc.hasDc':
-    'Дата-центру этого кластера нужен активный домен хранения данных.',
-  'guide.step.clusterStorage.desc.noDc':
-    'Привяжите этот кластер к дата-центру с активным хранилищем данных.',
-  'guide.step.clusterStorage.action': 'Перейти к дата-центру',
   'infra.compat': 'Совместимость {version}',
   'infra.datacenter.storage': 'Хранилище {format}',
   'inventory.folder.kind': 'Папка',

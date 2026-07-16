@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { ApiError, request } from '../transport'
+import { fetchWithFollowFallback, isFollowDenied, markFollowDenied } from '../followDegrade'
 import {
   HostListSchema,
   HostNicDetailListSchema,
@@ -39,10 +40,43 @@ export async function listHosts(
   return data.host ?? []
 }
 
+// GET the hosts collection with statistics inlined, degrading to the bare
+// collection (same base params, no follow) on a persistent 5xx via the sticky
+// follow-degrade helper — the documented "followed collection reads degrade,
+// never fail" rule. Shared by the dashboard aggregate (listHostsWithStats, no
+// base params) and listHostsUsage's statistics rung (all_content + optional
+// search): BOTH ride one denial key, so a follow=statistics fault probed by
+// either is remembered once and skipped everywhere for the TTL instead of every
+// caller re-probing the doomed follow on each poll tick. `baseParams` is the
+// query string minus the leading '?' and the follow= (e.g. '' or
+// 'all_content=true' or 'all_content=true&search=<enc>').
+async function readHostsStatistics(baseParams: string): Promise<Host[]> {
+  const bare = `/hosts${baseParams ? `?${baseParams}` : ''}`
+  const followed = `/hosts?${baseParams}${baseParams ? '&' : ''}follow=statistics`
+  const data = await fetchWithFollowFallback(
+    'hosts:follow=statistics',
+    async () => HostListSchema.parse(await request(followed)),
+    async () => HostListSchema.parse(await request(bare)),
+  )
+  return data.host ?? []
+}
+
+// The dashboard's every-30s fleet aggregate (CPU/memory across all hosts). No
+// all_content — it needs statistics, not the expensive computed properties —
+// and degrades to a bare /hosts read so a follow fault never fails the
+// dashboard. Shares readHostsStatistics (and its denial key) with
+// listHostsUsage's statistics rung.
+export async function listHostsWithStats(): Promise<Host[]> {
+  return readHostsStatistics('')
+}
+
 // The hosts LIST with usage gauges inlined: statistics for CPU/memory and
 // per-NIC statistics for the Network column. Nested follow can 500 on picky
 // engines (same class of quirk as getVm's absent-link follow), so degrade
-// progressively rather than break the whole page.
+// progressively rather than break the whole page — the bottom rung is a bare
+// all_content read (via readHostsStatistics) so a persistent follow fault
+// degrades to the plain inventory instead of hard-failing the hosts page (the
+// list matters more than the inlined gauges).
 //
 // all_content=true is what populates the engine's computed host properties —
 // most visibly `hosted_engine` (the HE crown). The live engine OMITS those
@@ -50,27 +84,26 @@ export async function listHosts(
 // the crown never appears; the mock returns them unconditionally, which is
 // why it only showed there. Same `?all_content=true` the original ovirt-web-ui
 // passes on its hosts read.
+//
+// Sticky denials remember the highest working level: the top (nics.statistics)
+// rung carries its own key, the statistics rung + bare fallback live in the
+// shared readHostsStatistics. A level that 5xxs is marked and skipped on later
+// poll ticks rather than re-probed.
 export async function listHostsUsage(search?: string): Promise<Host[]> {
-  const query = (follow: string) =>
-    `/hosts?all_content=true&${search ? `search=${encodeURIComponent(search)}&` : ''}follow=${follow}`
-  const attempts = [query('statistics,nics.statistics'), query('statistics')]
-  let lastError: unknown
-  for (const [index, path] of attempts.entries()) {
+  const baseParams = `all_content=true${search ? `&search=${encodeURIComponent(search)}` : ''}`
+  const richKey = 'hosts.usage:statistics,nics.statistics'
+  if (!isFollowDenied(richKey)) {
     try {
-      const data = HostListSchema.parse(await request(path))
+      const data = HostListSchema.parse(
+        await request(`/hosts?${baseParams}&follow=statistics,nics.statistics`),
+      )
       return data.host ?? []
     } catch (error) {
-      lastError = error
-      const retriable = error instanceof ApiError && error.status >= 500
-      if (!retriable || index === attempts.length - 1) throw error
+      if (!(error instanceof ApiError) || error.status < 500) throw error
+      markFollowDenied(richKey)
     }
   }
-  throw lastError
-}
-
-export async function listHostsWithStats(): Promise<Host[]> {
-  const data = HostListSchema.parse(await request('/hosts?follow=statistics'))
-  return data.host ?? []
+  return readHostsStatistics(baseParams)
 }
 
 export async function getHost(id: string): Promise<Host> {
@@ -79,8 +112,17 @@ export async function getHost(id: string): Promise<Host> {
   // would show an em dash instead of the cluster name. all_content=true
   // populates the computed properties (hosted_engine for the HE crown, ksm,
   // hugepages) the detail page reads — omitted from a plain read otherwise.
-  return HostSchema.parse(
-    await request(`/hosts/${encodeURIComponent(id)}?all_content=true&follow=cluster`),
+  // Degrade to the bare all_content read on a persistent 5xx (a cluster-less /
+  // partially-configured host makes the followed read 500 rather than omit the
+  // key) so the detail page still renders — mirror getVm/getCluster. Per-host
+  // denial key so one cluster-less host doesn't suppress the cluster name on
+  // every OTHER host. all_content rides on BOTH legs so the computed props
+  // survive the degrade.
+  const base = `/hosts/${encodeURIComponent(id)}?all_content=true`
+  return fetchWithFollowFallback(
+    `hosts.get:cluster:${id}`,
+    async () => HostSchema.parse(await request(`${base}&follow=cluster`)),
+    async () => HostSchema.parse(await request(base)),
   )
 }
 
@@ -461,9 +503,22 @@ export async function removeVfAllowedNetwork(
 // Networks dialog can diff against the cluster's networks without an N+1
 // fetch; host_nic stays a bare { id, href } link resolved against
 // listHostNics.
+//
+// Degrades to the bare read on a persistent 5xx. VERIFIED SAFE: without the
+// follow the engine still inlines each attachment's network as a { id, href }
+// link (schemas/network-attachment.ts), so the only consumer that joins on it
+// — listNetworkHosts, matching attachment.network.id — keeps working; only the
+// network NAME is lost from the degraded read. The denial key is SHARED across
+// hosts (not per-id): listNetworkHosts fans this out one call per host, so a
+// single 5xx short-circuits the whole fan-out instead of every host paying its
+// own failed follow probe. (De-polling / failure tolerance of that fan-out is
+// networks.ts's concern; this is just the per-call degrade.)
 export async function listHostNetworkAttachments(id: string): Promise<NetworkAttachment[]> {
-  const data = NetworkAttachmentListSchema.parse(
-    await request(`/hosts/${encodeURIComponent(id)}/networkattachments?follow=network`),
+  const base = `/hosts/${encodeURIComponent(id)}/networkattachments`
+  const data = await fetchWithFollowFallback(
+    'hosts.networkattachments:network',
+    async () => NetworkAttachmentListSchema.parse(await request(`${base}?follow=network`)),
+    async () => NetworkAttachmentListSchema.parse(await request(base)),
   )
   return data.network_attachment ?? []
 }

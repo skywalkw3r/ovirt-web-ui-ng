@@ -7,7 +7,9 @@ import {
   DescriptionListGroup,
   DescriptionListTerm,
   EmptyState,
+  EmptyStateActions,
   EmptyStateBody,
+  EmptyStateFooter,
   Form,
   FormGroup,
   FormHelperText,
@@ -34,6 +36,7 @@ import { useNavigate } from '@tanstack/react-router'
 import type { CloudInitNicSpec, NewVmSpec } from '../../api/resources/vms'
 import { useClusters, useTemplates } from '../../hooks/useCatalog'
 import { useCreateVm } from '../../hooks/useCreateVm'
+import { useT } from '../../i18n/useT'
 import { formatBytes } from '../../lib/format'
 import { ConfirmModal } from '../ConfirmModal'
 import { isWindowsOsType } from '../edit-vm/editVmDraft'
@@ -68,6 +71,7 @@ interface CreateVmButtonProps {
   initialClusterName?: string
   variant?: ButtonProps['variant']
   size?: ButtonProps['size']
+  /** Custom trigger text; defaults to the localized "Create virtual machine". */
   label?: string
 }
 
@@ -76,14 +80,15 @@ export function CreateVmButton({
   initialClusterName,
   variant = 'primary',
   size,
-  label = 'Create virtual machine',
+  label,
 }: CreateVmButtonProps) {
+  const t = useT()
   const [isOpen, setIsOpen] = useState(false)
 
   return (
     <>
       <Button variant={variant} size={size} onClick={() => setIsOpen(true)}>
-        {label}
+        {label ?? t('vm.create.title')}
       </Button>
       {/* remount per open so a cancelled or finished wizard never leaks its
           half-filled state into the next one */}
@@ -112,6 +117,7 @@ export function CreateVmWizardModal({
   initialClusterName?: string
   onClose: () => void
 }) {
+  const t = useT()
   const templates = useTemplates()
   const clusters = useClusters()
   const create = useCreateVm()
@@ -287,18 +293,18 @@ export function CreateVmWizardModal({
           startIndex={initialTemplateName ? 2 : 1}
           header={
             <WizardHeader
-              title="Create virtual machine"
+              title={t('vm.create.title')}
               titleId="create-vm-wizard-title"
-              description="The new VM starts powered off."
+              description={t('vm.create.description')}
               onClose={requestClose}
-              closeButtonAriaLabel="Close create virtual machine wizard"
+              closeButtonAriaLabel={t('vm.create.close.ariaLabel')}
             />
           }
           onClose={requestClose}
           onSave={submit}
         >
           <WizardStep
-            name="Template"
+            name={t('inventory.kind.template')}
             id="new-vm-step-template"
             footer={{ isNextDisabled: !templateStepValid }}
           >
@@ -306,38 +312,41 @@ export function CreateVmWizardModal({
               <>
                 <Skeleton height="2.5rem" style={{ marginBottom: '0.5rem' }} />
                 <Skeleton height="2.5rem" style={{ marginBottom: '0.5rem' }} />
-                <Skeleton height="2.5rem" screenreaderText="Loading templates" />
+                <Skeleton height="2.5rem" screenreaderText={t('templates.loading')} />
               </>
             )}
 
             {templates.isError && (
-              <EmptyState titleText="Could not load templates" status="danger">
+              <EmptyState titleText={t('templates.error.title')} status="danger">
                 <EmptyStateBody>
-                  {templates.error instanceof Error ? templates.error.message : 'Unknown error'}
+                  {templates.error instanceof Error
+                    ? templates.error.message
+                    : t('common.error.unknown')}
                 </EmptyStateBody>
-                <Button variant="primary" onClick={() => void templates.refetch()}>
-                  Retry
-                </Button>
+                <EmptyStateFooter>
+                  <EmptyStateActions>
+                    <Button variant="primary" onClick={() => void templates.refetch()}>
+                      {t('common.action.retry')}
+                    </Button>
+                  </EmptyStateActions>
+                </EmptyStateFooter>
               </EmptyState>
             )}
 
             {templates.isSuccess && sortedTemplates.length === 0 && (
-              <EmptyState titleText="No templates">
-                <EmptyStateBody>
-                  No template is visible to you — even the Blank template. A VM needs one, so ask an
-                  administrator for template permissions.
-                </EmptyStateBody>
+              <EmptyState titleText={t('templates.empty.title')}>
+                <EmptyStateBody>{t('vm.create.templates.empty.body')}</EmptyStateBody>
               </EmptyState>
             )}
 
             {templates.isSuccess && sortedTemplates.length > 0 && (
-              <Table aria-label="Select a template" variant="compact">
+              <Table aria-label={t('vm.create.templates.ariaLabel')} variant="compact">
                 <Thead>
                   <Tr>
-                    <Th screenReaderText="Select" />
-                    <Th>Name</Th>
-                    <Th>Operating system</Th>
-                    <Th>Description</Th>
+                    <Th screenReaderText={t('vm.create.templates.selectRow')} />
+                    <Th>{t('common.field.name')}</Th>
+                    <Th>{t('vm.import.vms.column.os')}</Th>
+                    <Th>{t('common.field.description')}</Th>
                   </Tr>
                 </Thead>
                 <Tbody>
@@ -351,9 +360,11 @@ export function CreateVmWizardModal({
                           onSelect: () => setTemplateName(template.name),
                         }}
                       />
-                      <Td dataLabel="Name">{template.name}</Td>
-                      <Td dataLabel="Operating system">{template.os?.type ?? '—'}</Td>
-                      <Td dataLabel="Description">{template.description || '—'}</Td>
+                      <Td dataLabel={t('common.field.name')}>{template.name}</Td>
+                      <Td dataLabel={t('vm.import.vms.column.os')}>{template.os?.type ?? '—'}</Td>
+                      <Td dataLabel={t('common.field.description')}>
+                        {template.description || '—'}
+                      </Td>
                     </Tr>
                   ))}
                 </Tbody>
@@ -362,12 +373,12 @@ export function CreateVmWizardModal({
           </WizardStep>
 
           <WizardStep
-            name="General"
+            name={t('vmDetail.tab.general')}
             id="new-vm-step-general"
             footer={{ isNextDisabled: !generalStepValid }}
           >
             <Form onSubmit={(event) => event.preventDefault()}>
-              <FormGroup label="Name" isRequired fieldId="new-vm-name">
+              <FormGroup label={t('common.field.name')} isRequired fieldId="new-vm-name">
                 <TextInput
                   id="new-vm-name"
                   isRequired
@@ -379,46 +390,54 @@ export function CreateVmWizardModal({
                 {nameError && (
                   <FormHelperText>
                     <HelperText>
-                      <HelperTextItem variant="error">Name is required</HelperTextItem>
+                      <HelperTextItem variant="error">
+                        {t('vmDisks.addModal.nameRequired')}
+                      </HelperTextItem>
                     </HelperText>
                   </FormHelperText>
                 )}
               </FormGroup>
-              <FormGroup label="Description" fieldId="new-vm-description">
+              <FormGroup label={t('common.field.description')} fieldId="new-vm-description">
                 <TextInput
                   id="new-vm-description"
                   value={description}
                   onChange={(_event, value) => setDescription(value)}
                 />
               </FormGroup>
-              <FormGroup label="Cluster" isRequired fieldId="new-vm-cluster">
+              <FormGroup label={t('common.field.cluster')} isRequired fieldId="new-vm-cluster">
                 {clusters.isPending && (
-                  <Skeleton height="2.25rem" screenreaderText="Loading clusters" />
+                  <Skeleton height="2.25rem" screenreaderText={t('clusters.loading')} />
                 )}
                 {clusters.isError && (
                   <>
                     <HelperText>
                       <HelperTextItem variant="error">
-                        Could not load clusters:{' '}
-                        {clusters.error instanceof Error ? clusters.error.message : 'Unknown error'}
+                        {t('vm.create.clusters.error', {
+                          message:
+                            clusters.error instanceof Error
+                              ? clusters.error.message
+                              : t('common.error.unknown'),
+                        })}
                       </HelperTextItem>
                     </HelperText>
                     <Button variant="link" isInline onClick={() => void clusters.refetch()}>
-                      Retry
+                      {t('common.action.retry')}
                     </Button>
                   </>
                 )}
                 {clusters.isSuccess && (
                   <FormSelect
                     id="new-vm-cluster"
-                    aria-label="Cluster"
+                    aria-label={t('common.field.cluster')}
                     value={clusterName}
                     onChange={(_event, value) => setClusterName(value)}
                   >
                     <FormSelectOption
                       value=""
                       label={
-                        clusters.data.length === 0 ? 'No clusters available' : 'Select a cluster'
+                        clusters.data.length === 0
+                          ? t('vm.import.target.cluster.empty')
+                          : t('vm.import.target.cluster.placeholder')
                       }
                       isPlaceholder
                       isDisabled
@@ -437,19 +456,19 @@ export function CreateVmWizardModal({
           </WizardStep>
 
           <WizardStep
-            name="Resources"
+            name={t('vm.create.step.resources')}
             id="new-vm-step-resources"
             footer={{ isNextDisabled: !memoryValid }}
           >
             <Form onSubmit={(event) => event.preventDefault()}>
               <FormGroup
-                label="Memory"
+                label={t('vm.create.field.memory')}
                 isRequired
                 fieldId="new-vm-memory"
                 labelHelp={
                   <FieldHelp
-                    field="Memory"
-                    content="RAM presented to the guest. The VM will not start unless a host has enough free memory, subject to the cluster’s memory over-commit."
+                    field={t('vm.create.field.memory')}
+                    content={t('vm.create.memory.help')}
                   />
                 }
               >
@@ -461,9 +480,9 @@ export function CreateVmWizardModal({
                   onChange={onMemoryChange}
                   onBlur={onMemoryBlur}
                   inputName="new-vm-memory"
-                  inputAriaLabel="Memory in GiB"
-                  minusBtnAriaLabel="Decrease memory"
-                  plusBtnAriaLabel="Increase memory"
+                  inputAriaLabel={t('vm.create.memory.aria')}
+                  minusBtnAriaLabel={t('vm.create.memory.decrease')}
+                  plusBtnAriaLabel={t('vm.create.memory.increase')}
                   unit="GiB"
                   widthChars={6}
                   validated={memoryValid ? 'default' : 'error'}
@@ -471,39 +490,46 @@ export function CreateVmWizardModal({
                 <FormHelperText>
                   <HelperText>
                     <HelperTextItem variant={memoryValid ? 'default' : 'error'}>
-                      At least {MIN_MEMORY_GIB} GiB
+                      {t('vm.create.memory.atLeast', { min: MIN_MEMORY_GIB })}
                     </HelperTextItem>
                   </HelperText>
                 </FormHelperText>
               </FormGroup>
               <HelperText>
-                <HelperTextItem>
-                  vCPU topology (sockets, cores, threads) keeps the template&apos;s defaults for now
-                  — editing it is a Phase 2 follow-up.
-                </HelperTextItem>
+                <HelperTextItem>{t('vm.create.vcpu.note')}</HelperTextItem>
               </HelperText>
             </Form>
           </WizardStep>
 
-          <WizardStep name="Initialization" id="new-vm-step-cloud-init">
+          <WizardStep name={t('vm.create.step.initialization')} id="new-vm-step-cloud-init">
             <Form onSubmit={(event) => event.preventDefault()}>
               <FormGroup
-                label={windows ? 'Configure sysprep' : 'Configure cloud-init'}
+                label={
+                  windows ? t('vm.create.init.sysprep.label') : t('vm.create.init.cloudInit.label')
+                }
                 fieldId="new-vm-cloud-init-enabled"
                 labelHelp={
                   <FieldHelp
-                    field={windows ? 'Configure sysprep' : 'Configure cloud-init'}
+                    field={
+                      windows
+                        ? t('vm.create.init.sysprep.label')
+                        : t('vm.create.init.cloudInit.label')
+                    }
                     content={
                       windows
-                        ? 'Sysprep customizes a Windows guest on first boot — joining a domain and running an unattended setup script.'
-                        : 'Cloud-init customizes the guest on first boot — setting hostname, credentials, SSH keys, DNS and a custom script — for images that ship the cloud-init agent (most modern Linux cloud images).'
+                        ? t('vm.create.init.sysprep.help')
+                        : t('vm.create.init.cloudInit.help')
                     }
                   />
                 }
               >
                 <Switch
                   id="new-vm-cloud-init-enabled"
-                  aria-label={windows ? 'Configure sysprep' : 'Configure cloud-init'}
+                  aria-label={
+                    windows
+                      ? t('vm.create.init.sysprep.label')
+                      : t('vm.create.init.cloudInit.label')
+                  }
                   isChecked={initEnabled}
                   onChange={(_event, checked) => setInitEnabled(checked)}
                 />
@@ -511,36 +537,42 @@ export function CreateVmWizardModal({
 
               {initEnabled && windows && (
                 <>
-                  <FormGroup label="Domain" fieldId="new-vm-sysprep-domain">
+                  <FormGroup
+                    label={t('vm.edit.initialRun.sysprep.domain')}
+                    fieldId="new-vm-sysprep-domain"
+                  >
                     <TextInput
                       id="new-vm-sysprep-domain"
-                      aria-label="Sysprep domain"
+                      aria-label={t('vm.create.sysprep.domain.aria')}
                       value={sysprepDomain}
                       onChange={(_event, value) => setSysprepDomain(value)}
                     />
                   </FormGroup>
                   <FormGroup
-                    label="Administrator password"
+                    label={t('vm.create.sysprep.adminPassword')}
                     fieldId="new-vm-sysprep-password"
                     labelHelp={
                       <FieldHelp
-                        field="Administrator password"
-                        content="Sysprep sets this as the guest Administrator password on first boot. Sent once and injected into the VM; not stored for read-back."
+                        field={t('vm.create.sysprep.adminPassword')}
+                        content={t('vm.create.sysprep.adminPassword.help')}
                       />
                     }
                   >
                     <TextInput
                       id="new-vm-sysprep-password"
                       type="password"
-                      aria-label="Sysprep administrator password"
+                      aria-label={t('vm.create.sysprep.adminPassword.aria')}
                       value={sysprepAdminPassword}
                       onChange={(_event, value) => setSysprepAdminPassword(value)}
                     />
                   </FormGroup>
-                  <FormGroup label="Custom script (unattend)" fieldId="new-vm-sysprep-script">
+                  <FormGroup
+                    label={t('vm.create.sysprep.customScript')}
+                    fieldId="new-vm-sysprep-script"
+                  >
                     <TextArea
                       id="new-vm-sysprep-script"
-                      aria-label="Sysprep custom script"
+                      aria-label={t('vm.create.sysprep.customScript.aria')}
                       value={sysprepCustomScript}
                       onChange={(_event, value) => setSysprepCustomScript(value)}
                       resizeOrientation="vertical"
@@ -552,12 +584,12 @@ export function CreateVmWizardModal({
               {initEnabled && !windows && (
                 <>
                   <FormGroup
-                    label="Hostname"
+                    label={t('vm.create.cloudInit.hostname')}
                     fieldId="new-vm-ci-hostname"
                     labelHelp={
                       <FieldHelp
-                        field="Hostname"
-                        content="The hostname cloud-init sets inside the guest on first boot."
+                        field={t('vm.create.cloudInit.hostname')}
+                        content={t('vm.create.cloudInit.hostname.help')}
                       />
                     }
                   >
@@ -568,12 +600,12 @@ export function CreateVmWizardModal({
                     />
                   </FormGroup>
                   <FormGroup
-                    label="Root password"
+                    label={t('vm.create.cloudInit.rootPassword')}
                     fieldId="new-vm-ci-password"
                     labelHelp={
                       <FieldHelp
-                        field="Root password"
-                        content="Cloud-init sets this as the guest root password on first boot. Sent once to the engine and injected into the VM; not stored for read-back."
+                        field={t('vm.create.cloudInit.rootPassword')}
+                        content={t('vm.create.cloudInit.rootPassword.help')}
                       />
                     }
                   >
@@ -585,12 +617,12 @@ export function CreateVmWizardModal({
                     />
                   </FormGroup>
                   <FormGroup
-                    label="Authorized SSH key"
+                    label={t('vm.create.cloudInit.sshKey')}
                     fieldId="new-vm-ci-ssh-key"
                     labelHelp={
                       <FieldHelp
-                        field="Authorized SSH key"
-                        content="A public SSH key cloud-init adds to the default user’s authorized_keys, so you can log in without a password."
+                        field={t('vm.create.cloudInit.sshKey')}
+                        content={t('vm.create.cloudInit.sshKey.help')}
                       />
                     }
                   >
@@ -601,73 +633,106 @@ export function CreateVmWizardModal({
                       resizeOrientation="vertical"
                     />
                   </FormGroup>
-                  <FormGroup label="DNS servers" fieldId="new-vm-ci-dns-servers">
+                  <FormGroup
+                    label={t('vm.create.cloudInit.dnsServers')}
+                    fieldId="new-vm-ci-dns-servers"
+                  >
                     <TextInput
                       id="new-vm-ci-dns-servers"
-                      aria-label="DNS servers"
-                      placeholder="e.g. 8.8.8.8 8.8.4.4"
+                      aria-label={t('vm.create.cloudInit.dnsServers')}
+                      placeholder={t('vm.create.cloudInit.dnsServers.placeholder')}
                       value={dnsServers}
                       onChange={(_event, value) => setDnsServers(value)}
                     />
                   </FormGroup>
-                  <FormGroup label="DNS search domains" fieldId="new-vm-ci-dns-search">
+                  <FormGroup
+                    label={t('vm.create.cloudInit.dnsSearch')}
+                    fieldId="new-vm-ci-dns-search"
+                  >
                     <TextInput
                       id="new-vm-ci-dns-search"
-                      aria-label="DNS search domains"
-                      placeholder="e.g. example.com"
+                      aria-label={t('vm.create.cloudInit.dnsSearch')}
+                      placeholder={t('vm.create.cloudInit.dnsSearch.placeholder')}
                       value={dnsSearch}
                       onChange={(_event, value) => setDnsSearch(value)}
                     />
                   </FormGroup>
-                  <FormGroup label="Custom script" fieldId="new-vm-ci-custom-script">
+                  <FormGroup
+                    label={t('vm.create.cloudInit.customScript')}
+                    fieldId="new-vm-ci-custom-script"
+                  >
                     <TextArea
                       id="new-vm-ci-custom-script"
-                      aria-label="Cloud-init custom script"
+                      aria-label={t('vm.create.cloudInit.customScript.aria')}
                       value={customScript}
                       onChange={(_event, value) => setCustomScript(value)}
                       resizeOrientation="vertical"
                     />
                   </FormGroup>
 
-                  <FormSection title="Network" titleElement="h3" aria-label="Cloud-init network">
-                    {nics.length === 0 && <p>No static NICs configured.</p>}
+                  <FormSection
+                    title={t('vm.edit.initialRun.networks.title')}
+                    titleElement="h3"
+                    aria-label={t('vm.create.cloudInit.network.aria')}
+                  >
+                    {nics.length === 0 && <p>{t('vm.create.cloudInit.noNics')}</p>}
                     {nics.map((nic, index) => (
                       <Grid key={index} hasGutter>
                         <GridItem span={3}>
-                          <FormGroup label="Name" fieldId={`new-vm-ci-nic-name-${index}`}>
+                          <FormGroup
+                            label={t('common.field.name')}
+                            fieldId={`new-vm-ci-nic-name-${index}`}
+                          >
                             <TextInput
                               id={`new-vm-ci-nic-name-${index}`}
-                              aria-label={`NIC name ${index + 1}`}
+                              aria-label={t('vm.create.cloudInit.nic.name.aria', {
+                                index: index + 1,
+                              })}
                               value={nic.name}
                               onChange={(_event, value) => updateNic(index, { name: value })}
                             />
                           </FormGroup>
                         </GridItem>
                         <GridItem span={3}>
-                          <FormGroup label="Address" fieldId={`new-vm-ci-nic-address-${index}`}>
+                          <FormGroup
+                            label={t('vm.create.cloudInit.nic.address')}
+                            fieldId={`new-vm-ci-nic-address-${index}`}
+                          >
                             <TextInput
                               id={`new-vm-ci-nic-address-${index}`}
-                              aria-label={`NIC address ${index + 1}`}
+                              aria-label={t('vm.create.cloudInit.nic.address.aria', {
+                                index: index + 1,
+                              })}
                               value={nic.address ?? ''}
                               onChange={(_event, value) => updateNic(index, { address: value })}
                             />
                           </FormGroup>
                         </GridItem>
                         <GridItem span={2}>
-                          <FormGroup label="Netmask" fieldId={`new-vm-ci-nic-netmask-${index}`}>
+                          <FormGroup
+                            label={t('vm.edit.initialRun.nic.netmask')}
+                            fieldId={`new-vm-ci-nic-netmask-${index}`}
+                          >
                             <TextInput
                               id={`new-vm-ci-nic-netmask-${index}`}
-                              aria-label={`NIC netmask ${index + 1}`}
+                              aria-label={t('vm.create.cloudInit.nic.netmask.aria', {
+                                index: index + 1,
+                              })}
                               value={nic.netmask ?? ''}
                               onChange={(_event, value) => updateNic(index, { netmask: value })}
                             />
                           </FormGroup>
                         </GridItem>
                         <GridItem span={3}>
-                          <FormGroup label="Gateway" fieldId={`new-vm-ci-nic-gateway-${index}`}>
+                          <FormGroup
+                            label={t('vm.edit.initialRun.nic.gateway')}
+                            fieldId={`new-vm-ci-nic-gateway-${index}`}
+                          >
                             <TextInput
                               id={`new-vm-ci-nic-gateway-${index}`}
-                              aria-label={`NIC gateway ${index + 1}`}
+                              aria-label={t('vm.create.cloudInit.nic.gateway.aria', {
+                                index: index + 1,
+                              })}
                               value={nic.gateway ?? ''}
                               onChange={(_event, value) => updateNic(index, { gateway: value })}
                             />
@@ -678,7 +743,9 @@ export function CreateVmWizardModal({
                             <Button
                               id={`new-vm-ci-nic-remove-${index}`}
                               variant="plain"
-                              aria-label={`Remove NIC ${index + 1}`}
+                              aria-label={t('vm.create.cloudInit.nic.remove.aria', {
+                                index: index + 1,
+                              })}
                               icon={<MinusCircleIcon />}
                               onClick={() => removeNic(index)}
                             />
@@ -690,9 +757,9 @@ export function CreateVmWizardModal({
                       variant="link"
                       icon={<PlusCircleIcon />}
                       onClick={addNic}
-                      aria-label="Add NIC"
+                      aria-label={t('vm.create.cloudInit.addNic')}
                     >
-                      Add NIC
+                      {t('vm.create.cloudInit.addNic')}
                     </Button>
                   </FormSection>
                 </>
@@ -701,10 +768,10 @@ export function CreateVmWizardModal({
           </WizardStep>
 
           <WizardStep
-            name="Review"
+            name={t('vm.import.step.review')}
             id="new-vm-step-review"
             footer={{
-              nextButtonText: 'Create virtual machine',
+              nextButtonText: t('vm.create.title'),
               isNextDisabled:
                 !templateStepValid || !generalStepValid || !memoryValid || create.isPending,
               nextButtonProps: { isLoading: create.isPending },
@@ -712,51 +779,61 @@ export function CreateVmWizardModal({
           >
             <DescriptionList isHorizontal>
               <DescriptionListGroup>
-                <DescriptionListTerm>Template</DescriptionListTerm>
+                <DescriptionListTerm>{t('inventory.kind.template')}</DescriptionListTerm>
                 <DescriptionListDescription>{templateName ?? '—'}</DescriptionListDescription>
               </DescriptionListGroup>
               <DescriptionListGroup>
-                <DescriptionListTerm>Name</DescriptionListTerm>
+                <DescriptionListTerm>{t('common.field.name')}</DescriptionListTerm>
                 <DescriptionListDescription>{name.trim() || '—'}</DescriptionListDescription>
               </DescriptionListGroup>
               <DescriptionListGroup>
-                <DescriptionListTerm>Description</DescriptionListTerm>
+                <DescriptionListTerm>{t('common.field.description')}</DescriptionListTerm>
                 <DescriptionListDescription>{description.trim() || '—'}</DescriptionListDescription>
               </DescriptionListGroup>
               <DescriptionListGroup>
-                <DescriptionListTerm>Cluster</DescriptionListTerm>
+                <DescriptionListTerm>{t('common.field.cluster')}</DescriptionListTerm>
                 <DescriptionListDescription>{clusterName || '—'}</DescriptionListDescription>
               </DescriptionListGroup>
               <DescriptionListGroup>
-                <DescriptionListTerm>Memory</DescriptionListTerm>
+                <DescriptionListTerm>{t('vm.create.field.memory')}</DescriptionListTerm>
                 <DescriptionListDescription>
                   {memoryValid ? formatBytes(memoryGib * GiB) : '—'}
                 </DescriptionListDescription>
               </DescriptionListGroup>
               <DescriptionListGroup>
-                <DescriptionListTerm>{windows ? 'Sysprep' : 'Cloud-init'}</DescriptionListTerm>
+                <DescriptionListTerm>
+                  {windows
+                    ? t('vm.edit.initialRun.sysprep.title')
+                    : t('vm.create.review.cloudInit')}
+                </DescriptionListTerm>
                 <DescriptionListDescription>
-                  {initEnabled ? 'Enabled' : 'Not configured'}
+                  {initEnabled ? t('common.enabled') : t('vm.create.review.notConfigured')}
                 </DescriptionListDescription>
               </DescriptionListGroup>
               {initEnabled && windows && (
                 <>
                   <DescriptionListGroup>
-                    <DescriptionListTerm>Domain</DescriptionListTerm>
+                    <DescriptionListTerm>
+                      {t('vm.edit.initialRun.sysprep.domain')}
+                    </DescriptionListTerm>
                     <DescriptionListDescription>
                       {sysprepDomain.trim() || '—'}
                     </DescriptionListDescription>
                   </DescriptionListGroup>
                   <DescriptionListGroup>
-                    <DescriptionListTerm>Administrator password</DescriptionListTerm>
+                    <DescriptionListTerm>
+                      {t('vm.create.sysprep.adminPassword')}
+                    </DescriptionListTerm>
                     <DescriptionListDescription>
                       {sysprepAdminPassword ? '••••••••' : '—'}
                     </DescriptionListDescription>
                   </DescriptionListGroup>
                   <DescriptionListGroup>
-                    <DescriptionListTerm>Custom script</DescriptionListTerm>
+                    <DescriptionListTerm>
+                      {t('vm.create.cloudInit.customScript')}
+                    </DescriptionListTerm>
                     <DescriptionListDescription>
-                      {sysprepCustomScript.trim() ? 'Provided' : '—'}
+                      {sysprepCustomScript.trim() ? t('vm.create.review.provided') : '—'}
                     </DescriptionListDescription>
                   </DescriptionListGroup>
                 </>
@@ -764,31 +841,33 @@ export function CreateVmWizardModal({
               {initEnabled && !windows && (
                 <>
                   <DescriptionListGroup>
-                    <DescriptionListTerm>Hostname</DescriptionListTerm>
+                    <DescriptionListTerm>{t('vm.create.cloudInit.hostname')}</DescriptionListTerm>
                     <DescriptionListDescription>
                       {hostName.trim() || '—'}
                     </DescriptionListDescription>
                   </DescriptionListGroup>
                   <DescriptionListGroup>
-                    <DescriptionListTerm>Root password</DescriptionListTerm>
+                    <DescriptionListTerm>
+                      {t('vm.create.cloudInit.rootPassword')}
+                    </DescriptionListTerm>
                     <DescriptionListDescription>
                       {rootPassword ? '••••••••' : '—'}
                     </DescriptionListDescription>
                   </DescriptionListGroup>
                   <DescriptionListGroup>
-                    <DescriptionListTerm>Authorized SSH key</DescriptionListTerm>
+                    <DescriptionListTerm>{t('vm.create.cloudInit.sshKey')}</DescriptionListTerm>
                     <DescriptionListDescription>
-                      {sshKey.trim() ? 'Provided' : '—'}
+                      {sshKey.trim() ? t('vm.create.review.provided') : '—'}
                     </DescriptionListDescription>
                   </DescriptionListGroup>
                   <DescriptionListGroup>
-                    <DescriptionListTerm>DNS servers</DescriptionListTerm>
+                    <DescriptionListTerm>{t('vm.create.cloudInit.dnsServers')}</DescriptionListTerm>
                     <DescriptionListDescription>
                       {dnsServers.trim() || '—'}
                     </DescriptionListDescription>
                   </DescriptionListGroup>
                   <DescriptionListGroup>
-                    <DescriptionListTerm>Static NICs</DescriptionListTerm>
+                    <DescriptionListTerm>{t('vm.create.review.staticNics')}</DescriptionListTerm>
                     <DescriptionListDescription>
                       {nics.filter((nic) => nic.name.trim() !== '').length || '—'}
                     </DescriptionListDescription>
@@ -803,9 +882,9 @@ export function CreateVmWizardModal({
       {confirmingCancel && (
         <ConfirmModal
           isOpen
-          title="Discard new virtual machine?"
-          body="Everything entered in the wizard will be lost."
-          confirmLabel="Discard"
+          title={t('vm.create.cancel.title')}
+          body={t('vm.create.cancel.body')}
+          confirmLabel={t('vm.import.cancel.confirm')}
           onConfirm={() => {
             setConfirmingCancel(false)
             onClose()

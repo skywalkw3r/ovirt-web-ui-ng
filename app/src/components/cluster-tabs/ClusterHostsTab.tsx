@@ -1,9 +1,17 @@
-import { Button, EmptyState, EmptyStateBody, Skeleton } from '@patternfly/react-core'
+import {
+  Button,
+  EmptyState,
+  EmptyStateActions,
+  EmptyStateBody,
+  EmptyStateFooter,
+  Skeleton,
+} from '@patternfly/react-core'
 import { Link } from '@tanstack/react-router'
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table'
 import { HostStatusLabel } from '../HostStatusLabel'
 import { HostedEngineCrown } from '../HostedEngineCrown'
 import { useClusterHosts } from '../../hooks/useClusterDetail'
+import { useT } from '../../i18n/useT'
 
 // The hosts belonging to this cluster. Hosts have no engine-search entry point
 // in this app, so useClusterHosts pulls the global /hosts feed and filters
@@ -13,50 +21,55 @@ import { useClusterHosts } from '../../hooks/useClusterDetail'
 
 export function ClusterHostsTab({ clusterId }: { clusterId: string }) {
   const hosts = useClusterHosts(clusterId)
+  const t = useT()
 
   if (hosts.isPending) {
     return (
       <>
         <Skeleton height="2.5rem" style={{ marginBottom: '0.5rem' }} />
-        <Skeleton height="2.5rem" screenreaderText="Loading hosts" />
+        <Skeleton height="2.5rem" screenreaderText={t('hosts.loading')} />
       </>
     )
   }
 
   if (hosts.isError) {
     return (
-      <EmptyState titleText="Could not load hosts" status="danger">
+      <EmptyState titleText={t('clusterHosts.error.title')} status="danger">
         <EmptyStateBody>
-          {hosts.error instanceof Error ? hosts.error.message : 'Unknown error'}
+          {hosts.error instanceof Error ? hosts.error.message : t('common.error.unknown')}
         </EmptyStateBody>
-        <Button variant="primary" onClick={() => void hosts.refetch()}>
-          Retry
-        </Button>
+        <EmptyStateFooter>
+          <EmptyStateActions>
+            <Button variant="primary" onClick={() => void hosts.refetch()}>
+              {t('common.action.retry')}
+            </Button>
+          </EmptyStateActions>
+        </EmptyStateFooter>
       </EmptyState>
     )
   }
 
   if (hosts.data.length === 0) {
     return (
-      <EmptyState titleText="No hosts">
-        <EmptyStateBody>No hosts belong to this cluster.</EmptyStateBody>
+      <EmptyState titleText={t('hosts.empty.title')}>
+        <EmptyStateBody>{t('clusterHosts.empty.body')}</EmptyStateBody>
       </EmptyState>
     )
   }
 
   return (
-    <Table aria-label="Hosts in this cluster" variant="compact">
+    <Table aria-label={t('clusterHosts.table.ariaLabel')} variant="compact">
       <Thead>
         <Tr>
-          <Th width={30}>Name</Th>
-          <Th width={15}>Status</Th>
-          <Th>Description</Th>
+          <Th width={30}>{t('common.field.name')}</Th>
+          <Th width={15}>{t('common.field.status')}</Th>
+          <Th>{t('common.field.description')}</Th>
         </Tr>
       </Thead>
       <Tbody>
         {hosts.data.map((host) => (
           <Tr key={host.id}>
-            <Td dataLabel="Name">
+            <Td dataLabel={t('common.field.name')}>
               <span
                 style={{
                   display: 'inline-flex',
@@ -71,13 +84,13 @@ export function ClusterHostsTab({ clusterId }: { clusterId: string }) {
                 </Link>
               </span>
             </Td>
-            <Td dataLabel="Status">
+            <Td dataLabel={t('common.field.status')}>
               <HostStatusLabel status={host.status} />
             </Td>
             {/* description with comment fallback — single line, full text on
                 hover (matches the inventory truncation convention) */}
             <Td
-              dataLabel="Description"
+              dataLabel={t('common.field.description')}
               modifier="truncate"
               title={host.description ?? host.comment ?? undefined}
             >

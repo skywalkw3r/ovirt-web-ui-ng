@@ -385,7 +385,11 @@ call sites change together — single-owner file).
 
 ### 5.5 SSO-cookie seam handling
 
-The SPA's in-memory bearer token is **not** readable by the iframe. Grafana uses
+> Superseded: the iframe embed described here was replaced by native chart
+> rendering (see docs/SECURITY-HEADERS.md); kept for design history.
+
+The SPA's bearer token (memory + per-tab sessionStorage) is **not** readable
+by the iframe. Grafana uses
 its own `grafana_session` cookie (same-origin, `SameSite=Lax` → sent on the
 same-site iframe request). With `[auth.anonymous]=false` /
 `oauth_auto_login=false`, a **first-ever** visit inside the frame lands on the

@@ -65,6 +65,12 @@ export interface VnicProfileTemplate {
 // a vNIC profile, so membership is derived from a single GET /vms?follow=nics
 // list (one call, not N per-VM /nics reads) — the same client-side join
 // resources/networks.ts' listNetworkVms uses, narrowed to one profile id.
+//
+// Deliberate non-degrade (as in listNetworkVms): membership is computed from the
+// inlined nics, so degrading a 5xx to a bare read would render a false-empty
+// list — worse than an honest failure. This does NOT use fetchWithFollowFallback;
+// the ApiError propagates to the tab's error state. The tab no longer polls
+// (useVnicProfileDetail.ts), so the follow read fires once per visit.
 export async function listVnicProfileVms(profileId: string): Promise<VnicProfileVm[]> {
   const data = VnicProfileConsumerVmListSchema.parse(await request('/vms?follow=nics'))
   return (data.vm ?? [])
@@ -78,7 +84,9 @@ export async function listVnicProfileVms(profileId: string): Promise<VnicProfile
 // GetVmTemplatesAndNetworkInterfacesByNetworkId, that the REST layer never
 // surfaces), so membership is derived from a single GET /templates?follow=nics
 // list (one call, not N per-template /nics reads) — the exact join
-// listVnicProfileVms runs over /vms, narrowed to one profile id.
+// listVnicProfileVms runs over /vms, narrowed to one profile id. It shares that
+// read's deliberate non-degrade too: a bare read can't compute membership, so a
+// 5xx fails loudly into the tab's error state rather than a false-empty list.
 export async function listVnicProfileTemplates(profileId: string): Promise<VnicProfileTemplate[]> {
   const data = VnicProfileConsumerTemplateListSchema.parse(await request('/templates?follow=nics'))
   return (data.template ?? [])

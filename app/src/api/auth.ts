@@ -7,8 +7,9 @@ import { getActiveBase } from '../servers/registry'
 // external engine (multi-engine). An engine-served page may instead arrive
 // already authenticated via the injected window.userInfo session (see
 // auth/bootstrap.ts), which always belongs to the same-origin engine.
-// External engines must allow this origin on their SSO endpoints (CORS): a
-// fixed enginesso build or the packaging/engine-cors/ Apache drop-in.
+// Cross-origin external engines must allow this origin on their SSO endpoints
+// (CORS) via a CORS-fixed enginesso build; an engine reached same-origin
+// through a /e/<slug> proxy path needs no CORS.
 const SSO_TOKEN_PATH =
   '/ovirt-engine/sso/oauth/token?grant_type=urn:ovirt:params:oauth:grant-type:http&scope=ovirt-app-api'
 const SSO_SCOPE = 'ovirt-app-api'

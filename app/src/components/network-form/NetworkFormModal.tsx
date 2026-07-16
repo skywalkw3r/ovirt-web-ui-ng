@@ -324,7 +324,9 @@ export function NetworkFormModal({
     draft.external &&
     draft.subnetEnabled &&
     (draft.subnet.name.trim() === '' || draft.subnet.cidr.trim() === '')
-  const title = isEdit ? `Edit network — ${network.name}` : 'New logical network'
+  const title = isEdit
+    ? t('networkForm.title.edit', { name: network.name })
+    : t('networkForm.title.new')
 
   return (
     <Modal
@@ -337,20 +339,20 @@ export function NetworkFormModal({
       <ModalHeader title={title} labelId="network-form-title" />
       <ModalBody id="network-form-body">
         <Form onSubmit={(event) => event.preventDefault()}>
-          <FormGroup label="Name" isRequired fieldId="network-name">
+          <FormGroup label={t('common.field.name')} isRequired fieldId="network-name">
             <TextInput
               id="network-name"
               isRequired
-              aria-label="Network name"
+              aria-label={t('networkForm.aria.name')}
               value={draft.name}
               onChange={(_event, value) => set('name', value)}
             />
           </FormGroup>
 
-          <FormGroup label="Description" fieldId="network-description">
+          <FormGroup label={t('common.field.description')} fieldId="network-description">
             <TextInput
               id="network-description"
-              aria-label="Network description"
+              aria-label={t('networkForm.aria.description')}
               value={draft.description}
               onChange={(_event, value) => set('description', value)}
             />
@@ -365,22 +367,30 @@ export function NetworkFormModal({
             />
           </FormGroup>
 
-          <FormGroup label="Data center" isRequired={!isEdit} fieldId="network-data-center">
+          <FormGroup
+            label={t('networkGeneral.term.dataCenter')}
+            isRequired={!isEdit}
+            fieldId="network-data-center"
+          >
             {isEdit ? (
               <TextInput
                 id="network-data-center"
-                aria-label="Data center"
+                aria-label={t('networkGeneral.term.dataCenter')}
                 value={network.data_center?.name ?? network.data_center?.id ?? '—'}
                 readOnlyVariant="default"
               />
             ) : (
               <FormSelect
                 id="network-data-center"
-                aria-label="Data center"
+                aria-label={t('networkGeneral.term.dataCenter')}
                 value={draft.dataCenterId}
                 onChange={(_event, value) => changeDataCenter(value)}
               >
-                <FormSelectOption value="" label="Select a data center" isDisabled />
+                <FormSelectOption
+                  value=""
+                  label={t('network.import.datacenter.placeholder')}
+                  isDisabled
+                />
                 {(dataCenters.data ?? []).map((dataCenter) => (
                   <FormSelectOption
                     key={dataCenter.id}
@@ -431,7 +441,7 @@ export function NetworkFormModal({
                         message:
                           providers.error instanceof Error
                             ? providers.error.message
-                            : 'Unknown error',
+                            : t('common.error.unknown'),
                       })}
                     </HelperTextItem>
                   </HelperText>
@@ -488,7 +498,7 @@ export function NetworkFormModal({
                         message:
                           dcNetworks.error instanceof Error
                             ? dcNetworks.error.message
-                            : 'Unknown error',
+                            : t('common.error.unknown'),
                       })}
                     </HelperTextItem>
                   </HelperText>
@@ -523,15 +533,18 @@ export function NetworkFormModal({
 
           {!draft.external && (
             <FormGroup
-              label="Enable VLAN tagging"
+              label={t('networkForm.vlanEnabled')}
               fieldId="network-vlan-enabled"
               labelHelp={
-                <FieldHelp field="Enable VLAN tagging" content={t('fieldHelp.network.vlan')} />
+                <FieldHelp
+                  field={t('networkForm.vlanEnabled')}
+                  content={t('fieldHelp.network.vlan')}
+                />
               }
             >
               <Switch
                 id="network-vlan-enabled"
-                aria-label="Enable VLAN tagging"
+                aria-label={t('networkForm.vlanEnabled')}
                 isChecked={draft.vlanEnabled}
                 onChange={(_event, checked) => set('vlanEnabled', checked)}
               />
@@ -539,11 +552,11 @@ export function NetworkFormModal({
           )}
 
           {!draft.external && draft.vlanEnabled && (
-            <FormGroup label="VLAN tag" fieldId="network-vlan">
+            <FormGroup label={t('networkGeneral.term.vlanTag')} fieldId="network-vlan">
               <TextInput
                 id="network-vlan"
                 type="number"
-                aria-label="VLAN tag"
+                aria-label={t('networkGeneral.term.vlanTag')}
                 value={draft.vlan}
                 onChange={(_event, value) => set('vlan', value)}
               />
@@ -551,14 +564,19 @@ export function NetworkFormModal({
           )}
 
           <FormGroup
-            label="MTU"
+            label={t('networkGeneral.term.mtu')}
             fieldId="network-mtu"
-            labelHelp={<FieldHelp field="MTU" content={t('fieldHelp.network.mtu')} />}
+            labelHelp={
+              <FieldHelp
+                field={t('networkGeneral.term.mtu')}
+                content={t('fieldHelp.network.mtu')}
+              />
+            }
           >
             <TextInput
               id="network-mtu"
               type="number"
-              aria-label="MTU"
+              aria-label={t('networkGeneral.term.mtu')}
               value={draft.mtu}
               onChange={(_event, value) => set('mtu', value)}
             />
@@ -603,13 +621,18 @@ export function NetworkFormModal({
           )}
 
           <FormGroup
-            label="VM network"
+            label={t('networkForm.vmNetwork')}
             fieldId="network-vm-network"
-            labelHelp={<FieldHelp field="VM network" content={t('fieldHelp.network.vmNetwork')} />}
+            labelHelp={
+              <FieldHelp
+                field={t('networkForm.vmNetwork')}
+                content={t('fieldHelp.network.vmNetwork')}
+              />
+            }
           >
             <Switch
               id="network-vm-network"
-              aria-label="VM network"
+              aria-label={t('networkForm.vmNetwork')}
               isChecked={draft.vmNetwork}
               isDisabled={draft.external}
               onChange={(_event, checked) =>
@@ -749,20 +772,20 @@ export function NetworkFormModal({
 
           {!isEdit && !draft.external && (
             <FormGroup
-              label="Network label"
+              label={t('networkForm.label')}
               fieldId="network-label"
-              labelHelp={<FieldHelp field="Network label" content={t('fieldHelp.network.label')} />}
+              labelHelp={
+                <FieldHelp field={t('networkForm.label')} content={t('fieldHelp.network.label')} />
+              }
             >
               <TextInput
                 id="network-label"
-                aria-label="Network label"
+                aria-label={t('networkForm.label')}
                 value={draft.label}
                 onChange={(_event, value) => set('label', value)}
               />
               <HelperText>
-                <HelperTextItem>
-                  An optional label lets host NICs carrying it attach this network automatically.
-                </HelperTextItem>
+                <HelperTextItem>{t('networkForm.label.hint')}</HelperTextItem>
               </HelperText>
             </FormGroup>
           )}
@@ -773,33 +796,37 @@ export function NetworkFormModal({
               Still hidden on the external branch, which never carries QoS. */}
           {!draft.external && (
             <FormGroup
-              label="Network QoS"
+              label={t('networkForm.qos')}
               fieldId="network-qos"
-              labelHelp={<FieldHelp field="Network QoS" content={t('fieldHelp.network.qos')} />}
+              labelHelp={
+                <FieldHelp field={t('networkForm.qos')} content={t('fieldHelp.network.qos')} />
+              }
             >
               {draft.dataCenterId === '' ? (
                 <HelperText>
-                  <HelperTextItem>Select a data center to choose a QoS profile.</HelperTextItem>
+                  <HelperTextItem>{t('networkForm.qos.selectDc')}</HelperTextItem>
                 </HelperText>
               ) : qosProfiles.isPending ? (
-                <Skeleton height="2.25rem" screenreaderText="Loading QoS profiles" />
+                <Skeleton height="2.25rem" screenreaderText={t('qos.loading')} />
               ) : qosProfiles.isError ? (
                 <HelperText>
                   <HelperTextItem variant="error">
-                    Could not load QoS profiles:{' '}
-                    {qosProfiles.error instanceof Error
-                      ? qosProfiles.error.message
-                      : 'Unknown error'}
+                    {t('networkForm.qos.error', {
+                      message:
+                        qosProfiles.error instanceof Error
+                          ? qosProfiles.error.message
+                          : t('common.error.unknown'),
+                    })}
                   </HelperTextItem>
                 </HelperText>
               ) : (
                 <FormSelect
                   id="network-qos"
-                  aria-label="Network QoS"
+                  aria-label={t('networkForm.qos')}
                   value={draft.qosId}
                   onChange={(_event, value) => set('qosId', value)}
                 >
-                  <FormSelectOption value="" label="Unlimited (no QoS)" />
+                  <FormSelectOption value="" label={t('networkForm.qos.unlimited')} />
                   {/* An assigned QoS the loaded list somehow lacks still gets an
                       option, so the select shows the truth instead of silently
                       falling back to "Unlimited" while the draft keeps the id. */}
@@ -819,43 +846,47 @@ export function NetworkFormModal({
               vNIC profiles to be usable. */}
           {!isEdit && (
             <>
-              <FormGroup label="Attach to clusters" fieldId="network-clusters">
+              <FormGroup label={t('networkForm.clusters')} fieldId="network-clusters">
                 {draft.dataCenterId === '' ? (
                   <HelperText>
-                    <HelperTextItem>
-                      Select a data center to attach the network to its clusters.
-                    </HelperTextItem>
+                    <HelperTextItem>{t('networkForm.clusters.selectDc')}</HelperTextItem>
                   </HelperText>
                 ) : clusters.isPending ? (
-                  <Skeleton height="4rem" screenreaderText="Loading clusters" />
+                  <Skeleton height="4rem" screenreaderText={t('networkForm.clusters.loading')} />
                 ) : clusters.isError ? (
                   <HelperText>
                     <HelperTextItem variant="error">
-                      Could not load clusters:{' '}
-                      {clusters.error instanceof Error ? clusters.error.message : 'Unknown error'}
+                      {t('networkForm.clusters.error', {
+                        message:
+                          clusters.error instanceof Error
+                            ? clusters.error.message
+                            : t('common.error.unknown'),
+                      })}
                     </HelperTextItem>
                   </HelperText>
                 ) : clusterChoices.length === 0 ? (
                   <HelperText>
-                    <HelperTextItem>This data center has no clusters.</HelperTextItem>
+                    <HelperTextItem>{t('networkForm.clusters.none')}</HelperTextItem>
                   </HelperText>
                 ) : (
-                  <Table aria-label="Attach to clusters" variant="compact">
+                  <Table aria-label={t('networkForm.clusters')} variant="compact">
                     <Thead>
                       <Tr>
-                        <Th>Cluster</Th>
-                        <Th>Attach</Th>
-                        <Th>Required</Th>
+                        <Th>{t('common.field.cluster')}</Th>
+                        <Th>{t('common.action.attach')}</Th>
+                        <Th>{t('networkForm.column.required')}</Th>
                       </Tr>
                     </Thead>
                     <Tbody>
                       {clusterChoices.map((choice) => (
                         <Tr key={choice.clusterId}>
-                          <Td dataLabel="Cluster">{choice.clusterName}</Td>
-                          <Td dataLabel="Attach">
+                          <Td dataLabel={t('common.field.cluster')}>{choice.clusterName}</Td>
+                          <Td dataLabel={t('common.action.attach')}>
                             <Checkbox
                               id={`network-cluster-attach-${choice.clusterId}`}
-                              aria-label={`Attach to ${choice.clusterName}`}
+                              aria-label={t('networkForm.attach.aria', {
+                                name: choice.clusterName,
+                              })}
                               isChecked={choice.attach}
                               onChange={(_event, checked) =>
                                 setChoice(choice.clusterId, {
@@ -867,10 +898,12 @@ export function NetworkFormModal({
                               }
                             />
                           </Td>
-                          <Td dataLabel="Required">
+                          <Td dataLabel={t('networkForm.column.required')}>
                             <Checkbox
                               id={`network-cluster-required-${choice.clusterId}`}
-                              aria-label={`Require on ${choice.clusterName}`}
+                              aria-label={t('networkForm.require.aria', {
+                                name: choice.clusterName,
+                              })}
                               isChecked={choice.required}
                               isDisabled={!choice.attach}
                               onChange={(_event, checked) =>
@@ -897,10 +930,10 @@ export function NetworkFormModal({
             pending || nameEmpty || dataCenterMissing || providerMissing || subnetIncomplete
           }
         >
-          Save
+          {t('common.action.save')}
         </Button>
         <Button variant="secondary" onClick={onClose} isDisabled={pending}>
-          Cancel
+          {t('common.action.cancel')}
         </Button>
       </ModalFooter>
     </Modal>

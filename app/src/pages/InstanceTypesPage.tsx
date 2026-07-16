@@ -1,8 +1,10 @@
-import { useState, type ReactNode } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import {
   Button,
   EmptyState,
+  EmptyStateActions,
   EmptyStateBody,
+  EmptyStateFooter,
   PageSection,
   Pagination,
   Skeleton,
@@ -27,6 +29,8 @@ import { useColumnPrefs } from '../hooks/useColumnPrefs'
 import { sortRows, useColumnSort } from '../hooks/useColumnSort'
 import { useDeleteInstanceType } from '../hooks/useInstanceTypeMutations'
 import { useListSearch } from '../hooks/useListSearch'
+import { useT } from '../i18n/useT'
+import type { MessageId } from '../i18n/messages/en'
 
 const MiB = 1024 * 1024
 const GiB = 1024 ** 3
@@ -54,49 +58,61 @@ function vcpuCount(instanceType: InstanceType): string {
 
 interface InstanceTypeColumn {
   key: string
-  label: string
+  labelId: MessageId
   always?: boolean
   defaultHidden?: boolean
   // opt-in header sort (see hooks/useColumnSort)
   sortValue?: (instanceType: InstanceType) => string | number | undefined
-  cell: (instanceType: InstanceType) => ReactNode
+  cell: (instanceType: InstanceType, t: ReturnType<typeof useT>) => ReactNode
 }
 
 // Headers and cells both map over the same isVisible-filtered array so they can
 // never desync. The actions column stays out of the picker and renders
-// unconditionally after the pickable columns.
+// unconditionally after the pickable columns. Labels ride as i18n ids, resolved
+// for the active locale in the component body.
 const COLUMNS: InstanceTypeColumn[] = [
-  { key: 'name', label: 'Name', sortValue: (it) => it.name, always: true, cell: (it) => it.name },
+  {
+    key: 'name',
+    labelId: 'common.field.name',
+    sortValue: (it) => it.name,
+    always: true,
+    cell: (it) => it.name,
+  },
   {
     key: 'memory',
-    label: 'Memory',
+    labelId: 'instanceTypes.column.memory',
     sortValue: (it) => it.memory,
     cell: (it) => formatMemory(it.memory),
   },
-  { key: 'cpus', label: 'vCPUs', sortValue: (it) => vcpuCount(it), cell: (it) => vcpuCount(it) },
+  {
+    key: 'cpus',
+    labelId: 'instanceTypes.column.vcpus',
+    sortValue: (it) => vcpuCount(it),
+    cell: (it) => vcpuCount(it),
+  },
   {
     key: 'sockets',
-    label: 'Sockets',
+    labelId: 'instanceTypes.column.sockets',
     sortValue: (it) => it.cpu?.topology?.sockets,
     defaultHidden: true,
     cell: (it) => it.cpu?.topology?.sockets ?? '—',
   },
   {
     key: 'guaranteed',
-    label: 'Guaranteed memory',
+    labelId: 'instanceTypes.column.guaranteed',
     sortValue: (it) => it.memory_policy?.guaranteed,
     defaultHidden: true,
     cell: (it) => formatMemory(it.memory_policy?.guaranteed),
   },
   {
     key: 'ha',
-    label: 'Highly available',
+    labelId: 'instanceTypes.column.ha',
     sortValue: (it) => (it.high_availability?.enabled ? 1 : 0),
-    cell: (it) => (it.high_availability?.enabled ? 'Yes' : 'No'),
+    cell: (it, t) => (it.high_availability?.enabled ? t('common.yes') : t('common.no')),
   },
   {
     key: 'description',
-    label: 'Description',
+    labelId: 'common.field.description',
     sortValue: (it) => it.description || undefined,
     cell: (it) => it.description || '—',
   },
@@ -111,9 +127,13 @@ const PER_PAGE_OPTIONS = [
 // Mounted only for the admin tier (gate below), so user tier never fires the
 // /instancetypes request the engine would answer with a permission fault.
 function InstanceTypesTable() {
+  const t = useT()
   const { query, draft, setDraft, commit, apply } = useListSearch()
   const instanceTypes = useInstanceTypes(query)
-  const prefs = useColumnPrefs('instance-types', COLUMNS)
+  // Resolve column labels for the active locale; identity is stable per locale
+  // (t is memoized on intl) so useColumnPrefs' seeding stays sound.
+  const columns = useMemo(() => COLUMNS.map((c) => ({ ...c, label: t(c.labelId) })), [t])
+  const prefs = useColumnPrefs('instance-types', columns)
   // client-side header sort; no default — the engine list order stands
   // until a header is clicked (see hooks/useColumnSort)
   const { sort, thSort } = useColumnSort()
@@ -134,7 +154,7 @@ function InstanceTypesTable() {
   }
 
   const items = sortRows(instanceTypes.data ?? [], sort, (row, key) =>
-    COLUMNS.find((column) => column.key === key)?.sortValue?.(row),
+    columns.find((column) => column.key === key)?.sortValue?.(row),
   )
 
   // clamp rather than effect-reset: polling refetches can shrink the list
@@ -143,15 +163,15 @@ function InstanceTypesTable() {
   const currentPage = Math.min(page, lastPage)
   const paged = items.slice((currentPage - 1) * perPage, currentPage * perPage)
 
-  const visibleColumns = COLUMNS.filter((column) => prefs.isVisible(column.key))
+  const visibleColumns = columns.filter((column) => prefs.isVisible(column.key))
 
   return (
     <>
       <ListPageHeader
-        title="Instance types"
+        title={t('instanceTypes.title')}
         actions={
           <Button variant="primary" onClick={() => setCreating(true)}>
-            New instance type
+            {t('instanceTypes.new')}
           </Button>
         }
       />
@@ -163,8 +183,8 @@ function InstanceTypesTable() {
               value={draft}
               onChange={setDraft}
               onCommit={commit}
-              hint="name=small* — or plain text"
-              ariaLabel="Search instance types"
+              hint={t('instanceTypes.search.hint')}
+              ariaLabel={t('instanceTypes.search.ariaLabel')}
             />
           </ToolbarItem>
           <ToolbarGroup align={{ default: 'alignEnd' }}>
@@ -181,12 +201,12 @@ function InstanceTypesTable() {
                   setPerPage(nextPerPage)
                   setPage(nextPage)
                 }}
-                titles={{ paginationAriaLabel: 'Instance types pagination' }}
+                titles={{ paginationAriaLabel: t('instanceTypes.pagination.ariaLabel') }}
               />
             </ToolbarItem>
             <ToolbarItem>
               <ColumnPicker
-                columns={COLUMNS}
+                columns={columns}
                 isVisible={prefs.isVisible}
                 onToggle={prefs.toggle}
                 onReset={prefs.reset}
@@ -206,9 +226,9 @@ function InstanceTypesTable() {
       {removing && (
         <ConfirmModal
           isOpen
-          title={`Remove instance type '${removing.name}'?`}
-          body="The instance type is removed permanently. Any VM created from it keeps running — its configuration simply reverts to a custom one."
-          confirmLabel="Remove"
+          title={t('instanceTypes.remove.confirm.title', { name: removing.name })}
+          body={t('instanceTypes.remove.confirm.body')}
+          confirmLabel={t('common.action.remove')}
           isConfirmDisabled={remove.isPending}
           onConfirm={() => {
             const target = removing
@@ -223,43 +243,59 @@ function InstanceTypesTable() {
         <>
           <Skeleton height="2.5rem" style={{ marginBottom: '0.5rem' }} />
           <Skeleton height="2.5rem" style={{ marginBottom: '0.5rem' }} />
-          <Skeleton height="2.5rem" screenreaderText="Loading instance types" />
+          <Skeleton height="2.5rem" screenreaderText={t('instanceTypes.loading')} />
         </>
       )}
 
       {instanceTypes.isError && (
-        <EmptyState titleText="Could not load instance types" status="danger">
+        <EmptyState titleText={t('instanceTypes.error.title')} status="danger">
           <EmptyStateBody>
-            {instanceTypes.error instanceof Error ? instanceTypes.error.message : 'Unknown error'}
+            {instanceTypes.error instanceof Error
+              ? instanceTypes.error.message
+              : t('common.error.unknown')}
           </EmptyStateBody>
-          <Button variant="primary" onClick={() => void instanceTypes.refetch()}>
-            Retry
-          </Button>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="primary" onClick={() => void instanceTypes.refetch()}>
+                {t('common.action.retry')}
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 
       {instanceTypes.isSuccess && items.length === 0 && (
-        <EmptyState titleText={query !== '' ? 'No matching instance types' : 'No instance types'}>
+        <EmptyState
+          titleText={
+            query !== '' ? t('instanceTypes.searchEmpty.title') : t('instanceTypes.empty.title')
+          }
+        >
           <EmptyStateBody>
-            {query !== ''
-              ? 'No instance type matches your search.'
-              : 'Instance types you have permission to see will appear here.'}
+            {query !== '' ? t('instanceTypes.searchEmpty.body') : t('instanceTypes.empty.body')}
           </EmptyStateBody>
-          {query !== '' ? (
-            <Button variant="link" onClick={() => apply('')}>
-              Clear search
-            </Button>
-          ) : (
-            <Button variant="primary" onClick={() => setCreating(true)}>
-              New instance type
-            </Button>
-          )}
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              {query !== '' ? (
+                <Button variant="link" onClick={() => apply('')}>
+                  {t('common.action.clearSearch')}
+                </Button>
+              ) : (
+                <Button variant="primary" onClick={() => setCreating(true)}>
+                  {t('instanceTypes.new')}
+                </Button>
+              )}
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 
       {instanceTypes.isSuccess && items.length > 0 && (
         <div className="app-table-viewport">
-          <Table aria-label="Instance types" variant="compact" {...resizableTableProps(prefs)}>
+          <Table
+            aria-label={t('instanceTypes.table.ariaLabel')}
+            variant="compact"
+            {...resizableTableProps(prefs)}
+          >
             <Thead>
               <Tr>
                 {visibleColumns.map((column, index) => (
@@ -280,7 +316,7 @@ function InstanceTypesTable() {
                     {column.label}
                   </ResizableTh>
                 ))}
-                <Th screenReaderText="Actions" />
+                <Th screenReaderText={t('common.field.actions')} />
               </Tr>
             </Thead>
             <Tbody>
@@ -288,16 +324,16 @@ function InstanceTypesTable() {
                 <Tr key={instanceType.id}>
                   {visibleColumns.map((column) => (
                     <Td key={column.key} dataLabel={column.label}>
-                      {column.cell(instanceType)}
+                      {column.cell(instanceType, t)}
                     </Td>
                   ))}
-                  <Td dataLabel="Actions" isActionCell>
+                  <Td dataLabel={t('common.field.actions')} isActionCell>
                     <ActionsColumn
                       isDisabled={remove.isPending}
                       items={[
-                        { title: 'Edit', onClick: () => setEditing(instanceType) },
+                        { title: t('common.action.edit'), onClick: () => setEditing(instanceType) },
                         {
-                          title: 'Remove',
+                          title: t('common.action.remove'),
                           isDanger: true,
                           onClick: () => setRemoving(instanceType),
                         },
@@ -315,6 +351,7 @@ function InstanceTypesTable() {
 }
 
 export function InstanceTypesPage() {
+  const t = useT()
   // Admin-gated (AppShell marks /instance-types adminOnly). Skeletons cover the
   // pre-capability window (loaded=false) instead of flashing the lock at users
   // who will turn out to be admins.
@@ -333,17 +370,17 @@ export function InstanceTypesPage() {
 
   return (
     <PageSection>
-      <ListPageHeader title="Instance types" />
+      <ListPageHeader title={t('instanceTypes.title')} />
 
       {!loaded && (
         <>
           <Skeleton height="2.5rem" style={{ marginBottom: '0.5rem' }} />
           <Skeleton height="2.5rem" style={{ marginBottom: '0.5rem' }} />
-          <Skeleton height="2.5rem" screenreaderText="Loading instance types" />
+          <Skeleton height="2.5rem" screenreaderText={t('instanceTypes.loading')} />
         </>
       )}
 
-      {loaded && !isAdmin && <NotPermitted what="instance types" />}
+      {loaded && !isAdmin && <NotPermitted what={t('instanceTypes.notPermitted')} />}
     </PageSection>
   )
 }

@@ -26,6 +26,7 @@ import { NotPermitted } from '../components/NotPermitted'
 import { RefreshControl } from '../components/RefreshControl'
 import { SearchInput } from '../components/list-toolbar/SearchInput'
 import { sortRows, useColumnSort } from '../hooks/useColumnSort'
+import { useT } from '../i18n/useT'
 import {
   SchedulingPolicyFormModal,
   type SchedulingPolicyEditorMode,
@@ -40,19 +41,13 @@ interface EditorState {
   policy?: SchedulingPolicy
 }
 
-// The engine built-ins ship locked; Edit/Remove stay disabled with these
-// explaining tooltips (Clone is the built-in escape hatch) — the RolesPage
-// immutable-role posture. Strings are hardcoded English pending the dedicated
-// i18n pass.
-const LOCKED_EDIT_REASON = 'Built-in scheduling policies are locked and cannot be edited.'
-const LOCKED_REMOVE_REASON = 'Built-in scheduling policies are locked and cannot be removed.'
-
 // The Scheduling Policies admin page: webadmin's Configure → Scheduling
 // Policies. Locked (built-in) policies offer Clone only; custom policies get
 // the full Edit / Clone / Remove set.
 const POLICY_KEYS = ['name', 'description', 'type'] as const
 
 export function SchedulingPoliciesPage() {
+  const t = useT()
   const { loaded, isAdmin } = useCapabilities()
   const policies = useSchedulingPoliciesAdmin()
   const remove = useDeleteSchedulingPolicy()
@@ -62,7 +57,7 @@ export function SchedulingPoliciesPage() {
   const [editor, setEditor] = useState<EditorState | null>(null)
   const [removing, setRemoving] = useState<SchedulingPolicy | null>(null)
   // Client-side name/description filter — the policy list is small, so no
-  // engine DSL (the RolesPage posture). Hardcoded English pending the i18n pass.
+  // engine DSL (the RolesPage posture).
   const [filter, setFilter] = useState('')
 
   // The nav already hides Scheduling Policies from user-tier accounts; this
@@ -74,10 +69,16 @@ export function SchedulingPoliciesPage() {
   if (loaded && !isAdmin) {
     return (
       <PageSection>
-        <NotPermitted what="Scheduling policies" />
+        <NotPermitted what={t('schedulingPolicies.notPermitted')} />
       </PageSection>
     )
   }
+
+  // The engine built-ins ship locked; Edit/Remove stay disabled with these
+  // explaining tooltips (Clone is the built-in escape hatch) — the RolesPage
+  // immutable-role posture.
+  const lockedEditReason = t('schedulingPolicies.locked.editReason')
+  const lockedRemoveReason = t('schedulingPolicies.locked.removeReason')
 
   const total = policies.data?.length ?? 0
   const needle = filter.trim().toLowerCase()
@@ -87,6 +88,8 @@ export function SchedulingPoliciesPage() {
       (policy.name ?? '').toLowerCase().includes(needle) ||
       (policy.description ?? '').toLowerCase().includes(needle),
   )
+  // 'Locked'/'Custom' here are sort keys (group locked vs custom rows), not
+  // rendered text — the visible Label resolves through i18n below.
   const sortedPolicies = sortRows(items, sort, (policy, key) =>
     key === 'name'
       ? (policy.name ?? policy.id)
@@ -102,11 +105,11 @@ export function SchedulingPoliciesPage() {
       {/* RefreshControl rides the header actions; the search toolbar sits
           below it (the RolesPage shape). */}
       <ListPageHeader
-        title="Scheduling policies"
+        title={t('schedulingPolicies.title')}
         actions={
           <>
             <Button variant="primary" onClick={() => setEditor({ mode: 'create' })}>
-              New policy
+              {t('schedulingPolicies.new')}
             </Button>
             <RefreshControl />
           </>
@@ -120,8 +123,8 @@ export function SchedulingPoliciesPage() {
               value={filter}
               onChange={setFilter}
               onCommit={() => {}}
-              hint="Filter by name"
-              ariaLabel="Filter scheduling policies by name"
+              hint={t('schedulingPolicies.filter.hint')}
+              ariaLabel={t('schedulingPolicies.filter.ariaLabel')}
             />
           </ToolbarItem>
         </ToolbarContent>
@@ -131,31 +134,32 @@ export function SchedulingPoliciesPage() {
         <>
           <Skeleton height="2.5rem" style={{ marginBottom: '0.5rem' }} />
           <Skeleton height="2.5rem" style={{ marginBottom: '0.5rem' }} />
-          <Skeleton height="2.5rem" screenreaderText="Loading scheduling policies" />
+          <Skeleton height="2.5rem" screenreaderText={t('schedulingPolicies.loading')} />
         </>
       )}
 
       {loaded && policies.isError && (
-        <EmptyState titleText="Could not load scheduling policies" status="danger">
+        <EmptyState titleText={t('schedulingPolicies.error.title')} status="danger">
           <EmptyStateBody>
             {policies.error instanceof Error ? policies.error.message : ''}
           </EmptyStateBody>
-          <Button variant="primary" onClick={() => void policies.refetch()}>
-            Retry
-          </Button>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="primary" onClick={() => void policies.refetch()}>
+                {t('common.action.retry')}
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 
       {loaded && policies.isSuccess && total === 0 && (
-        <EmptyState titleText="No scheduling policies">
-          <EmptyStateBody>
-            Scheduling policies control how the engine places and balances VMs across the hosts of a
-            cluster.
-          </EmptyStateBody>
+        <EmptyState titleText={t('schedulingPolicies.empty.title')}>
+          <EmptyStateBody>{t('schedulingPolicies.empty.body')}</EmptyStateBody>
           <EmptyStateFooter>
             <EmptyStateActions>
               <Button variant="primary" onClick={() => setEditor({ mode: 'create' })}>
-                New policy
+                {t('schedulingPolicies.new')}
               </Button>
             </EmptyStateActions>
           </EmptyStateFooter>
@@ -163,23 +167,25 @@ export function SchedulingPoliciesPage() {
       )}
 
       {loaded && policies.isSuccess && total > 0 && items.length === 0 && (
-        <EmptyState titleText="Nothing matches the filter">
-          <EmptyStateBody>
-            <Button variant="link" isInline onClick={() => setFilter('')}>
-              Clear filter
-            </Button>
-          </EmptyStateBody>
+        <EmptyState titleText={t('common.state.searchEmpty.title')}>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="link" isInline onClick={() => setFilter('')}>
+                {t('common.action.clearFilter')}
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 
       {loaded && policies.isSuccess && items.length > 0 && (
-        <Table aria-label="Scheduling policies" variant="compact">
+        <Table aria-label={t('schedulingPolicies.table.ariaLabel')} variant="compact">
           <Thead>
             <Tr>
-              <Th sort={thSort(POLICY_KEYS, 0)}>Name</Th>
-              <Th sort={thSort(POLICY_KEYS, 1)}>Description</Th>
-              <Th sort={thSort(POLICY_KEYS, 2)}>Type</Th>
-              <Th screenReaderText="Actions" />
+              <Th sort={thSort(POLICY_KEYS, 0)}>{t('common.field.name')}</Th>
+              <Th sort={thSort(POLICY_KEYS, 1)}>{t('common.field.description')}</Th>
+              <Th sort={thSort(POLICY_KEYS, 2)}>{t('common.field.type')}</Th>
+              <Th screenReaderText={t('common.field.actions')} />
             </Tr>
           </Thead>
           <Tbody>
@@ -187,42 +193,44 @@ export function SchedulingPoliciesPage() {
               const locked = isLockedPolicy(policy)
               return (
                 <Tr key={policy.id}>
-                  <Td dataLabel="Name">
+                  <Td dataLabel={t('common.field.name')}>
                     {policy.name ?? policy.id}
-                    {isDefaultPolicy(policy) ? ' (default)' : ''}
+                    {isDefaultPolicy(policy) ? t('schedulingPolicies.defaultSuffix') : ''}
                   </Td>
-                  <Td dataLabel="Description">{policy.description || '—'}</Td>
-                  <Td dataLabel="Type">
+                  <Td dataLabel={t('common.field.description')}>{policy.description || '—'}</Td>
+                  <Td dataLabel={t('common.field.type')}>
                     <Label
                       isCompact
                       color={locked ? 'grey' : 'green'}
                       icon={locked ? <LockIcon /> : undefined}
                     >
-                      {locked ? 'Locked' : 'Custom'}
+                      {locked
+                        ? t('schedulingPolicies.type.locked')
+                        : t('schedulingPolicies.type.custom')}
                     </Label>
                   </Td>
-                  <Td dataLabel="Actions" isActionCell>
+                  <Td dataLabel={t('common.field.actions')} isActionCell>
                     <ActionsColumn
                       isDisabled={remove.isPending}
                       items={[
                         {
-                          title: 'Edit',
+                          title: t('common.action.edit'),
                           // aria-disabled (not disabled) keeps hover alive so
                           // the explaining tooltip can show; PF still blocks
                           // the click (RolesPage idiom).
                           isAriaDisabled: locked,
-                          tooltipProps: locked ? { content: LOCKED_EDIT_REASON } : undefined,
+                          tooltipProps: locked ? { content: lockedEditReason } : undefined,
                           onClick: () => setEditor({ mode: 'edit', policy }),
                         },
                         {
-                          title: 'Clone',
+                          title: t('schedulingPolicies.action.clone'),
                           onClick: () => setEditor({ mode: 'clone', policy }),
                         },
                         {
-                          title: 'Remove',
+                          title: t('common.action.remove'),
                           isDanger: true,
                           isAriaDisabled: locked,
-                          tooltipProps: locked ? { content: LOCKED_REMOVE_REASON } : undefined,
+                          tooltipProps: locked ? { content: lockedRemoveReason } : undefined,
                           onClick: () => setRemoving(policy),
                         },
                       ]}
@@ -246,9 +254,11 @@ export function SchedulingPoliciesPage() {
       {removing && (
         <ConfirmModal
           isOpen
-          title={`Remove scheduling policy '${removing.name ?? removing.id}'?`}
-          body="The policy is permanently removed. A policy still assigned to a cluster cannot be removed — move those clusters to another policy first, or the engine rejects the removal. This cannot be undone."
-          confirmLabel="Remove"
+          title={t('schedulingPolicies.remove.confirm.title', {
+            name: removing.name ?? removing.id,
+          })}
+          body={t('schedulingPolicies.remove.confirm.body')}
+          confirmLabel={t('common.action.remove')}
           isConfirmDisabled={remove.isPending}
           onConfirm={() => {
             const target = removing

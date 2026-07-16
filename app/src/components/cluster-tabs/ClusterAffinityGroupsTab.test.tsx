@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { renderToStaticMarkup } from 'react-dom/server'
+import { IntlProvider } from 'react-intl'
+import { enMessages } from '../../i18n/messages/en'
 import type { ReactNode } from 'react'
 import type { UseQueryResult } from '@tanstack/react-query'
 import type { ClusterAffinityGroup } from '../../api/resources/clusters'
@@ -101,7 +103,9 @@ const GROUPS = [
 
 function render() {
   return renderToStaticMarkup(
-    <ClusterAffinityGroupsTab clusterId="cluster-1" clusterName="Default" />,
+    <IntlProvider locale="en" messages={enMessages}>
+      <ClusterAffinityGroupsTab clusterId="cluster-1" clusterName="Default" />
+    </IntlProvider>,
   )
 }
 

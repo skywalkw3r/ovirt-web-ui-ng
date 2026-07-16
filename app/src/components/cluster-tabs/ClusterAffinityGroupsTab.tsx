@@ -16,6 +16,7 @@ import { ActionsColumn, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/reac
 import type { ClusterAffinityGroup } from '../../api/resources/clusters'
 import { useClusterAffinityGroups } from '../../hooks/useClusterDetail'
 import { useDeleteAffinityGroup } from '../../hooks/useClusterMutations'
+import { useT } from '../../i18n/useT'
 import { AffinityGroupModal } from '../affinity/AffinityGroupModal'
 import { ConfirmModal } from '../ConfirmModal'
 
@@ -39,6 +40,7 @@ export function ClusterAffinityGroupsTab({
 }) {
   const affinityGroups = useClusterAffinityGroups(clusterId)
   const remove = useDeleteAffinityGroup()
+  const t = useT()
 
   // create when the flag is set; edit when a group is set; removing gates the
   // destructive ConfirmModal per project rule. Only one is up at a time.
@@ -54,7 +56,7 @@ export function ClusterAffinityGroupsTab({
             <ToolbarGroup align={{ default: 'alignEnd' }}>
               <ToolbarItem>
                 <Button variant="primary" onClick={() => setCreating(true)}>
-                  New affinity group
+                  {t('clusterAffinityGroups.new')}
                 </Button>
               </ToolbarItem>
             </ToolbarGroup>
@@ -65,28 +67,34 @@ export function ClusterAffinityGroupsTab({
       {affinityGroups.isPending && (
         <>
           <Skeleton height="2.5rem" style={{ marginBottom: '0.5rem' }} />
-          <Skeleton height="2.5rem" screenreaderText="Loading affinity groups" />
+          <Skeleton height="2.5rem" screenreaderText={t('clusterAffinityGroups.loading')} />
         </>
       )}
 
       {affinityGroups.isError && (
-        <EmptyState titleText="Could not load affinity groups" status="danger">
+        <EmptyState titleText={t('clusterAffinityGroups.error.title')} status="danger">
           <EmptyStateBody>
-            {affinityGroups.error instanceof Error ? affinityGroups.error.message : 'Unknown error'}
+            {affinityGroups.error instanceof Error
+              ? affinityGroups.error.message
+              : t('common.error.unknown')}
           </EmptyStateBody>
-          <Button variant="primary" onClick={() => void affinityGroups.refetch()}>
-            Retry
-          </Button>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="primary" onClick={() => void affinityGroups.refetch()}>
+                {t('common.action.retry')}
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 
       {affinityGroups.isSuccess && affinityGroups.data.length === 0 && (
-        <EmptyState titleText="No affinity groups">
-          <EmptyStateBody>No VM affinity groups are defined on this cluster.</EmptyStateBody>
+        <EmptyState titleText={t('clusterAffinityGroups.empty.title')}>
+          <EmptyStateBody>{t('clusterAffinityGroups.empty.body')}</EmptyStateBody>
           <EmptyStateFooter>
             <EmptyStateActions>
               <Button variant="primary" onClick={() => setCreating(true)}>
-                New affinity group
+                {t('clusterAffinityGroups.new')}
               </Button>
             </EmptyStateActions>
           </EmptyStateFooter>
@@ -94,38 +102,40 @@ export function ClusterAffinityGroupsTab({
       )}
 
       {affinityGroups.isSuccess && affinityGroups.data.length > 0 && (
-        <Table aria-label="Affinity groups" variant="compact">
+        <Table aria-label={t('clusterAffinityGroups.table.ariaLabel')} variant="compact">
           <Thead>
             <Tr>
-              <Th>Name</Th>
-              <Th>Polarity</Th>
-              <Th>Enforcing</Th>
-              <Th screenReaderText="Actions" />
+              <Th>{t('common.field.name')}</Th>
+              <Th>{t('clusterAffinityGroups.column.polarity')}</Th>
+              <Th>{t('clusterAffinityGroups.column.enforcing')}</Th>
+              <Th screenReaderText={t('common.field.actions')} />
             </Tr>
           </Thead>
           <Tbody>
             {affinityGroups.data.map((group) => (
               <Tr key={group.id}>
-                <Td dataLabel="Name">{group.name ?? '—'}</Td>
-                <Td dataLabel="Polarity">
+                <Td dataLabel={t('common.field.name')}>{group.name ?? '—'}</Td>
+                <Td dataLabel={t('clusterAffinityGroups.column.polarity')}>
                   {group.positive === true ? (
                     <Label isCompact color="green">
-                      Positive
+                      {t('clusterAffinityGroups.polarity.positive')}
                     </Label>
                   ) : (
                     <Label isCompact color="orange">
-                      Negative
+                      {t('clusterAffinityGroups.polarity.negative')}
                     </Label>
                   )}
                 </Td>
-                <Td dataLabel="Enforcing">{group.enforcing === true ? 'Yes' : 'No'}</Td>
-                <Td dataLabel="Actions" isActionCell>
+                <Td dataLabel={t('clusterAffinityGroups.column.enforcing')}>
+                  {group.enforcing === true ? t('common.yes') : t('common.no')}
+                </Td>
+                <Td dataLabel={t('common.field.actions')} isActionCell>
                   <ActionsColumn
                     isDisabled={remove.isPending}
                     items={[
-                      { title: 'Edit', onClick: () => setEditing(group) },
+                      { title: t('common.action.edit'), onClick: () => setEditing(group) },
                       {
-                        title: 'Remove',
+                        title: t('common.action.remove'),
                         isDanger: true,
                         onClick: () => setRemoving(group),
                       },
@@ -158,9 +168,11 @@ export function ClusterAffinityGroupsTab({
       {removing && (
         <ConfirmModal
           isOpen
-          title={`Remove affinity group '${removing.name ?? removing.id}'?`}
-          body="The affinity group is permanently removed and its scheduling rule no longer applies. This cannot be undone."
-          confirmLabel="Remove"
+          title={t('clusterAffinityGroups.remove.confirm.title', {
+            name: removing.name ?? removing.id,
+          })}
+          body={t('clusterAffinityGroups.remove.confirm.body')}
+          confirmLabel={t('common.action.remove')}
           isConfirmDisabled={remove.isPending}
           onConfirm={() => {
             const target = removing

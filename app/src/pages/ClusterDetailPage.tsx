@@ -5,7 +5,9 @@ import {
   BreadcrumbItem,
   Button,
   EmptyState,
+  EmptyStateActions,
   EmptyStateBody,
+  EmptyStateFooter,
   PageSection,
   Skeleton,
   Tab,
@@ -16,8 +18,8 @@ import {
 import { Link, useNavigate } from '@tanstack/react-router'
 import { ApiError } from '../api/transport'
 import { useCapabilities } from '../auth/capabilities'
+import { useT } from '../i18n/useT'
 import { ClusterActionsBar } from '../components/cluster-actions/ClusterActionsBar'
-import { ClusterGuideModal } from '../components/guide-me/ClusterGuideModal'
 import { ListPageHeader } from '../components/ListPageHeader'
 import { NotPermitted } from '../components/NotPermitted'
 import { ClusterAffinityGroupsTab } from '../components/cluster-tabs/ClusterAffinityGroupsTab'
@@ -35,12 +37,12 @@ import { useCluster } from '../hooks/useClusterDetail'
 import { clusterDetailRoute } from '../routes/router'
 
 export function ClusterDetailPage() {
+  const t = useT()
   const { clusterId } = clusterDetailRoute.useParams()
   const { loaded, isAdmin } = useCapabilities()
   const cluster = useCluster(clusterId)
   const navigate = useNavigate()
   const [activeKey, setActiveKey] = useState<string | number>('general')
-  const [guiding, setGuiding] = useState(false)
   // History-only Monitoring tab — pure DWH/Grafana, so it only exists when a
   // cluster query spec is configured AND the availability gate shows the
   // surface (see HostDetailPage for the same pattern).
@@ -56,7 +58,7 @@ export function ClusterDetailPage() {
   if (loaded && !isAdmin) {
     return (
       <PageSection>
-        <NotPermitted what="Clusters" />
+        <NotPermitted what={t('clusters.title')} />
       </PageSection>
     )
   }
@@ -69,31 +71,37 @@ export function ClusterDetailPage() {
             width="30%"
             height="2rem"
             style={{ marginBottom: '1rem' }}
-            screenreaderText="Loading cluster"
+            screenreaderText={t('clusterDetail.loading')}
           />
           <Skeleton height="12rem" />
         </>
       )}
 
       {cluster.isError && notFound && (
-        <EmptyState titleText="Cluster not found" status="warning">
-          <EmptyStateBody>
-            No cluster with ID {clusterId} is visible to you — it may have been removed.
-          </EmptyStateBody>
-          <Button variant="primary" onClick={() => void navigate({ to: '/clusters' })}>
-            Back to clusters
-          </Button>
+        <EmptyState titleText={t('clusterDetail.notFound.title')} status="warning">
+          <EmptyStateBody>{t('clusterDetail.notFound.body', { id: clusterId })}</EmptyStateBody>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="primary" onClick={() => void navigate({ to: '/clusters' })}>
+                {t('clusterDetail.notFound.back')}
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 
       {cluster.isError && !notFound && (
-        <EmptyState titleText="Could not load cluster" status="danger">
+        <EmptyState titleText={t('clusterDetail.error.title')} status="danger">
           <EmptyStateBody>
-            {cluster.error instanceof Error ? cluster.error.message : 'Unknown error'}
+            {cluster.error instanceof Error ? cluster.error.message : t('common.error.unknown')}
           </EmptyStateBody>
-          <Button variant="primary" onClick={() => void cluster.refetch()}>
-            Retry
-          </Button>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="primary" onClick={() => void cluster.refetch()}>
+                {t('common.action.retry')}
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 
@@ -106,7 +114,7 @@ export function ClusterDetailPage() {
                 <BreadcrumbItem
                   render={({ className }) => (
                     <Link to="/clusters" className={className}>
-                      Clusters
+                      {t('clusters.title')}
                     </Link>
                   )}
                 />
@@ -114,21 +122,12 @@ export function ClusterDetailPage() {
               </Breadcrumb>
             }
             actions={
-              <>
-                <Button variant="secondary" onClick={() => setGuiding(true)}>
-                  <FormattedMessage id="guide.button" />
-                </Button>
-                <ClusterActionsBar
-                  cluster={cluster.data}
-                  onRemoved={() => void navigate({ to: '/clusters' })}
-                />
-              </>
+              <ClusterActionsBar
+                cluster={cluster.data}
+                onRemoved={() => void navigate({ to: '/clusters' })}
+              />
             }
           />
-
-          {guiding && (
-            <ClusterGuideModal cluster={cluster.data} onClose={() => setGuiding(false)} />
-          )}
 
           {/* unmountOnExit keeps hidden tabs from polling — a mounted tab's
               query observers would otherwise keep their refetchInterval alive */}
@@ -137,9 +136,12 @@ export function ClusterDetailPage() {
             onSelect={(_event, tabKey) => setActiveKey(tabKey)}
             mountOnEnter
             unmountOnExit
-            aria-label="cluster details tabs"
+            aria-label={t('clusterDetail.tabs.ariaLabel')}
           >
-            <Tab eventKey="general" title={<TabTitleText>General</TabTitleText>}>
+            <Tab
+              eventKey="general"
+              title={<TabTitleText>{t('clusterDetail.tab.general')}</TabTitleText>}
+            >
               <TabContentBody hasPadding>
                 <ClusterGeneralTab cluster={cluster.data} />
               </TabContentBody>
@@ -158,7 +160,10 @@ export function ClusterDetailPage() {
                 </TabContentBody>
               </Tab>
             )}
-            <Tab eventKey="networks" title={<TabTitleText>Logical Networks</TabTitleText>}>
+            <Tab
+              eventKey="networks"
+              title={<TabTitleText>{t('clusterDetail.tab.networks')}</TabTitleText>}
+            >
               <TabContentBody hasPadding>
                 <ClusterNetworksTab
                   clusterId={clusterId}
@@ -166,32 +171,47 @@ export function ClusterDetailPage() {
                 />
               </TabContentBody>
             </Tab>
-            <Tab eventKey="hosts" title={<TabTitleText>Hosts</TabTitleText>}>
+            <Tab
+              eventKey="hosts"
+              title={<TabTitleText>{t('clusterDetail.tab.hosts')}</TabTitleText>}
+            >
               <TabContentBody hasPadding>
                 <ClusterHostsTab clusterId={clusterId} />
               </TabContentBody>
             </Tab>
-            <Tab eventKey="vms" title={<TabTitleText>Virtual Machines</TabTitleText>}>
+            <Tab eventKey="vms" title={<TabTitleText>{t('clusterDetail.tab.vms')}</TabTitleText>}>
               <TabContentBody hasPadding>
                 <ClusterVmsTab clusterId={clusterId} />
               </TabContentBody>
             </Tab>
-            <Tab eventKey="affinity-groups" title={<TabTitleText>Affinity Groups</TabTitleText>}>
+            <Tab
+              eventKey="affinity-groups"
+              title={<TabTitleText>{t('clusterDetail.tab.affinityGroups')}</TabTitleText>}
+            >
               <TabContentBody hasPadding>
                 <ClusterAffinityGroupsTab clusterId={clusterId} clusterName={cluster.data.name} />
               </TabContentBody>
             </Tab>
-            <Tab eventKey="affinity-labels" title={<TabTitleText>Affinity Labels</TabTitleText>}>
+            <Tab
+              eventKey="affinity-labels"
+              title={<TabTitleText>{t('clusterDetail.tab.affinityLabels')}</TabTitleText>}
+            >
               <TabContentBody hasPadding>
                 <ClusterAffinityLabelsTab clusterId={clusterId} clusterName={cluster.data.name} />
               </TabContentBody>
             </Tab>
-            <Tab eventKey="cpu-profiles" title={<TabTitleText>CPU Profiles</TabTitleText>}>
+            <Tab
+              eventKey="cpu-profiles"
+              title={<TabTitleText>{t('clusterDetail.tab.cpuProfiles')}</TabTitleText>}
+            >
               <TabContentBody hasPadding>
                 <ClusterCpuProfilesTab clusterId={clusterId} />
               </TabContentBody>
             </Tab>
-            <Tab eventKey="permissions" title={<TabTitleText>Permissions</TabTitleText>}>
+            <Tab
+              eventKey="permissions"
+              title={<TabTitleText>{t('clusterDetail.tab.permissions')}</TabTitleText>}
+            >
               <TabContentBody hasPadding>
                 <ClusterPermissionsTab clusterId={clusterId} />
               </TabContentBody>

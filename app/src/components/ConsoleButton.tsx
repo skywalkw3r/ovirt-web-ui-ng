@@ -97,9 +97,11 @@ export function ConsoleButton({ vm }: { vm: Vm }) {
   // (proxy + fresh ~120s tickets) itself, so a transient 409 (display not
   // ready right after VM start) surfaces in the console tab's error state.
   //
-  // No `noopener`: the new tab has no in-memory token (memory-only by design)
-  // and asks its opener for one over an origin-checked postMessage, so it needs
-  // window.opener. Same origin, so this is not a reverse-tabnabbing exposure.
+  // No `noopener`: the new tab may start with no token — the session store is
+  // per-tab (memory + a sessionStorage mirror; see api/session.ts) and a
+  // window.open'd tab doesn't reliably inherit it — so it asks its opener for
+  // one over an origin-checked postMessage and needs window.opener. Same
+  // origin, so this is not a reverse-tabnabbing exposure.
   const openInBrowser = () => {
     setIsOpen(false)
     const base = import.meta.env.BASE_URL.replace(/\/$/, '')

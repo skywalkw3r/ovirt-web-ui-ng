@@ -8,7 +8,6 @@ import {
   ChartVoronoiContainer,
 } from '@patternfly/react-charts/victory'
 import {
-  Bullseye,
   Button,
   Card,
   CardBody,
@@ -18,7 +17,7 @@ import {
   EmptyStateBody,
   EmptyStateFooter,
   Gallery,
-  Spinner,
+  Skeleton,
 } from '@patternfly/react-core'
 import { ChartLineIcon, ExternalLinkAltIcon, LockIcon } from '@patternfly/react-icons'
 import { FormattedMessage } from 'react-intl'
@@ -141,10 +140,13 @@ export function HistoryCharts({
   const { query } = useDwhHistory(entity, entityId, range)
 
   if (query.isPending) {
+    // Four states: the pending state is Skeleton (the house data-view idiom),
+    // shaped like the charts Gallery below rather than a bare centered spinner.
     return (
-      <Bullseye style={{ minHeight: '8rem' }}>
-        <Spinner aria-label={t('monitoring.checking')} />
-      </Bullseye>
+      <Gallery hasGutter minWidths={{ default: '440px' }}>
+        <Skeleton height={`${CHART_HEIGHT}px`} screenreaderText={t('monitoring.checking')} />
+        <Skeleton height={`${CHART_HEIGHT}px`} />
+      </Gallery>
     )
   }
   if (query.isError && query.error instanceof GrafanaAuthError) {

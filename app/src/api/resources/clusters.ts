@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { ApiError, request } from '../transport'
+import { fetchWithFollowFallback } from '../followDegrade'
 import { ClusterListSchema, ClusterSchema, type Cluster } from '../schemas/cluster'
 import { NetworkListSchema, type Network } from '../schemas/network'
 
@@ -201,13 +202,21 @@ export async function listClusterAffinityGroups(id: string): Promise<ClusterAffi
 }
 
 // The CRUD table needs each group's members for a Members column, so this read
-// follows vms,hosts. Following a group's OWN subcollections is always safe (they
+// follows vms,hosts. Following a group's OWN subcollections SHOULD be safe (they
 // are present, never OPTIONAL links — unlike a cluster's mac_pool/scheduling
-// links, which 500 when followed). 404-tolerant → [] for a cluster with none.
+// links, which 500 when followed), but that is an untested assumption on the
+// live engine, so a 5xx from the follow degrades to the bare read via
+// fetchWithFollowFallback (the Members column simply renders empty until the
+// follow recovers) rather than failing the tab. 404-tolerant → [] stays with the
+// caller, outside the degrade helper.
 export async function listClusterAffinityGroupsFull(id: string): Promise<ClusterAffinityGroup[]> {
   try {
     const data = ClusterAffinityGroupListSchema.parse(
-      await request(`/clusters/${encodeURIComponent(id)}/affinitygroups?follow=vms,hosts`),
+      await fetchWithFollowFallback(
+        'clusters.affinityGroups.full:vms,hosts',
+        () => request(`/clusters/${encodeURIComponent(id)}/affinitygroups?follow=vms,hosts`),
+        () => request(`/clusters/${encodeURIComponent(id)}/affinitygroups`),
+      ),
     )
     return data.affinity_group ?? []
   } catch (error) {

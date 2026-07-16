@@ -24,10 +24,11 @@ Multi-engine (one console connecting to several hosted engines) is a
 **proxy/external-deploy feature only**: the Containerfile compiles it in
 (`VITE_MULTI_ENGINE=1`); the integrated RPM ships the default build where the
 capability does not exist, so an engine-host install is always single-engine.
-Enabling it on container/OpenShift: `servers` in `config.js` + the
-`CSP_CONNECT_EXTRA` env + one-time CORS enablement on each external engine
-(`engine-cors/README.md`). Overview: `docs/DEPLOY.md` §"Connecting to
-multiple engines".
+Enabling it on container/OpenShift: `servers` in `config.js` — each engine
+either a same-origin `/e/<slug>` proxy path (no CORS) or an absolute https
+origin that needs the `CSP_CONNECT_EXTRA` env plus one-time engine-side CORS
+(`engine-config`). Overview: `docs/DEPLOY.md` §"Connecting to multiple
+engines".
 
 Both serve the app from the **same sub-path**, `/ovirt-engine/web-ui-ng/`, so
 the token-injection flow and all relative API calls behave identically. That
@@ -111,9 +112,10 @@ websocket-proxy with WebSocket upgrade) to `${ENGINE_ORIGIN}`, so the browser
 only ever talks to this one origin. The image listens on **8080** and runs
 unprivileged (no root, no `NET_BIND_SERVICE`).
 
-`proxy_ssl_verify` is **off** by default for lab engines with self-signed certs;
-for production, point `proxy_ssl_trusted_certificate` at the engine CA and turn
-verification on (see the comment in `nginx-sample.conf`).
+`proxy_ssl_verify` is **on** by default (secure-by-default): mount the engine
+CA at `proxy_ssl_trusted_certificate` (`/etc/pki/ovirt-engine/ca.pem`). For a
+lab with self-signed engine certs only, flip it to `off` — the commented
+opt-in in `nginx-sample.conf`, never the shipped default.
 
 ---
 

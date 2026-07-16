@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { ApiError, request } from '../transport'
+import { fetchWithFollowFallback, isFollowDenied, markFollowDenied } from '../followDegrade'
 import { VmStatListSchema, type VmStat } from '../schemas/statistic'
 import { VmListSchema, VmSchema, type Vm } from '../schemas/vm'
 import { VmApplicationListSchema, type VmApplication } from '../schemas/vm-application'
@@ -7,12 +8,15 @@ import { ReportedDeviceListSchema, type ReportedDevice } from '../schemas/report
 import { HostDeviceListSchema, type HostDevice } from '../schemas/host-device'
 import { KatelloErratumListSchema, type Erratum } from '../schemas/erratum'
 
-// follow=tags embeds each VM's assigned tags in the list payload — one call
-// where per-row reads would be N+1 (the VMs page folder filter, counts and
-// label chips all derive from it). LIVE-ENGINE QUIRK (same family as getVm's
-// below): treat a 5xx on a followed list as "engine can't follow this" and
-// retry once bare — the list matters more than the embedded tags, and
-// consumers of vm.tags fall back to per-VM queries when the key is absent.
+// follow=tags,statistics embeds each VM's tags + live stats in the list
+// payload — one call where per-row reads would be N+1 (the VMs page folder
+// filter, counts and label chips all derive from it). LIVE-ENGINE QUIRK (same
+// family as getVm's below): a 5xx on a followed list means "engine can't
+// follow this". Degrade through fetchWithFollowFallback so the denial STICKS
+// for DENIAL_TTL_MS and later poll ticks skip the doomed follow= read entirely
+// instead of re-probing every tick — the list matters more than the embedded
+// extras, and list rows fall back to [] (see vmListColumns) rather than a
+// per-VM tags query once the follow is denied.
 export async function listVms(
   opts: { search?: string; follow?: string; signal?: AbortSignal } = {},
 ): Promise<Vm[]> {
@@ -23,17 +27,16 @@ export async function listVms(
     ].filter((param) => param !== undefined)
     return params.length > 0 ? `?${params.join('&')}` : ''
   }
-  try {
-    const data = VmListSchema.parse(await request(`/vms${queryFor(opts)}`, { signal: opts.signal }))
-    return data.vm ?? []
-  } catch (error) {
-    const retriable = opts.follow !== undefined && error instanceof ApiError && error.status >= 500
-    if (!retriable) throw error
-    const data = VmListSchema.parse(
-      await request(`/vms${queryFor({ search: opts.search })}`, { signal: opts.signal }),
-    )
+  const read = async (o: { search?: string; follow?: string }) => {
+    const data = VmListSchema.parse(await request(`/vms${queryFor(o)}`, { signal: opts.signal }))
     return data.vm ?? []
   }
+  if (opts.follow === undefined) return read(opts)
+  return fetchWithFollowFallback(
+    `vms.list:${opts.follow}`,
+    () => read(opts),
+    () => read({ search: opts.search }),
+  )
 }
 
 // follow=cluster,template,host inlines the linked entities (name, etc.); the
@@ -45,22 +48,36 @@ export async function listVms(
 // `host` link, so the full follow 500s for fresh/down VMs. Degrade
 // progressively: drop `host` first (a down VM has no Run On to show anyway),
 // then statistics (the General tab's Uptime row hides), then go bare.
+//
+// The working step is STICKY so a detail page polled every tick doesn't
+// re-walk (and re-500) the chain each time: a 5xx on a step remembers that
+// step's denial, and the next call jumps straight to the highest step not yet
+// denied. Keyed per VM id, not globally, because the host 500 is a per-VM
+// condition (this VM is down) — a global denial would wrongly strip the host
+// (and statistics) inline from OTHER, running VMs. The bare read carries no
+// follow, is never denied, and always terminates the walk; denials self-heal
+// after DENIAL_TTL_MS, restoring first-discovery.
 export async function getVm(id: string): Promise<Vm> {
   const base = `/vms/${encodeURIComponent(id)}`
-  const paths = [
-    `${base}?follow=cluster,template,host,statistics`,
-    `${base}?follow=cluster,template,statistics`,
-    `${base}?follow=cluster,template`,
-    base,
+  const follows = [
+    'cluster,template,host,statistics',
+    'cluster,template,statistics',
+    'cluster,template',
+    undefined,
   ]
   let lastError: unknown
-  for (const [index, path] of paths.entries()) {
+  for (const [index, follow] of follows.entries()) {
+    const key = follow === undefined ? undefined : `vms.get:${id}:${follow}`
+    if (key !== undefined && isFollowDenied(key)) continue
+    const path = follow === undefined ? base : `${base}?follow=${follow}`
     try {
       return VmSchema.parse(await request(path))
     } catch (error) {
       lastError = error
       const retriable = error instanceof ApiError && error.status >= 500
-      if (!retriable || index === paths.length - 1) throw error
+      if (!retriable) throw error
+      if (key !== undefined) markFollowDenied(key)
+      if (index === follows.length - 1) throw error
     }
   }
   throw lastError
@@ -184,12 +201,22 @@ export async function listVmAffinityGroups(
   clusterId: string,
   vmId: string,
 ): Promise<VmAffinityGroup[]> {
-  try {
-    const data = VmAffinityGroupListSchema.parse(
-      await request(`/clusters/${encodeURIComponent(clusterId)}/affinitygroups?follow=vms`),
-    )
+  const base = `/clusters/${encodeURIComponent(clusterId)}/affinitygroups`
+  const read = async (path: string) => {
+    const data = VmAffinityGroupListSchema.parse(await request(path))
     return (data.affinity_group ?? []).filter((group) =>
       (group.vms?.vm ?? []).some((vm) => vm.id === vmId),
+    )
+  }
+  try {
+    // follow=vms inlines each group's members so membership is a client-side
+    // filter; a 5xx degrades (stickily) to the bare list — members aren't
+    // inlined then, so the filter finds none and the tab shows no groups
+    // rather than erroring. 404 (missing cluster) stays [] outside the helper.
+    return await fetchWithFollowFallback(
+      'affinitygroups:vms',
+      () => read(`${base}?follow=vms`),
+      () => read(base),
     )
   } catch (error) {
     if (error instanceof ApiError && error.status === 404) return []

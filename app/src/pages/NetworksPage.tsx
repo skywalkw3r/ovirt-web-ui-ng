@@ -2,7 +2,9 @@ import { useMemo, useState, type ReactNode } from 'react'
 import {
   Button,
   EmptyState,
+  EmptyStateActions,
   EmptyStateBody,
+  EmptyStateFooter,
   Label,
   LabelGroup,
   PageSection,
@@ -303,9 +305,13 @@ export function NetworksPage() {
           <EmptyStateBody>
             {networks.error instanceof Error ? networks.error.message : t('common.error.unknown')}
           </EmptyStateBody>
-          <Button variant="primary" onClick={() => void networks.refetch()}>
-            {t('common.action.retry')}
-          </Button>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="primary" onClick={() => void networks.refetch()}>
+                {t('common.action.retry')}
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 
@@ -324,9 +330,13 @@ export function NetworksPage() {
             )}
           </EmptyStateBody>
           {query !== '' && (
-            <Button variant="link" onClick={() => apply('')}>
-              {t('common.action.clearSearch')}
-            </Button>
+            <EmptyStateFooter>
+              <EmptyStateActions>
+                <Button variant="link" onClick={() => apply('')}>
+                  {t('common.action.clearSearch')}
+                </Button>
+              </EmptyStateActions>
+            </EmptyStateFooter>
           )}
         </EmptyState>
       )}

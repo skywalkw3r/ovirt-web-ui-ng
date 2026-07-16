@@ -23,7 +23,8 @@ rules) — link to them, don't duplicate them.
 Data flows one way: **transport → schemas → resources → hooks → pages**.
 
 - `api/transport.ts` — single fetch wrapper for `/ovirt-engine/api` (bearer
-  token in memory, `ApiError`). Auth/SSO lives in `api/auth.ts` + `auth/`.
+  token in memory + a per-tab sessionStorage mirror, `ApiError`). Auth/SSO
+  lives in `api/auth.ts` + `auth/`.
 - `servers/registry.ts` — multi-engine: the active engine base ('' =
   same-origin; else an https origin from config.js `servers.list`) prefixing
   every API/SSO call. Config-file-only list (no user-added servers); active
@@ -31,8 +32,9 @@ Data flows one way: **transport → schemas → resources → hooks → pages**.
   binding in sessionStorage beside the token. **Build-gated to proxy/external
   deploys**: only `VITE_MULTI_ENGINE=1` builds (the Containerfile) honor the
   list — the integrated RPM build compiles the capability out and is always
-  single-engine. Engine-side CORS + CSP wiring: `packaging/engine-cors/`,
-  `docs/SECURITY-HEADERS.md` §Multi-engine.
+  single-engine. Each engine is reached same-origin via a `/e/<slug>` proxy
+  path (no CORS) or cross-origin via an https origin (per-engine CORS); CSP
+  wiring in `docs/SECURITY-HEADERS.md` §Multi-engine.
 - `api/schemas/` — zod schemas, one per entity. The live engine serializes
   numbers/booleans as JSON strings, so schemas must coerce both forms.
 - `api/resources/` — one module per REST collection; typed functions that

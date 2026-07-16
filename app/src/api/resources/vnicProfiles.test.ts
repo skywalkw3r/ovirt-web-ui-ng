@@ -99,6 +99,15 @@ describe('listVnicProfileVms', () => {
     mockFetch(200, {})
     await expect(listVnicProfileVms('vnic-01')).resolves.toEqual([])
   })
+
+  it('propagates a 5xx rather than degrading to a false-empty list', async () => {
+    // Membership is computed from the inlined nics, so a bare read can't compute
+    // it — the follow read fails loudly rather than degrading to "no VMs".
+    mockFetch(500, { fault: { reason: 'Internal', detail: 'engine busy' } })
+    const error = await listVnicProfileVms('vnic-01').catch((e: unknown) => e)
+    expect(error).toBeInstanceOf(ApiError)
+    expect(error).toMatchObject({ status: 500 })
+  })
 })
 
 describe('listVnicProfileTemplates', () => {
@@ -129,5 +138,14 @@ describe('listVnicProfileTemplates', () => {
   it('returns [] when the engine omits the template key', async () => {
     mockFetch(200, {})
     await expect(listVnicProfileTemplates('vnic-01')).resolves.toEqual([])
+  })
+
+  it('propagates a 5xx rather than degrading to a false-empty list', async () => {
+    // Same load-bearing follow read as listVnicProfileVms — a 5xx rejects
+    // instead of rendering a false-empty "no templates" list.
+    mockFetch(500, { fault: { reason: 'Internal', detail: 'engine busy' } })
+    const error = await listVnicProfileTemplates('vnic-01').catch((e: unknown) => e)
+    expect(error).toBeInstanceOf(ApiError)
+    expect(error).toMatchObject({ status: 500 })
   })
 })

@@ -162,14 +162,21 @@ export function useErrata() {
 }
 
 // listGlusterVolumes fans out GET /clusters/{id}/glustervolumes per cluster
-// and flattens, tolerating the 404s virt-only clusters answer with.
-export function useGlusterVolumes() {
+// and flattens, tolerating the 404s virt-only clusters answer with. The
+// VolumesPage parity view polls at the 60s admin floor; the Dashboard only
+// needs a probe, so it passes { poll: false } to read the shared
+// ['glustervolumes'] cache without adding that per-cluster fan-out to every
+// Dashboard tick (on virt-only installs each cluster would 404 every tick).
+// staleTime Infinity keeps the probe from refetching the shared entry on
+// mount — whichever consumer mounts first seeds it.
+export function useGlusterVolumes({ poll = true }: { poll?: boolean } = {}) {
   const { isAdmin } = useCapabilities()
-  const refetchInterval = useAdminResourcePollInterval()
+  const pollInterval = useAdminResourcePollInterval()
   return useQuery({
     queryKey: ['glustervolumes'],
     queryFn: () => listGlusterVolumes(),
-    refetchInterval,
+    refetchInterval: poll ? pollInterval : false,
+    staleTime: poll ? 0 : Infinity,
     enabled: isAdmin,
   })
 }

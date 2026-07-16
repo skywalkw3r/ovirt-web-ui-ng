@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { FormGroup, Stack, StackItem, TextInput } from '@patternfly/react-core'
 import type { StorageDomain } from '../../api/schemas/storage-domain'
 import { useDestroyStorageDomain } from '../../hooks/useStorageDomainMutations'
+import { useT } from '../../i18n/useT'
 import { ConfirmModal } from '../ConfirmModal'
 
 // The Destroy modal (webadmin StorageDestroyPopupPresenterWidget). Force-removes
@@ -24,32 +25,28 @@ export function DestroyStorageDomainModal({
   // the list; the list page relies on the invalidation dropping the row.
   onDestroyed?: () => void
 }) {
+  const t = useT()
   const [nameInput, setNameInput] = useState('')
   const destroy = useDestroyStorageDomain()
 
   return (
     <ConfirmModal
       isOpen={isOpen}
-      title={`Destroy ${domain.name}?`}
-      confirmLabel="Destroy"
+      title={t('storage.destroy.title', { name: domain.name })}
+      confirmLabel={t('storage.action.destroy')}
       isConfirmDisabled={nameInput !== domain.name || destroy.isPending}
       body={
         <Stack hasGutter>
-          <StackItem>
-            This force-removes the domain from the engine database without contacting any host. Use
-            it only when the storage is permanently unreachable — the backing data, if any remains,
-            is left untouched and is not recoverable through the engine afterward. This cannot be
-            undone.
-          </StackItem>
+          <StackItem>{t('storage.destroy.body')}</StackItem>
           <StackItem>
             <FormGroup
-              label={`Type "${domain.name}" to confirm`}
+              label={t('storage.confirmName.typeLabel', { name: domain.name })}
               isRequired
               fieldId="destroy-storage-domain-confirm-name"
             >
               <TextInput
                 id="destroy-storage-domain-confirm-name"
-                aria-label="Type the storage domain name to confirm destroy"
+                aria-label={t('storage.destroy.confirmAria')}
                 value={nameInput}
                 onChange={(_event, value) => setNameInput(value)}
               />

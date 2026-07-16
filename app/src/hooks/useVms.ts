@@ -35,7 +35,11 @@ export function useVms(search?: string) {
   const { refreshIntervalMs } = useSettings()
   return useQuery({
     queryKey: ['vms', search ?? ''],
-    queryFn: () => listVms({ search, follow: 'tags,statistics' }),
+    // '' and undefined share the ['vms', ''] cache entry (empty search box,
+    // membership tabs, no-arg callers) — normalize so every observer of that
+    // key issues the identical URL (same-key-same-fn invariant; an empty
+    // search= param would otherwise ride on some observers' reads).
+    queryFn: () => listVms({ search: search || undefined, follow: 'tags,statistics' }),
     refetchInterval: (query) => vmPollIntervalMs(refreshIntervalMs, query.state.data?.length),
   })
 }

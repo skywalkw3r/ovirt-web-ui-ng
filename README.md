@@ -51,8 +51,9 @@ can eventually be retired. It shares **no runtime code** with either.
   integrated RPM stays single-engine; the container build opts in.
 - **Two deploy shapes** — integrated on the engine host (RPM, same-origin SSO)
   *and* standalone (container / OpenShift). See [Deployment](#deployment).
-- **Security-first by construction** — bearer token in memory only, strict CSP
-  from day one, no raw HTML injected into the DOM. See
+- **Security-first by construction** — bearer token held per-tab (memory +
+  sessionStorage, never a cookie), strict CSP from day one, no raw HTML
+  injected into the DOM. See
   [`docs/SECURITY.md`](docs/SECURITY.md) / [`docs/SECURITY-HEADERS.md`](docs/SECURITY-HEADERS.md).
 - **Grafana / Data-Warehouse history** for monitoring charts — an integration
   the original portals didn't offer standalone; some DWH-heavy webadmin
@@ -104,16 +105,17 @@ release/signing in [`docs/RELEASING.md`](docs/RELEASING.md)):
   session token, always single-engine. See
   [`packaging/ovirt-web-ui-ng.spec`](packaging/ovirt-web-ui-ng.spec).
 - **Standalone (container / OpenShift)** — served separately (nginx image),
-  multi-engine-capable; each target engine needs REST + SSO **CORS** and a CSP
-  `connect-src` entry. Manifests in [`packaging/openshift/`](packaging/openshift/),
-  engine-side CORS drop-in in [`packaging/engine-cors/`](packaging/engine-cors/).
+  multi-engine-capable; each engine is reached either through a same-origin
+  `/e/<slug>` proxy path (no CORS) or a direct cross-origin connection (which
+  needs per-engine REST + SSO **CORS** and a CSP `connect-src` entry).
+  Manifests in [`packaging/openshift/`](packaging/openshift/).
 
 ## Repository layout
 
 | Path           | What it is                                                                                                                                                                                                          |
 | -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `app/`         | The console. `npm run dev:mock` runs it against built-in fixtures — no engine needed.                                                                                                                              |
-| `packaging/`   | Deploy artifacts: RPM spec, `Containerfile`, nginx config, `openshift/` manifests, `engine-cors/` drop-in.                                                                                                         |
+| `packaging/`   | Deploy artifacts: RPM spec, `Containerfile`, nginx config, `openshift/` manifests.                                                                                                                                 |
 | `lab/ansible/` | Fully automated single-node oVirt lab: Proxmox VM (nested virt) → CentOS Stream 9 node → self-hosted engine. See its README.                                                                                        |
 | `docs/`        | [`PLAN.md`](docs/PLAN.md) (roadmap, IA), [`COMPONENTS.md`](docs/COMPONENTS.md) (PF6 map + design rules), [`GAP-ANALYSIS.md`](docs/GAP-ANALYSIS.md), [`DEPLOY.md`](docs/DEPLOY.md), [`RELEASING.md`](docs/RELEASING.md), security & lab references. |
 

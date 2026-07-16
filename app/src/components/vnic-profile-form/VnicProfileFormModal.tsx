@@ -32,6 +32,7 @@ import {
   useUpdateVnicProfile,
   useVnicProfilePublicUse,
 } from '../../hooks/useVnicProfileMutations'
+import { useT } from '../../i18n/useT'
 import { FieldHelp } from '../forms/FieldHelp'
 import {
   type VnicProfileDraft,
@@ -71,6 +72,7 @@ export function VnicProfileFormModal({
   onClose: () => void
   onSaved?: () => void
 }) {
+  const t = useT()
   const isEdit = profile !== undefined
   // The network is fixed (read-only text) in edit mode AND when the embedder
   // pre-bound it (the network-detail tab's New button).
@@ -247,7 +249,9 @@ export function VnicProfileFormModal({
   // prefer a friendly name; fall back to an em dash rather than the opaque
   // network GUID while the networks list is still resolving
   const networkName = selectedNetwork?.name ?? '—'
-  const title = isEdit ? `Edit vNIC profile — ${profile.name}` : 'New vNIC profile'
+  const title = isEdit
+    ? t('vnicProfileForm.title.edit', { name: profile.name })
+    : t('vnicProfileForm.title.new')
 
   return (
     <Modal
@@ -260,32 +264,40 @@ export function VnicProfileFormModal({
       <ModalHeader title={title} labelId="vnic-profile-form-title" />
       <ModalBody id="vnic-profile-form-body">
         <Form onSubmit={(event) => event.preventDefault()}>
-          <FormGroup label="Name" isRequired fieldId="vnic-profile-name">
+          <FormGroup label={t('common.field.name')} isRequired fieldId="vnic-profile-name">
             <TextInput
               id="vnic-profile-name"
               isRequired
-              aria-label="vNIC profile name"
+              aria-label={t('vnicProfileForm.aria.name')}
               value={draft.name}
               onChange={(_event, value) => set('name', value)}
             />
           </FormGroup>
 
-          <FormGroup label="Network" isRequired={!networkLocked} fieldId="vnic-profile-network">
+          <FormGroup
+            label={t('nics.column.network')}
+            isRequired={!networkLocked}
+            fieldId="vnic-profile-network"
+          >
             {networkLocked ? (
               <TextInput
                 id="vnic-profile-network"
-                aria-label="Network"
+                aria-label={t('nics.column.network')}
                 value={networkName}
                 readOnlyVariant="default"
               />
             ) : (
               <FormSelect
                 id="vnic-profile-network"
-                aria-label="Network"
+                aria-label={t('nics.column.network')}
                 value={draft.networkId}
                 onChange={(_event, value) => set('networkId', value)}
               >
-                <FormSelectOption value="" label="Select a network" isDisabled />
+                <FormSelectOption
+                  value=""
+                  label={t('vnicProfileForm.network.placeholder')}
+                  isDisabled
+                />
                 {(networks.data ?? []).map((network) => {
                   const dcName = dataCenters.data?.find(
                     (dc) => dc.id === network.data_center?.id,
@@ -305,16 +317,14 @@ export function VnicProfileFormModal({
           <FormGroup fieldId="vnic-profile-passthrough">
             <Switch
               id="vnic-profile-passthrough"
-              label="Passthrough (SR-IOV)"
-              aria-label="Passthrough"
+              label={t('vnicProfileForm.passthrough.label')}
+              aria-label={t('vnicProfileForm.passthrough')}
               isChecked={draft.passthrough}
               onChange={(_event, checked) => togglePassthrough(checked)}
             />
             <FormHelperText>
               <HelperText>
-                <HelperTextItem>
-                  Passthrough clears and locks port mirroring, network filter, and QoS.
-                </HelperTextItem>
+                <HelperTextItem>{t('vnicProfileForm.passthrough.hint')}</HelperTextItem>
               </HelperText>
             </FormHelperText>
           </FormGroup>
@@ -322,8 +332,8 @@ export function VnicProfileFormModal({
           <FormGroup fieldId="vnic-profile-port-mirroring">
             <Switch
               id="vnic-profile-port-mirroring"
-              label="Port mirroring"
-              aria-label="Port mirroring"
+              label={t('networkVnic.column.portMirroring')}
+              aria-label={t('networkVnic.column.portMirroring')}
               isChecked={draft.portMirroring}
               isDisabled={draft.passthrough}
               onChange={(_event, checked) => set('portMirroring', checked)}
@@ -331,21 +341,24 @@ export function VnicProfileFormModal({
             {draft.passthrough && (
               <FormHelperText>
                 <HelperText>
-                  <HelperTextItem>Not available while passthrough is enabled.</HelperTextItem>
+                  <HelperTextItem>{t('vnicProfileForm.passthroughLocked')}</HelperTextItem>
                 </HelperText>
               </FormHelperText>
             )}
           </FormGroup>
 
-          <FormGroup label="Network filter" fieldId="vnic-profile-network-filter">
+          <FormGroup
+            label={t('vnicProfileForm.networkFilter')}
+            fieldId="vnic-profile-network-filter"
+          >
             <FormSelect
               id="vnic-profile-network-filter"
-              aria-label="Network filter"
+              aria-label={t('vnicProfileForm.networkFilter')}
               value={draft.networkFilterId}
               isDisabled={draft.passthrough}
               onChange={(_event, value) => set('networkFilterId', value)}
             >
-              <FormSelectOption value="" label="No filter" />
+              <FormSelectOption value="" label={t('vnicProfileForm.networkFilter.none')} />
               {(filters.data ?? []).map((filter) => (
                 <FormSelectOption
                   key={filter.id}
@@ -357,21 +370,21 @@ export function VnicProfileFormModal({
             {draft.passthrough && (
               <FormHelperText>
                 <HelperText>
-                  <HelperTextItem>Not available while passthrough is enabled.</HelperTextItem>
+                  <HelperTextItem>{t('vnicProfileForm.passthroughLocked')}</HelperTextItem>
                 </HelperText>
               </FormHelperText>
             )}
           </FormGroup>
 
-          <FormGroup label="QoS" fieldId="vnic-profile-qos">
+          <FormGroup label={t('vnicProfileForm.qos')} fieldId="vnic-profile-qos">
             <FormSelect
               id="vnic-profile-qos"
-              aria-label="QoS"
+              aria-label={t('vnicProfileForm.qos')}
               value={draft.qosId}
               isDisabled={draft.passthrough || networkDcId === undefined}
               onChange={(_event, value) => set('qosId', value)}
             >
-              <FormSelectOption value="" label="No QoS" />
+              <FormSelectOption value="" label={t('vnicProfileForm.qos.none')} />
               {networkQoss.map((qos) => (
                 <FormSelectOption
                   key={qos.id}
@@ -383,14 +396,14 @@ export function VnicProfileFormModal({
             {draft.passthrough ? (
               <FormHelperText>
                 <HelperText>
-                  <HelperTextItem>Not available while passthrough is enabled.</HelperTextItem>
+                  <HelperTextItem>{t('vnicProfileForm.passthroughLocked')}</HelperTextItem>
                 </HelperText>
               </FormHelperText>
             ) : (
               networkDcId === undefined && (
                 <FormHelperText>
                   <HelperText>
-                    <HelperTextItem>Choose a network to list its QoS profiles.</HelperTextItem>
+                    <HelperTextItem>{t('vnicProfileForm.qos.chooseNetwork')}</HelperTextItem>
                   </HelperText>
                 </FormHelperText>
               )
@@ -401,8 +414,8 @@ export function VnicProfileFormModal({
             <FormGroup fieldId="vnic-profile-migratable">
               <Switch
                 id="vnic-profile-migratable"
-                label="Migratable"
-                aria-label="Migratable"
+                label={t('vnicProfileForm.migratable')}
+                aria-label={t('vnicProfileForm.migratable')}
                 isChecked={draft.migratable}
                 onChange={(_event, checked) =>
                   setDraft((current) => ({
@@ -416,14 +429,14 @@ export function VnicProfileFormModal({
           )}
 
           {draft.passthrough && draft.migratable && (
-            <FormGroup label="Failover vNIC profile" fieldId="vnic-profile-failover">
+            <FormGroup label={t('vnicProfileForm.failover')} fieldId="vnic-profile-failover">
               <FormSelect
                 id="vnic-profile-failover"
-                aria-label="Failover vNIC profile"
+                aria-label={t('vnicProfileForm.failover')}
                 value={draft.failoverId}
                 onChange={(_event, value) => set('failoverId', value)}
               >
-                <FormSelectOption value="" label="No failover" />
+                <FormSelectOption value="" label={t('vnicProfileForm.failover.none')} />
                 {failoverOptions.map((entry) => (
                   <FormSelectOption key={entry.id} value={entry.id} label={entry.name} />
                 ))}
@@ -432,8 +445,7 @@ export function VnicProfileFormModal({
                 <FormHelperText>
                   <HelperText>
                     <HelperTextItem variant="warning">
-                      A failover profile cannot be removed here — the engine offers no clear path.
-                      Choosing a different profile still works.
+                      {t('vnicProfileForm.failover.warning')}
                     </HelperTextItem>
                   </HelperText>
                 </FormHelperText>
@@ -441,10 +453,10 @@ export function VnicProfileFormModal({
             </FormGroup>
           )}
 
-          <FormGroup label="Description" fieldId="vnic-profile-description">
+          <FormGroup label={t('common.field.description')} fieldId="vnic-profile-description">
             <TextInput
               id="vnic-profile-description"
-              aria-label="vNIC profile description"
+              aria-label={t('vnicProfileForm.aria.description')}
               value={draft.description}
               onChange={(_event, value) => set('description', value)}
             />
@@ -455,12 +467,12 @@ export function VnicProfileFormModal({
               OVN 'security_groups' or vdsm 'queues' properties). Removing every
               row clears the set on save — see vnicProfileDraft.draftToPayload. */}
           <FormGroup
-            label="Custom properties"
+            label={t('vnicProfileForm.customProperties')}
             fieldId="vnic-profile-custom-properties"
             labelHelp={
               <FieldHelp
-                field="Custom properties"
-                content="Key/value pairs passed to the vNIC's device hooks on the host, such as queues or security_groups. Available keys depend on the engine's custom device properties configuration."
+                field={t('vnicProfileForm.customProperties')}
+                content={t('fieldHelp.vnicProfile.customProperties')}
               />
             }
           >
@@ -469,8 +481,8 @@ export function VnicProfileFormModal({
                 <GridItem span={5}>
                   <TextInput
                     id={`vnic-profile-custom-property-name-${index}`}
-                    aria-label={`Custom property ${index + 1} name`}
-                    placeholder="Name"
+                    aria-label={t('vnicProfileForm.customProperty.nameAria', { index: index + 1 })}
+                    placeholder={t('common.field.name')}
                     value={row.name}
                     onChange={(_event, value) => setCustomProperty(index, { name: value })}
                   />
@@ -478,8 +490,8 @@ export function VnicProfileFormModal({
                 <GridItem span={6}>
                   <TextInput
                     id={`vnic-profile-custom-property-value-${index}`}
-                    aria-label={`Custom property ${index + 1} value`}
-                    placeholder="Value"
+                    aria-label={t('vnicProfileForm.customProperty.valueAria', { index: index + 1 })}
+                    placeholder={t('vm.edit.customProperties.value')}
                     value={row.value}
                     onChange={(_event, value) => setCustomProperty(index, { value })}
                   />
@@ -487,7 +499,9 @@ export function VnicProfileFormModal({
                 <GridItem span={1}>
                   <Button
                     variant="plain"
-                    aria-label={`Remove custom property ${index + 1}`}
+                    aria-label={t('vnicProfileForm.customProperty.removeAria', {
+                      index: index + 1,
+                    })}
                     icon={<MinusCircleIcon />}
                     onClick={() => removeCustomProperty(index)}
                   />
@@ -499,9 +513,9 @@ export function VnicProfileFormModal({
               isInline
               icon={<PlusCircleIcon />}
               onClick={addCustomProperty}
-              aria-label="Add custom property"
+              aria-label={t('vnicProfileForm.customProperty.add')}
             >
-              Add custom property
+              {t('vnicProfileForm.customProperty.add')}
             </Button>
           </FormGroup>
 
@@ -513,8 +527,8 @@ export function VnicProfileFormModal({
           <FormGroup fieldId="vnic-profile-public-use">
             <Switch
               id="vnic-profile-public-use"
-              label="Public use"
-              aria-label="Public use"
+              label={t('vnicProfileForm.publicUse')}
+              aria-label={t('vnicProfileForm.publicUse')}
               isChecked={publicUse}
               isDisabled={isEdit && publicUseQuery.granted === undefined}
               onChange={(_event, checked) => setPublicUse(checked)}
@@ -523,8 +537,8 @@ export function VnicProfileFormModal({
               <HelperText>
                 <HelperTextItem>
                   {isEdit && publicUseQuery.isError
-                    ? 'Could not read the current public-use state.'
-                    : 'Lets every user attach this profile to their vNICs.'}
+                    ? t('vnicProfileForm.publicUse.readError')
+                    : t('vnicProfileForm.publicUse.hint')}
                 </HelperTextItem>
               </HelperText>
             </FormHelperText>
@@ -538,10 +552,10 @@ export function VnicProfileFormModal({
           isLoading={pending}
           isDisabled={pending || nameEmpty || networkMissing}
         >
-          Save
+          {t('common.action.save')}
         </Button>
         <Button variant="secondary" onClick={onClose} isDisabled={pending}>
-          Cancel
+          {t('common.action.cancel')}
         </Button>
       </ModalFooter>
     </Modal>

@@ -2539,55 +2539,6 @@ export const fr: LocaleCatalog = {
   'volumes.bricks.server': 'Serveur',
   'volumes.bricks.directory': 'Répertoire de la brick',
   'volumes.bricks.addBricks': 'Ajouter des bricks',
-  'guide.button': 'Guidez-moi',
-  'guide.dc.title': 'Guidez-moi — {name}',
-  'guide.cluster.title': 'Guidez-moi — {name}',
-  'guide.dc.intro': 'Suivez ces étapes pour rendre ce centre de données opérationnel.',
-  'guide.cluster.intro': 'Suivez ces étapes pour rendre ce cluster opérationnel.',
-  'guide.summary.done': 'Toutes les étapes requises sont terminées.',
-  'guide.summary.remaining':
-    'Il reste {count, plural, one {# étape requise} other {# étapes requises}}.',
-  'guide.error.title': "Impossible de lire l'état de configuration",
-  'guide.error.body':
-    "Le guide a besoin des clusters, hôtes et stockage actuels pour déterminer ce qu'il reste à faire.",
-  'guide.loading': 'Chargement des étapes de configuration',
-  'guide.close': 'Fermer',
-  'guide.optional': '(facultatif)',
-  'guide.count.aria': '{count} configuré(s)',
-  'guide.aria.complete': 'Terminé',
-  'guide.aria.required': 'Requis',
-  'guide.aria.optional': 'Facultatif',
-  'guide.step.clusters.title': 'Configurer les clusters',
-  'guide.step.clusters.desc':
-    "Un centre de données a besoin d'au moins un cluster avant que des hôtes puissent le rejoindre.",
-  'guide.step.clusters.action': 'Nouveau cluster',
-  'guide.step.hosts.title': 'Configurer les hôtes',
-  'guide.step.hosts.action': 'Nouvel hôte',
-  'guide.step.dc.hosts.desc':
-    "Ajoutez un hôte à l'un des clusters de ce centre de données pour exécuter des machines virtuelles.",
-  'guide.step.cluster.hosts.desc':
-    "Ajoutez un hôte à ce cluster pour qu'il puisse exécuter des machines virtuelles.",
-  'guide.blocked.needCluster': "Ajoutez d'abord un cluster",
-  'guide.blocked.needUpHost': "Nécessite un hôte à l'état Up",
-  'guide.blocked.needHost': "Ajoutez d'abord un hôte",
-  'guide.blocked.noDc': "Le cluster n'est rattaché à aucun centre de données",
-  'guide.step.dataStorage.title': 'Rattacher un stockage de données',
-  'guide.step.dataStorage.desc':
-    'Rattachez et activez un domaine de stockage de données pour que le centre de données puisse démarrer.',
-  'guide.step.dataStorage.action': 'Rattacher un stockage',
-  'guide.step.iso.title': 'Rattacher une bibliothèque ISO',
-  'guide.step.iso.desc':
-    "Facultatif : rattachez un domaine de stockage ISO pour démarrer les VMs depuis un support d'installation.",
-  'guide.step.iso.action': 'Rattacher une bibliothèque ISO',
-  'guide.step.upHost.title': 'Activer un hôte',
-  'guide.step.upHost.desc':
-    "Au moins un hôte doit atteindre l'état Up pour planifier des charges de travail.",
-  'guide.step.clusterStorage.title': 'Accéder au stockage de données',
-  'guide.step.clusterStorage.desc.hasDc':
-    "Le centre de données du cluster a besoin d'un domaine de stockage de données actif.",
-  'guide.step.clusterStorage.desc.noDc':
-    "Rattachez ce cluster à un centre de données disposant d'un stockage de données actif.",
-  'guide.step.clusterStorage.action': 'Aller au centre de données',
 
   'infra.compat': 'Compatibilité {version}',
   'infra.datacenter.storage': 'Stockage {format}',

@@ -20,6 +20,7 @@ import {
   useClusterVms,
 } from '../../hooks/useClusterDetail'
 import { useDeleteAffinityLabel } from '../../hooks/useClusterMutations'
+import { useT } from '../../i18n/useT'
 import { AffinityLabelModal } from '../affinity/AffinityLabelModal'
 import { ConfirmModal } from '../ConfirmModal'
 
@@ -50,6 +51,7 @@ export function ClusterAffinityLabelsTab({
 }) {
   const labels = useClusterAffinityLabels(clusterId)
   const remove = useDeleteAffinityLabel()
+  const t = useT()
 
   // create when the flag is set; edit when a label is set; removing gates the
   // destructive ConfirmModal per project rule. Only one is up at a time.
@@ -57,8 +59,9 @@ export function ClusterAffinityLabelsTab({
   const [editing, setEditing] = useState<AffinityLabel | null>(null)
   const [removing, setRemoving] = useState<AffinityLabel | null>(null)
 
-  // Candidate pickers stay disabled until a modal opens: passing empty args
-  // keeps the underlying queries idle (the same gate the group modal uses).
+  // Candidate pickers stay idle until a modal opens: the empty arg trips each
+  // hook's `enabled: … !== ''` gate so no fetch fires while closed (the same
+  // gate the group modal relies on).
   const modalOpen = creating || editing !== null
   const vmCandidates = useClusterVms(modalOpen ? clusterName : '')
   const hostCandidates = useClusterHosts(modalOpen ? clusterId : '')
@@ -71,7 +74,7 @@ export function ClusterAffinityLabelsTab({
             <ToolbarGroup align={{ default: 'alignEnd' }}>
               <ToolbarItem>
                 <Button variant="primary" onClick={() => setCreating(true)}>
-                  New affinity label
+                  {t('clusterAffinityLabels.new')}
                 </Button>
               </ToolbarItem>
             </ToolbarGroup>
@@ -82,28 +85,32 @@ export function ClusterAffinityLabelsTab({
       {labels.isPending && (
         <>
           <Skeleton height="2.5rem" style={{ marginBottom: '0.5rem' }} />
-          <Skeleton height="2.5rem" screenreaderText="Loading affinity labels" />
+          <Skeleton height="2.5rem" screenreaderText={t('clusterAffinityLabels.loading')} />
         </>
       )}
 
       {labels.isError && (
-        <EmptyState titleText="Could not load affinity labels" status="danger">
+        <EmptyState titleText={t('clusterAffinityLabels.error.title')} status="danger">
           <EmptyStateBody>
-            {labels.error instanceof Error ? labels.error.message : 'Unknown error'}
+            {labels.error instanceof Error ? labels.error.message : t('common.error.unknown')}
           </EmptyStateBody>
-          <Button variant="primary" onClick={() => void labels.refetch()}>
-            Retry
-          </Button>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="primary" onClick={() => void labels.refetch()}>
+                {t('common.action.retry')}
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 
       {labels.isSuccess && labels.data.length === 0 && (
-        <EmptyState titleText="No affinity labels">
-          <EmptyStateBody>No affinity labels are available in this cluster.</EmptyStateBody>
+        <EmptyState titleText={t('clusterAffinityLabels.empty.title')}>
+          <EmptyStateBody>{t('clusterAffinityLabels.empty.body')}</EmptyStateBody>
           <EmptyStateFooter>
             <EmptyStateActions>
               <Button variant="primary" onClick={() => setCreating(true)}>
-                New affinity label
+                {t('clusterAffinityLabels.new')}
               </Button>
             </EmptyStateActions>
           </EmptyStateFooter>
@@ -111,28 +118,28 @@ export function ClusterAffinityLabelsTab({
       )}
 
       {labels.isSuccess && labels.data.length > 0 && (
-        <Table aria-label="Affinity labels" variant="compact">
+        <Table aria-label={t('clusterAffinityLabels.table.ariaLabel')} variant="compact">
           <Thead>
             <Tr>
-              <Th>Name</Th>
-              <Th screenReaderText="Actions" />
+              <Th>{t('common.field.name')}</Th>
+              <Th screenReaderText={t('common.field.actions')} />
             </Tr>
           </Thead>
           <Tbody>
             {labels.data.map((label) => (
               <Tr key={label.id}>
-                <Td dataLabel="Name">
+                <Td dataLabel={t('common.field.name')}>
                   <Label isCompact color="blue">
                     {label.name ?? label.id}
                   </Label>
                 </Td>
-                <Td dataLabel="Actions" isActionCell>
+                <Td dataLabel={t('common.field.actions')} isActionCell>
                   <ActionsColumn
                     isDisabled={remove.isPending}
                     items={[
-                      { title: 'Edit', onClick: () => setEditing(label) },
+                      { title: t('common.action.edit'), onClick: () => setEditing(label) },
                       {
-                        title: 'Remove',
+                        title: t('common.action.remove'),
                         isDanger: true,
                         onClick: () => setRemoving(label),
                       },
@@ -167,9 +174,11 @@ export function ClusterAffinityLabelsTab({
       {removing && (
         <ConfirmModal
           isOpen
-          title={`Remove affinity label '${removing.name ?? removing.id}'?`}
-          body="The affinity label is permanently removed and unassigned from every VM and host that carried it. This cannot be undone."
-          confirmLabel="Remove"
+          title={t('clusterAffinityLabels.remove.confirm.title', {
+            name: removing.name ?? removing.id,
+          })}
+          body={t('clusterAffinityLabels.remove.confirm.body')}
+          confirmLabel={t('common.action.remove')}
           isConfirmDisabled={remove.isPending}
           onConfirm={() => {
             const target = removing

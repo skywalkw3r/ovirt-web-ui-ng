@@ -9,6 +9,7 @@ import {
 } from '../api/resources/clusters'
 import { listHosts } from '../api/resources/hosts'
 import { listVms } from '../api/resources/vms'
+import { HOST_POLL_INTERVAL_MS } from './useHosts'
 import { useSettings } from '../settings/SettingsProvider'
 
 // Cluster subcollections drift slowly and only load while the detail page is
@@ -89,10 +90,20 @@ export function useClusterHosts(id: string) {
   return useQuery({
     queryKey: ['cluster', id, 'hosts'],
     queryFn: async () => {
-      const hosts = await listHosts()
+      // all_content populates the computed hosted_engine field the crown reads
+      // (HostedEngineCrown on ClusterHostsTab) — the same shape useHosts fetches.
+      const hosts = await listHosts({ allContent: true })
       return hosts.filter((host) => host.cluster?.id === id)
     },
-    refetchInterval: refreshIntervalMs,
+    // This pulls the GLOBAL /hosts collection and filters client-side, so it
+    // carries the same full-inventory cost as the Hosts page and floors at the
+    // hosts cadence (30s, HOST_POLL_INTERVAL_MS) — NOT this file's 60s
+    // cluster-detail floor, which is for the cheap own-subcollection reads.
+    refetchInterval: Math.max(refreshIntervalMs, HOST_POLL_INTERVAL_MS),
+    // Empty id ⇒ genuinely idle. The affinity group/label modal pickers pass ''
+    // while closed; without this gate the full /hosts read still fires every
+    // tick only to filter down to [].
+    enabled: id !== '',
   })
 }
 
@@ -104,5 +115,10 @@ export function useClusterVms(clusterName: string) {
     queryKey: ['cluster', clusterName, 'vms'],
     queryFn: () => listVms({ search: `cluster=${clusterName}` }),
     refetchInterval: refreshIntervalMs,
+    // Empty name ⇒ genuinely idle. The picker consumers pass '' while their
+    // modal is closed; without this gate the query fires
+    // GET /vms?search=cluster%3D — malformed DSL a live engine rejects — every
+    // tick, re-attempted by the retry policy.
+    enabled: clusterName !== '',
   })
 }

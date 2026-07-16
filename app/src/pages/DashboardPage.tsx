@@ -13,7 +13,9 @@ import {
   DescriptionListGroup,
   DescriptionListTerm,
   EmptyState,
+  EmptyStateActions,
   EmptyStateBody,
+  EmptyStateFooter,
   Flex,
   FlexItem,
   Grid,
@@ -167,9 +169,13 @@ function QueryError({
       <EmptyStateBody>
         {error instanceof Error ? error.message : t('common.error.unknown')}
       </EmptyStateBody>
-      <Button variant="link" isInline onClick={onRetry}>
-        {t('common.action.retry')}
-      </Button>
+      <EmptyStateFooter>
+        <EmptyStateActions>
+          <Button variant="link" isInline onClick={onRetry}>
+            {t('common.action.retry')}
+          </Button>
+        </EmptyStateActions>
+      </EmptyStateFooter>
     </EmptyState>
   )
 }
@@ -475,10 +481,12 @@ function InventoryCard({
   const domains = operatorDomains(storageDomains.data ?? [])
   const sdAttention = storageAttentionCount(domains)
   // Gluster volumes aren't part of the shared useDashboard composition (owned
-  // elsewhere); the row reuses the same ['glustervolumes'] query VolumesPage
-  // observes, so it shares that cache entry and poll cycle. The hook is
+  // elsewhere); the row reuses the same ['glustervolumes'] cache VolumesPage
+  // observes. { poll: false } makes this a probe — the Dashboard reads the
+  // shared entry without adding a per-cluster gluster fan-out to every Dashboard
+  // tick (virt-only installs would 404 each cluster otherwise). The hook is
   // admin-gated internally, matching the isAdmin gate on the row below.
-  const glusterVolumes = useGlusterVolumes()
+  const glusterVolumes = useGlusterVolumes({ poll: false })
   const glusterCounts = glusterBuckets(glusterVolumes.data ?? [])
 
   return (

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { StorageDomain } from '../../api/schemas/storage-domain'
+import { en } from '../../i18n/messages/en'
 import { DISABLED_REASONS, canRefreshLuns, canUpdateOvfs } from './lifecycle'
 
 // Pure gating predicates — construct minimal StorageDomain read models and
@@ -60,10 +61,17 @@ describe('canRefreshLuns', () => {
 
 describe('DISABLED_REASONS', () => {
   it('names the precondition for the two new maintenance actions', () => {
-    // These are the disabled-tooltip copy the UI shows; assert they name the
-    // precondition rather than merely being non-empty (toBeTruthy passed for
-    // any non-empty string, so a wrong-but-present message would slip through).
-    expect(DISABLED_REASONS.updateOvfs).toMatch(/active data domain/i)
-    expect(DISABLED_REASONS.refreshLuns).toMatch(/iSCSI|FCP|block/i)
+    // The map now carries catalog MessageIds (resolved with t() at the tooltip
+    // call sites); assert the ids resolve to copy that names the precondition
+    // rather than merely being non-empty (toBeTruthy passed for any non-empty
+    // string, so a wrong-but-present message would slip through).
+    expect(en[DISABLED_REASONS.updateOvfs]).toMatch(/active data domain/i)
+    expect(en[DISABLED_REASONS.refreshLuns]).toMatch(/iSCSI|FCP|block/i)
+  })
+
+  it('every reason id resolves in the en catalog', () => {
+    for (const id of Object.values(DISABLED_REASONS)) {
+      expect(en[id], id).toBeTruthy()
+    }
   })
 })

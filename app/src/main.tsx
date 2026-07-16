@@ -22,11 +22,15 @@ const queryClient = new QueryClient({
     queries: {
       staleTime: 10_000,
       retry: (failureCount, error) => {
-        // 401/403 won't heal by retrying — surface immediately
-        if (error instanceof ApiError && (error.status === 401 || error.status === 403)) {
+        // Never retry a 4xx (401/403 included): a client error — auth,
+        // forbidden, bad request — won't heal by retrying, so surface it
+        // immediately. Other failures (5xx, network) get a single retry;
+        // piling on attempts only amplifies load while the engine is already
+        // in distress, and polled queries get their real retry on the next tick.
+        if (error instanceof ApiError && error.status >= 400 && error.status < 500) {
           return false
         }
-        return failureCount < 2
+        return failureCount < 1
       },
     },
   },

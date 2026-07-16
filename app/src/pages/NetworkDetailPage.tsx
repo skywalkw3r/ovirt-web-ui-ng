@@ -4,7 +4,9 @@ import {
   BreadcrumbItem,
   Button,
   EmptyState,
+  EmptyStateActions,
   EmptyStateBody,
+  EmptyStateFooter,
   FormGroup,
   PageSection,
   Skeleton,
@@ -77,9 +79,13 @@ export function NetworkDetailPage() {
       {network.isError && notFound && (
         <EmptyState titleText={t('networkDetail.notFound.title')} status="warning">
           <EmptyStateBody>{t('networkDetail.notFound.body', { id: networkId })}</EmptyStateBody>
-          <Button variant="primary" onClick={() => void navigate({ to: '/networks' })}>
-            {t('networkDetail.notFound.back')}
-          </Button>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="primary" onClick={() => void navigate({ to: '/networks' })}>
+                {t('networkDetail.notFound.back')}
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 
@@ -88,9 +94,13 @@ export function NetworkDetailPage() {
           <EmptyStateBody>
             {network.error instanceof Error ? network.error.message : t('common.error.unknown')}
           </EmptyStateBody>
-          <Button variant="primary" onClick={() => void network.refetch()}>
-            {t('common.action.retry')}
-          </Button>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="primary" onClick={() => void network.refetch()}>
+                {t('common.action.retry')}
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 
@@ -199,9 +209,11 @@ export function NetworkDetailPage() {
                 <NetworkVnicProfilesTab networkId={networkId} />
               </TabContentBody>
             </Tab>
-            {/* Webadmin subtab order puts Clusters right after the profiles.
-                Title is hardcoded pending the i18n externalization pass. */}
-            <Tab eventKey="clusters" title={<TabTitleText>Clusters</TabTitleText>}>
+            {/* Webadmin subtab order puts Clusters right after the profiles. */}
+            <Tab
+              eventKey="clusters"
+              title={<TabTitleText>{t('networkDetail.tab.clusters')}</TabTitleText>}
+            >
               <TabContentBody hasPadding>
                 <NetworkClustersTab network={network.data} />
               </TabContentBody>

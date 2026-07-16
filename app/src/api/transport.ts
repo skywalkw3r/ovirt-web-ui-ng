@@ -4,9 +4,10 @@ import { getSessionToken, isSessionAdmin } from './session'
 // The engine-relative API path. The full fetch URL is prefixed with the
 // active server's base (servers/registry.ts): '' — the default and the only
 // possibility when no servers are configured — keeps every call same-origin
-// (Vite dev proxy / the engine's own Apache), while a configured external
-// engine contributes its https origin (CORS-enabled on the engine side; see
-// packaging/engine-cors/).
+// (Vite dev proxy / the engine's own Apache), as does the same-origin
+// path-proxy shape ('/e/<slug>') for a configured engine, while a
+// direct-connect external engine contributes its https origin (per-engine CORS
+// + a CSP connect-src entry; see docs/SECURITY-HEADERS.md §Multi-engine).
 const API_PATH = '/ovirt-engine/api'
 
 export class ApiError extends Error {
@@ -57,6 +58,27 @@ function extractFault(payload: unknown): { reason?: string; detail?: string } {
   return { reason: fault?.reason, detail: fault?.detail }
 }
 
+// A hung engine must not pin a socket for the browser default (often minutes).
+// A single view mounts dozens of poll queries; with keepalive they can exhaust
+// the per-origin connection pool and stall discovery of an expired session (the
+// 401 that tears it down). 30s is comfortably clear of a normal engine
+// round-trip yet caps a dead socket fast. Safe as a BLANKET ceiling because
+// every long-running action (VM/template/disk export, clone, migrate) returns
+// an async-job envelope immediately and imageio blob transfers use a bare XHR,
+// not this wrapper — nothing legitimately holds a request() connection open.
+const REQUEST_TIMEOUT_MS = 30_000
+
+// Compose the caller's signal (cancel-on-unmount) with the timeout so a request
+// aborts on the sooner of the two. AbortSignal.timeout/any are evergreen and
+// Node ≥20; on a runtime missing them, degrade to the caller signal alone
+// (losing only the timeout) rather than throwing or polyfilling.
+function requestSignal(caller: AbortSignal | undefined): AbortSignal | undefined {
+  if (typeof AbortSignal.timeout !== 'function') return caller
+  const timeout = AbortSignal.timeout(REQUEST_TIMEOUT_MS)
+  if (!caller) return timeout
+  return typeof AbortSignal.any === 'function' ? AbortSignal.any([caller, timeout]) : caller
+}
+
 export async function request(path: string, opts: RequestOptions = {}): Promise<unknown> {
   const token = getSessionToken()
   if (!token) {
@@ -72,21 +94,25 @@ export async function request(path: string, opts: RequestOptions = {}): Promise<
   const response = await fetch(`${getActiveBase()}${API_PATH}${path}`, {
     method: opts.method ?? 'GET',
     headers: {
+      // Accept + Content-Type are semantic defaults a caller may legitimately
+      // override (e.g. a non-JSON Accept), so they sit BEFORE the caller spread.
       Accept: 'application/json',
-      Authorization: `Bearer ${token}`,
-      // Filter:true scopes results to objects the user is explicitly permitted
-      // on; Filter:false (admins only) returns everything the engine holds,
-      // including system-owned objects like the HostedEngine VM that carry no
-      // per-user permission. Driven by the SERVER-VERIFIED admin flag (see
-      // session.ts / docs/SECURITY.md §4) — the engine rejects Filter:false
-      // from real non-admins, so this can't escalate access.
-      Filter: isSessionAdmin() ? 'false' : 'true',
       ...(opts.body !== undefined ? { 'Content-Type': 'application/json' } : {}),
       ...(opts.correlationId !== undefined ? { 'Correlation-Id': opts.correlationId } : {}),
       ...opts.headers,
+      // Security headers are transport-owned and set AFTER the caller spread so
+      // no caller can clobber the bearer token or downgrade the result scope
+      // (SECURITY.md §3). Filter:true scopes results to objects the user is
+      // explicitly permitted on; Filter:false (admins only) returns everything
+      // the engine holds, including system-owned objects like the HostedEngine
+      // VM that carry no per-user permission. Driven by the SERVER-VERIFIED
+      // admin flag (see session.ts / docs/SECURITY.md §4) — the engine rejects
+      // Filter:false from real non-admins, so this can't escalate access.
+      Authorization: `Bearer ${token}`,
+      Filter: isSessionAdmin() ? 'false' : 'true',
     },
     body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
-    signal: opts.signal,
+    signal: requestSignal(opts.signal),
   })
 
   if (!response.ok) {

@@ -2,7 +2,9 @@ import { useMemo, useState, type ReactNode } from 'react'
 import {
   Button,
   EmptyState,
+  EmptyStateActions,
   EmptyStateBody,
+  EmptyStateFooter,
   PageSection,
   Pagination,
   Skeleton,
@@ -253,9 +255,13 @@ export function TemplatesPage() {
           <EmptyStateBody>
             {templates.error instanceof Error ? templates.error.message : t('common.error.unknown')}
           </EmptyStateBody>
-          <Button variant="primary" onClick={() => void templates.refetch()}>
-            {t('common.action.retry')}
-          </Button>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="primary" onClick={() => void templates.refetch()}>
+                {t('common.action.retry')}
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 
@@ -267,9 +273,13 @@ export function TemplatesPage() {
             {query !== '' ? t('templates.emptyFiltered.body') : t('templates.empty.body')}
           </EmptyStateBody>
           {query !== '' && (
-            <Button variant="link" onClick={() => apply('')}>
-              {t('common.action.clearSearch')}
-            </Button>
+            <EmptyStateFooter>
+              <EmptyStateActions>
+                <Button variant="link" onClick={() => apply('')}>
+                  {t('common.action.clearSearch')}
+                </Button>
+              </EmptyStateActions>
+            </EmptyStateFooter>
           )}
         </EmptyState>
       )}

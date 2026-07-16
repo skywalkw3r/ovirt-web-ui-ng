@@ -264,6 +264,21 @@ describe('getRuntimeConfig servers', () => {
     expect(getRuntimeConfig().servers).toEqual([])
   })
 
+  it('rejects a plaintext http cross-origin base (creds would go cleartext)', () => {
+    injectAt({ servers: { list: [{ name: 'HE HTTP', url: 'http://engine2.example' }] } })
+    expect(getRuntimeConfig().servers).toEqual([])
+  })
+
+  it('accepts an https cross-origin base', () => {
+    injectAt({ servers: { list: [{ name: 'HE 2', url: 'https://engine2.example' }] } })
+    expect(getRuntimeConfig().servers).toEqual([{ name: 'HE 2', base: 'https://engine2.example' }])
+  })
+
+  it('still accepts a same-origin path base (no cross-origin scheme to downgrade)', () => {
+    injectAt({ servers: { list: [{ name: 'HE BBN', url: '/e/bbn' }] } })
+    expect(getRuntimeConfig().servers).toEqual([{ name: 'HE BBN', base: '/e/bbn' }])
+  })
+
   it('carries a per-engine profile and drops a blank one', () => {
     injectAt({
       servers: {

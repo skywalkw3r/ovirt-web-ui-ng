@@ -17,6 +17,7 @@ import type { ClusterCpuProfile } from '../../api/resources/clusters'
 import { listDataCenterQoss } from '../../api/resources/datacenters'
 import { useCluster, useClusterCpuProfiles } from '../../hooks/useClusterDetail'
 import { useDeleteClusterCpuProfile } from '../../hooks/useClusterCpuProfileMutations'
+import { useT } from '../../i18n/useT'
 import { CpuProfileFormModal } from '../cpu-profile-form/CpuProfileFormModal'
 import { ConfirmModal } from '../ConfirmModal'
 
@@ -38,6 +39,7 @@ export function ClusterCpuProfilesTab({ clusterId }: { clusterId: string }) {
   const cluster = useCluster(clusterId)
   const dcId = cluster.data?.data_center?.id ?? ''
   const remove = useDeleteClusterCpuProfile()
+  const t = useT()
 
   // The DC's CPU-kind QoS profiles, for the QoS column's name resolution. Shares
   // the ['datacenter-qoss', dcId] key with the form modal so both dedupe to one
@@ -73,7 +75,7 @@ export function ClusterCpuProfilesTab({ clusterId }: { clusterId: string }) {
             <ToolbarGroup align={{ default: 'alignEnd' }}>
               <ToolbarItem>
                 <Button variant="primary" onClick={() => setCreating(true)}>
-                  New CPU profile
+                  {t('cpuProfiles.new')}
                 </Button>
               </ToolbarItem>
             </ToolbarGroup>
@@ -84,28 +86,34 @@ export function ClusterCpuProfilesTab({ clusterId }: { clusterId: string }) {
       {cpuProfiles.isPending && (
         <>
           <Skeleton height="2.5rem" style={{ marginBottom: '0.5rem' }} />
-          <Skeleton height="2.5rem" screenreaderText="Loading CPU profiles" />
+          <Skeleton height="2.5rem" screenreaderText={t('cpuProfiles.loading')} />
         </>
       )}
 
       {cpuProfiles.isError && (
-        <EmptyState titleText="Could not load CPU profiles" status="danger">
+        <EmptyState titleText={t('cpuProfiles.error.title')} status="danger">
           <EmptyStateBody>
-            {cpuProfiles.error instanceof Error ? cpuProfiles.error.message : 'Unknown error'}
+            {cpuProfiles.error instanceof Error
+              ? cpuProfiles.error.message
+              : t('common.error.unknown')}
           </EmptyStateBody>
-          <Button variant="primary" onClick={() => void cpuProfiles.refetch()}>
-            Retry
-          </Button>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="primary" onClick={() => void cpuProfiles.refetch()}>
+                {t('common.action.retry')}
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 
       {cpuProfiles.isSuccess && cpuProfiles.data.length === 0 && (
-        <EmptyState titleText="No CPU profiles">
-          <EmptyStateBody>No CPU profiles are defined on this cluster.</EmptyStateBody>
+        <EmptyState titleText={t('cpuProfiles.empty.title')}>
+          <EmptyStateBody>{t('cpuProfiles.empty.body')}</EmptyStateBody>
           <EmptyStateFooter>
             <EmptyStateActions>
               <Button variant="primary" onClick={() => setCreating(true)}>
-                New CPU profile
+                {t('cpuProfiles.new')}
               </Button>
             </EmptyStateActions>
           </EmptyStateFooter>
@@ -113,28 +121,28 @@ export function ClusterCpuProfilesTab({ clusterId }: { clusterId: string }) {
       )}
 
       {cpuProfiles.isSuccess && cpuProfiles.data.length > 0 && (
-        <Table aria-label="CPU profiles" variant="compact">
+        <Table aria-label={t('cpuProfiles.table.ariaLabel')} variant="compact">
           <Thead>
             <Tr>
-              <Th>Name</Th>
-              <Th>Description</Th>
-              <Th>QoS</Th>
-              <Th screenReaderText="Actions" />
+              <Th>{t('common.field.name')}</Th>
+              <Th>{t('common.field.description')}</Th>
+              <Th>{t('cpuProfiles.column.qos')}</Th>
+              <Th screenReaderText={t('common.field.actions')} />
             </Tr>
           </Thead>
           <Tbody>
             {cpuProfiles.data.map((profile) => (
               <Tr key={profile.id}>
-                <Td dataLabel="Name">{profile.name ?? '—'}</Td>
-                <Td dataLabel="Description">{profile.description ?? '—'}</Td>
-                <Td dataLabel="QoS">{qosLabel(profile)}</Td>
-                <Td dataLabel="Actions" isActionCell>
+                <Td dataLabel={t('common.field.name')}>{profile.name ?? '—'}</Td>
+                <Td dataLabel={t('common.field.description')}>{profile.description ?? '—'}</Td>
+                <Td dataLabel={t('cpuProfiles.column.qos')}>{qosLabel(profile)}</Td>
+                <Td dataLabel={t('common.field.actions')} isActionCell>
                   <ActionsColumn
                     isDisabled={remove.isPending}
                     items={[
-                      { title: 'Edit', onClick: () => setEditing(profile) },
+                      { title: t('common.action.edit'), onClick: () => setEditing(profile) },
                       {
-                        title: 'Remove',
+                        title: t('common.action.remove'),
                         isDanger: true,
                         onClick: () => setRemoving(profile),
                       },
@@ -167,9 +175,9 @@ export function ClusterCpuProfilesTab({ clusterId }: { clusterId: string }) {
       {removing && (
         <ConfirmModal
           isOpen
-          title={`Remove CPU profile '${removing.name ?? removing.id}'?`}
-          body="The CPU profile is permanently removed. A profile still in use by a VM cannot be removed. This cannot be undone."
-          confirmLabel="Remove"
+          title={t('cpuProfiles.remove.confirm.title', { name: removing.name ?? removing.id })}
+          body={t('cpuProfiles.remove.confirm.body')}
+          confirmLabel={t('common.action.remove')}
           isConfirmDisabled={remove.isPending}
           onConfirm={() => {
             const target = removing

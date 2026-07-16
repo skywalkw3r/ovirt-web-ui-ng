@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { migrateVm, performVmAction, type VmAction } from '../api/resources/vms'
 import type { Vm } from '../api/schemas/vm'
 import { useNotify } from '../notifications/context'
-import { VM_ACTION_LABELS } from './useVmActions'
+import { vmActionEnglishLabel } from './useVmActions'
 
 // Build the single aggregate toast for a fanned-out bulk operation. verb reads
 // as the past-tense request wording ("Shutdown requested", "Migration
@@ -50,7 +50,9 @@ export function useBulkVmAction(): {
     mutationFn: async ({ vms, action }: { vms: Vm[]; action: VmAction }) =>
       Promise.allSettled(vms.map((vm) => performVmAction(vm.id, action))),
     onSuccess: (results, { vms, action }) =>
-      notifyBulkResult(notify, VM_ACTION_LABELS[action], vms, results),
+      // toasts stay hardcoded English (house convention) — resolve via the
+      // source catalog, not the active locale
+      notifyBulkResult(notify, vmActionEnglishLabel(action), vms, results),
     onSettled: invalidate,
   })
 

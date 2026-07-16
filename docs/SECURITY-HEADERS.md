@@ -88,8 +88,11 @@ The policy remains deny-by-default: only deployer-listed engine origins are
 reachable, users cannot add servers in the browser (config-file-only list,
 `config/runtime.ts`), and single-engine deployments keep `connect-src 'self'
 wss:` untouched. CSRF posture is unchanged — cross-origin calls still carry
-only the Bearer header (no cookies), and each engine independently gates
-callers via `CORSAllowedOrigins` (see `packaging/engine-cors/README.md`).
+only the Bearer header (no cookies), and each cross-origin engine gates
+callers via `CORSAllowedOrigins` (set with `engine-config`; see the annotated
+`app/public/config.js`). Deployments that instead reverse-proxy each engine
+under a same-origin path (`/e/<slug>`) avoid CORS entirely — `connect-src`
+stays `'self'` and this section does not apply.
 
 ## Companion headers (also set at Apache)
 

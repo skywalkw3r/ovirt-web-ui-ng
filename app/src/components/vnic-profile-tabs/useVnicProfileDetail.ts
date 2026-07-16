@@ -43,23 +43,27 @@ export function useVnicProfilePermissionsList(id: string) {
 
 // VMs with a vNIC bound to the profile — a client-side join over GET
 // /vms?follow=nics (see resources/vnicProfiles.ts). Shares the ['vnicprofile',
-// id, …] prefix and the same 60s floor.
+// id, …] prefix. It does NOT poll: the join pulls the ENTIRE /vms collection with
+// follow=nics, and membership drifts slowly (H-6 engine-load finding). 5min
+// staleTime lets a tab revisit reuse the cache; the toolbar RefreshControl still
+// invalidates every query, so a manual refresh refetches on demand.
 export function useVnicProfileVms(id: string) {
-  const { refreshIntervalMs } = useSettings()
   return useQuery({
     queryKey: ['vnicprofile', id, 'vms'],
     queryFn: () => listVnicProfileVms(id),
-    refetchInterval: Math.max(refreshIntervalMs, VNIC_PROFILE_DETAIL_POLL_INTERVAL_MS),
+    refetchInterval: false,
+    staleTime: 5 * 60_000,
   })
 }
 
 // Templates with a vNIC bound to the profile — the same client-side join as the
-// VMs read, over GET /templates?follow=nics (see resources/vnicProfiles.ts).
+// VMs read, over GET /templates?follow=nics (see resources/vnicProfiles.ts), and
+// de-polled for the same reason.
 export function useVnicProfileTemplates(id: string) {
-  const { refreshIntervalMs } = useSettings()
   return useQuery({
     queryKey: ['vnicprofile', id, 'templates'],
     queryFn: () => listVnicProfileTemplates(id),
-    refetchInterval: Math.max(refreshIntervalMs, VNIC_PROFILE_DETAIL_POLL_INTERVAL_MS),
+    refetchInterval: false,
+    staleTime: 5 * 60_000,
   })
 }

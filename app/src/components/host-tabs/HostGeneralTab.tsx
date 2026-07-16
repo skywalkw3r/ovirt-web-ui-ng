@@ -35,10 +35,11 @@ function spmState(host: Host): string | undefined {
 }
 
 function BoolLabel({ value }: { value: boolean | undefined }) {
+  const t = useT()
   if (value === undefined) return <>{DASH}</>
   return (
     <Label isCompact color={value ? 'green' : 'grey'}>
-      {value ? 'Enabled' : 'Disabled'}
+      {value ? t('common.enabled') : t('common.disabled')}
     </Label>
   )
 }
@@ -111,8 +112,8 @@ export function HostGeneralTab({ host }: { host: Host }) {
     hostedEngine?.active === undefined
       ? DASH
       : hostedEngine.active
-        ? `Active (Score: ${orDash(hostedEngine.score)})`
-        : 'Down'
+        ? t('hostGeneral.hostedEngine.activeScore', { score: orDash(hostedEngine.score) })
+        : t('hostGeneral.hostedEngine.down')
 
   // webadmin surfaces an "action items" callout when power management is not
   // configured; this slice has no PM sub-resource, so the hosted-engine agent
@@ -125,10 +126,10 @@ export function HostGeneralTab({ host }: { host: Host }) {
         <Alert
           isInline
           variant="warning"
-          title="Power management is not configured for this host"
+          title={t('hostGeneral.pm.alert.title')}
           style={{ marginBottom: 'var(--pf-t--global--spacer--md)' }}
         >
-          Configure power management on the host to enable fencing and automatic recovery.
+          {t('hostGeneral.pm.alert.body')}
         </Alert>
       )}
 
@@ -137,70 +138,90 @@ export function HostGeneralTab({ host }: { host: Host }) {
       <Grid hasGutter>
         <GridItem lg={6}>
           <SectionCard title={t('hostGeneral.card.general')}>
-            <TextGroup term="Hostname/IP" value={host.address ?? host.name} />
-            <NodeGroup term="Cluster">
+            <TextGroup term={t('hosts.column.address')} value={host.address ?? host.name} />
+            <NodeGroup term={t('common.field.cluster')}>
               <ClusterValue cluster={host.cluster} />
             </NodeGroup>
-            <TextGroup term="SPM Priority" value={host.spm?.priority} />
-            <TextGroup term="SPM Status" value={spmState(host)} />
-            <TextGroup term="Kdump Status" value={host.kdump_status} />
+            <TextGroup term={t('hostGeneral.field.spmPriority')} value={host.spm?.priority} />
+            <TextGroup term={t('hostGeneral.field.spmStatus')} value={spmState(host)} />
+            <TextGroup term={t('hostGeneral.field.kdumpStatus')} value={host.kdump_status} />
             <DescriptionListGroup>
-              <DescriptionListTerm>Active/Total VMs</DescriptionListTerm>
+              <DescriptionListTerm>{t('hostGeneral.field.activeTotalVms')}</DescriptionListTerm>
               <DescriptionListDescription>
                 {active === undefined && total === undefined
                   ? DASH
                   : `${orDash(active)} / ${orDash(total)}`}
               </DescriptionListDescription>
             </DescriptionListGroup>
-            <TextGroup term="SELinux Mode" value={host.se_linux?.mode} />
+            <TextGroup term={t('hostGeneral.field.selinuxMode')} value={host.se_linux?.mode} />
             <DescriptionListGroup>
-              <DescriptionListTerm>Device Passthrough</DescriptionListTerm>
+              <DescriptionListTerm>{t('hostGeneral.field.devicePassthrough')}</DescriptionListTerm>
               <DescriptionListDescription>
                 <BoolLabel value={host.device_passthrough?.enabled} />
               </DescriptionListDescription>
             </DescriptionListGroup>
-            <TextGroup term="Hosted Engine HA" value={hostedEngineHa} />
+            <TextGroup term={t('hostGeneral.field.hostedEngineHa')} value={hostedEngineHa} />
           </SectionCard>
         </GridItem>
 
         <GridItem lg={6}>
           <SectionCard title={t('hostGeneral.card.capacity')}>
             <DescriptionListGroup>
-              <DescriptionListTerm>Physical Memory</DescriptionListTerm>
+              <DescriptionListTerm>{t('hostGeneral.field.physicalMemory')}</DescriptionListTerm>
               <DescriptionListDescription>{formatBytes(host.memory)}</DescriptionListDescription>
             </DescriptionListGroup>
             <DescriptionListGroup>
-              <DescriptionListTerm>Max Free Memory for Scheduling</DescriptionListTerm>
+              <DescriptionListTerm>
+                {t('hostGeneral.field.maxSchedulingMemory')}
+              </DescriptionListTerm>
               <DescriptionListDescription>
                 {formatBytes(host.max_scheduling_memory)}
               </DescriptionListDescription>
             </DescriptionListGroup>
-            <TextGroup term="Logical CPU Cores" value={logicalCores} />
-            <TextGroup term="Online CPU Cores" value={logicalCores} />
+            <TextGroup term={t('hostGeneral.field.logicalCpuCores')} value={logicalCores} />
+            <TextGroup term={t('hostGeneral.field.onlineCpuCores')} value={logicalCores} />
           </SectionCard>
         </GridItem>
 
         <GridItem lg={6}>
           <SectionCard title={t('hostGeneral.card.hardware')}>
-            <TextGroup term="Manufacturer" value={host.hardware_information?.manufacturer} />
-            <TextGroup term="Family" value={host.hardware_information?.family} />
-            <TextGroup term="Product Name" value={host.hardware_information?.product_name} />
-            <TextGroup term="Version" value={host.hardware_information?.version} />
-            <TextGroup term="UUID" value={host.hardware_information?.uuid} />
-            <TextGroup term="Serial Number" value={host.hardware_information?.serial_number} />
-            <TextGroup term="CPU Model Name" value={host.cpu?.name} />
-            <TextGroup term="CPU Type" value={host.cpu?.type} />
-            <TextGroup term="Sockets" value={topology?.sockets} />
-            <TextGroup term="Cores per Socket" value={topology?.cores} />
-            <TextGroup term="Threads per Core" value={topology?.threads} />
+            <TextGroup
+              term={t('hostGeneral.field.manufacturer')}
+              value={host.hardware_information?.manufacturer}
+            />
+            <TextGroup
+              term={t('hostGeneral.field.family')}
+              value={host.hardware_information?.family}
+            />
+            <TextGroup
+              term={t('hostGeneral.field.productName')}
+              value={host.hardware_information?.product_name}
+            />
+            <TextGroup
+              term={t('hostGeneral.field.version')}
+              value={host.hardware_information?.version}
+            />
+            <TextGroup term={t('hostGeneral.field.uuid')} value={host.hardware_information?.uuid} />
+            <TextGroup
+              term={t('hostGeneral.field.serialNumber')}
+              value={host.hardware_information?.serial_number}
+            />
+            <TextGroup term={t('hostGeneral.field.cpuModelName')} value={host.cpu?.name} />
+            <TextGroup term={t('hostGeneral.field.cpuType')} value={host.cpu?.type} />
+            <TextGroup term={t('hostGeneral.field.sockets')} value={topology?.sockets} />
+            <TextGroup term={t('hostGeneral.field.coresPerSocket')} value={topology?.cores} />
+            <TextGroup term={t('hostGeneral.field.threadsPerCore')} value={topology?.threads} />
           </SectionCard>
         </GridItem>
 
         <GridItem lg={6}>
           <SectionCard title={t('hostGeneral.card.software')}>
-            <TextGroup term="Operating System" value={host.os?.type} />
-            <TextGroup term="OS Version" value={host.os?.version?.full_version} />
-            <TextGroup term="VDSM Version" value={host.version?.full_version} />
+            <TextGroup term={t('hostGeneral.field.operatingSystem')} value={host.os?.type} />
+            <TextGroup term={t('hosts.column.os')} value={host.os?.version?.full_version} />
+            <TextGroup
+              term={t('hostGeneral.field.vdsmVersion')}
+              value={host.version?.full_version}
+            />
           </SectionCard>
         </GridItem>
       </Grid>

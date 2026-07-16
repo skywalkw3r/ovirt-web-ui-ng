@@ -124,11 +124,16 @@ cannot be enabled there.
 | Container (podman)  | yes          | mount/edit `config.js`             | `-e CSP_CONNECT_EXTRA='https://…'`     |
 | OpenShift / ArgoCD  | yes          | ConfigMap (`packaging/openshift/`) | `CSP_CONNECT_EXTRA` env in the overlay |
 
-Each **external** engine (any listed origin other than the console's own)
-additionally needs a one-time CORS enablement on the engine side —
-`engine-config` for the REST API plus the SSO fix or Apache drop-in — fully
-documented in [`packaging/engine-cors/README.md`](../packaging/engine-cors/README.md).
-Users' browsers must trust each engine's TLS certificate.
+Each listed engine is reached one of two ways. The shipped model is a
+**same-origin path proxy**: give the engine a `/e/<slug>` `url` in `config.js`
+and have the console's nginx forward that path to it, so the browser only ever
+talks to the console's origin — **no CORS**, and `connect-src` stays `'self'`.
+Alternatively a **direct cross-origin** entry (an absolute `https://` origin)
+needs the origin added to the CSP `connect-src` **and** a one-time engine-side
+CORS enablement — `engine-config` for the REST API plus a CORS-fixed enginesso
+build for SSO login (both spelled out inline in
+[`app/public/config.js`](../app/public/config.js)). Either way, users' browsers
+must trust each engine's TLS certificate.
 
 Sessions are per-engine: signing in binds the tab to the picked engine, a
 token is never sent to a different engine, and switching engines happens on

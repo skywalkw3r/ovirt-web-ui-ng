@@ -2,7 +2,9 @@ import { useMemo, useState, type CSSProperties, type ReactNode, type Ref } from 
 import {
   Button,
   EmptyState,
+  EmptyStateActions,
   EmptyStateBody,
+  EmptyStateFooter,
   MenuToggle,
   PageSection,
   Pagination,
@@ -286,9 +288,13 @@ export function EventsPage() {
           <EmptyStateBody>
             {events.error instanceof Error ? events.error.message : t('common.error.unknown')}
           </EmptyStateBody>
-          <Button variant="primary" onClick={() => void events.refetch()}>
-            {t('common.action.retry')}
-          </Button>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="primary" onClick={() => void events.refetch()}>
+                {t('common.action.retry')}
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 
@@ -304,9 +310,13 @@ export function EventsPage() {
               : t('events.empty.body')}
           </EmptyStateBody>
           {severity !== 'all' && (
-            <Button variant="link" onClick={() => setSeverity('all')}>
-              {t('common.action.clearFilter')}
-            </Button>
+            <EmptyStateFooter>
+              <EmptyStateActions>
+                <Button variant="link" onClick={() => setSeverity('all')}>
+                  {t('common.action.clearFilter')}
+                </Button>
+              </EmptyStateActions>
+            </EmptyStateFooter>
           )}
         </EmptyState>
       )}

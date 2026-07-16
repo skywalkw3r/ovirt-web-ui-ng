@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { renderToStaticMarkup } from 'react-dom/server'
+import { IntlProvider } from 'react-intl'
+import { enMessages } from '../../i18n/messages/en'
 import type { ReactNode } from 'react'
 import type { UseQueryResult } from '@tanstack/react-query'
 import type { AffinityLabel } from '../../api/resources/clusters'
@@ -106,7 +108,9 @@ const LABELS = [
 
 function render() {
   return renderToStaticMarkup(
-    <ClusterAffinityLabelsTab clusterId="cluster-1" clusterName="Default" />,
+    <IntlProvider locale="en" messages={enMessages}>
+      <ClusterAffinityLabelsTab clusterId="cluster-1" clusterName="Default" />
+    </IntlProvider>,
   )
 }
 

@@ -13,6 +13,11 @@ import { QUOTA_CONSUMER_ROLE_ID } from './roles'
 // modules re-surface their schema types).
 export type { OvirtDomain, OvirtUser, OvirtGroup }
 
+// Dev-only mock mode (npm run dev:mock) — same gate as transport.ts. Only the
+// admin fast path in fetchCapabilityProfile keys off this; live engines fall
+// through to the real /permissions probe.
+const IS_MOCK = import.meta.env.DEV && import.meta.env.VITE_MOCK === '1'
+
 export interface CapabilityProfile {
   tier: 'admin' | 'user'
   isAdmin: boolean
@@ -57,7 +62,13 @@ function isAdministrativeRole(administrative: unknown): boolean {
 
 // Nav-gating only — cosmetic. The engine's `Filter` header is the real authZ
 // boundary and stays server-verified (docs/SECURITY.md §4). Detection:
-//   1. Fast path — the mock inlines user_name ('admin*' → admin).
+//   1. Fast path (MOCK ONLY) — the mock inlines user_name ('admin*' → admin).
+//      GATED to VITE_MOCK: a live engine that inlines user_name on
+//      authenticated_user would otherwise client-tag any real 'admin*'-named
+//      non-admin (admin_ro, administrator.intern) as admin, flipping the
+//      transport Filter header to false so the engine rejects every collection
+//      read — a 400/403 storm the app never retries out of. Live sessions must
+//      fall through to the /permissions probe below.
 //   2. Real engines: the current principal is an admin iff they hold an
 //      administrative role on the SYSTEM. GET /permissions is auto-scoped to
 //      the authenticated user; the built-in admin's SuperUser surfaces here
@@ -69,7 +80,7 @@ export async function fetchCapabilityProfile(): Promise<CapabilityProfile> {
   const user = root.authenticated_user
   const username = user?.user_name ?? user?.name
 
-  if (username?.startsWith('admin')) {
+  if (IS_MOCK && username?.startsWith('admin')) {
     return { tier: 'admin', isAdmin: true, username }
   }
 
@@ -329,20 +340,19 @@ export async function listUserQuotas(userId: string): Promise<UserQuotaGrant[]> 
   const [quotas, groups] = await Promise.all([listQuotas(), listUserGroups(userId)])
   const groupNames = new Map(groups.map((group) => [group.id, group.name]))
 
-  const grants = await Promise.all(
+  // One permissions read per quota, on top of listQuotas' own per-DC fan-out —
+  // so this stays failure-tolerant (Promise.allSettled): a single quota whose
+  // permissions read fails (a 404 meaning "no grants here", or a transient 5xx)
+  // just drops that quota from the join rather than failing — and, on the query
+  // retry, re-issuing — the whole fan-out. An auth verdict (401/403) is the
+  // session breaking, not one quota, so it propagates immediately (mirror
+  // listProviders / listQuotas).
+  const settled = await Promise.allSettled(
     quotas.map(async (quota): Promise<UserQuotaGrant | undefined> => {
-      let rows: Permission[]
-      try {
-        const data = PermissionListSchema.parse(
-          await request(`/quotas/${encodeURIComponent(quota.id)}/permissions?follow=role`),
-        )
-        rows = data.permission ?? []
-      } catch (error) {
-        // 404 on the optional subcollection means "no grants here", not error
-        if (error instanceof ApiError && error.status === 404) return undefined
-        throw error
-      }
-      const consumers = rows.filter((p) => p.role?.id === QUOTA_CONSUMER_ROLE_ID)
+      const data = PermissionListSchema.parse(
+        await request(`/quotas/${encodeURIComponent(quota.id)}/permissions?follow=role`),
+      )
+      const consumers = (data.permission ?? []).filter((p) => p.role?.id === QUOTA_CONSUMER_ROLE_ID)
       // direct grant wins the "via" display over group-mediated ones
       if (consumers.some((p) => p.user?.id === userId)) return { quota, via: { kind: 'user' } }
       for (const p of consumers) {
@@ -360,7 +370,18 @@ export async function listUserQuotas(userId: string): Promise<UserQuotaGrant[]> 
       return undefined
     }),
   )
-  return grants.filter((grant) => grant !== undefined)
+
+  const authFailure = settled.find(
+    (result) =>
+      result.status === 'rejected' &&
+      result.reason instanceof ApiError &&
+      (result.reason.status === 401 || result.reason.status === 403),
+  )
+  if (authFailure?.status === 'rejected') throw authFailure.reason
+
+  return settled.flatMap((result) =>
+    result.status === 'fulfilled' && result.value !== undefined ? [result.value] : [],
+  )
 }
 
 // ---------------------------------------------------------------------------

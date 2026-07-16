@@ -7,7 +7,9 @@ import {
   DrawerContent,
   DrawerContentBody,
   EmptyState,
+  EmptyStateActions,
   EmptyStateBody,
+  EmptyStateFooter,
   Flex,
   FlexItem,
   PageSection,
@@ -24,6 +26,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { FormattedMessage } from 'react-intl'
 import { formatBytes, formatUptime, statusText, vmUptimeSeconds } from '../lib/format'
+import { isFollowDenied } from '../api/followDegrade'
 import { migrateVm } from '../api/resources/vms'
 import type { Vm } from '../api/schemas/vm'
 import { useCapabilities } from '../auth/capabilities'
@@ -134,13 +137,21 @@ const COLUMNS: VmColumn[] = [
     defaultHidden: true,
     cell: (vm) => statusText(vm.type),
   },
-  // Rows pass the tags embedded in the list read (?follow=tags); VmLabels
-  // only falls back to its per-VM query when the wrapper is absent (a live
-  // engine that refused the follow).
+  // Rows pass the tags embedded in the list read (?follow=tags). When a live
+  // engine refused the follow (sticky denial in listVms), every row would
+  // lack the wrapper and VmLabels' per-VM fallback would turn the page into
+  // the tags N+1 the follow exists to avoid — serve [] instead so rows render
+  // honestly (no chips) without re-probing the struggling engine per row
+  // (same guard as vmListColumns).
   {
     key: 'labels',
     labelId: 'vms.column.labels',
-    cell: (vm) => <VmLabels vmId={vm.id} tags={followedTagsOf(vm)} />,
+    cell: (vm) => (
+      <VmLabels
+        vmId={vm.id}
+        tags={followedTagsOf(vm) ?? (isFollowDenied('vms.list:tags,statistics') ? [] : undefined)}
+      />
+    ),
   },
   {
     key: 'comment',
@@ -489,9 +500,13 @@ export function VmsPage() {
           <EmptyStateBody>
             {vms.error instanceof Error ? vms.error.message : t('common.error.unknown')}
           </EmptyStateBody>
-          <Button variant="primary" onClick={() => void vms.refetch()}>
-            {t('common.action.retry')}
-          </Button>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="primary" onClick={() => void vms.refetch()}>
+                {t('common.action.retry')}
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 
@@ -504,9 +519,13 @@ export function VmsPage() {
             />
             {selectedFolderId !== null && <FormattedMessage id="folders.searchEmpty.suffix" />}.
           </EmptyStateBody>
-          <Button variant="link" onClick={clear}>
-            {t('common.action.clearSearch')}
-          </Button>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="link" onClick={clear}>
+                {t('common.action.clearSearch')}
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 
@@ -524,9 +543,13 @@ export function VmsPage() {
             )}
           </EmptyStateBody>
           {selectedFolderId !== null && (
-            <Button variant="link" onClick={() => setSelectedFolderId(null)}>
-              <FormattedMessage id="folders.emptyState.clear" />
-            </Button>
+            <EmptyStateFooter>
+              <EmptyStateActions>
+                <Button variant="link" onClick={() => setSelectedFolderId(null)}>
+                  <FormattedMessage id="folders.emptyState.clear" />
+                </Button>
+              </EmptyStateActions>
+            </EmptyStateFooter>
           )}
         </EmptyState>
       )}

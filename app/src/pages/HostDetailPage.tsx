@@ -4,7 +4,9 @@ import {
   BreadcrumbItem,
   Button,
   EmptyState,
+  EmptyStateActions,
   EmptyStateBody,
+  EmptyStateFooter,
   FormGroup,
   PageSection,
   Skeleton,
@@ -78,7 +80,7 @@ export function HostDetailPage() {
   if (loaded && !isAdmin) {
     return (
       <PageSection>
-        <NotPermitted what="Hosts" />
+        <NotPermitted what={t('hosts.title')} />
       </PageSection>
     )
   }
@@ -91,31 +93,37 @@ export function HostDetailPage() {
             width="30%"
             height="2rem"
             style={{ marginBottom: '1rem' }}
-            screenreaderText="Loading host"
+            screenreaderText={t('hostDetail.loading')}
           />
           <Skeleton height="12rem" />
         </>
       )}
 
       {host.isError && notFound && (
-        <EmptyState titleText="Host not found" status="warning">
-          <EmptyStateBody>
-            No host with ID {hostId} is visible to you — it may have been removed.
-          </EmptyStateBody>
-          <Button variant="primary" onClick={() => void navigate({ to: '/hosts' })}>
-            Back to hosts
-          </Button>
+        <EmptyState titleText={t('hostDetail.notFound.title')} status="warning">
+          <EmptyStateBody>{t('hostDetail.notFound.body', { id: hostId })}</EmptyStateBody>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="primary" onClick={() => void navigate({ to: '/hosts' })}>
+                {t('hostDetail.notFound.back')}
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 
       {host.isError && !notFound && (
-        <EmptyState titleText="Could not load host" status="danger">
+        <EmptyState titleText={t('hostDetail.error.title')} status="danger">
           <EmptyStateBody>
-            {host.error instanceof Error ? host.error.message : 'Unknown error'}
+            {host.error instanceof Error ? host.error.message : t('common.error.unknown')}
           </EmptyStateBody>
-          <Button variant="primary" onClick={() => void host.refetch()}>
-            Retry
-          </Button>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="primary" onClick={() => void host.refetch()}>
+                {t('common.action.retry')}
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 
@@ -140,7 +148,7 @@ export function HostDetailPage() {
                 <BreadcrumbItem
                   render={({ className }) => (
                     <Link to="/hosts" className={className}>
-                      Hosts
+                      {t('hosts.title')}
                     </Link>
                   )}
                 />
@@ -150,7 +158,7 @@ export function HostDetailPage() {
             actions={
               <>
                 <Button variant="secondary" onClick={() => setEditing(true)}>
-                  Edit
+                  {t('common.action.edit')}
                 </Button>
                 {inMaintenance ? (
                   <Button
@@ -159,14 +167,14 @@ export function HostDetailPage() {
                     isDisabled={deleteMutation.isPending}
                     onClick={() => setRemoving({ nameInput: '' })}
                   >
-                    Remove
+                    {t('common.action.remove')}
                   </Button>
                 ) : (
                   // isAriaDisabled keeps the button hoverable/focusable so the
                   // tooltip explaining why it is disabled can show.
-                  <Tooltip content="Move the host to maintenance before removing it">
+                  <Tooltip content={t('hostDetail.remove.maintenanceTooltip')}>
                     <Button variant="secondary" isDanger isAriaDisabled>
-                      Remove
+                      {t('common.action.remove')}
                     </Button>
                   </Tooltip>
                 )}
@@ -183,21 +191,19 @@ export function HostDetailPage() {
           {removing && (
             <ConfirmModal
               isOpen
-              title={`Remove ${host.data.name}?`}
+              title={t('hosts.remove.confirm.title', { name: host.data.name })}
               body={
                 <Stack hasGutter>
-                  <StackItem>
-                    The host will be permanently removed. This cannot be undone.
-                  </StackItem>
+                  <StackItem>{t('hosts.remove.confirm.body')}</StackItem>
                   <StackItem>
                     <FormGroup
-                      label={`Type "${host.data.name}" to confirm`}
+                      label={t('hosts.remove.confirm.typeLabel', { name: host.data.name })}
                       isRequired
                       fieldId="remove-confirm-name"
                     >
                       <TextInput
                         id="remove-confirm-name"
-                        aria-label="Type the host name to confirm removal"
+                        aria-label={t('hosts.remove.confirm.inputAria')}
                         value={removing.nameInput}
                         onChange={(_event, value) => setRemoving({ nameInput: value })}
                       />
@@ -205,7 +211,7 @@ export function HostDetailPage() {
                   </StackItem>
                 </Stack>
               }
-              confirmLabel="Remove"
+              confirmLabel={t('common.action.remove')}
               isConfirmDisabled={removing.nameInput !== host.data.name}
               onConfirm={() => {
                 setRemoving(null)

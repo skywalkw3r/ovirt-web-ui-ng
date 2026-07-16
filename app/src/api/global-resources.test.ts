@@ -488,12 +488,32 @@ describe('listQuotas', () => {
     await expect(listQuotas()).resolves.toMatchObject([{ id: 'q-3' }])
   })
 
-  it('rethrows non-404 per-DC errors', async () => {
+  // Intentional behavior change: the per-DC fan-out is allSettled-tolerant
+  // (one faulty DC no longer fails the whole list, and the poll retry no
+  // longer re-issues the entire fan-out); only auth verdicts propagate.
+  it('skips a failed DC and keeps the rest', async () => {
+    mockFetchSequence(
+      {
+        status: 200,
+        payload: {
+          data_center: [
+            { id: 'dc-1', name: 'Default' },
+            { id: 'dc-2', name: 'edge' },
+          ],
+        },
+      },
+      { status: 500, payload: { fault: { reason: 'Internal Server Error' } } },
+      { status: 200, payload: { quota: [{ id: 'q-3', name: 'edge-quota' }] } },
+    )
+    await expect(listQuotas()).resolves.toMatchObject([{ id: 'q-3' }])
+  })
+
+  it('propagates a per-DC 401 (session teardown beats tolerance)', async () => {
     mockFetchSequence(
       { status: 200, payload: { data_center: [{ id: 'dc-1', name: 'Default' }] } },
-      { status: 500, payload: { fault: { reason: 'Internal Server Error' } } },
+      { status: 401, payload: { fault: { reason: 'Unauthorized' } } },
     )
-    await expect(listQuotas()).rejects.toMatchObject({ status: 500 })
+    await expect(listQuotas()).rejects.toMatchObject({ status: 401 })
   })
 })
 
@@ -694,12 +714,35 @@ describe('listGlusterVolumes', () => {
     })
   })
 
-  it('rethrows non-404 per-cluster errors', async () => {
+  // Intentional behavior change: the per-cluster fan-out is
+  // allSettled-tolerant (a virt-only or faulty cluster no longer fails the
+  // whole volumes list); only auth verdicts propagate.
+  it('skips a failed cluster and keeps the rest', async () => {
+    mockFetchSequence(
+      {
+        status: 200,
+        payload: {
+          cluster: [
+            { id: 'c-1', name: 'Default' },
+            { id: 'c-2', name: 'lab-nested' },
+          ],
+        },
+      },
+      { status: 500 },
+      {
+        status: 200,
+        payload: { gluster_volume: [{ id: 'gv-1', name: 'gv-data', cluster: { id: 'c-2' } }] },
+      },
+    )
+    await expect(listGlusterVolumes()).resolves.toMatchObject([{ id: 'gv-1' }])
+  })
+
+  it('propagates a per-cluster 401 (session teardown beats tolerance)', async () => {
     mockFetchSequence(
       { status: 200, payload: { cluster: [{ id: 'c-1', name: 'Default' }] } },
-      { status: 500 },
+      { status: 401 },
     )
-    await expect(listGlusterVolumes()).rejects.toMatchObject({ status: 500 })
+    await expect(listGlusterVolumes()).rejects.toMatchObject({ status: 401 })
   })
 })
 

@@ -6,6 +6,7 @@ import {
   listNetworkVms,
   updateNetwork,
 } from './networks'
+import { ApiError } from '../transport'
 import { clearSessionToken, setSessionToken } from '../session'
 
 // URL-routed fetch stub (extends the vms.test.ts / hosts.test.ts single-payload
@@ -75,6 +76,100 @@ describe('listNetworkHosts', () => {
 
     await expect(listNetworkHosts('net-01')).resolves.toEqual([])
   })
+
+  it('emits rows in /hosts order regardless of which per-host read finishes first', async () => {
+    // host-03 resolves first, host-01 last — the concurrency pool fills
+    // result[i] for host[i], so the output must follow the /hosts order, not the
+    // completion order.
+    const delayByPath: Record<string, number> = {
+      '/hosts/host-01/networkattachments?follow=network': 20,
+      '/hosts/host-02/networkattachments?follow=network': 10,
+      '/hosts/host-03/networkattachments?follow=network': 0,
+    }
+    const payloads: Record<string, unknown> = {
+      '/hosts': {
+        host: [
+          { id: 'host-01', name: 'node-01' },
+          { id: 'host-02', name: 'node-02' },
+          { id: 'host-03', name: 'node-03' },
+        ],
+      },
+      '/hosts/host-01/networkattachments?follow=network': {
+        network_attachment: [{ id: 'a1', network: { id: 'net-01' } }],
+      },
+      '/hosts/host-02/networkattachments?follow=network': {
+        network_attachment: [{ id: 'a2', network: { id: 'net-01' } }],
+      },
+      '/hosts/host-03/networkattachments?follow=network': {
+        network_attachment: [{ id: 'a3', network: { id: 'net-01' } }],
+      },
+    }
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((url: string) => {
+        const path = url.replace('/ovirt-engine/api', '')
+        return new Promise((resolve) =>
+          setTimeout(
+            () => resolve({ ok: true, status: 200, json: () => Promise.resolve(payloads[path]) }),
+            delayByPath[path] ?? 0,
+          ),
+        )
+      }),
+    )
+
+    const rows = await listNetworkHosts('net-01')
+    expect(rows.map((r) => r.host.id)).toEqual(['host-01', 'host-02', 'host-03'])
+  })
+
+  it('skips a host whose attachment read fails without rejecting the whole join', async () => {
+    routedFetch({
+      '/hosts': {
+        host: [
+          { id: 'host-01', name: 'node-01' },
+          { id: 'host-02', name: 'node-02' },
+          { id: 'host-03', name: 'node-03' },
+        ],
+      },
+      '/hosts/host-01/networkattachments?follow=network': {
+        network_attachment: [{ id: 'a1', network: { id: 'net-01' } }],
+      },
+      // host-02's route is intentionally absent → routedFetch answers 404, a
+      // per-host failure the pool tolerates (skip the host, don't reject).
+      '/hosts/host-03/networkattachments?follow=network': {
+        network_attachment: [{ id: 'a3', network: { id: 'net-01' } }],
+      },
+    })
+
+    const rows = await listNetworkHosts('net-01')
+    expect(rows.map((r) => r.host.id)).toEqual(['host-01', 'host-03'])
+  })
+
+  it('propagates a 401 from a host read rather than dropping the host', async () => {
+    // A 401 is a dead session, not a per-host fault — it must reject the whole
+    // read so the tab shows its error state instead of a false-empty list.
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((url: string) => {
+        const path = url.replace('/ovirt-engine/api', '')
+        if (path === '/hosts') {
+          return Promise.resolve({
+            ok: true,
+            status: 200,
+            json: () => Promise.resolve({ host: [{ id: 'host-01', name: 'node-01' }] }),
+          })
+        }
+        return Promise.resolve({
+          ok: false,
+          status: 401,
+          json: () => Promise.resolve({ fault: { reason: 'Unauthorized', detail: 'expired' } }),
+        })
+      }),
+    )
+
+    const error = await listNetworkHosts('net-01').catch((e: unknown) => e)
+    expect(error).toBeInstanceOf(ApiError)
+    expect(error).toMatchObject({ status: 401 })
+  })
 })
 
 describe('listNetworkVms', () => {
@@ -123,6 +218,33 @@ describe('listNetworkVms', () => {
 
     await expect(listNetworkVms('net-empty')).resolves.toEqual([])
     expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('propagates a 5xx from /vms?follow=nics instead of degrading to a false-empty list', async () => {
+    // The follow=nics read is load-bearing — membership can't be computed from a
+    // bare read — so a 5xx must reject (a bare degrade would render "no VMs").
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((url: string) => {
+        const path = url.replace('/ovirt-engine/api', '')
+        if (path === '/networks/net-01/vnicprofiles') {
+          return Promise.resolve({
+            ok: true,
+            status: 200,
+            json: () => Promise.resolve({ vnic_profile: [{ id: 'vnic-01', name: 'mgmt' }] }),
+          })
+        }
+        return Promise.resolve({
+          ok: false,
+          status: 500,
+          json: () => Promise.resolve({ fault: { reason: 'Internal', detail: 'engine busy' } }),
+        })
+      }),
+    )
+
+    const error = await listNetworkVms('net-01').catch((e: unknown) => e)
+    expect(error).toBeInstanceOf(ApiError)
+    expect(error).toMatchObject({ status: 500 })
   })
 })
 

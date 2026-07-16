@@ -18,6 +18,7 @@ import {
 import type { StorageDomain } from '../../api/schemas/storage-domain'
 import type { StorageDomainEditBody } from '../../api/resources/storageDomains'
 import { useUpdateStorageDomain } from '../../hooks/useStorageDomainMutations'
+import { useT } from '../../i18n/useT'
 
 // Engine defaults for the advanced thresholds — shared with the New Storage
 // Domain modal (webadmin StorageConstants). The edit modal seeds from the
@@ -63,20 +64,6 @@ function parseOptionalNumber(raw: string): number | undefined {
   return Number.isFinite(value) ? value : undefined
 }
 
-// Webadmin's IntegerValidation: a bounded whole number, required here (the
-// space thresholds are NotEmptyValidation). Mirrors the create modal.
-function integerRangeError(raw: string, min: number, max: number): string | undefined {
-  const trimmed = raw.trim()
-  if (trimmed === '') return 'Enter a value'
-  const value = Number(trimmed)
-  if (!Number.isInteger(value) || value < min || value > max) {
-    return max === Number.MAX_SAFE_INTEGER
-      ? `Must be a whole number of at least ${min}`
-      : `Must be a whole number between ${min} and ${max}`
-  }
-  return undefined
-}
-
 // The Edit / Manage Domain modal — PUT /storagedomains/{id} with only the
 // changed metadata (webadmin StorageModel parity). Editable set: name (always
 // resent), description, comment, warning-low-space %, critical-blocker GB,
@@ -92,10 +79,26 @@ export function EditStorageDomainModal({
   isOpen: boolean
   onClose: () => void
 }) {
+  const t = useT()
   const [draft, setDraft] = useState<EditDraft>(() => draftFrom(domain))
 
   const set = <K extends keyof EditDraft>(key: K, value: EditDraft[K]) => {
     setDraft((current) => ({ ...current, [key]: value }))
+  }
+
+  // Webadmin's IntegerValidation: a bounded whole number, required here (the
+  // space thresholds are NotEmptyValidation). Mirrors the create modal —
+  // in-component so the error copy resolves through the i18n catalog.
+  const integerRangeError = (raw: string, min: number, max: number): string | undefined => {
+    const trimmed = raw.trim()
+    if (trimmed === '') return t('storageForm.validation.required')
+    const value = Number(trimmed)
+    if (!Number.isInteger(value) || value < min || value > max) {
+      return max === Number.MAX_SAFE_INTEGER
+        ? t('storageForm.validation.minInteger', { min })
+        : t('storageForm.validation.rangeInteger', { min, max })
+    }
+    return undefined
   }
 
   const update = useUpdateStorageDomain()
@@ -162,14 +165,17 @@ export function EditStorageDomainModal({
       aria-labelledby="edit-storage-domain-title"
       aria-describedby="edit-storage-domain-body"
     >
-      <ModalHeader title={`Edit ${domain.name}`} labelId="edit-storage-domain-title" />
+      <ModalHeader
+        title={t('storage.edit.title', { name: domain.name })}
+        labelId="edit-storage-domain-title"
+      />
       <ModalBody id="edit-storage-domain-body">
         <Form onSubmit={(event) => event.preventDefault()}>
-          <FormGroup label="Name" isRequired fieldId="edit-storage-domain-name">
+          <FormGroup label={t('common.field.name')} isRequired fieldId="edit-storage-domain-name">
             <TextInput
               id="edit-storage-domain-name"
               isRequired
-              aria-label="Storage domain name"
+              aria-label={t('storageForm.aria.name')}
               validated={nameEmpty ? 'error' : 'default'}
               value={draft.name}
               onChange={(_event, value) => set('name', value)}
@@ -177,38 +183,41 @@ export function EditStorageDomainModal({
             {nameEmpty && (
               <FormHelperText>
                 <HelperText>
-                  <HelperTextItem variant="error">Enter a name</HelperTextItem>
+                  <HelperTextItem variant="error">{t('storage.edit.nameRequired')}</HelperTextItem>
                 </HelperText>
               </FormHelperText>
             )}
           </FormGroup>
 
-          <FormGroup label="Description" fieldId="edit-storage-domain-description">
+          <FormGroup
+            label={t('common.field.description')}
+            fieldId="edit-storage-domain-description"
+          >
             <TextInput
               id="edit-storage-domain-description"
-              aria-label="Storage domain description"
+              aria-label={t('storageForm.aria.description')}
               value={draft.description}
               onChange={(_event, value) => set('description', value)}
             />
           </FormGroup>
 
-          <FormGroup label="Comment" fieldId="edit-storage-domain-comment">
+          <FormGroup label={t('common.field.comment')} fieldId="edit-storage-domain-comment">
             <TextInput
               id="edit-storage-domain-comment"
-              aria-label="Storage domain comment"
+              aria-label={t('storageForm.aria.comment')}
               value={draft.comment}
               onChange={(_event, value) => set('comment', value)}
             />
           </FormGroup>
 
           <FormGroup
-            label="Warning low space indicator (%)"
+            label={t('storageForm.field.warningLowSpace')}
             fieldId="edit-storage-domain-warning-low-space"
           >
             <TextInput
               id="edit-storage-domain-warning-low-space"
               type="number"
-              aria-label="Warning low space indicator percent"
+              aria-label={t('storageForm.aria.warningLowSpace')}
               validated={warningError !== undefined ? 'error' : 'default'}
               value={draft.warningLowSpace}
               onChange={(_event, value) => set('warningLowSpace', value)}
@@ -223,13 +232,13 @@ export function EditStorageDomainModal({
           </FormGroup>
 
           <FormGroup
-            label="Critical space action blocker (GB)"
+            label={t('storageForm.field.criticalSpaceBlocker')}
             fieldId="edit-storage-domain-critical-space-blocker"
           >
             <TextInput
               id="edit-storage-domain-critical-space-blocker"
               type="number"
-              aria-label="Critical space action blocker in gigabytes"
+              aria-label={t('storageForm.aria.criticalSpaceBlocker')}
               validated={criticalError !== undefined ? 'error' : 'default'}
               value={draft.criticalSpaceBlocker}
               onChange={(_event, value) => set('criticalSpaceBlocker', value)}
@@ -247,8 +256,8 @@ export function EditStorageDomainModal({
             <StackItem>
               <Checkbox
                 id="edit-storage-domain-wipe-after-delete"
-                label="Wipe after delete"
-                aria-label="Wipe after delete"
+                label={t('storageForm.field.wipeAfterDelete')}
+                aria-label={t('storageForm.field.wipeAfterDelete')}
                 isChecked={draft.wipeAfterDelete}
                 onChange={(_event, checked) => set('wipeAfterDelete', checked)}
               />
@@ -259,8 +268,8 @@ export function EditStorageDomainModal({
               <StackItem>
                 <Checkbox
                   id="edit-storage-domain-backup"
-                  label="Backup"
-                  aria-label="Backup"
+                  label={t('storageForm.field.backup')}
+                  aria-label={t('storageForm.field.backup')}
                   isChecked={draft.backup}
                   onChange={(_event, checked) => set('backup', checked)}
                 />
@@ -276,10 +285,10 @@ export function EditStorageDomainModal({
           isLoading={pending}
           isDisabled={pending || invalid}
         >
-          Save
+          {t('common.action.save')}
         </Button>
         <Button variant="secondary" onClick={onClose} isDisabled={pending}>
-          Cancel
+          {t('common.action.cancel')}
         </Button>
       </ModalFooter>
     </Modal>

@@ -183,8 +183,13 @@ function normalizePathBase(path: string): string {
 //     origin); bare '/' collapses to '' (same-origin root).
 //   - an absolute http(s) URL on the PAGE's own origin: collapses to its path
 //     ('' when the path is just root) — same same-origin proxy semantics.
-//   - an absolute http(s) URL on a DIFFERENT origin: the origin is kept (the
+//   - an absolute HTTPS URL on a DIFFERENT origin: the origin is kept (the
 //     engine's fixed paths are appended), the direct-connect (CORS) shape.
+//     Plaintext http to another origin is REJECTED — the browser talks to that
+//     engine directly, so the base carries the bearer token (and Basic creds at
+//     SSO login); http would send them cleartext, and the config docs describe
+//     the direct-connect list as https-only. Same-origin http is exempt: it
+//     collapses to a same-origin path and rides the page's own scheme.
 // Anything else (javascript:, data:, garbage) drops the entry.
 function serverBase(url: string | undefined): string | undefined {
   if (!url) return undefined
@@ -203,6 +208,9 @@ function serverBase(url: string | undefined): string | undefined {
       // Same origin as the page: keep any path (the proxy prefix), else ''.
       return normalizePathBase(parsed.pathname)
     }
+    // Cross-origin (direct-connect): https only — a cleartext base would leak
+    // the bearer token/credentials to another host.
+    if (parsed.protocol !== 'https:') return undefined
     return parsed.origin
   } catch {
     return undefined

@@ -8,17 +8,19 @@ import {
   SyncAltIcon,
 } from '@patternfly/react-icons'
 import type { VmAction } from '../api/resources/vms'
+import type { MessageId } from '../i18n/messages/en'
 import { canReset, canRestart, canShutdown, canStart, canSuspend } from '../lib/vm-status'
 
 export interface PowerAction {
   action: VmAction
   allowed: (status: string | undefined) => boolean
   icon: ReactNode
-  // one-line hover tooltip explaining what the action does
-  description: string
+  // one-line hover tooltip explaining what the action does — a message id the
+  // consuming component resolves via t() (module-level const, no hook here)
+  descriptionId: MessageId
   isDanger?: boolean
-  // body copy for the confirmation modal; absent means fire immediately
-  confirmBody?: string
+  // body copy id for the confirmation modal; absent means fire immediately
+  confirmBodyId?: MessageId
 }
 
 // Single source for the power lifecycle menu — the detail header's Power
@@ -33,45 +35,42 @@ export const POWER_ACTIONS: PowerAction[] = [
     action: 'start',
     allowed: canStart,
     icon: <PlayIcon />,
-    description: 'Boot the VM on a host in its cluster.',
+    descriptionId: 'power.start.description',
   },
   {
     action: 'shutdown',
     allowed: canShutdown,
     icon: <PowerOffIcon />,
-    description: 'Ask the guest OS to shut down cleanly, then power off.',
+    descriptionId: 'power.shutdown.description',
     isDanger: true,
-    confirmBody:
-      'The guest OS will be asked to shut down; anyone using this VM will be interrupted.',
+    confirmBodyId: 'power.shutdown.confirm',
   },
   {
     action: 'stop',
     allowed: canShutdown,
     icon: <OffIcon />,
-    description: 'Cut power immediately without telling the guest OS — like pulling the plug.',
+    descriptionId: 'power.stop.description',
     isDanger: true,
-    confirmBody:
-      'Powering off cuts power without asking the guest OS to shut down — unsaved data may be lost.',
+    confirmBodyId: 'power.stop.confirm',
   },
   {
     action: 'reboot',
     allowed: canRestart,
     icon: <RedoIcon />,
-    description: 'Ask the guest OS to restart cleanly.',
-    confirmBody: 'The guest OS will be asked to restart; anyone using this VM will be interrupted.',
+    descriptionId: 'power.reboot.description',
+    confirmBodyId: 'power.reboot.confirm',
   },
   {
     action: 'reset',
     allowed: canReset,
     icon: <SyncAltIcon />,
-    description: 'Restart instantly without telling the guest OS — like pressing the reset button.',
-    confirmBody:
-      'Hard-resets the VM without asking the guest OS — like pressing the reset button; unsaved data is lost.',
+    descriptionId: 'power.reset.description',
+    confirmBodyId: 'power.reset.confirm',
   },
   {
     action: 'suspend',
     allowed: canSuspend,
     icon: <PauseIcon />,
-    description: 'Save the VM state to disk and pause it; resume later with Start.',
+    descriptionId: 'power.suspend.description',
   },
 ]

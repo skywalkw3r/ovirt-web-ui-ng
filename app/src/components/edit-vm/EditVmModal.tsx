@@ -1,11 +1,12 @@
 import { useCallback, useState } from 'react'
 import { Button, Modal, ModalBody, ModalFooter, ModalHeader } from '@patternfly/react-core'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { listClusterCpuProfiles, listClusters } from '../../api/resources/clusters'
-import { listHosts } from '../../api/resources/hosts'
+import { listClusterCpuProfiles } from '../../api/resources/clusters'
 import { changeVmCd, listOperatingSystems } from '../../api/resources/vms'
 import type { Vm } from '../../api/schemas/vm'
 import { useCapabilities } from '../../auth/capabilities'
+import { useClusters } from '../../hooks/useCatalog'
+import { useHosts } from '../../hooks/useHosts'
 import { useUpdateVm } from '../../hooks/useUpdateVm'
 import { useT } from '../../i18n/useT'
 import { ModalVerticalTabs } from '../forms/ModalVerticalTabs'
@@ -69,7 +70,11 @@ export function EditVmModal({
 
   // Option sources for the General section. Both default to [] while loading —
   // the selects just show fewer options, so no blocking spinner is needed.
-  const clusters = useQuery({ queryKey: ['clusters'], queryFn: () => listClusters() })
+  // useClusters is the shared catalog consumer: its ['clusters', ''] key + fn
+  // (and 60s staleTime) match every other reader, so the modal reuses that one
+  // cache entry instead of a bare ['clusters'] key that would fire a redundant
+  // full-clusters fetch and get double-hit by prefix invalidations.
+  const clusters = useClusters()
   const operatingSystems = useQuery({
     queryKey: ['operatingSystems'],
     queryFn: listOperatingSystems,
@@ -77,13 +82,12 @@ export function EditVmModal({
 
   // Host placement needs the host inventory — an admin-only read on the engine
   // (same gate as useHosts/RunOnceModal), so the whole Host section is
-  // admin-only, exactly like webadmin.
+  // admin-only, exactly like webadmin. Reuse the useHosts hook itself so this
+  // modal shares the EXACT ['hosts', ''] key AND queryFn (all_content=true) the
+  // infra tree and HE-crown joins depend on — a bare listHosts() here refetches
+  // the shared entry without hosted_engine and strips that computed data.
   const { isAdmin } = useCapabilities()
-  const hosts = useQuery({
-    queryKey: ['hosts', ''],
-    queryFn: () => listHosts(),
-    enabled: isAdmin,
-  })
+  const hosts = useHosts()
 
   // The Resource Allocation CPU-profile select — keyed like useClusterCpuProfiles
   // so the cluster detail page and this modal share the cache.

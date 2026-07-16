@@ -2,7 +2,9 @@ import { useMemo, useState, type ReactNode } from 'react'
 import {
   Button,
   EmptyState,
+  EmptyStateActions,
   EmptyStateBody,
+  EmptyStateFooter,
   // Label stays for the categorical LUN type badge — the status icon is only
   // for states; the Status column uses DiskStatusLabel.
   Label,
@@ -481,9 +483,13 @@ function DisksTable() {
           <EmptyStateBody>
             {disks.error instanceof Error ? disks.error.message : t('common.error.unknown')}
           </EmptyStateBody>
-          <Button variant="primary" onClick={() => void disks.refetch()}>
-            {t('common.action.retry')}
-          </Button>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="primary" onClick={() => void disks.refetch()}>
+                {t('common.action.retry')}
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 
@@ -495,9 +501,13 @@ function DisksTable() {
             {query !== '' ? t('disks.searchEmpty.body') : t('disks.empty.body')}
           </EmptyStateBody>
           {query !== '' && (
-            <Button variant="link" onClick={() => apply('')}>
-              {t('common.action.clearSearch')}
-            </Button>
+            <EmptyStateFooter>
+              <EmptyStateActions>
+                <Button variant="link" onClick={() => apply('')}>
+                  {t('common.action.clearSearch')}
+                </Button>
+              </EmptyStateActions>
+            </EmptyStateFooter>
           )}
         </EmptyState>
       )}

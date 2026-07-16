@@ -25,15 +25,21 @@ describe('fetchCapabilityProfile', () => {
     vi.unstubAllGlobals()
   })
 
-  it('fast path: an inlined admin* user_name (mock) → admin without a second call', async () => {
+  // Intentional behavior change: the admin* name fast path is mock-gated
+  // (IS_MOCK) — on a live engine the name is never trusted, so a real
+  // non-admin named admin* keeps Filter:true instead of triggering the
+  // engine's Filter:false rejection storm. Tier always comes from the
+  // server-verified permissions probe here (vitest env is not mock mode).
+  it('an inlined admin* user_name is not trusted — tier comes from the permissions probe', async () => {
     setSessionToken('t')
-    const fetchMock = mockResponses({
-      authenticated_user: { id: 'u1', user_name: 'admin@internal' },
-    })
+    const fetchMock = mockResponses(
+      { authenticated_user: { id: 'u1', user_name: 'admin_ro@internal' } },
+      { permission: [{ role: { name: 'UserRole', administrative: 'false' } }] },
+    )
 
     const profile = await fetchCapabilityProfile()
-    expect(profile).toEqual({ tier: 'admin', isAdmin: true, username: 'admin@internal' })
-    expect(fetchMock).toHaveBeenCalledTimes(1) // no permissions lookup needed
+    expect(profile).toEqual({ tier: 'user', isAdmin: false, username: 'admin_ro@internal' })
+    expect(fetchMock).toHaveBeenCalledTimes(2) // name alone never short-circuits
   })
 
   it('real engine: no user_name, an administrative role → admin (string "true" coerced)', async () => {

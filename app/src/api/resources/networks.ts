@@ -253,22 +253,75 @@ export interface NetworkHostAttachment {
   inSync: boolean
 }
 
+// Max per-host attachment reads in flight at once in listNetworkHosts' fan-out —
+// small enough that a 100-host fleet opens ~6 sockets at a time, not 100.
+const HOST_ATTACHMENT_POOL_SIZE = 6
+
+// Bounded-concurrency Promise.allSettled: runs `task` over `items` with at most
+// `limit` promises in flight, settling each result in place (result[i] pairs
+// with items[i], regardless of which reads finish first) so a single failed item
+// never rejects the whole batch. Kept inline — listNetworkHosts is the only
+// caller.
+async function mapSettledPool<T, R>(
+  items: readonly T[],
+  limit: number,
+  task: (item: T) => Promise<R>,
+): Promise<PromiseSettledResult<R>[]> {
+  const results = new Array<PromiseSettledResult<R>>(items.length)
+  let cursor = 0
+  async function worker(): Promise<void> {
+    while (cursor < items.length) {
+      const index = cursor++
+      try {
+        results[index] = { status: 'fulfilled', value: await task(items[index]) }
+      } catch (reason) {
+        results[index] = { status: 'rejected', reason }
+      }
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, () => worker()))
+  return results
+}
+
 // Hosts on a network — a bounded fan-out: the global /hosts list, then one
 // GET /hosts/{id}/networkattachments per host filtered to this network's id.
-// N+1 by construction (1 + hostCount reads); fine at lab/single-DC scale, where
-// host count is small. A large fleet would want the server-side
-// GetVdsAndNetworkInterfacesByNetworkId query webadmin uses, which the REST
-// api-model does not expose — the documented tradeoff for staying REST-only.
+// N+1 by construction (1 + hostCount reads), but the per-host reads run through
+// a concurrency pool (HOST_ATTACHMENT_POOL_SIZE in flight) rather than a single
+// Promise.all that opens one socket per host at once. allSettled semantics make
+// the join fault-tolerant: a host answering 5xx/404 (or a read the engine chokes
+// on) drops from the result instead of rejecting the whole tab into the retry
+// cycle. A 401/403 is the exception — a dead/forbidden session is not a per-host
+// fault, so it propagates (mirrors resources/providers.ts listProviders). A large
+// fleet would still prefer the server-side GetVdsAndNetworkInterfacesByNetworkId
+// query webadmin uses, which the REST api-model does not expose — the documented
+// tradeoff for staying REST-only. The membership hook no longer polls this
+// (useNetworkMembership.ts), so the fan-out fires once per Hosts-tab visit.
 export async function listNetworkHosts(networkId: string): Promise<NetworkHostAttachment[]> {
   const hosts = await listHosts()
-  const rows = await Promise.all(
-    hosts.map(async (host) => {
-      const attachments = await listHostNetworkAttachments(host.id)
-      const match = attachments.find((att) => att.network?.id === networkId)
-      return match ? { host, inSync: match.in_sync !== false } : undefined
-    }),
+  const settled = await mapSettledPool(hosts, HOST_ATTACHMENT_POOL_SIZE, (host) =>
+    listHostNetworkAttachments(host.id),
   )
-  return rows.filter((row): row is NetworkHostAttachment => row !== undefined)
+  // An auth verdict on any host read means the session is broken, not that the
+  // host lacks the network — surface it rather than silently dropping the host.
+  const authFailure = settled
+    .filter((result) => result.status === 'rejected')
+    .find(
+      (result) =>
+        result.reason instanceof ApiError &&
+        (result.reason.status === 401 || result.reason.status === 403),
+    )
+  if (authFailure) throw authFailure.reason
+
+  // Order follows the /hosts list, not read-completion order (mapSettledPool
+  // fills result[i] for host[i]); a failed or non-matching host is skipped.
+  const rows: NetworkHostAttachment[] = []
+  hosts.forEach((host, index) => {
+    const result = settled[index]
+    if (result.status !== 'fulfilled') return
+    const match = result.value.find((att) => att.network?.id === networkId)
+    if (match) rows.push({ host, inSync: match.in_sync !== false })
+  })
+  return rows
 }
 
 // A slim VM/template row for the membership join: identity for the link column
@@ -312,6 +365,15 @@ async function networkProfileIds(networkId: string): Promise<Set<string>> {
 // single GET /vms?follow=nics list (one call, not N per-VM /nics reads — the
 // api-model offers no vms locator on a network or on a vNIC profile). A network
 // with no vNIC profiles can carry no VMs, so short-circuit before the /vms read.
+//
+// DELIBERATE non-degrade (diverges from the CLAUDE.md followed-read degrade
+// rule): membership is computed FROM the inlined nics, so a bare /vms read cannot
+// compute it — degrading a 5xx to the bare read would render a false-empty "no
+// VMs" list, which is worse than an honest failure. So this does NOT use
+// fetchWithFollowFallback; the ApiError propagates to the tab's error state
+// (four-states EmptyState + retry). The cost is bounded — the hook no longer
+// polls (useNetworkMembership.ts), so the follow read fires once per tab visit,
+// and the global query-retry policy caps re-attempts.
 export async function listNetworkVms(networkId: string): Promise<NetworkConsumer[]> {
   const profileIds = await networkProfileIds(networkId)
   if (profileIds.size === 0) return []
@@ -319,8 +381,10 @@ export async function listNetworkVms(networkId: string): Promise<NetworkConsumer
   return (data.vm ?? []).filter((vm) => usesNetworkProfile(vm, profileIds))
 }
 
-// Templates with a vNIC on this network — same derivation as listNetworkVms
-// over GET /templates?follow=nics.
+// Templates with a vNIC on this network — same derivation as listNetworkVms over
+// GET /templates?follow=nics, including its deliberate non-degrade: a bare read
+// can't compute membership, so a 5xx fails loudly into the tab's error state
+// rather than degrading to a false-empty list.
 export async function listNetworkTemplates(networkId: string): Promise<NetworkConsumer[]> {
   const profileIds = await networkProfileIds(networkId)
   if (profileIds.size === 0) return []
