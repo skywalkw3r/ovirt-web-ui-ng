@@ -1,3 +1,0 @@
-# Machine-generated translation caches — regenerate via npm run i18n:backfill
-*.json
-!es/*.json

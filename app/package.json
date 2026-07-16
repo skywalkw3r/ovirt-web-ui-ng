@@ -15,11 +15,7 @@
     "e2e": "playwright test",
     "e2e:ui": "playwright test --ui",
     "verify:engine": "node ../scripts/verify-live-engine.mjs",
-    "deploy:engine": "bash ../scripts/deploy-engine.sh",
-    "i18n:translate": "node scripts/locale-data/translate-backfill.mjs --all",
-    "i18n:fill": "node scripts/locale-data/fill-all-locales.mjs",
-    "i18n:build": "node scripts/locale-data/build-all.mjs",
-    "i18n:backfill": "node scripts/locale-data/translate-backfill.mjs --all && node scripts/locale-data/fill-all-locales.mjs && node scripts/locale-data/build-all.mjs"
+    "deploy:engine": "bash ../scripts/deploy-engine.sh"
   },
   "dependencies": {
     "@novnc/novnc": "^1.7.0",
