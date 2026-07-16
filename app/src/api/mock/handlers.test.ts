@@ -326,6 +326,29 @@ describe('permissions data layer (mock)', () => {
     expect((await settle(listGroups({ search: 'dev' }))).map((g) => g.name)).toEqual(['dev-team'])
   })
 
+  // The dashboard's status badges deep-link into /hosts with an engine search
+  // clause; a multi-status badge (maintenance = maintenance +
+  // preparing_for_maintenance) ORs its statuses, so the mock has to parse OR
+  // or those links would come back empty in dev:mock and the e2e run.
+  it('honors the ?search OR grammar the dashboard status links emit', async () => {
+    const names = async (search: string) =>
+      (await settle(listHostsUsage(search))).map((h) => h.name).sort()
+
+    expect(await names('status=maintenance')).toEqual(['node-03'])
+    // no fixture sits in preparing_for_maintenance, so the real dashboard
+    // clause resolves to the maintenance host alone — the OR must not widen it
+    expect(await names('status=maintenance or status=preparing_for_maintenance')).toEqual([
+      'node-03',
+    ])
+    // both sides contribute
+    const upAndMaintenance = await names('status=up or status=maintenance')
+    expect(upAndMaintenance).toContain('node-03')
+    expect(upAndMaintenance.length).toBeGreaterThan(1)
+    // AND still binds tighter than OR: (name=node-03 and status=up) is empty,
+    // so only the right-hand clause matches
+    expect(await names('name=node-03 and status=up or status=maintenance')).toEqual(['node-03'])
+  })
+
   it('grants a role to a user and the entity permissions list picks it up', async () => {
     // cluster-02 starts with no permissions subcollection (404 → [])
     expect(await settle(listClusterPermissions('cluster-02'))).toEqual([])

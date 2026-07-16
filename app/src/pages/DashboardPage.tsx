@@ -109,17 +109,17 @@ const DONUT_SEGMENTS: { kind: VmStatusKind; labelId: MessageId; color: string }[
   { kind: 'unknown', labelId: 'dashboard.vmStatus.unknown', color: chart_color_black_500.var },
 ]
 
-// VM donut kinds whose count maps to a single engine status get a status-
-// prefiltered deep link into the filterable /vms list — VmsPage reads ?q= as
-// the engine search DSL (see useVmSearch), so the URL shape mirrors the list
-// toolbar's own committed query. Multi-status kinds (transitional, unknown)
-// have no faithful single-status clause, so their legend rows stay plain text.
-// The paused kind also covers 'suspended'; 'status=paused' is the pragmatic
-// primary clause (the engine's OR grammar is deferred).
+// VM donut kinds whose count maps faithfully to an engine status clause get a
+// status-prefiltered deep link into the filterable /vms list — VmsPage reads
+// ?q= as the engine search DSL (see useVmSearch), so the URL shape mirrors the
+// list toolbar's own committed query. The clause has to cover every status the
+// kind counts (paused also buckets 'suspended', see lib/vm-status), or the
+// linked list under-reports its own badge. Open-ended kinds (transitional,
+// unknown) have no bounded clause, so their legend rows stay plain text.
 const VM_STATUS_QUERY: Partial<Record<VmStatusKind, string>> = {
   running: 'status=up',
   stopped: 'status=down',
-  paused: 'status=paused',
+  paused: 'status=paused or status=suspended',
   error: 'status=not_responding',
 }
 
@@ -261,10 +261,12 @@ interface StatusBadge {
   // screen-reader suffix, e.g. "running" → "3 running"
   label: string
   // status-prefiltered deep link into the filterable list page (VmsPage /
-  // HostsPage read ?q= as the engine search DSL). Only set for badges whose
-  // count maps to a single engine status, so the linked list's count matches
-  // the badge — multi-status buckets (transitional, maintenance, attention)
-  // have no faithful single-status clause and stay plain.
+  // HostsPage read ?q= as the engine search DSL). Only set where the clause
+  // covers exactly the statuses the badge counts, so the linked list's count
+  // matches the badge — a multi-status bucket ORs its statuses together
+  // (HOST_MAINTENANCE_QUERY). The open-ended 'attention' bucket is every
+  // status that isn't up or maintenance, so it has no bounded clause and
+  // stays plain.
   link?: { to: string; q: string }
 }
 
@@ -388,6 +390,15 @@ function InventoryRow({
 // Everything not up and not in (or entering) maintenance needs eyes on it —
 // non_responsive, non_operational, install_failed, error, down, …
 const HOST_MAINTENANCE_STATUSES = new Set(['maintenance', 'preparing_for_maintenance'])
+
+// The maintenance badge's deep link. Both statuses in HOST_MAINTENANCE_STATUSES
+// have to ride the clause or the linked list would under-count the badge while
+// a host is mid-transition — hence the OR, which the engine's search grammar
+// takes and the mock's searchMatches parses (AND binds tighter than OR).
+// Keep in step with HOST_MAINTENANCE_STATUSES.
+const HOST_MAINTENANCE_QUERY = [...HOST_MAINTENANCE_STATUSES]
+  .map((status) => `status=${status}`)
+  .join(' or ')
 
 function hostBuckets(hosts: { status?: string }[]) {
   let up = 0
@@ -536,6 +547,7 @@ function InventoryCard({
                   <WrenchIcon />,
                   hostCounts.maintenance,
                   t('dashboard.badge.inMaintenance'),
+                  { to: '/hosts', q: HOST_MAINTENANCE_QUERY },
                 ),
                 badge(
                   'attention',

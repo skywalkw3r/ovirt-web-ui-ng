@@ -10771,16 +10771,26 @@ function entityMatchesTerm(entity: MockSearchableEntity, term: string): boolean 
   }
 }
 
+// 'a and b or c' groups as '(a and b) or c' — AND binds tighter than OR, the
+// engine's precedence. The dashboard's maintenance deep link is the OR case
+// (status=maintenance or status=preparing_for_maintenance); an empty side (a
+// trailing 'or') contributes nothing rather than matching everything.
 function searchMatches(entity: MockSearchableEntity, search: string | null): boolean {
   if (!search) return true
   const bare = search
     .replace(/\bsortby\s+[\w.]+(\s+(asc|desc))?/gi, '')
     .replace(/\bpage\s+\d+/gi, '')
-  const terms = bare
-    .split(' and ')
-    .map((term) => term.trim())
-    .filter((term) => term !== '')
-  return terms.every((term) => entityMatchesTerm(entity, term))
+  const clauses = bare
+    .split(' or ')
+    .map((clause) =>
+      clause
+        .split(' and ')
+        .map((term) => term.trim())
+        .filter((term) => term !== ''),
+    )
+    .filter((terms) => terms.length > 0)
+  if (clauses.length === 0) return true
+  return clauses.some((terms) => terms.every((term) => entityMatchesTerm(entity, term)))
 }
 
 // ---------------------------------------------------------------------------
