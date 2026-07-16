@@ -9,7 +9,9 @@ import {
   DescriptionListGroup,
   DescriptionListTerm,
   EmptyState,
+  EmptyStateActions,
   EmptyStateBody,
+  EmptyStateFooter,
   Grid,
   GridItem,
   Label,
@@ -98,9 +100,13 @@ export function GuestInfoTab({ vm }: { vm: Vm }) {
               ? reportedDevices.error.message
               : t('common.error.unknown')}
           </EmptyStateBody>
-          <Button variant="primary" onClick={() => void reportedDevices.refetch()}>
-            {t('common.action.retry')}
-          </Button>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="primary" onClick={() => void reportedDevices.refetch()}>
+                {t('common.action.retry')}
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 

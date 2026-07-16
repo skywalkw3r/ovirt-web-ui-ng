@@ -789,13 +789,13 @@ export function deriveMemoryOnCommit(draft: EditVmDraft, overcommitPercent?: num
 // guaranteed <= memory <= max. Surface it inline so the user sees why a save
 // would bounce rather than eating a raw fault. max is only checked when set
 // (0 means "let the engine default it"). Returns undefined when consistent.
-export function vmMemoryError(draft: EditVmDraft): string | undefined {
-  if (draft.memoryMb <= 0) return 'Memory Size must be greater than 0'
+export function vmMemoryError(draft: EditVmDraft): MessageId | undefined {
+  if (draft.memoryMb <= 0) return 'templateForm.memory.error.positive'
   if (draft.guaranteedMemoryMb > draft.memoryMb) {
-    return 'Physical Memory Guaranteed cannot exceed the Memory Size'
+    return 'templateForm.memory.error.guaranteed'
   }
   if (draft.maxMemoryMb > 0 && draft.maxMemoryMb < draft.memoryMb) {
-    return 'Maximum memory cannot be smaller than the Memory Size'
+    return 'templateForm.memory.error.max'
   }
   return undefined
 }
@@ -805,6 +805,12 @@ export function vmMemoryError(draft: EditVmDraft): string | undefined {
 // I18NNameValidation — unicode letters, digits, '-', '_' and '.', no spaces.
 // Shared by the Edit VM General section and the Clone VM dialog so both mark
 // the field invalid inline instead of bouncing a raw engine fault.
+//
+// i18n: this deliberately returns an English string, NOT a MessageId. Several
+// consumers outside this feature dir render the return value directly as text
+// (CloneVmModal, TemplateFormModal, instanceTypeDraft's re-export), so returning
+// an id here would surface a raw id to those users. Left English for backward
+// compatibility until those call sites move to a MessageId contract in one pass.
 export const MAX_VM_NAME_LENGTH = 64
 const VM_NAME_PATTERN = /^[\p{L}\p{Nd}_.-]+$/u
 
@@ -820,40 +826,52 @@ export function vmNameError(name: string): string | undefined {
 }
 
 // "Optimized for" (vm.type) — webadmin's three profiles. Shared so the General
-// section's select and any label lookup stay in sync.
-export const OPTIMIZED_FOR_OPTIONS: { value: string; label: string }[] = [
-  { value: 'desktop', label: 'Desktop' },
-  { value: 'server', label: 'Server' },
-  { value: 'high_performance', label: 'High Performance' },
+// section's select and any label lookup stay in sync. Each option carries both
+// a plain `label` (kept for out-of-dir consumers like TemplateFormModal that
+// render it directly) and a `labelId` the Edit VM sections resolve via t().
+export const OPTIMIZED_FOR_OPTIONS: { value: string; label: string; labelId: MessageId }[] = [
+  { value: 'desktop', label: 'Desktop', labelId: 'vm.edit.optimizedFor.desktop' },
+  { value: 'server', label: 'Server', labelId: 'vm.edit.optimizedFor.server' },
+  {
+    value: 'high_performance',
+    label: 'High Performance',
+    labelId: 'vm.edit.optimizedFor.highPerformance',
+  },
 ]
 
 // Boot device select options — a blank placeholder plus the three orderable
-// devices the Boot Options section offers for first/second boot.
-export const BOOT_DEVICE_OPTIONS: { value: string; label: string }[] = [
-  { value: '', label: 'None' },
-  { value: 'hd', label: 'Hard Disk' },
-  { value: 'cdrom', label: 'CD-ROM' },
-  { value: 'network', label: 'Network (PXE)' },
+// devices the Boot Options section offers for first/second boot. Labels resolve
+// per-locale at the render site (BootOptionsSection) via the labelId.
+export const BOOT_DEVICE_OPTIONS: { value: string; labelId: MessageId }[] = [
+  { value: '', labelId: 'vm.edit.boot.device.none' },
+  { value: 'hd', labelId: 'vm.edit.boot.device.hd' },
+  { value: 'cdrom', labelId: 'vm.edit.boot.device.cdrom' },
+  { value: 'network', labelId: 'vm.edit.boot.device.network' },
 ]
 
 // Console "disconnect action" options — a blank placeholder plus the engine's
-// three console-disconnect behaviors.
-export const DISCONNECT_ACTION_OPTIONS: { value: string; label: string }[] = [
-  { value: '', label: 'No action' },
-  { value: 'LOCK_SCREEN', label: 'Lock screen' },
-  { value: 'LOGOUT', label: 'Log out' },
-  { value: 'REBOOT', label: 'Reboot' },
-  { value: 'SHUTDOWN', label: 'Shut down' },
+// four console-disconnect behaviors. Labels resolve per-locale at the render
+// site (ConsoleSection) via the labelId.
+export const DISCONNECT_ACTION_OPTIONS: { value: string; labelId: MessageId }[] = [
+  { value: '', labelId: 'vm.edit.console.disconnect.none' },
+  { value: 'LOCK_SCREEN', labelId: 'vm.edit.console.disconnect.lock' },
+  { value: 'LOGOUT', labelId: 'vm.edit.console.disconnect.logout' },
+  { value: 'REBOOT', labelId: 'action.reboot' },
+  { value: 'SHUTDOWN', labelId: 'vm.edit.console.disconnect.shutdown' },
 ]
 
 // Graphics protocol options — SPICE/VNC map to display.type; Headless removes
-// the graphics device (webadmin's IsHeadlessModeEnabled). Product tokens
-// (SPICE/VNC) stay verbatim; the Console section is hardcoded English (see the
-// section file), so labels live here as plain strings.
-export const GRAPHICS_PROTOCOL_OPTIONS: { value: string; label: string }[] = [
+// the graphics device (webadmin's IsHeadlessModeEnabled). SPICE/VNC are product
+// tokens kept verbatim (a plain `label`); only "Headless mode" is translatable,
+// so it carries a `labelId` the Console section resolves via t().
+export const GRAPHICS_PROTOCOL_OPTIONS: {
+  value: string
+  label?: string
+  labelId?: MessageId
+}[] = [
   { value: 'spice', label: 'SPICE' },
   { value: 'vnc', label: 'VNC' },
-  { value: 'headless', label: 'Headless mode' },
+  { value: 'headless', labelId: 'vm.edit.console.headless' },
 ]
 
 // VNC keyboard-layout codes the Console section offers (the QEMU/libvirt keymap
@@ -919,10 +937,11 @@ export const HARDWARE_CLOCK_TIMEZONES: string[] = [
 
 // Serial-number policy options — '' (cluster default → policy 'none' on the
 // wire) plus the three api-model SerialNumberPolicy values the System section
-// offers. Custom reveals the free-text serial input.
-export const SERIAL_NUMBER_POLICY_OPTIONS: { value: string; label: string }[] = [
-  { value: '', label: 'Cluster default' },
-  { value: 'host', label: 'Host ID' },
-  { value: 'vm', label: 'VM ID' },
-  { value: 'custom', label: 'Custom serial number' },
+// offers. Custom reveals the free-text serial input. Labels resolve per-locale
+// at the render site (SystemSection) via the labelId.
+export const SERIAL_NUMBER_POLICY_OPTIONS: { value: string; labelId: MessageId }[] = [
+  { value: '', labelId: 'vm.edit.system.serialPolicy.default' },
+  { value: 'host', labelId: 'vm.edit.system.serialPolicy.host' },
+  { value: 'vm', labelId: 'vm.edit.system.serialPolicy.vm' },
+  { value: 'custom', labelId: 'vm.edit.system.serialPolicy.custom' },
 ]

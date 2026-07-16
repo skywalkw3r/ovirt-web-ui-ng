@@ -7,6 +7,7 @@ import {
   TextInput,
 } from '@patternfly/react-core'
 import { FieldHelp } from '../forms/FieldHelp'
+import { useT } from '../../i18n/useT'
 // The slice of the host draft this section reads/writes. EditHostDraft and
 // NewHostDraft are both structural supersets, so the Edit and New Host modals
 // share this presentational section — same sharing rule as
@@ -27,28 +28,29 @@ export function KernelSection({
   draft: KernelDraft
   set: (key: keyof KernelDraft, value: string) => void
 }) {
+  const t = useT()
   return (
     <Form onSubmit={(event) => event.preventDefault()}>
       <FormGroup
-        label="Custom kernel command line"
+        label={t('hostForm.kernel.cmdline')}
         fieldId="edit-host-kernel-cmdline"
         labelHelp={
           <FieldHelp
-            field="Custom kernel command line"
-            content="Extra kernel boot parameters applied to the host (e.g. iommu=pt for device passthrough, hugepages, isolcpus). Applied on the next host reinstall or reboot."
+            field={t('hostForm.kernel.cmdline')}
+            content={t('hostForm.kernel.cmdline.help')}
           />
         }
       >
         <TextInput
           id="edit-host-kernel-cmdline"
-          aria-label="Custom kernel command line"
+          aria-label={t('hostForm.kernel.cmdline')}
           value={draft.kernelCmdline}
           onChange={(_event, value) => set('kernelCmdline', value)}
         />
         <FormHelperText>
           <HelperText>
             <HelperTextItem variant="warning">
-              Applied on the next host reinstall/reboot.
+              {t('hostForm.kernel.cmdline.warning')}
             </HelperTextItem>
           </HelperText>
         </FormHelperText>

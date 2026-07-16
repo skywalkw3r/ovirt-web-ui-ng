@@ -52,10 +52,11 @@ import { SanStorageSection } from './SanStorageSection'
 // does not expose — so, like ansible's ovirt_storage_domain state=imported,
 // the admin supplies the domain id (prefilled when a scanned LUN reports one).
 //
-// File-kind labels resolve through the i18n catalog (storage.import.title /
-// .type.posixfs / .glusterfs / .field.vfsType / .mountOptions, plus the shared
-// storageForm.* ids); the block-branch strings are hardcoded English pending
-// the externalization pass. Technical acronyms (NFS, iSCSI) stay verbatim.
+// All labels resolve through the i18n catalog (storage.import.title /
+// .type.posixfs / .glusterfs / .field.vfsType / .mountOptions, the block-branch
+// importStorage.* / fieldHelp.importStorage.domainId ids, plus the shared
+// storageForm.* ids); the success toast stays hardcoded English by convention.
+// Technical acronyms (NFS, iSCSI) stay verbatim.
 
 interface ImportDraft {
   name: string
@@ -490,20 +491,20 @@ export function ImportStorageDomainModal({
 
           {isBlock && (
             <FormGroup
-              label="Storage domain ID"
+              label={t('importStorage.domainId.label')}
               isRequired
               fieldId="import-storage-domain-domain-id"
               labelHelp={
                 <FieldHelp
-                  field="Storage domain ID"
-                  content="The UUID recorded in the pre-existing domain's own on-LUN metadata — the id it had in its previous engine. The host enumerates its connected targets and imports the domain matching this id; the name and settings come from the domain's metadata."
+                  field={t('importStorage.domainId.label')}
+                  content={t('fieldHelp.importStorage.domainId')}
                 />
               }
             >
               <TextInput
                 id="import-storage-domain-domain-id"
                 isRequired
-                aria-label="Storage domain ID"
+                aria-label={t('importStorage.domainId.label')}
                 placeholder="00000000-0000-0000-0000-000000000000"
                 validated={domainIdInvalid && draft.domainId !== '' ? 'error' : 'default'}
                 value={draft.domainId}
@@ -514,26 +515,23 @@ export function ImportStorageDomainModal({
                   <HelperTextItem
                     variant={domainIdInvalid && draft.domainId !== '' ? 'error' : 'default'}
                   >
-                    Enter the pre-existing domain&apos;s UUID.
+                    {t('importStorage.domainId.hint')}
                   </HelperTextItem>
                 </HelperText>
               </FormHelperText>
               {detectedDomainIds.length > 0 && (
                 <FormHelperText>
                   <HelperText>
-                    <HelperTextItem>
-                      Domain ids reported on the host&apos;s LUNs (may include domains this engine
-                      already manages):
-                    </HelperTextItem>
+                    <HelperTextItem>{t('importStorage.detectedIds.help')}</HelperTextItem>
                   </HelperText>
-                  <LabelGroup aria-label="Detected storage domain ids" numLabels={5}>
+                  <LabelGroup aria-label={t('importStorage.detectedIds.aria')} numLabels={5}>
                     {detectedDomainIds.map((id) => (
                       // clickable Label (PF renders it as a button) — one click
                       // fills the domain-id field with the reported id
                       <Label
                         key={id}
                         color="blue"
-                        aria-label={`Use domain id ${id}`}
+                        aria-label={t('importStorage.detectedIds.use', { id })}
                         onClick={() => set('domainId', id)}
                       >
                         {id}

@@ -2,11 +2,17 @@ import type { ReactNode } from 'react'
 import type { ThProps } from '@patternfly/react-table'
 import { Link } from '@tanstack/react-router'
 import type { Vm } from '../../api/schemas/vm'
+import type { MessageId } from '../../i18n/messages/en'
 import { VmStatusLabel } from '../VmStatusLabel'
 
 export interface VmMembershipColumn {
   key: string
-  label: string
+  // A column carries EITHER a labelId (resolved to text through t() inside
+  // VmMembershipTable — the preferred i18n path the shared columns use) OR a
+  // pre-resolved label string (out-of-dir tabs that translate at their own
+  // call site, e.g. ClusterVmsTab's description column). labelId wins when set.
+  label?: string
+  labelId?: MessageId
   width?: ThProps['width']
   render: (vm: Vm) => ReactNode
   // opt-in header sort (see hooks/useColumnSort). Status stays unsortable — it
@@ -23,7 +29,7 @@ export interface VmMembershipColumn {
 // file exports only the component (fast-refresh rule).
 export const VM_NAME_COLUMN: VmMembershipColumn = {
   key: 'name',
-  label: 'Name',
+  labelId: 'common.field.name',
   sortValue: (vm) => vm.name,
   render: (vm) => (
     <Link to="/vms/$vmId" params={{ vmId: vm.id }}>
@@ -34,6 +40,6 @@ export const VM_NAME_COLUMN: VmMembershipColumn = {
 
 export const VM_STATUS_COLUMN: VmMembershipColumn = {
   key: 'status',
-  label: 'Status',
+  labelId: 'common.field.status',
   render: (vm) => <VmStatusLabel status={vm.status} />,
 }

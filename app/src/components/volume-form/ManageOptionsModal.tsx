@@ -2,7 +2,9 @@ import { useState } from 'react'
 import {
   Button,
   EmptyState,
+  EmptyStateActions,
   EmptyStateBody,
+  EmptyStateFooter,
   Form,
   FormGroup,
   Modal,
@@ -37,8 +39,7 @@ const appendToOptions = () => document.getElementById(OPTIONS_MODAL_ID) ?? docum
 // The Manage Options modal (opened from the volume kebab). Reads the volume's
 // current tunables with the standard four states, lets an admin add/change a key
 // (setoption), reset a single key to its default (per-row), or reset every key
-// (reset-all danger confirm). Strings are hardcoded English this pass; a later
-// externalization sweep owns the catalog ids.
+// (reset-all danger confirm).
 export function ManageOptionsModal({
   volume,
   onClose,
@@ -82,60 +83,72 @@ export function ManageOptionsModal({
       aria-labelledby="volume-options-title"
       aria-describedby="volume-options-body"
     >
-      <ModalHeader title={`Volume options — ${volume.name}`} labelId="volume-options-title" />
+      <ModalHeader
+        title={t('volumes.options.title', { name: volume.name })}
+        labelId="volume-options-title"
+      />
       <ModalBody id="volume-options-body">
         <Stack hasGutter>
           <StackItem>
             {options.isPending && (
               <>
                 <Skeleton height="2rem" style={{ marginBottom: '0.5rem' }} />
-                <Skeleton height="2rem" screenreaderText="Loading volume options" />
+                <Skeleton height="2rem" screenreaderText={t('volumes.options.loading')} />
               </>
             )}
 
             {options.isError && (
-              <EmptyState titleText="Couldn't load volume options" status="danger">
+              <EmptyState titleText={t('volumes.options.error.title')} status="danger">
                 <EmptyStateBody>
                   {options.error instanceof Error
                     ? options.error.message
-                    : 'The volume options could not be read.'}
+                    : t('volumes.options.error.body')}
                 </EmptyStateBody>
-                <Button variant="primary" onClick={() => void options.refetch()}>
-                  {t('common.action.retry')}
-                </Button>
+                <EmptyStateFooter>
+                  <EmptyStateActions>
+                    <Button variant="primary" onClick={() => void options.refetch()}>
+                      {t('common.action.retry')}
+                    </Button>
+                  </EmptyStateActions>
+                </EmptyStateFooter>
               </EmptyState>
             )}
 
             {options.isSuccess && options.data.length === 0 && (
-              <EmptyState titleText="No custom options set">
-                <EmptyStateBody>
-                  Every tunable is at its gluster default. Add one below to override a default.
-                </EmptyStateBody>
+              <EmptyState titleText={t('volumes.options.empty.title')}>
+                <EmptyStateBody>{t('volumes.options.empty.body')}</EmptyStateBody>
               </EmptyState>
             )}
 
             {options.isSuccess && options.data.length > 0 && (
-              <Table aria-label={`Options for ${volume.name}`} variant="compact">
+              <Table
+                aria-label={t('volumes.options.tableAria', { name: volume.name })}
+                variant="compact"
+              >
                 <Thead>
                   <Tr>
-                    <Th>Option</Th>
-                    <Th>Value</Th>
-                    <Th screenReaderText="Actions" />
+                    <Th>{t('volumes.options.column.option')}</Th>
+                    <Th>{t('volumes.options.column.value')}</Th>
+                    <Th screenReaderText={t('common.field.actions')} />
                   </Tr>
                 </Thead>
                 <Tbody>
                   {options.data.map((option, index) => (
                     <Tr key={option.name ?? index}>
-                      <Td dataLabel="Option">{option.name ?? '—'}</Td>
-                      <Td dataLabel="Value" modifier="truncate" title={option.value ?? ''}>
+                      <Td dataLabel={t('volumes.options.column.option')}>{option.name ?? '—'}</Td>
+                      <Td
+                        dataLabel={t('volumes.options.column.value')}
+                        modifier="truncate"
+                        title={option.value ?? ''}
+                      >
                         {option.value ?? '—'}
                       </Td>
-                      <Td dataLabel="Actions" isActionCell>
+                      <Td dataLabel={t('common.field.actions')} isActionCell>
                         <Button
                           variant="link"
                           isInline
                           isDisabled={busy || !option.name}
-                          aria-label={`Reset option ${option.name ?? ''}`}
+                          aria-label={t('volumes.options.resetOption', { name: option.name ?? '' })}
                           onClick={() =>
                             option.name &&
                             resetOption.mutate({
@@ -158,12 +171,12 @@ export function ManageOptionsModal({
           <StackItem>
             <Form onSubmit={(event) => event.preventDefault()}>
               <FormGroup
-                label="Add option"
+                label={t('volumes.options.add')}
                 fieldId="volume-option-key"
                 labelHelp={
                   <FieldHelp
-                    field="Add option"
-                    content="A gluster volume tunable, entered as key and value — for example auth.allow with a value of 10.0.0.*, or performance.cache-size with 256MB. Setting an existing key changes its value."
+                    field={t('volumes.options.add')}
+                    content={t('fieldHelp.volume.addOption')}
                   />
                 }
               >
@@ -171,8 +184,8 @@ export function ManageOptionsModal({
                   <SplitItem style={{ minWidth: '14rem' }}>
                     <TextInput
                       id="volume-option-key"
-                      aria-label="Option key"
-                      placeholder="key (e.g. auth.allow)"
+                      aria-label={t('volumes.options.keyAria')}
+                      placeholder={t('volumes.options.keyPlaceholder')}
                       value={newKey}
                       onChange={(_event, value) => setNewKey(value)}
                     />
@@ -180,8 +193,8 @@ export function ManageOptionsModal({
                   <SplitItem isFilled>
                     <TextInput
                       id="volume-option-value"
-                      aria-label="Option value"
-                      placeholder="value"
+                      aria-label={t('volumes.options.valueAria')}
+                      placeholder={t('volumes.options.valuePlaceholder')}
                       value={newValue}
                       onChange={(_event, value) => setNewValue(value)}
                     />
@@ -208,7 +221,7 @@ export function ManageOptionsModal({
           onClick={() => setResetAllOpen(true)}
           isDisabled={busy || !options.isSuccess || options.data.length === 0}
         >
-          Reset all to default
+          {t('volumes.options.resetAll')}
         </Button>
         <Button variant="link" onClick={onClose}>
           {t('common.action.close')}
@@ -219,9 +232,9 @@ export function ManageOptionsModal({
         <ConfirmModal
           isOpen
           appendTo={appendToOptions}
-          title={`Reset all options on ${volume.name}?`}
-          body="Every tunable on this volume returns to its gluster default. Options you set here will be lost. This cannot be undone."
-          confirmLabel="Reset all"
+          title={t('volumes.options.resetAll.confirm.title', { name: volume.name })}
+          body={t('volumes.options.resetAll.confirm.body')}
+          confirmLabel={t('volumes.options.resetAll.confirm.label')}
           onConfirm={() => {
             setResetAllOpen(false)
             resetAll.mutate({ clusterId, volumeId: volume.id, volumeName: volume.name })

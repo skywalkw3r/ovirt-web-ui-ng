@@ -3,7 +3,9 @@ import {
   Button,
   Checkbox,
   EmptyState,
+  EmptyStateActions,
   EmptyStateBody,
+  EmptyStateFooter,
   FormGroup,
   Modal,
   ModalBody,
@@ -186,9 +188,13 @@ export function BricksModal({ volume, onClose }: { volume: GlusterVolume; onClos
                     ? bricks.error.message
                     : t('volumes.bricks.error.body')}
                 </EmptyStateBody>
-                <Button variant="primary" onClick={() => void bricks.refetch()}>
-                  {t('common.action.retry')}
-                </Button>
+                <EmptyStateFooter>
+                  <EmptyStateActions>
+                    <Button variant="primary" onClick={() => void bricks.refetch()}>
+                      {t('common.action.retry')}
+                    </Button>
+                  </EmptyStateActions>
+                </EmptyStateFooter>
               </EmptyState>
             )}
 
@@ -205,10 +211,10 @@ export function BricksModal({ volume, onClose }: { volume: GlusterVolume; onClos
               >
                 <Thead>
                   <Tr>
-                    <Th aria-label="Select">
+                    <Th aria-label={t('volumes.bricks.selectColumn')}>
                       <Checkbox
                         id="bricks-select-all"
-                        aria-label="Select all bricks"
+                        aria-label={t('volumes.bricks.selectAll')}
                         isChecked={allSelected}
                         isDisabled={mutating || selectableKeys.length === 0}
                         onChange={(_event, checked) => toggleAll(checked)}
@@ -227,7 +233,9 @@ export function BricksModal({ volume, onClose }: { volume: GlusterVolume; onClos
                         <Td>
                           <Checkbox
                             id={`brick-select-${index}`}
-                            aria-label={`Select brick ${(brick.name ?? key) || index + 1}`}
+                            aria-label={t('volumes.bricks.selectBrick', {
+                              name: (brick.name ?? key) || index + 1,
+                            })}
                             isChecked={key !== '' && selected.has(key)}
                             isDisabled={mutating || key === ''}
                             onChange={(_event, checked) => toggleRow(key, checked)}
@@ -278,7 +286,7 @@ export function BricksModal({ volume, onClose }: { volume: GlusterVolume; onClos
               onClick={() => setRemoving({ migrateData: true, replicaCount: currentReplica })}
               isDisabled={mutating || selectedBricks.length === 0}
             >
-              Remove selected
+              {t('volumes.bricks.removeSelected')}
             </Button>
             <Button
               variant="link"
@@ -295,7 +303,7 @@ export function BricksModal({ volume, onClose }: { volume: GlusterVolume; onClos
               }
               isDisabled={mutating || selectedBricks.length === 0}
             >
-              Stop migration
+              {t('volumes.bricks.stopMigration')}
             </Button>
             <Button variant="link" onClick={onClose}>
               {t('common.action.close')}
@@ -322,15 +330,16 @@ export function BricksModal({ volume, onClose }: { volume: GlusterVolume; onClos
         <ConfirmModal
           isOpen
           appendTo={appendToBricks}
-          title={`Remove ${selectedBricks.length} ${
-            selectedBricks.length === 1 ? 'brick' : 'bricks'
-          } from ${volume.name}`}
+          title={t('volumes.bricks.remove.confirm.title', {
+            count: selectedBricks.length,
+            name: volume.name,
+          })}
           body={
             <Stack hasGutter>
               <StackItem>
                 <Switch
                   id="brick-remove-migrate"
-                  label="Migrate data off the bricks first"
+                  label={t('volumes.bricks.migrateFirst')}
                   isChecked={removing.migrateData}
                   onChange={(_event, checked) =>
                     setRemoving((current) =>
@@ -341,18 +350,18 @@ export function BricksModal({ volume, onClose }: { volume: GlusterVolume; onClos
               </StackItem>
               <StackItem>
                 {removing.migrateData
-                  ? 'Data is migrated off the selected bricks first; removal is committed once migration finishes. You can cancel with Stop migration.'
-                  : 'The selected bricks are removed immediately. Any data still on them is lost.'}
+                  ? t('volumes.bricks.remove.migrateBody')
+                  : t('volumes.bricks.remove.immediateBody')}
               </StackItem>
               {replicated && !removing.migrateData && (
                 <StackItem>
                   <FormGroup
-                    label="New replica count"
+                    label={t('volumes.bricks.newReplicaCount')}
                     fieldId="brick-remove-replica"
                     labelHelp={
                       <FieldHelp
-                        field="New replica count"
-                        content="The volume's replica factor after removal. Leave it at the current value to remove whole replica sets without changing the factor; lower it to reduce how many copies of the data the volume keeps."
+                        field={t('volumes.bricks.newReplicaCount')}
+                        content={t('fieldHelp.volume.newReplicaCount')}
                       />
                     }
                   >
@@ -361,7 +370,7 @@ export function BricksModal({ volume, onClose }: { volume: GlusterVolume; onClos
                       value={removing.replicaCount}
                       min={1}
                       max={currentReplica}
-                      inputAriaLabel="New replica count"
+                      inputAriaLabel={t('volumes.bricks.newReplicaCount')}
                       onMinus={() =>
                         setRemoving((current) =>
                           current
@@ -398,7 +407,9 @@ export function BricksModal({ volume, onClose }: { volume: GlusterVolume; onClos
               )}
             </Stack>
           }
-          confirmLabel={removing.migrateData ? 'Start migration' : t('common.action.remove')}
+          confirmLabel={
+            removing.migrateData ? t('volumes.bricks.startMigration') : t('common.action.remove')
+          }
           onConfirm={submitRemove}
           onCancel={() => setRemoving(null)}
         />

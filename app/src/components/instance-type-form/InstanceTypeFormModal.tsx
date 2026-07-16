@@ -14,7 +14,9 @@ import {
   Switch,
   TextInput,
 } from '@patternfly/react-core'
+import { FormattedMessage } from 'react-intl'
 import type { InstanceType } from '../../api/schemas/instance-type'
+import { useT } from '../../i18n/useT'
 import {
   blankInstanceTypeDraft,
   draftToPayload,
@@ -42,6 +44,7 @@ export function InstanceTypeFormModal({
   isOpen: boolean
   onClose: () => void
 }) {
+  const t = useT()
   const isEdit = instanceType !== undefined
   const [draft, setDraft] = useState<InstanceTypeDraft>(() =>
     instanceType ? instanceTypeToDraft(instanceType) : blankInstanceTypeDraft(),
@@ -96,7 +99,9 @@ export function InstanceTypeFormModal({
   // bouncing a raw engine fault.
   const nameError = instanceTypeNameError(draft.name)
   const memoryError = instanceTypeMemoryError(draft)
-  const title = isEdit ? `Edit instance type — ${instanceType.name}` : 'New instance type'
+  const title = isEdit
+    ? t('instanceTypeForm.title.edit', { name: instanceType.name ?? '' })
+    : t('instanceTypeForm.title.new')
 
   return (
     <Modal
@@ -109,11 +114,11 @@ export function InstanceTypeFormModal({
       <ModalHeader title={title} labelId="instance-type-form-title" />
       <ModalBody id="instance-type-form-body">
         <Form onSubmit={(event) => event.preventDefault()}>
-          <FormGroup label="Name" isRequired fieldId="instance-type-name">
+          <FormGroup label={t('common.field.name')} isRequired fieldId="instance-type-name">
             <TextInput
               id="instance-type-name"
               isRequired
-              aria-label="Instance type name"
+              aria-label={t('instanceTypeForm.aria.name')}
               validated={nameError !== undefined ? 'error' : 'default'}
               value={draft.name}
               onChange={(_event, value) => set('name', value)}
@@ -121,26 +126,28 @@ export function InstanceTypeFormModal({
             {nameError !== undefined && (
               <FormHelperText>
                 <HelperText>
+                  {/* nameError is raw engine-parity text from the shared vmNameError
+                      (edit-vm/editVmDraft.ts) — converting it is the edit-vm owner's. */}
                   <HelperTextItem variant="error">{nameError}</HelperTextItem>
                 </HelperText>
               </FormHelperText>
             )}
           </FormGroup>
 
-          <FormGroup label="Description" fieldId="instance-type-description">
+          <FormGroup label={t('common.field.description')} fieldId="instance-type-description">
             <TextInput
               id="instance-type-description"
-              aria-label="Instance type description"
+              aria-label={t('instanceTypeForm.aria.description')}
               value={draft.description}
               onChange={(_event, value) => set('description', value)}
             />
           </FormGroup>
 
-          <FormGroup label="Memory Size (MB)" fieldId="instance-type-memory">
+          <FormGroup label={t('templateForm.memory')} fieldId="instance-type-memory">
             <TextInput
               id="instance-type-memory"
               type="number"
-              aria-label="Memory Size (MB)"
+              aria-label={t('templateForm.memory')}
               validated={memoryError !== undefined ? 'error' : 'default'}
               value={draft.memoryMb}
               onChange={setMemory}
@@ -148,24 +155,24 @@ export function InstanceTypeFormModal({
           </FormGroup>
 
           <FormGroup
-            label="Physical Memory Guaranteed (MB)"
+            label={t('templateForm.guaranteedMemory')}
             fieldId="instance-type-guaranteed-memory"
           >
             <TextInput
               id="instance-type-guaranteed-memory"
               type="number"
-              aria-label="Physical Memory Guaranteed (MB)"
+              aria-label={t('templateForm.guaranteedMemory')}
               validated={memoryError !== undefined ? 'error' : 'default'}
               value={draft.guaranteedMemoryMb}
               onChange={setNumber('guaranteedMemoryMb')}
             />
           </FormGroup>
 
-          <FormGroup label="Maximum memory (MB)" fieldId="instance-type-max-memory">
+          <FormGroup label={t('templateForm.maxMemory')} fieldId="instance-type-max-memory">
             <TextInput
               id="instance-type-max-memory"
               type="number"
-              aria-label="Maximum memory (MB)"
+              aria-label={t('templateForm.maxMemory')}
               validated={memoryError !== undefined ? 'error' : 'default'}
               value={draft.maxMemoryMb}
               onChange={setNumber('maxMemoryMb')}
@@ -173,38 +180,38 @@ export function InstanceTypeFormModal({
             {memoryError !== undefined && (
               <FormHelperText>
                 <HelperText>
-                  <HelperTextItem variant="error">{memoryError}</HelperTextItem>
+                  <HelperTextItem variant="error">{t(memoryError)}</HelperTextItem>
                 </HelperText>
               </FormHelperText>
             )}
           </FormGroup>
 
-          <FormSection title="Virtual CPUs" titleElement="h3">
-            <FormGroup label="Virtual Sockets" fieldId="instance-type-sockets">
+          <FormSection title={t('instanceTypeForm.section.cpu')} titleElement="h3">
+            <FormGroup label={t('templateForm.sockets')} fieldId="instance-type-sockets">
               <TextInput
                 id="instance-type-sockets"
                 type="number"
-                aria-label="Virtual Sockets"
+                aria-label={t('templateForm.sockets')}
                 value={draft.sockets}
                 onChange={setNumber('sockets')}
               />
             </FormGroup>
 
-            <FormGroup label="Cores per Virtual Socket" fieldId="instance-type-cores">
+            <FormGroup label={t('templateForm.cores')} fieldId="instance-type-cores">
               <TextInput
                 id="instance-type-cores"
                 type="number"
-                aria-label="Cores per Virtual Socket"
+                aria-label={t('templateForm.cores')}
                 value={draft.coresPerSocket}
                 onChange={setNumber('coresPerSocket')}
               />
             </FormGroup>
 
-            <FormGroup label="Threads per Core" fieldId="instance-type-threads">
+            <FormGroup label={t('templateForm.threads')} fieldId="instance-type-threads">
               <TextInput
                 id="instance-type-threads"
                 type="number"
-                aria-label="Threads per Core"
+                aria-label={t('templateForm.threads')}
                 value={draft.threadsPerCore}
                 onChange={setNumber('threadsPerCore')}
               />
@@ -214,8 +221,8 @@ export function InstanceTypeFormModal({
           <FormGroup fieldId="instance-type-ha">
             <Switch
               id="instance-type-ha"
-              label="Highly available"
-              aria-label="Highly available"
+              label={t('templateForm.ha')}
+              aria-label={t('templateForm.ha')}
               isChecked={draft.haEnabled}
               onChange={(_event, checked) => set('haEnabled', checked)}
             />
@@ -229,10 +236,10 @@ export function InstanceTypeFormModal({
           isLoading={pending}
           isDisabled={pending || nameError !== undefined || memoryError !== undefined}
         >
-          Save
+          <FormattedMessage id="common.action.save" />
         </Button>
         <Button variant="secondary" onClick={onClose} isDisabled={pending}>
-          Cancel
+          <FormattedMessage id="common.action.cancel" />
         </Button>
       </ModalFooter>
     </Modal>

@@ -5,7 +5,8 @@ import {
   Button,
   Checkbox,
   EmptyState,
-  EmptyStateBody,
+  EmptyStateActions,
+  EmptyStateFooter,
   FlexItem,
   Form,
   FormGroup,
@@ -38,6 +39,7 @@ import {
 } from '../../api/resources/hosts'
 import type { Network } from '../../api/schemas/network'
 import { FieldHelp } from '../forms/FieldHelp'
+import { useT } from '../../i18n/useT'
 import { useNotify } from '../../notifications/context'
 
 // The SR-IOV virtual-functions editor for one physical-function NIC. Unlike the
@@ -48,8 +50,7 @@ import { useNotify } from '../../notifications/context'
 // (useQuery/useMutation) is inlined rather than lifted into hooks/ because this
 // wave owns only host-network/**; a later pass can hoist it.
 //
-// Strings are hardcoded English this wave (a later externalization pass owns the
-// i18n catalogs).
+// Toast (notify) titles stay hardcoded English per the toast convention.
 export function SriovVfModal({
   hostId,
   nicId,
@@ -67,6 +68,7 @@ export function SriovVfModal({
   isOpen: boolean
   onClose: () => void
 }) {
+  const t = useT()
   const { notify } = useNotify()
   const queryClient = useQueryClient()
   const max = initialVf.max
@@ -133,9 +135,9 @@ export function SriovVfModal({
 
   const countError =
     count.trim() === '' || !/^\d+$/.test(count.trim())
-      ? 'Enter a non-negative whole number'
+      ? t('setupNetworks.validation.qosValue')
       : max !== undefined && Number(count) > max
-        ? `Cannot exceed the maximum of ${max}`
+        ? t('setupNetworks.sriov.countMax', { max })
         : undefined
   const configUnchanged =
     Number(count) === (initialVf.count ?? 0) &&
@@ -152,18 +154,21 @@ export function SriovVfModal({
       aria-labelledby="sriov-vf-title"
       aria-describedby="sriov-vf-body"
     >
-      <ModalHeader title={`SR-IOV configuration — ${nicName}`} labelId="sriov-vf-title" />
+      <ModalHeader
+        title={t('setupNetworks.sriov.title', { name: nicName })}
+        labelId="sriov-vf-title"
+      />
       <ModalBody id="sriov-vf-body">
         <Stack hasGutter>
           <StackItem>
             <Form onSubmit={(event) => event.preventDefault()}>
               <FormGroup
-                label="Number of virtual functions"
+                label={t('setupNetworks.sriov.count')}
                 fieldId="sriov-vf-count"
                 labelHelp={
                   <FieldHelp
-                    field="Number of virtual functions"
-                    content="The number of SR-IOV virtual functions to expose on this NIC. Must be between 0 and the NIC's hardware maximum."
+                    field={t('setupNetworks.sriov.count')}
+                    content={t('setupNetworks.sriov.count.help')}
                   />
                 }
               >
@@ -172,7 +177,7 @@ export function SriovVfModal({
                   type="number"
                   min={0}
                   max={max}
-                  aria-label={`Number of virtual functions for ${nicName}`}
+                  aria-label={t('setupNetworks.sriov.aria.count', { name: nicName })}
                   validated={countError !== undefined ? 'error' : 'default'}
                   value={count}
                   onChange={(_event, value) => setCount(value)}
@@ -182,8 +187,8 @@ export function SriovVfModal({
                     <HelperTextItem variant={countError !== undefined ? 'error' : 'default'}>
                       {countError ??
                         (max !== undefined
-                          ? `Maximum: ${max}`
-                          : 'Set the number of virtual functions')}
+                          ? t('setupNetworks.sriov.max', { max })
+                          : t('setupNetworks.sriov.countHint'))}
                     </HelperTextItem>
                   </HelperText>
                 </FormHelperText>
@@ -192,17 +197,14 @@ export function SriovVfModal({
               <FormGroup fieldId="sriov-vf-all-networks">
                 <Checkbox
                   id="sriov-vf-all-networks"
-                  label="Allow all networks on the virtual functions"
-                  aria-label="Allow all networks on the virtual functions"
+                  label={t('setupNetworks.sriov.allowAll')}
+                  aria-label={t('setupNetworks.sriov.allowAll')}
                   isChecked={allNetworks}
                   onChange={(_event, checked) => setAllNetworks(checked)}
                 />
                 <FormHelperText>
                   <HelperText>
-                    <HelperTextItem>
-                      When off, only the allowed labels and networks below may be assigned to the
-                      virtual functions.
-                    </HelperTextItem>
+                    <HelperTextItem>{t('setupNetworks.sriov.allowAll.help')}</HelperTextItem>
                   </HelperText>
                 </FormHelperText>
               </FormGroup>
@@ -214,7 +216,7 @@ export function SriovVfModal({
                   isLoading={applyConfig.isPending}
                   isDisabled={applyConfig.isPending || countError !== undefined || configUnchanged}
                 >
-                  Apply configuration
+                  {t('setupNetworks.sriov.apply')}
                 </Button>
               </FlexItem>
             </Form>
@@ -222,42 +224,38 @@ export function SriovVfModal({
 
           {allNetworks && (
             <StackItem>
-              <Alert
-                variant="info"
-                isInline
-                title="All networks are allowed — the label and network allow-lists below are not enforced."
-              />
+              <Alert variant="info" isInline title={t('setupNetworks.sriov.allowAll.alert')} />
             </StackItem>
           )}
 
           <StackItem>
             <FormGroup
-              label="Allowed labels"
+              label={t('setupNetworks.sriov.labels')}
               role="group"
               labelHelp={
                 <FieldHelp
-                  field="Allowed labels"
-                  content="Network labels whose networks may be assigned to this NIC's virtual functions. Only enforced when 'Allow all networks' is off."
+                  field={t('setupNetworks.sriov.labels')}
+                  content={t('setupNetworks.sriov.labels.help')}
                 />
               }
             >
               <AllowList
                 query={labels}
-                emptyText="No labels are allowed."
-                errorText="Could not load the allowed labels."
+                emptyText={t('setupNetworks.sriov.labels.empty')}
+                errorText={t('setupNetworks.sriov.labels.error')}
                 renderChip={(label) => label}
                 chipKey={(label) => label}
                 onRemove={(label) => removeLabel.mutate(label)}
-                removeAriaLabel={(label) => `Remove allowed label ${label}`}
+                removeAriaLabel={(label) => t('setupNetworks.sriov.labels.removeAria', { label })}
                 removePending={removeLabel.isPending}
-                ariaLabel={`Allowed labels for ${nicName}`}
+                ariaLabel={t('setupNetworks.sriov.labels.aria', { name: nicName })}
               />
               <Split hasGutter style={{ marginTop: '0.5rem' }}>
                 <SplitItem isFilled>
                   <TextInput
                     id="sriov-vf-new-label"
-                    aria-label={`New allowed label for ${nicName}`}
-                    placeholder="Label"
+                    aria-label={t('setupNetworks.sriov.labels.newAria', { name: nicName })}
+                    placeholder={t('setupNetworks.labels.placeholder')}
                     value={newLabel}
                     onChange={(_event, value) => setNewLabel(value)}
                     onKeyDown={(event) => {
@@ -274,7 +272,7 @@ export function SriovVfModal({
                     isDisabled={newLabel.trim() === '' || addLabel.isPending}
                     onClick={() => addLabel.mutate(newLabel.trim())}
                   >
-                    Add label
+                    {t('setupNetworks.labels.add')}
                   </Button>
                 </SplitItem>
               </Split>
@@ -283,38 +281,41 @@ export function SriovVfModal({
 
           <StackItem>
             <FormGroup
-              label="Allowed networks"
+              label={t('setupNetworks.sriov.networks')}
               role="group"
               labelHelp={
                 <FieldHelp
-                  field="Allowed networks"
-                  content="Networks that may be assigned to this NIC's virtual functions. Only enforced when 'Allow all networks' is off."
+                  field={t('setupNetworks.sriov.networks')}
+                  content={t('setupNetworks.sriov.networks.help')}
                 />
               }
             >
               <AllowList
                 query={allowedNetworks}
-                emptyText="No networks are allowed."
-                errorText="Could not load the allowed networks."
+                emptyText={t('setupNetworks.sriov.networks.empty')}
+                errorText={t('setupNetworks.sriov.networks.error')}
                 renderChip={(network) => network.name ?? network.id}
                 chipKey={(network) => network.id}
                 onRemove={(network) => removeNetwork.mutate(network.id)}
                 removeAriaLabel={(network) =>
-                  `Remove allowed network ${network.name ?? network.id}`
+                  t('setupNetworks.sriov.networks.removeAria', { name: network.name ?? network.id })
                 }
                 removePending={removeNetwork.isPending}
-                ariaLabel={`Allowed networks for ${nicName}`}
+                ariaLabel={t('setupNetworks.sriov.networks.aria', { name: nicName })}
               />
               {addableNetworks.length > 0 && (
                 <Split hasGutter style={{ marginTop: '0.5rem' }}>
                   <SplitItem isFilled>
                     <FormSelect
                       id="sriov-vf-add-network"
-                      aria-label={`Add an allowed network for ${nicName}`}
+                      aria-label={t('setupNetworks.sriov.networks.addAria', { name: nicName })}
                       value={addNetworkId}
                       onChange={(_event, value) => setAddNetworkId(value)}
                     >
-                      <FormSelectOption value="" label="Select a network" />
+                      <FormSelectOption
+                        value=""
+                        label={t('setupNetworks.sriov.networks.selectPlaceholder')}
+                      />
                       {addableNetworks.map((network) => (
                         <FormSelectOption
                           key={network.id}
@@ -330,7 +331,7 @@ export function SriovVfModal({
                       isDisabled={addNetworkId === '' || addNetwork.isPending}
                       onClick={() => addNetwork.mutate(addNetworkId)}
                     >
-                      Add network
+                      {t('setupNetworks.sriov.networks.add')}
                     </Button>
                   </SplitItem>
                 </Split>
@@ -341,7 +342,7 @@ export function SriovVfModal({
       </ModalBody>
       <ModalFooter>
         <Button variant="primary" onClick={onClose}>
-          Close
+          {t('common.action.close')}
         </Button>
       </ModalFooter>
     </Modal>
@@ -372,15 +373,19 @@ function AllowList<T>({
   removePending: boolean
   ariaLabel: string
 }) {
-  if (query.isPending) return <Skeleton height="2rem" screenreaderText="Loading" />
+  const t = useT()
+  if (query.isPending)
+    return <Skeleton height="2rem" screenreaderText={t('common.state.loading')} />
   if (query.isError) {
     return (
       <EmptyState titleText={errorText} status="danger">
-        <EmptyStateBody>
-          <Button variant="link" isInline onClick={() => query.refetch()}>
-            Retry
-          </Button>
-        </EmptyStateBody>
+        <EmptyStateFooter>
+          <EmptyStateActions>
+            <Button variant="link" isInline onClick={() => query.refetch()}>
+              {t('common.action.retry')}
+            </Button>
+          </EmptyStateActions>
+        </EmptyStateFooter>
       </EmptyState>
     )
   }

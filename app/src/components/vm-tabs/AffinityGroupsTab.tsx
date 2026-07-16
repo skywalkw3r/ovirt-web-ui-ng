@@ -2,7 +2,9 @@ import { useState } from 'react'
 import {
   Button,
   EmptyState,
+  EmptyStateActions,
   EmptyStateBody,
+  EmptyStateFooter,
   Flex,
   FlexItem,
   Form,
@@ -85,9 +87,13 @@ export function AffinityGroupsTab({ vm }: { vm: Vm }) {
           <EmptyStateBody>
             {groups.error instanceof Error ? groups.error.message : t('common.error.unknown')}
           </EmptyStateBody>
-          <Button variant="primary" onClick={() => void groups.refetch()}>
-            {t('common.action.retry')}
-          </Button>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="primary" onClick={() => void groups.refetch()}>
+                {t('common.action.retry')}
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 
@@ -95,9 +101,13 @@ export function AffinityGroupsTab({ vm }: { vm: Vm }) {
         <EmptyState titleText={t('vmAffinityGroups.empty.title')}>
           <EmptyStateBody>{t('vmAffinityGroups.empty.body')}</EmptyStateBody>
           {isAdmin && clusterId !== undefined && (
-            <Button variant="primary" isDisabled={busy} onClick={() => setAdding(true)}>
-              {t('vmAffinityGroups.add')}
-            </Button>
+            <EmptyStateFooter>
+              <EmptyStateActions>
+                <Button variant="primary" isDisabled={busy} onClick={() => setAdding(true)}>
+                  {t('vmAffinityGroups.add')}
+                </Button>
+              </EmptyStateActions>
+            </EmptyStateFooter>
           )}
         </EmptyState>
       )}
@@ -166,7 +176,7 @@ export function AffinityGroupsTab({ vm }: { vm: Vm }) {
         <ConfirmModal
           isOpen
           title={t('vmAffinityGroups.remove.confirm.title', { name: removing.name ?? '' })}
-          body={`${vm.name} will no longer be scheduled by this affinity group's rules.`}
+          body={t('vmAffinityGroups.remove.confirm.body', { name: vm.name })}
           confirmLabel={t('vmAffinityGroups.remove')}
           onConfirm={() => {
             const group = removing
@@ -225,9 +235,13 @@ function AddToGroupModal({
                 ? clusterGroups.error.message
                 : t('common.error.unknown')}
             </EmptyStateBody>
-            <Button variant="primary" onClick={() => void clusterGroups.refetch()}>
-              {t('common.action.retry')}
-            </Button>
+            <EmptyStateFooter>
+              <EmptyStateActions>
+                <Button variant="primary" onClick={() => void clusterGroups.refetch()}>
+                  {t('common.action.retry')}
+                </Button>
+              </EmptyStateActions>
+            </EmptyStateFooter>
           </EmptyState>
         )}
         {clusterGroups.isSuccess && (
@@ -248,7 +262,9 @@ function AddToGroupModal({
                 <FormSelectOption
                   value=""
                   label={
-                    eligible.length === 0 ? t('vmAffinityGroups.empty.action') : 'Select a group'
+                    eligible.length === 0
+                      ? t('vmAffinityGroups.empty.action')
+                      : t('vmAffinityGroups.add.select')
                   }
                   isPlaceholder
                   isDisabled

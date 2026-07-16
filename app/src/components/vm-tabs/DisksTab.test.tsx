@@ -31,6 +31,8 @@ vi.mock('@patternfly/react-core', () => {
     EmptyState: ({ titleText, children }: { titleText?: ReactNode; children?: ReactNode }) =>
       createElement('div', undefined, createElement('h2', undefined, titleText), children),
     EmptyStateBody: passthrough('div'),
+    EmptyStateFooter: passthrough('div'),
+    EmptyStateActions: passthrough('div'),
     Skeleton: ({ screenreaderText }: { screenreaderText?: string }) =>
       createElement('span', undefined, screenreaderText ?? 'skeleton'),
     MenuToggle: passthrough('button'),

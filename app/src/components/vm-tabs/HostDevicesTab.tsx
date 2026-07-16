@@ -571,6 +571,7 @@ function AddVGpuModal({
   existing: MediatedDevice[]
   onClose: () => void
 }) {
+  const t = useT()
   const queryClient = useQueryClient()
   const { notify } = useNotify()
   const vm = useVm(vmId)
@@ -618,7 +619,7 @@ function AddVGpuModal({
 
   return (
     <Modal variant="small" isOpen onClose={onClose} aria-labelledby="add-vgpu-title">
-      <ModalHeader title="Add vGPU (mediated device)" labelId="add-vgpu-title" />
+      <ModalHeader title={t('vmHostDevices.vgpu.addModal.title')} labelId="add-vgpu-title" />
       <ModalBody>
         <Form
           id="add-vgpu-form"
@@ -628,35 +629,34 @@ function AddVGpuModal({
           }}
         >
           {discoveryHostId === undefined && (
-            <Alert
-              variant="info"
-              isInline
-              title="Start or pin this VM to a host to list its available mdev types. You can still enter a type manually."
-            />
+            <Alert variant="info" isInline title={t('vmHostDevices.vgpu.addModal.needsHost')} />
           )}
 
           {discoveryHostId !== undefined && mdevTypes.isSuccess && discovered.length === 0 && (
-            <Alert
-              variant="info"
-              isInline
-              title="This host reports no mdev types (no vGPU-capable GPU). Enter the mdev type name manually."
-            />
+            <Alert variant="info" isInline title={t('vmHostDevices.vgpu.addModal.noTypes')} />
           )}
 
           {discovered.length > 0 && (
-            <FormGroup label="Available mdev types" fieldId="add-vgpu-select">
+            <FormGroup
+              label={t('vmHostDevices.vgpu.addModal.availableTypes')}
+              fieldId="add-vgpu-select"
+            >
               <FormSelect
                 id="add-vgpu-select"
-                aria-label="Available mdev types"
+                aria-label={t('vmHostDevices.vgpu.addModal.availableTypes')}
                 value={discovered.some((type) => type.name === trimmed) ? trimmed : ''}
                 onChange={(_event, value) => setMdevTypeValue(value)}
               >
-                <FormSelectOption value="" label="Select a type…" isDisabled />
+                <FormSelectOption
+                  value=""
+                  label={t('vmHostDevices.vgpu.addModal.selectType')}
+                  isDisabled
+                />
                 {discovered.map((type) => (
                   <FormSelectOption
                     key={type.name}
                     value={type.name}
-                    label={mdevOptionLabel(type)}
+                    label={mdevOptionLabel(type, t)}
                   />
                 ))}
               </FormSelect>
@@ -664,19 +664,19 @@ function AddVGpuModal({
           )}
 
           <FormGroup
-            label="mdev type"
+            label={t('vmHostDevices.vgpu.column.mdevType')}
             isRequired
             fieldId="add-vgpu-type"
             labelHelp={
               <FieldHelp
-                field="mdev type"
-                content="The mediated-device type name that rides as the spec_params 'mdevType' property, for example nvidia-11 or i915-GVTg_V5_4. In a lab without a vGPU-capable GPU the host reports no types, so enter the name directly."
+                field={t('vmHostDevices.vgpu.column.mdevType')}
+                content={t('vmHostDevices.vgpu.addModal.mdevType.help')}
               />
             }
           >
             <TextInput
               id="add-vgpu-type"
-              aria-label="mdev type"
+              aria-label={t('vmHostDevices.vgpu.column.mdevType')}
               value={mdevTypeValue}
               onChange={(_event, value) => setMdevTypeValue(value)}
               validated={duplicate ? 'error' : 'default'}
@@ -684,7 +684,7 @@ function AddVGpuModal({
             {duplicate && (
               <HelperText>
                 <HelperTextItem variant="error">
-                  This mdev type is already attached to the VM.
+                  {t('vmHostDevices.vgpu.addModal.duplicate')}
                 </HelperTextItem>
               </HelperText>
             )}
@@ -693,8 +693,8 @@ function AddVGpuModal({
           <FormGroup fieldId="add-vgpu-nodisplay">
             <Checkbox
               id="add-vgpu-nodisplay"
-              label="Disable framebuffer console (nodisplay)"
-              aria-label="Disable framebuffer console"
+              label={t('vmHostDevices.vgpu.addModal.nodisplay')}
+              aria-label={t('vmHostDevices.vgpu.addModal.nodisplay.aria')}
               isChecked={nodisplay}
               onChange={(_event, checked) => setNodisplay(checked)}
             />
@@ -709,10 +709,10 @@ function AddVGpuModal({
           isDisabled={trimmed === '' || duplicate || addMutation.isPending}
           isLoading={addMutation.isPending}
         >
-          Add
+          {t('common.action.add')}
         </Button>
         <Button variant="link" onClick={onClose}>
-          Cancel
+          {t('common.action.cancel')}
         </Button>
       </ModalFooter>
     </Modal>
@@ -721,13 +721,16 @@ function AddVGpuModal({
 
 // Option label for a discovered mdev type: the human-readable name (falling back
 // to the wire name) plus the count of instances still available on the host.
-function mdevOptionLabel(type: {
-  name?: string
-  human_readable_name?: string
-  available_instances?: number
-}): string {
+function mdevOptionLabel(
+  type: {
+    name?: string
+    human_readable_name?: string
+    available_instances?: number
+  },
+  t: ReturnType<typeof useT>,
+): string {
   const base = type.human_readable_name ?? type.name ?? ''
   return type.available_instances === undefined
     ? base
-    : `${base} (${type.available_instances} available)`
+    : t('vmHostDevices.vgpu.addModal.typeOption', { name: base, count: type.available_instances })
 }

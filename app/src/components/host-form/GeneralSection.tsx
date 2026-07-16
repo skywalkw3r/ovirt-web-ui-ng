@@ -7,6 +7,7 @@ import {
   TextInput,
 } from '@patternfly/react-core'
 import type { Host } from '../../api/schemas/host'
+import { useT } from '../../i18n/useT'
 import type { EditHostDraft } from './editHostDraft'
 
 // Presentational General section of the Edit Host modal: editable name/comment
@@ -23,55 +24,56 @@ export function GeneralSection({
   draft: EditHostDraft
   set: <K extends keyof EditHostDraft>(key: K, value: EditHostDraft[K]) => void
 }) {
+  const t = useT()
   return (
     <Form onSubmit={(event) => event.preventDefault()}>
-      <FormGroup label="Name" isRequired fieldId="edit-host-name">
+      <FormGroup label={t('common.field.name')} isRequired fieldId="edit-host-name">
         <TextInput
           id="edit-host-name"
           isRequired
-          aria-label="Host name"
+          aria-label={t('hostForm.field.hostName')}
           value={draft.name}
           onChange={(_event, value) => set('name', value)}
         />
       </FormGroup>
 
-      <FormGroup label="Comment" fieldId="edit-host-comment">
+      <FormGroup label={t('common.field.comment')} fieldId="edit-host-comment">
         <TextInput
           id="edit-host-comment"
-          aria-label="Host comment"
+          aria-label={t('hostForm.field.hostComment')}
           value={draft.comment}
           onChange={(_event, value) => set('comment', value)}
         />
       </FormGroup>
 
-      <FormGroup label="Hostname / IP" fieldId="edit-host-address">
+      <FormGroup label={t('hostForm.field.address')} fieldId="edit-host-address">
         <TextInput
           id="edit-host-address"
-          aria-label="Hostname or IP address"
+          aria-label={t('hostForm.field.addressAria')}
           value={host.address ?? ''}
           isDisabled
         />
       </FormGroup>
 
-      <FormGroup label="SSH port" fieldId="edit-host-ssh-port">
+      <FormGroup label={t('hostForm.field.sshPort')} fieldId="edit-host-ssh-port">
         <TextInput
           id="edit-host-ssh-port"
-          aria-label="SSH port"
+          aria-label={t('hostForm.field.sshPort')}
           value={String(host.ssh?.port ?? 22)}
           isDisabled
         />
       </FormGroup>
 
-      <FormGroup label="Cluster" fieldId="edit-host-cluster">
+      <FormGroup label={t('common.field.cluster')} fieldId="edit-host-cluster">
         <TextInput
           id="edit-host-cluster"
-          aria-label="Cluster"
+          aria-label={t('common.field.cluster')}
           value={host.cluster?.name ?? ''}
           isDisabled
         />
         <FormHelperText>
           <HelperText>
-            <HelperTextItem>Move the host to maintenance to change its cluster</HelperTextItem>
+            <HelperTextItem>{t('hostForm.cluster.editHelp')}</HelperTextItem>
           </HelperText>
         </FormHelperText>
       </FormGroup>

@@ -4,6 +4,7 @@ import {
   EmptyState,
   EmptyStateActions,
   EmptyStateBody,
+  EmptyStateFooter,
   Label,
   LabelGroup,
   Skeleton,
@@ -11,9 +12,11 @@ import {
   StackItem,
 } from '@patternfly/react-core'
 import { useQuery } from '@tanstack/react-query'
+import { FormattedMessage } from 'react-intl'
 import { listHostTags, listUserTags } from '../../api/resources/tags'
 import type { Tag } from '../../api/schemas/tag'
 import { tagColor, useTags } from '../../hooks/useTags'
+import { useT } from '../../i18n/useT'
 import { AssignTagsModal } from './AssignTagsModal'
 import { entityTagsKey, type TaggableKind } from './entityTags'
 import { pfLabelColor } from './label-palette'
@@ -36,6 +39,7 @@ export function EntityTagsTab({
   entityId: string
   entityName?: string
 }) {
+  const t = useT()
   const tags = useQuery({
     queryKey: entityTagsKey(kind, entityId),
     queryFn: () => RESOURCE_LIST[kind](entityId),
@@ -49,29 +53,37 @@ export function EntityTagsTab({
       {tags.isPending && (
         <>
           <Skeleton height="2.5rem" style={{ marginBottom: '0.5rem' }} />
-          <Skeleton height="2.5rem" screenreaderText="Loading tags" />
+          <Skeleton height="2.5rem" screenreaderText={t('tags.manager.loading')} />
         </>
       )}
 
       {tags.isError && (
-        <EmptyState titleText="Could not load tags" status="danger">
+        <EmptyState titleText={t('tags.manager.error.title')} status="danger">
           <EmptyStateBody>
-            {tags.error instanceof Error ? tags.error.message : 'Unknown error'}
+            {tags.error instanceof Error ? tags.error.message : t('common.error.unknown')}
           </EmptyStateBody>
-          <Button variant="primary" onClick={() => void tags.refetch()}>
-            Retry
-          </Button>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="primary" onClick={() => void tags.refetch()}>
+                <FormattedMessage id="action.retry" />
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 
       {tags.isSuccess && tags.data.length === 0 && (
-        <EmptyState titleText="No tags assigned">
-          <EmptyStateBody>No tags are assigned to this user.</EmptyStateBody>
-          <EmptyStateActions style={{ marginBlockEnd: 'var(--pf-t--global--spacer--lg)' }}>
-            <Button variant="primary" onClick={() => setAssigning(true)}>
-              Assign tags
-            </Button>
-          </EmptyStateActions>
+        <EmptyState titleText={t('entityTags.empty.title')}>
+          <EmptyStateBody>
+            <FormattedMessage id="entityTags.empty.body" />
+          </EmptyStateBody>
+          <EmptyStateFooter>
+            <EmptyStateActions style={{ marginBlockEnd: 'var(--pf-t--global--spacer--lg)' }}>
+              <Button variant="primary" onClick={() => setAssigning(true)}>
+                <FormattedMessage id="entityTags.assign" />
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 
@@ -79,11 +91,11 @@ export function EntityTagsTab({
         <Stack hasGutter>
           <StackItem>
             <Button variant="secondary" onClick={() => setAssigning(true)}>
-              Assign tags
+              <FormattedMessage id="entityTags.assign" />
             </Button>
           </StackItem>
           <StackItem>
-            <LabelGroup aria-label="Assigned tags" numLabels={tags.data.length}>
+            <LabelGroup aria-label={t('entityTags.group.ariaLabel')} numLabels={tags.data.length}>
               {tags.data.map((tag) => (
                 <Label
                   key={tag.id}

@@ -12,6 +12,7 @@ import {
   TextInput,
 } from '@patternfly/react-core'
 import { useIsoImages, useVmCdrom } from '../../hooks/useVmCd'
+import { useT } from '../../i18n/useT'
 import { FieldHelp } from '../forms/FieldHelp'
 import { BOOT_DEVICE_OPTIONS, type EditVmDraft } from './editVmDraft'
 
@@ -20,8 +21,7 @@ import { BOOT_DEVICE_OPTIONS, type EditVmDraft } from './editVmDraft'
 // the boot-menu switch toggles vm.bios.boot_menu; kernel/initrd/cmdline drive
 // os.*). The Attach CD picker is the exception: the current tray isn't on the vm
 // read, so it fetches the ISO catalog + the persisted CD (read-only reuse of the
-// Change CD hooks) and seeds the draft once. Hardcoded English — the
-// vm.edit.boot.* ids are pre-seeded for a later i18n pass.
+// Change CD hooks) and seeds the draft once.
 export function BootOptionsSection({
   draft,
   set,
@@ -29,6 +29,7 @@ export function BootOptionsSection({
   draft: EditVmDraft
   set: <K extends keyof EditVmDraft>(key: K, value: EditVmDraft[K]) => void
 }) {
+  const t = useT()
   const isos = useIsoImages(true)
   // current=false → the persisted next-boot CD (Edit VM persists for next boot),
   // matching Change CD's stopped-VM path.
@@ -53,67 +54,64 @@ export function BootOptionsSection({
   return (
     <Form onSubmit={(event) => event.preventDefault()}>
       <FormGroup
-        label="First Device"
+        label={t('vm.edit.boot.firstDevice')}
         fieldId="boot-first-device"
         labelHelp={
           <FieldHelp
-            field="First Device"
-            content="The device the VM tries to boot from first; the second device is tried if the first fails. Set the first device to CD or network to boot an installer, then back to disk."
+            field={t('vm.edit.boot.firstDevice')}
+            content={t('fieldHelp.vm.bootFirstDevice')}
           />
         }
       >
         <FormSelect
           id="boot-first-device"
-          aria-label="First Device"
+          aria-label={t('vm.edit.boot.firstDevice')}
           value={draft.firstBootDevice}
           onChange={(_event, value) => set('firstBootDevice', value)}
         >
           {BOOT_DEVICE_OPTIONS.map((option) => (
-            <FormSelectOption key={option.value} value={option.value} label={option.label} />
+            <FormSelectOption key={option.value} value={option.value} label={t(option.labelId)} />
           ))}
         </FormSelect>
       </FormGroup>
 
-      <FormGroup label="Second Device" fieldId="boot-second-device">
+      <FormGroup label={t('vm.edit.boot.secondDevice')} fieldId="boot-second-device">
         <FormSelect
           id="boot-second-device"
-          aria-label="Second Device"
+          aria-label={t('vm.edit.boot.secondDevice')}
           value={draft.secondBootDevice}
           onChange={(_event, value) => set('secondBootDevice', value)}
         >
           {BOOT_DEVICE_OPTIONS.map((option) => (
-            <FormSelectOption key={option.value} value={option.value} label={option.label} />
+            <FormSelectOption key={option.value} value={option.value} label={t(option.labelId)} />
           ))}
         </FormSelect>
       </FormGroup>
 
       <FormGroup
-        label="Enable Boot Menu"
+        label={t('vm.edit.boot.bootMenu')}
         fieldId="boot-menu-enabled"
         labelHelp={
-          <FieldHelp
-            field="Enable Boot Menu"
-            content="Show the firmware boot menu at power-on so you can pick a boot device interactively, with a short pause before booting."
-          />
+          <FieldHelp field={t('vm.edit.boot.bootMenu')} content={t('fieldHelp.vm.bootMenu')} />
         }
       >
         <Switch
           id="boot-menu-enabled"
-          aria-label="Enable Boot Menu"
+          aria-label={t('vm.edit.boot.bootMenu')}
           isChecked={draft.bootMenuEnabled}
           onChange={(_event, checked) => set('bootMenuEnabled', checked)}
         />
       </FormGroup>
 
-      <FormGroup label="Attach CD" fieldId="boot-attach-cd">
+      <FormGroup label={t('vm.edit.boot.attachCd')} fieldId="boot-attach-cd">
         <FormSelect
           id="boot-attach-cd"
-          aria-label="Attach CD"
+          aria-label={t('vm.edit.boot.attachCd')}
           value={draft.attachedCdId}
           isDisabled={isos.isPending || isos.isError}
           onChange={(_event, value) => changeCd(value)}
         >
-          <FormSelectOption value="" label="No CD" />
+          <FormSelectOption value="" label={t('vm.edit.boot.attachCd.none')} />
           {isos.data?.map((iso) => (
             <FormSelectOption key={iso.id} value={iso.id} label={iso.name} />
           ))}
@@ -122,9 +120,9 @@ export function BootOptionsSection({
           <FormHelperText>
             <HelperText>
               <HelperTextItem variant="error">
-                Could not load ISO images.{' '}
+                {t('vm.edit.boot.attachCd.error')}{' '}
                 <Button variant="link" isInline onClick={() => void isos.refetch()}>
-                  Retry
+                  {t('common.action.retry')}
                 </Button>
               </HelperTextItem>
             </HelperText>
@@ -133,63 +131,55 @@ export function BootOptionsSection({
         {isos.isSuccess && isos.data.length === 0 && (
           <FormHelperText>
             <HelperText>
-              <HelperTextItem variant="warning">
-                No ISO images are available in this data center.
-              </HelperTextItem>
+              <HelperTextItem variant="warning">{t('vm.edit.boot.attachCd.empty')}</HelperTextItem>
             </HelperText>
           </FormHelperText>
         )}
       </FormGroup>
 
       <FormGroup
-        label="Kernel path"
+        label={t('vm.edit.boot.kernelPath')}
         fieldId="boot-kernel-path"
         labelHelp={
-          <FieldHelp
-            field="Kernel path"
-            content="Direct-kernel boot: an absolute path (on the host or an ISO domain) to a kernel image the VM boots directly, bypassing its own bootloader. Advanced — leave blank normally."
-          />
+          <FieldHelp field={t('vm.edit.boot.kernelPath')} content={t('fieldHelp.vm.kernelPath')} />
         }
       >
         <TextInput
           id="boot-kernel-path"
-          aria-label="Kernel path"
+          aria-label={t('vm.edit.boot.kernelPath')}
           value={draft.kernelPath}
           onChange={(_event, value) => set('kernelPath', value)}
         />
       </FormGroup>
 
       <FormGroup
-        label="initrd path"
+        label={t('vm.edit.boot.initrdPath')}
         fieldId="boot-initrd-path"
         labelHelp={
-          <FieldHelp
-            field="initrd path"
-            content="Path to the initial ramdisk that pairs with the direct-boot kernel above. Advanced — leave blank unless doing direct-kernel boot."
-          />
+          <FieldHelp field={t('vm.edit.boot.initrdPath')} content={t('fieldHelp.vm.initrdPath')} />
         }
       >
         <TextInput
           id="boot-initrd-path"
-          aria-label="initrd path"
+          aria-label={t('vm.edit.boot.initrdPath')}
           value={draft.initrdPath}
           onChange={(_event, value) => set('initrdPath', value)}
         />
       </FormGroup>
 
       <FormGroup
-        label="Kernel command line"
+        label={t('vm.edit.boot.kernelParams')}
         fieldId="boot-kernel-params"
         labelHelp={
           <FieldHelp
-            field="Kernel command line"
-            content="Kernel parameters passed to the direct-boot kernel (e.g. for automated or kickstart installs). Only used together with a kernel path above."
+            field={t('vm.edit.boot.kernelParams')}
+            content={t('fieldHelp.vm.kernelParams')}
           />
         }
       >
         <TextInput
           id="boot-kernel-params"
-          aria-label="Kernel command line"
+          aria-label={t('vm.edit.boot.kernelParams')}
           value={draft.kernelParams}
           onChange={(_event, value) => set('kernelParams', value)}
         />

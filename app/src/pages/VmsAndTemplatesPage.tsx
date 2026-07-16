@@ -6,7 +6,9 @@ import {
   BreadcrumbItem,
   Button,
   EmptyState,
+  EmptyStateActions,
   EmptyStateBody,
+  EmptyStateFooter,
   Flex,
   FlexItem,
   PageSection,
@@ -362,17 +364,21 @@ export function VmsAndTemplatesPage() {
       {isError && (
         <EmptyState titleText={t('inventory.error.title')} status="danger">
           <EmptyStateBody>
-            {error instanceof Error ? error.message : 'Unknown error'}
+            {error instanceof Error ? error.message : t('common.error.unknown')}
           </EmptyStateBody>
-          <Button
-            variant="primary"
-            onClick={() => {
-              void vms.refetch()
-              void templates.refetch()
-            }}
-          >
-            <FormattedMessage id="action.retry" />
-          </Button>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button
+                variant="primary"
+                onClick={() => {
+                  void vms.refetch()
+                  void templates.refetch()
+                }}
+              >
+                <FormattedMessage id="action.retry" />
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 
@@ -382,9 +388,13 @@ export function VmsAndTemplatesPage() {
             <code>{filter}</code>
             {selectedFolderId !== null && <FormattedMessage id="folders.searchEmpty.suffix" />}
           </EmptyStateBody>
-          <Button variant="link" onClick={() => setFilter('')}>
-            <FormattedMessage id="inventory.searchEmpty.clear" />
-          </Button>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="link" onClick={() => setFilter('')}>
+                <FormattedMessage id="inventory.searchEmpty.clear" />
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 
@@ -404,9 +414,13 @@ export function VmsAndTemplatesPage() {
             )}
           </EmptyStateBody>
           {selectedFolderId !== null && (
-            <Button variant="link" onClick={() => setSelectedFolderId(null)}>
-              <FormattedMessage id="folders.emptyState.clear" />
-            </Button>
+            <EmptyStateFooter>
+              <EmptyStateActions>
+                <Button variant="link" onClick={() => setSelectedFolderId(null)}>
+                  <FormattedMessage id="folders.emptyState.clear" />
+                </Button>
+              </EmptyStateActions>
+            </EmptyStateFooter>
           )}
         </EmptyState>
       )}
@@ -440,7 +454,7 @@ export function VmsAndTemplatesPage() {
                     {column.label}
                   </ResizableTh>
                 ))}
-                <Th screenReaderText="Actions" />
+                <Th screenReaderText={t('common.field.actions')} />
               </Tr>
             </Thead>
             <Tbody>
@@ -469,7 +483,7 @@ export function VmsAndTemplatesPage() {
                         {column.cell(row, ctx)}
                       </Td>
                     ))}
-                    <Td dataLabel="Actions" isActionCell>
+                    <Td dataLabel={t('common.field.actions')} isActionCell>
                       {/* One kebab per row: VM rows get the shared VmActionsMenu
                         (Migrate folded in, self-gated to admin + running) and
                         template rows the shared TemplateActionsMenu with Create

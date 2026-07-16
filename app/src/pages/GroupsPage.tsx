@@ -136,11 +136,13 @@ export function GroupsPanel() {
 
       {groups.isSuccess && groups.data.length > 0 && sortedGroups.length === 0 && (
         <EmptyState titleText={t('common.state.searchEmpty.title')}>
-          <EmptyStateBody>
-            <Button variant="link" isInline onClick={() => setFilter('')}>
-              {t('common.action.clearFilter')}
-            </Button>
-          </EmptyStateBody>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="link" isInline onClick={() => setFilter('')}>
+                {t('common.action.clearFilter')}
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 

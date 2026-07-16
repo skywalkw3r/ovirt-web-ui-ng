@@ -18,7 +18,9 @@ import {
   Switch,
   TextInput,
 } from '@patternfly/react-core'
+import { FormattedMessage } from 'react-intl'
 import { FieldHelp } from '../forms/FieldHelp'
+import { useT } from '../../i18n/useT'
 import { buildProviderPayload, isOpenStackProviderType } from '../../api/resources/providers'
 import type { OpenStackAuthApiVersion, ProviderDraft } from '../../api/resources/providers'
 import type { Provider, ProviderType } from '../../api/schemas/provider'
@@ -56,6 +58,7 @@ export function ProviderFormModal({
   isOpen: boolean
   onClose: () => void
 }) {
+  const t = useT()
   const isEdit = provider !== undefined
   const [draft, setDraft] = useState<ProviderDraft>(() =>
     provider ? providerToDraft(provider) : blankProviderDraft(),
@@ -109,7 +112,9 @@ export function ProviderFormModal({
     if (provider) test.mutate({ type: provider.providerType, id: provider.id })
   }
 
-  const title = isEdit ? `Edit provider — ${provider.name}` : 'Add provider'
+  const title = isEdit
+    ? t('providerForm.title.edit', { name: provider.name ?? '' })
+    : t('providerForm.title.new')
 
   return (
     <Modal
@@ -122,10 +127,10 @@ export function ProviderFormModal({
       <ModalHeader title={title} labelId="provider-modal-title" />
       <ModalBody id="provider-modal-body">
         <Form onSubmit={(event) => event.preventDefault()}>
-          <FormGroup label="Type" isRequired fieldId="provider-type">
+          <FormGroup label={t('common.field.type')} isRequired fieldId="provider-type">
             <FormSelect
               id="provider-type"
-              aria-label="Provider type"
+              aria-label={t('providerForm.aria.type')}
               value={draft.type}
               // The kind is fixed once stored — a different kind is a different
               // collection, so edit shows it disabled for context.
@@ -133,16 +138,20 @@ export function ProviderFormModal({
               onChange={(_event, value) => set('type', value as ProviderType)}
             >
               {PROVIDER_TYPES.map((option) => (
-                <FormSelectOption key={option.value} value={option.value} label={option.label} />
+                <FormSelectOption
+                  key={option.value}
+                  value={option.value}
+                  label={t(option.labelId)}
+                />
               ))}
             </FormSelect>
           </FormGroup>
 
-          <FormGroup label="Name" isRequired fieldId="provider-name">
+          <FormGroup label={t('common.field.name')} isRequired fieldId="provider-name">
             <TextInput
               id="provider-name"
               isRequired
-              aria-label="Provider name"
+              aria-label={t('providerForm.aria.name')}
               value={draft.name}
               validated={nameEmpty ? 'error' : 'default'}
               onChange={(_event, value) => set('name', value)}
@@ -150,16 +159,18 @@ export function ProviderFormModal({
             {nameEmpty && (
               <FormHelperText>
                 <HelperText>
-                  <HelperTextItem variant="error">The provider name is required.</HelperTextItem>
+                  <HelperTextItem variant="error">
+                    <FormattedMessage id="providerForm.name.required" />
+                  </HelperTextItem>
                 </HelperText>
               </FormHelperText>
             )}
           </FormGroup>
 
-          <FormGroup label="Description" fieldId="provider-description">
+          <FormGroup label={t('common.field.description')} fieldId="provider-description">
             <TextInput
               id="provider-description"
-              aria-label="Provider description"
+              aria-label={t('providerForm.aria.description')}
               value={draft.description}
               onChange={(_event, value) => set('description', value)}
             />
@@ -167,10 +178,13 @@ export function ProviderFormModal({
 
           {draft.type === 'network' && (
             <>
-              <FormGroup label="Networking plugin" fieldId="provider-network-type">
+              <FormGroup
+                label={t('providerDetail.term.networkPlugin')}
+                fieldId="provider-network-type"
+              >
                 <FormSelect
                   id="provider-network-type"
-                  aria-label="Networking plugin"
+                  aria-label={t('providerDetail.term.networkPlugin')}
                   value={draft.networkType}
                   onChange={(_event, value) => set('networkType', value)}
                 >
@@ -178,7 +192,7 @@ export function ProviderFormModal({
                     <FormSelectOption
                       key={option.value}
                       value={option.value}
-                      label={option.label}
+                      label={t(option.labelId)}
                     />
                   ))}
                 </FormSelect>
@@ -188,15 +202,15 @@ export function ProviderFormModal({
                 fieldId="provider-read-only"
                 labelHelp={
                   <FieldHelp
-                    field="Read-only"
-                    content="A read-only provider is imported for reference only: the engine will not create, modify, or delete the provider's networks or subnets. Leave off to let oVirt manage networks on this provider."
+                    field={t('providerForm.readOnly')}
+                    content={t('fieldHelp.provider.readOnly')}
                   />
                 }
               >
                 <Checkbox
                   id="provider-read-only"
-                  label="Read-only"
-                  aria-label="Read-only provider"
+                  label={t('providerForm.readOnly')}
+                  aria-label={t('providerForm.readOnly.aria')}
                   isChecked={draft.readOnly}
                   onChange={(_event, checked) => set('readOnly', checked)}
                 />
@@ -204,11 +218,11 @@ export function ProviderFormModal({
             </>
           )}
 
-          <FormGroup label="Provider URL" isRequired fieldId="provider-url">
+          <FormGroup label={t('providerForm.url')} isRequired fieldId="provider-url">
             <TextInput
               id="provider-url"
               isRequired
-              aria-label="Provider URL"
+              aria-label={t('providerForm.url')}
               placeholder="https://provider.example.com:35357"
               value={draft.url}
               validated={urlEmpty ? 'error' : 'default'}
@@ -217,7 +231,9 @@ export function ProviderFormModal({
             {urlEmpty && (
               <FormHelperText>
                 <HelperText>
-                  <HelperTextItem variant="error">The provider URL is required.</HelperTextItem>
+                  <HelperTextItem variant="error">
+                    <FormattedMessage id="providerForm.url.required" />
+                  </HelperTextItem>
                 </HelperText>
               </FormHelperText>
             )}
@@ -226,8 +242,8 @@ export function ProviderFormModal({
           <FormGroup fieldId="provider-requires-auth">
             <Switch
               id="provider-requires-auth"
-              label="Requires authentication"
-              aria-label="Requires authentication"
+              label={t('providerDetail.term.requiresAuth')}
+              aria-label={t('providerDetail.term.requiresAuth')}
               isChecked={draft.requiresAuthentication}
               onChange={(_event, checked) => set('requiresAuthentication', checked)}
             />
@@ -235,21 +251,21 @@ export function ProviderFormModal({
 
           {draft.requiresAuthentication && (
             <>
-              <FormGroup label="Username" fieldId="provider-username">
+              <FormGroup label={t('providerDetail.term.username')} fieldId="provider-username">
                 <TextInput
                   id="provider-username"
-                  aria-label="Provider username"
+                  aria-label={t('providerForm.aria.username')}
                   value={draft.username}
                   onChange={(_event, value) => set('username', value)}
                 />
               </FormGroup>
 
-              <FormGroup label="Password" fieldId="provider-password">
+              <FormGroup label={t('login.password')} fieldId="provider-password">
                 <TextInput
                   id="provider-password"
                   type="password"
                   autoComplete="new-password"
-                  aria-label="Provider password"
+                  aria-label={t('providerForm.aria.password')}
                   value={draft.password}
                   onChange={(_event, value) => set('password', value)}
                 />
@@ -257,8 +273,8 @@ export function ProviderFormModal({
                   <HelperText>
                     <HelperTextItem>
                       {isEdit
-                        ? 'Leave blank to keep the current password. The engine never returns it.'
-                        : 'Sent once to the engine, which stores it — never read back.'}
+                        ? t('providerForm.password.hint.edit')
+                        : t('providerForm.password.hint.create')}
                     </HelperTextItem>
                   </HelperText>
                 </FormHelperText>
@@ -266,23 +282,25 @@ export function ProviderFormModal({
 
               {openStack && (
                 <>
-                  <FormGroup label="Authentication URL" fieldId="provider-auth-url">
+                  <FormGroup label={t('providerDetail.term.authUrl')} fieldId="provider-auth-url">
                     <TextInput
                       id="provider-auth-url"
-                      aria-label="Authentication URL"
+                      aria-label={t('providerDetail.term.authUrl')}
                       placeholder="https://keystone.example.com:5000/v2.0"
                       value={draft.authenticationUrl}
                       onChange={(_event, value) => set('authenticationUrl', value)}
                     />
                     <FormHelperText>
                       <HelperText>
-                        <HelperTextItem>The OpenStack Identity (Keystone) endpoint.</HelperTextItem>
+                        <HelperTextItem>
+                          <FormattedMessage id="providerForm.authUrl.hint" />
+                        </HelperTextItem>
                       </HelperText>
                     </FormHelperText>
                   </FormGroup>
 
                   <FormGroup
-                    label="Identity API version"
+                    label={t('providerForm.authVersion')}
                     role="radiogroup"
                     isStack
                     fieldId="provider-auth-version"
@@ -290,81 +308,97 @@ export function ProviderFormModal({
                     <Radio
                       id="provider-auth-version-v2"
                       name="provider-auth-version"
-                      label="Version 2.0 (tenant)"
-                      aria-label="Identity API version 2.0"
+                      label={t('providerForm.authVersion.v2')}
+                      aria-label={t('providerForm.authVersion.v2.aria')}
                       isChecked={draft.authApiVersion === 'v2'}
                       onChange={() => set('authApiVersion', 'v2' as OpenStackAuthApiVersion)}
                     />
                     <Radio
                       id="provider-auth-version-v3"
                       name="provider-auth-version"
-                      label="Version 3 (domains + project)"
-                      aria-label="Identity API version 3"
+                      label={t('providerForm.authVersion.v3')}
+                      aria-label={t('providerForm.authVersion.v3.aria')}
                       isChecked={draft.authApiVersion === 'v3'}
                       onChange={() => set('authApiVersion', 'v3' as OpenStackAuthApiVersion)}
                     />
                   </FormGroup>
 
                   {draft.authApiVersion === 'v2' ? (
-                    <FormGroup label="Tenant name" fieldId="provider-tenant">
+                    <FormGroup
+                      label={t('providerDetail.term.tenantName')}
+                      fieldId="provider-tenant"
+                    >
                       <TextInput
                         id="provider-tenant"
-                        aria-label="Tenant name"
+                        aria-label={t('providerDetail.term.tenantName')}
                         value={draft.tenantName}
                         onChange={(_event, value) => set('tenantName', value)}
                       />
                       <FormHelperText>
                         <HelperText>
                           <HelperTextItem>
-                            Optional — the OpenStack tenant/project (Identity API v2.0).
+                            <FormattedMessage id="providerForm.tenant.hint" />
                           </HelperTextItem>
                         </HelperText>
                       </FormHelperText>
                     </FormGroup>
                   ) : (
                     <>
-                      <FormGroup label="User domain name" fieldId="provider-user-domain">
+                      <FormGroup
+                        label={t('providerDetail.term.userDomainName')}
+                        fieldId="provider-user-domain"
+                      >
                         <TextInput
                           id="provider-user-domain"
-                          aria-label="User domain name"
-                          placeholder="Default"
+                          aria-label={t('providerDetail.term.userDomainName')}
+                          placeholder={t('providerForm.domain.placeholder')}
                           value={draft.userDomainName}
                           onChange={(_event, value) => set('userDomainName', value)}
                         />
                         <FormHelperText>
                           <HelperText>
-                            <HelperTextItem>The domain the username belongs to.</HelperTextItem>
+                            <HelperTextItem>
+                              <FormattedMessage id="providerForm.userDomain.hint" />
+                            </HelperTextItem>
                           </HelperText>
                         </FormHelperText>
                       </FormGroup>
 
-                      <FormGroup label="Project name" fieldId="provider-project">
+                      <FormGroup
+                        label={t('providerDetail.term.projectName')}
+                        fieldId="provider-project"
+                      >
                         <TextInput
                           id="provider-project"
-                          aria-label="Project name"
+                          aria-label={t('providerDetail.term.projectName')}
                           value={draft.projectName}
                           onChange={(_event, value) => set('projectName', value)}
                         />
                         <FormHelperText>
                           <HelperText>
                             <HelperTextItem>
-                              The OpenStack project (Identity API v3 replaces the tenant).
+                              <FormattedMessage id="providerForm.project.hint" />
                             </HelperTextItem>
                           </HelperText>
                         </FormHelperText>
                       </FormGroup>
 
-                      <FormGroup label="Project domain name" fieldId="provider-project-domain">
+                      <FormGroup
+                        label={t('providerDetail.term.projectDomainName')}
+                        fieldId="provider-project-domain"
+                      >
                         <TextInput
                           id="provider-project-domain"
-                          aria-label="Project domain name"
-                          placeholder="Default"
+                          aria-label={t('providerDetail.term.projectDomainName')}
+                          placeholder={t('providerForm.domain.placeholder')}
                           value={draft.projectDomainName}
                           onChange={(_event, value) => set('projectDomainName', value)}
                         />
                         <FormHelperText>
                           <HelperText>
-                            <HelperTextItem>The domain the project belongs to.</HelperTextItem>
+                            <HelperTextItem>
+                              <FormattedMessage id="providerForm.projectDomain.hint" />
+                            </HelperTextItem>
                           </HelperText>
                         </FormHelperText>
                       </FormGroup>
@@ -379,18 +413,18 @@ export function ProviderFormModal({
             <Alert
               variant="success"
               isInline
-              title="Connection succeeded"
-              aria-label="Connection succeeded"
+              title={t('providerForm.test.success.title')}
+              aria-label={t('providerForm.test.success.title')}
             >
-              The engine reached the provider with the stored credentials.
+              <FormattedMessage id="providerForm.test.success.body" />
             </Alert>
           )}
           {test.isError && (
             <Alert
               variant="danger"
               isInline
-              title="Connection failed"
-              aria-label="Connection failed"
+              title={t('providerForm.test.fail.title')}
+              aria-label={t('providerForm.test.fail.title')}
             >
               {test.error.message}
             </Alert>
@@ -404,7 +438,7 @@ export function ProviderFormModal({
           isLoading={pending}
           isDisabled={pending || nameEmpty || urlEmpty}
         >
-          Save
+          <FormattedMessage id="common.action.save" />
         </Button>
         {isEdit && (
           <Button
@@ -413,11 +447,11 @@ export function ProviderFormModal({
             isLoading={test.isPending}
             isDisabled={pending || test.isPending}
           >
-            Test
+            <FormattedMessage id="providerForm.test.action" />
           </Button>
         )}
         <Button variant="secondary" onClick={onClose} isDisabled={pending}>
-          Cancel
+          <FormattedMessage id="common.action.cancel" />
         </Button>
       </ModalFooter>
     </Modal>

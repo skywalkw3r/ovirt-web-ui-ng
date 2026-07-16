@@ -1,4 +1,5 @@
 import type { InstanceType } from '../../api/schemas/instance-type'
+import type { MessageId } from '../../i18n/messages/en'
 import { vmNameError } from '../edit-vm/editVmDraft'
 
 // Memory is stored in bytes on the wire (see schemas/instance-type.ts) but
@@ -129,13 +130,15 @@ export const instanceTypeNameError = vmNameError
 // guaranteed <= memory <= max; surface it inline so the user sees why Save is
 // blocked rather than eating a raw fault. Returns undefined when the sizing is
 // consistent. max is only checked when set (0 means "let the engine default").
-export function instanceTypeMemoryError(draft: InstanceTypeDraft): string | undefined {
-  if (draft.memoryMb <= 0) return 'Memory size must be greater than 0'
+// Returns a message id (not a string): the modal resolves it through t() so the
+// inline error follows the active locale (mirrors TemplateFormModal).
+export function instanceTypeMemoryError(draft: InstanceTypeDraft): MessageId | undefined {
+  if (draft.memoryMb <= 0) return 'instanceTypeForm.memory.error.positive'
   if (draft.guaranteedMemoryMb > draft.memoryMb) {
-    return 'Physical memory guaranteed cannot exceed the memory size'
+    return 'instanceTypeForm.memory.error.guaranteed'
   }
   if (draft.maxMemoryMb > 0 && draft.maxMemoryMb < draft.memoryMb) {
-    return 'Maximum memory cannot be smaller than the memory size'
+    return 'instanceTypeForm.memory.error.max'
   }
   return undefined
 }

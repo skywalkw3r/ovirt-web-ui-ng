@@ -2,7 +2,9 @@ import { useState } from 'react'
 import {
   Button,
   EmptyState,
+  EmptyStateActions,
   EmptyStateBody,
+  EmptyStateFooter,
   Label,
   Skeleton,
   ToggleGroup,
@@ -222,9 +224,13 @@ export function PermissionsPanel<T extends PermissionRow>({
               ? permissions.error.message
               : t('common.error.unknown')}
           </EmptyStateBody>
-          <Button variant="primary" onClick={() => void permissions.refetch()}>
-            {t('common.action.retry')}
-          </Button>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="primary" onClick={() => void permissions.refetch()}>
+                {t('common.action.retry')}
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 

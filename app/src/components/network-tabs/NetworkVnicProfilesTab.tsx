@@ -92,7 +92,7 @@ export function NetworkVnicProfilesTab({ networkId }: { networkId: string }) {
           <ToolbarContent>
             <ToolbarItem>
               <Button variant="secondary" onClick={() => setCreating(true)}>
-                New vNIC profile
+                {t('networkVnic.new')}
               </Button>
             </ToolbarItem>
           </ToolbarContent>
@@ -111,9 +111,13 @@ export function NetworkVnicProfilesTab({ networkId }: { networkId: string }) {
           <EmptyStateBody>
             {profiles.error instanceof Error ? profiles.error.message : t('common.error.unknown')}
           </EmptyStateBody>
-          <Button variant="primary" onClick={() => void profiles.refetch()}>
-            {t('common.action.retry')}
-          </Button>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="primary" onClick={() => void profiles.refetch()}>
+                {t('common.action.retry')}
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 
@@ -124,7 +128,7 @@ export function NetworkVnicProfilesTab({ networkId }: { networkId: string }) {
             <EmptyStateFooter>
               <EmptyStateActions>
                 <Button variant="primary" onClick={() => setCreating(true)}>
-                  New vNIC profile
+                  {t('networkVnic.new')}
                 </Button>
               </EmptyStateActions>
             </EmptyStateFooter>
@@ -206,8 +210,8 @@ export function NetworkVnicProfilesTab({ networkId }: { networkId: string }) {
       {removing !== null && (
         <ConfirmModal
           isOpen
-          title={`Remove vNIC profile ${removing.name}?`}
-          body="A profile still used by any VM or template vNIC cannot be removed — the engine rejects it."
+          title={t('networkVnic.remove.confirm.title', { name: removing.name })}
+          body={t('networkVnic.remove.confirm.body')}
           confirmLabel={t('common.action.remove')}
           onConfirm={() => {
             deleteMutation.mutate(

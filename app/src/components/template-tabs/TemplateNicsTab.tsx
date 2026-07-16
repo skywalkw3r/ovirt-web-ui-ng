@@ -2,7 +2,9 @@ import { useState } from 'react'
 import {
   Button,
   EmptyState,
+  EmptyStateActions,
   EmptyStateBody,
+  EmptyStateFooter,
   MenuToggle,
   Skeleton,
   Toolbar,
@@ -20,6 +22,7 @@ import {
   useUpdateTemplateNic,
 } from '../../hooks/useTemplateMutations'
 import { useTemplateNics } from '../../hooks/useTemplateDetail'
+import { useT } from '../../i18n/useT'
 import { ConfirmModal } from '../ConfirmModal'
 import { NicModal } from '../vm-tabs/NicsTab'
 
@@ -46,13 +49,17 @@ function nicLabel(nic: Nic): string {
 // Green for a live link, grey for down, an em dash when the engine omits it —
 // matching the VM NICs tab's Linked coloring policy.
 function LinkStateCell({ linked }: { linked?: boolean }) {
+  const t = useT()
   if (linked === undefined) return <>—</>
   return (
-    <StatusBadge color={linked ? 'green' : 'grey'}>{linked ? 'Linked' : 'Unlinked'}</StatusBadge>
+    <StatusBadge color={linked ? 'green' : 'grey'}>
+      {linked ? t('templateNics.linked') : t('templateNics.unlinked')}
+    </StatusBadge>
   )
 }
 
 export function TemplateNicsTab({ templateId }: { templateId: string }) {
+  const t = useT()
   const nics = useTemplateNics(templateId)
   const add = useAddTemplateNic(templateId)
   const update = useUpdateTemplateNic(templateId)
@@ -69,7 +76,7 @@ export function TemplateNicsTab({ templateId }: { templateId: string }) {
         <ToolbarContent>
           <ToolbarItem>
             <Button variant="primary" onClick={() => setIsAddOpen(true)} isDisabled={mutating}>
-              Add network interface
+              {t('vmNics.add')}
             </Button>
           </ToolbarItem>
         </ToolbarContent>
@@ -79,57 +86,58 @@ export function TemplateNicsTab({ templateId }: { templateId: string }) {
         <>
           <Skeleton height="2.5rem" style={{ marginBottom: '0.5rem' }} />
           <Skeleton height="2.5rem" style={{ marginBottom: '0.5rem' }} />
-          <Skeleton height="2.5rem" screenreaderText="Loading network interfaces" />
+          <Skeleton height="2.5rem" screenreaderText={t('vmNics.loading')} />
         </>
       )}
 
       {nics.isError && (
-        <EmptyState titleText="Could not load network interfaces" status="danger">
+        <EmptyState titleText={t('vmNics.error.title')} status="danger">
           <EmptyStateBody>
-            {nics.error instanceof Error ? nics.error.message : 'Unknown error'}
+            {nics.error instanceof Error ? nics.error.message : t('common.error.unknown')}
           </EmptyStateBody>
-          <Button variant="primary" onClick={() => void nics.refetch()}>
-            Retry
-          </Button>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="primary" onClick={() => void nics.refetch()}>
+                {t('common.action.retry')}
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 
       {nics.isSuccess && nics.data.length === 0 && (
-        <EmptyState titleText="No network interfaces">
-          <EmptyStateBody>
-            This template has no network interfaces. Add one so VMs created from it inherit the
-            binding.
-          </EmptyStateBody>
+        <EmptyState titleText={t('vmNics.empty.title')}>
+          <EmptyStateBody>{t('templateNics.empty.body')}</EmptyStateBody>
         </EmptyState>
       )}
 
       {nics.isSuccess && nics.data.length > 0 && (
-        <Table aria-label="Template network interfaces" variant="compact">
+        <Table aria-label={t('templateNics.table.ariaLabel')} variant="compact">
           <Thead>
             <Tr>
-              <Th>Name</Th>
-              <Th>Network</Th>
-              <Th>vNIC profile</Th>
-              <Th>Link state</Th>
-              <Th screenReaderText="Actions" />
+              <Th>{t('common.field.name')}</Th>
+              <Th>{t('nics.column.network')}</Th>
+              <Th>{t('vmNics.profile.label')}</Th>
+              <Th>{t('templateNics.column.linkState')}</Th>
+              <Th screenReaderText={t('common.field.actions')} />
             </Tr>
           </Thead>
           <Tbody>
             {nics.data.map((nic: Nic) => (
               <Tr key={nic.id}>
-                <Td dataLabel="Name">{nic.name ?? '—'}</Td>
-                <Td dataLabel="Network">{nicNetwork(nic)}</Td>
-                <Td dataLabel="vNIC profile">{nicVnicProfile(nic)}</Td>
-                <Td dataLabel="Link state">
+                <Td dataLabel={t('common.field.name')}>{nic.name ?? '—'}</Td>
+                <Td dataLabel={t('nics.column.network')}>{nicNetwork(nic)}</Td>
+                <Td dataLabel={t('vmNics.profile.label')}>{nicVnicProfile(nic)}</Td>
+                <Td dataLabel={t('templateNics.column.linkState')}>
                   <LinkStateCell linked={nic.linked} />
                 </Td>
-                <Td dataLabel="Actions" isActionCell>
+                <Td dataLabel={t('common.field.actions')} isActionCell>
                   <ActionsColumn
                     isDisabled={mutating}
                     actionsToggle={({ onToggle, isOpen, isDisabled, toggleRef }) => (
                       <MenuToggle
                         ref={toggleRef}
-                        aria-label={`Actions for ${nicLabel(nic)}`}
+                        aria-label={t('common.action.actionsFor', { name: nicLabel(nic) })}
                         variant="plain"
                         icon={<EllipsisVIcon />}
                         onClick={onToggle}
@@ -138,9 +146,9 @@ export function TemplateNicsTab({ templateId }: { templateId: string }) {
                       />
                     )}
                     items={[
-                      { title: 'Edit', onClick: () => setEditing(nic) },
+                      { title: t('common.action.edit'), onClick: () => setEditing(nic) },
                       {
-                        title: 'Remove',
+                        title: t('common.action.remove'),
                         isDanger: true,
                         onClick: () => setRemoving(nic),
                       },
@@ -195,9 +203,9 @@ export function TemplateNicsTab({ templateId }: { templateId: string }) {
       {removing && (
         <ConfirmModal
           isOpen
-          title={`Remove ${nicLabel(removing)}?`}
-          body="VMs created from this template will no longer inherit this network interface."
-          confirmLabel="Remove"
+          title={t('templateNics.remove.confirm.title', { name: nicLabel(removing) })}
+          body={t('templateNics.remove.confirm.body')}
+          confirmLabel={t('common.action.remove')}
           onConfirm={() => {
             const nic = removing
             setRemoving(null)

@@ -129,7 +129,10 @@ export function TemplateExportModal({
       aria-labelledby="template-export-title"
       aria-describedby="template-export-body"
     >
-      <ModalHeader title={`Export ${template.name}`} labelId="template-export-title" />
+      <ModalHeader
+        title={t('templateExport.modalTitle', { name: template.name })}
+        labelId="template-export-title"
+      />
       <ModalBody id="template-export-body">
         <Form
           id="template-export-form"
@@ -138,20 +141,25 @@ export function TemplateExportModal({
             if (canSubmit) save()
           }}
         >
-          <FormGroup label="Destination" role="radiogroup" isInline fieldId="template-export-dest">
+          <FormGroup
+            label={t('templateExport.destination')}
+            role="radiogroup"
+            isInline
+            fieldId="template-export-dest"
+          >
             <Radio
               id="template-export-dest-ova"
               name="template-export-dest"
-              label="OVA on a host"
-              aria-label="OVA on a host"
+              label={t('templateExport.dest.ova')}
+              aria-label={t('templateExport.dest.ova')}
               isChecked={destination === 'ova'}
               onChange={() => setDestination('ova')}
             />
             <Radio
               id="template-export-dest-domain"
               name="template-export-dest"
-              label="Export domain"
-              aria-label="Export domain"
+              label={t('templateExport.exportDomain')}
+              aria-label={t('templateExport.exportDomain')}
               isChecked={destination === 'domain'}
               onChange={() => setDestination('domain')}
             />
@@ -202,7 +210,7 @@ export function TemplateExportModal({
                   id="template-export-directory"
                   isRequired
                   aria-label={t('templateExport.directory')}
-                  placeholder="/var/tmp/ova"
+                  placeholder={t('templateExport.directory.placeholder')}
                   validated={directory !== '' && dirError !== undefined ? 'error' : 'default'}
                   value={directory}
                   onChange={(_event, value) => setDirectory(value)}
@@ -233,14 +241,21 @@ export function TemplateExportModal({
 
           {destination === 'domain' && (
             <>
-              <FormGroup label="Export domain" isRequired fieldId="template-export-domain">
+              <FormGroup
+                label={t('templateExport.exportDomain')}
+                isRequired
+                fieldId="template-export-domain"
+              >
                 {domainsLoading ? (
-                  <Skeleton height="2.25rem" screenreaderText="Loading export domains" />
+                  <Skeleton
+                    height="2.25rem"
+                    screenreaderText={t('templateExport.domain.loading')}
+                  />
                 ) : domainsError ? (
                   <FormHelperText>
                     <HelperText>
                       <HelperTextItem variant="error">
-                        Could not load storage domains: {domainsError.message}
+                        {t('templateExport.domain.error', { message: domainsError.message })}
                       </HelperTextItem>
                     </HelperText>
                   </FormHelperText>
@@ -248,11 +263,15 @@ export function TemplateExportModal({
                   <>
                     <FormSelect
                       id="template-export-domain"
-                      aria-label="Export domain"
+                      aria-label={t('templateExport.exportDomain')}
                       value={storageDomainId}
                       onChange={(_event, value) => setStorageDomainId(value)}
                     >
-                      <FormSelectOption value="" label="Select an export domain" isDisabled />
+                      <FormSelectOption
+                        value=""
+                        label={t('templateExport.domain.placeholder')}
+                        isDisabled
+                      />
                       {exportDomains.map((domain) => (
                         <FormSelectOption key={domain.id} value={domain.id} label={domain.name} />
                       ))}
@@ -261,7 +280,7 @@ export function TemplateExportModal({
                       <FormHelperText>
                         <HelperText>
                           <HelperTextItem variant="warning">
-                            No active export domain is attached to this template&apos;s data center.
+                            {t('templateExport.domain.none')}
                           </HelperTextItem>
                         </HelperText>
                       </FormHelperText>
@@ -273,8 +292,8 @@ export function TemplateExportModal({
               <FormGroup fieldId="template-export-overwrite">
                 <Switch
                   id="template-export-overwrite"
-                  label="Overwrite an existing template in the domain"
-                  aria-label="Overwrite an existing template in the domain"
+                  label={t('templateExport.overwrite')}
+                  aria-label={t('templateExport.overwrite')}
                   isChecked={overwrite}
                   onChange={(_event, checked) => setOverwrite(checked)}
                 />

@@ -33,7 +33,7 @@ describe('newHostNameError', () => {
   })
 
   it('rejects names over 255 characters', () => {
-    expect(newHostNameError('a'.repeat(256))).toBe('Must be at most 255 characters')
+    expect(newHostNameError('a'.repeat(256))).toBe('hostForm.validation.maxLength255')
   })
 
   it('rejects characters outside the hostname alphabet', () => {
@@ -67,7 +67,7 @@ describe('newHostAddressError', () => {
   })
 
   it('rejects malformed addresses that match neither FQDN nor IP form', () => {
-    expect(newHostAddressError('node_04.lab.local')).toBe('Enter a valid hostname or IP address')
+    expect(newHostAddressError('node_04.lab.local')).toBe('hostForm.validation.address')
     expect(newHostAddressError('-bad.lab.local')).toBeDefined()
     expect(newHostAddressError('a..b')).toBeDefined()
     expect(newHostAddressError('fe80::1::2')).toBeDefined()
@@ -83,7 +83,7 @@ describe('newHostAddressError', () => {
   it('rejects addresses over 255 characters even when well-formed', () => {
     const long = Array.from({ length: 4 }, () => 'a'.repeat(63)).join('.') // 255 chars — fine
     expect(newHostAddressError(long)).toBeUndefined()
-    expect(newHostAddressError(`a.${long}`)).toBe('Must be at most 255 characters')
+    expect(newHostAddressError(`a.${long}`)).toBe('hostForm.validation.maxLength255')
   })
 })
 
@@ -96,7 +96,7 @@ describe('newHostSshPortError', () => {
   })
 
   it('errors on blank — the field has a default, so blank means actively emptied', () => {
-    expect(newHostSshPortError('')).toBe('Enter a port between 1 and 65535')
+    expect(newHostSshPortError('')).toBe('hostForm.validation.portRequired')
     expect(newHostSshPortError('   ')).toBeDefined()
   })
 

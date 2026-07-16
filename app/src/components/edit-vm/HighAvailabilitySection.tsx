@@ -10,16 +10,19 @@ import {
   Switch,
 } from '@patternfly/react-core'
 import { useStorageDomains } from '../../hooks/useStorageDomains'
+import type { MessageId } from '../../i18n/messages/en'
+import { useT } from '../../i18n/useT'
 import { FieldHelp } from '../forms/FieldHelp'
 import type { EditVmDraft } from './editVmDraft'
 
 // HA restart priority is a free-form integer on the wire, but webadmin exposes
 // only three buckets. Map the draft's numeric priority to Low/Medium/High and
-// back so the select stays a fixed, controlled set of choices.
-const HA_PRIORITY_OPTIONS: { value: number; label: string }[] = [
-  { value: 1, label: 'Low' },
-  { value: 50, label: 'Medium' },
-  { value: 100, label: 'High' },
+// back so the select stays a fixed, controlled set of choices. Labels resolve
+// per-locale at the render site via the labelId.
+const HA_PRIORITY_OPTIONS: { value: number; labelId: MessageId }[] = [
+  { value: 1, labelId: 'vm.edit.ha.priority.low' },
+  { value: 50, labelId: 'vm.edit.ha.priority.medium' },
+  { value: 100, labelId: 'vm.edit.ha.priority.high' },
 ]
 
 // Snap an arbitrary stored priority onto the nearest bucket value so the select
@@ -37,6 +40,7 @@ export function HighAvailabilitySection({
   draft: EditVmDraft
   set: <K extends keyof EditVmDraft>(key: K, value: EditVmDraft[K]) => void
 }) {
+  const t = useT()
   // The lease target must be an active data domain (read-only reuse of the
   // shared storage-domains query — cached with the rest of the app).
   const domains = useStorageDomains()
@@ -52,42 +56,36 @@ export function HighAvailabilitySection({
   return (
     <Form onSubmit={(event) => event.preventDefault()}>
       <FormGroup
-        label="Highly available"
+        label={t('vm.edit.ha.enabled')}
         fieldId="edit-vm-ha-enabled"
         labelHelp={
-          <FieldHelp
-            field="Highly available"
-            content="If the VM’s host crashes or is fenced, the engine automatically restarts the VM on another host. Depends on fencing/power management being configured so the failed host is safely down first."
-          />
+          <FieldHelp field={t('vm.edit.ha.enabled')} content={t('fieldHelp.vm.highlyAvailable')} />
         }
       >
         <Switch
           id="edit-vm-ha-enabled"
-          aria-label="Highly available"
+          aria-label={t('vm.edit.ha.enabled')}
           isChecked={draft.haEnabled}
           onChange={(_event, checked) => set('haEnabled', checked)}
         />
       </FormGroup>
 
       <FormGroup
-        label="Priority"
+        label={t('vm.edit.ha.priority')}
         fieldId="edit-vm-ha-priority"
         labelHelp={
-          <FieldHelp
-            field="Priority"
-            content="When several highly-available VMs must restart at once and capacity is tight, higher-priority VMs are restarted first."
-          />
+          <FieldHelp field={t('vm.edit.ha.priority')} content={t('fieldHelp.vm.haPriority')} />
         }
       >
         <FormSelect
           id="edit-vm-ha-priority"
-          aria-label="Priority"
+          aria-label={t('vm.edit.ha.priority')}
           value={nearestPriority(draft.haPriority)}
           isDisabled={!draft.haEnabled}
           onChange={(_event, value) => set('haPriority', Number(value))}
         >
           {HA_PRIORITY_OPTIONS.map((option) => (
-            <FormSelectOption key={option.value} value={option.value} label={option.label} />
+            <FormSelectOption key={option.value} value={option.value} label={t(option.labelId)} />
           ))}
         </FormSelect>
       </FormGroup>
@@ -98,7 +96,7 @@ export function HighAvailabilitySection({
         labelHelp={
           <FieldHelp
             field="Target storage domain for VM lease"
-            content="Stores an HA lease on shared storage. Before restarting the VM elsewhere the engine acquires this lease, preventing the same VM from running on two hosts (split-brain) when the original host is only network-isolated. Select None to skip the lease."
+            content={t('fieldHelp.vm.leaseSd')}
           />
         }
       >
@@ -124,9 +122,9 @@ export function HighAvailabilitySection({
           <FormHelperText>
             <HelperText>
               <HelperTextItem variant="error">
-                Could not load storage domains.{' '}
+                {t('vm.edit.ha.leaseSd.error')}{' '}
                 <Button variant="link" isInline onClick={() => void domains.refetch()}>
-                  Retry
+                  {t('common.action.retry')}
                 </Button>
               </HelperTextItem>
             </HelperText>

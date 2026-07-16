@@ -8,6 +8,7 @@ import {
   TextInput,
 } from '@patternfly/react-core'
 import { FieldHelp } from '../forms/FieldHelp'
+import { useT } from '../../i18n/useT'
 // The slice of the host draft this section reads/writes. EditHostDraft and
 // NewHostDraft are both structural supersets, so the Edit and New Host modals
 // share this presentational section — same sharing rule as
@@ -35,47 +36,43 @@ export function ConsoleGpuSection({
   // accepts both.
   set: (key: keyof ConsoleGpuDraft, value: boolean | string) => void
 }) {
+  const t = useT()
   return (
     <Form onSubmit={(event) => event.preventDefault()}>
       <FormGroup
-        label="Override display address"
+        label={t('hostForm.console.override')}
         fieldId="edit-host-console-address-enabled"
         labelHelp={
           <FieldHelp
-            field="Override display address"
-            content="By default consoles connect to the host’s own address. Override it when that address isn’t reachable by console clients — for example when the host is behind NAT and clients need a public or otherwise routable address."
+            field={t('hostForm.console.override')}
+            content={t('hostForm.console.override.help')}
           />
         }
       >
         <Switch
           id="edit-host-console-address-enabled"
-          aria-label="Override display address"
+          aria-label={t('hostForm.console.override')}
           isChecked={draft.consoleAddressEnabled}
           onChange={(_event, checked) => set('consoleAddressEnabled', checked)}
         />
         <FormHelperText>
           <HelperText>
-            <HelperTextItem>
-              When off, graphical consoles connect to the host address; turning it off also clears a
-              previously saved override.
-            </HelperTextItem>
+            <HelperTextItem>{t('hostForm.console.override.note')}</HelperTextItem>
           </HelperText>
         </FormHelperText>
       </FormGroup>
 
       {draft.consoleAddressEnabled && (
-        <FormGroup label="Console display address" fieldId="edit-host-console-address">
+        <FormGroup label={t('hostForm.console.address')} fieldId="edit-host-console-address">
           <TextInput
             id="edit-host-console-address"
-            aria-label="Console display address"
+            aria-label={t('hostForm.console.address')}
             value={draft.consoleAddress}
             onChange={(_event, value) => set('consoleAddress', value)}
           />
           <FormHelperText>
             <HelperText>
-              <HelperTextItem>
-                Graphical consoles connect to this address instead of the host address.
-              </HelperTextItem>
+              <HelperTextItem>{t('hostForm.console.address.help')}</HelperTextItem>
             </HelperText>
           </FormHelperText>
         </FormGroup>

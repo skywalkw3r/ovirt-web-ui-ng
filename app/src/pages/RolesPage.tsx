@@ -159,9 +159,13 @@ export function RolesPage() {
       {loaded && roles.isError && (
         <EmptyState titleText={t('roles.error.title')} status="danger">
           <EmptyStateBody>{roles.error instanceof Error ? roles.error.message : ''}</EmptyStateBody>
-          <Button variant="primary" onClick={() => void roles.refetch()}>
-            <FormattedMessage id="common.action.retry" />
-          </Button>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="primary" onClick={() => void roles.refetch()}>
+                <FormattedMessage id="common.action.retry" />
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 

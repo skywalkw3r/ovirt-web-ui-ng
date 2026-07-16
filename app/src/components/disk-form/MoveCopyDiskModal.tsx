@@ -18,6 +18,7 @@ import {
 import type { Disk } from '../../api/schemas/disk'
 import type { StorageDomain } from '../../api/schemas/storage-domain'
 import { useStorageDomains } from '../../hooks/useStorageDomains'
+import { useT } from '../../i18n/useT'
 
 // Move and Copy share a form (target storage-domain select); Copy adds an
 // editable alias (webadmin's MoveOrCopyDiskModel makes the alias editable only
@@ -63,6 +64,7 @@ export function MoveCopyDiskModal({
   onSubmit: (input: { storageDomainId: string; name?: string }) => void
   onClose: () => void
 }) {
+  const t = useT()
   const domains = useStorageDomains()
   const [storageDomainId, setStorageDomainId] = useState('')
   // Copy defaults the new alias to "<source>-copy", matching webadmin's
@@ -71,8 +73,10 @@ export function MoveCopyDiskModal({
 
   const targets = eligibleTargets(domains.data ?? [], disk)
   const title =
-    mode === 'move' ? `Move disk '${diskLabel(disk)}'` : `Copy disk '${diskLabel(disk)}'`
-  const confirmLabel = mode === 'move' ? 'Move' : 'Copy'
+    mode === 'move'
+      ? t('diskForm.move.title', { name: diskLabel(disk) })
+      : t('diskForm.copy.title', { name: diskLabel(disk) })
+  const confirmLabel = mode === 'move' ? t('common.action.move') : t('common.action.copy')
   const formId = `${mode}-disk-form`
 
   const submit = () => {
@@ -101,20 +105,27 @@ export function MoveCopyDiskModal({
             submit()
           }}
         >
-          <FormGroup label="Target storage domain" isRequired fieldId="move-copy-target">
+          <FormGroup label={t('diskForm.targetDomain')} isRequired fieldId="move-copy-target">
             {domains.isPending && (
-              <Skeleton height="2.25rem" screenreaderText="Loading storage domains" />
+              <Skeleton
+                height="2.25rem"
+                screenreaderText={t('vmDisks.addModal.storageDomain.loading')}
+              />
             )}
             {domains.isError && (
               <>
                 <HelperText>
                   <HelperTextItem variant="error">
-                    Could not load storage domains:{' '}
-                    {domains.error instanceof Error ? domains.error.message : 'Unknown error'}
+                    {t('vmDisks.addModal.storageDomain.error', {
+                      message:
+                        domains.error instanceof Error
+                          ? domains.error.message
+                          : t('common.error.unknown'),
+                    })}
                   </HelperTextItem>
                 </HelperText>
                 <Button variant="link" isInline onClick={() => void domains.refetch()}>
-                  Retry
+                  {t('common.action.retry')}
                 </Button>
               </>
             )}
@@ -122,7 +133,7 @@ export function MoveCopyDiskModal({
               <>
                 <FormSelect
                   id="move-copy-target"
-                  aria-label="Target storage domain"
+                  aria-label={t('diskForm.targetDomain')}
                   value={storageDomainId}
                   onChange={(_event, value) => setStorageDomainId(value)}
                 >
@@ -130,8 +141,8 @@ export function MoveCopyDiskModal({
                     value=""
                     label={
                       targets.length === 0
-                        ? 'No eligible storage domain'
-                        : 'Select a storage domain'
+                        ? t('diskForm.targetDomain.none')
+                        : t('vmDisks.addModal.storageDomain.select')
                     }
                     isPlaceholder
                     isDisabled
@@ -144,8 +155,9 @@ export function MoveCopyDiskModal({
                   <FormHelperText>
                     <HelperText>
                       <HelperTextItem variant="warning">
-                        No other data storage domain is available to{' '}
-                        {mode === 'move' ? 'move' : 'copy'} this disk to.
+                        {mode === 'move'
+                          ? t('diskForm.targetDomain.emptyMove')
+                          : t('diskForm.targetDomain.emptyCopy')}
                       </HelperTextItem>
                     </HelperText>
                   </FormHelperText>
@@ -155,16 +167,16 @@ export function MoveCopyDiskModal({
           </FormGroup>
 
           {mode === 'copy' && (
-            <FormGroup label="New alias" fieldId="copy-disk-alias">
+            <FormGroup label={t('diskForm.copy.newAlias')} fieldId="copy-disk-alias">
               <TextInput
                 id="copy-disk-alias"
-                aria-label="New disk alias"
+                aria-label={t('diskForm.copy.newAlias.aria')}
                 value={alias}
                 onChange={(_event, value) => setAlias(value)}
               />
               <FormHelperText>
                 <HelperText>
-                  <HelperTextItem>Leave unchanged to keep the source alias.</HelperTextItem>
+                  <HelperTextItem>{t('diskForm.copy.newAlias.help')}</HelperTextItem>
                 </HelperText>
               </FormHelperText>
             </FormGroup>
@@ -176,7 +188,7 @@ export function MoveCopyDiskModal({
           {confirmLabel}
         </Button>
         <Button variant="link" onClick={onClose}>
-          Cancel
+          {t('common.action.cancel')}
         </Button>
       </ModalFooter>
     </Modal>

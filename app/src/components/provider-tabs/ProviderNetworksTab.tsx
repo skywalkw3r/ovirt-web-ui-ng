@@ -1,6 +1,13 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Button, EmptyState, EmptyStateBody, Skeleton } from '@patternfly/react-core'
+import {
+  Button,
+  EmptyState,
+  EmptyStateActions,
+  EmptyStateBody,
+  EmptyStateFooter,
+  Skeleton,
+} from '@patternfly/react-core'
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table'
 import {
   importedProviderNetworkNames,
@@ -58,9 +65,13 @@ export function ProviderNetworksTab({ providerId }: { providerId: string }) {
               ? providerNetworks.error.message
               : t('common.error.unknown')}
           </EmptyStateBody>
-          <Button variant="primary" onClick={() => void providerNetworks.refetch()}>
-            {t('common.action.retry')}
-          </Button>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="primary" onClick={() => void providerNetworks.refetch()}>
+                {t('common.action.retry')}
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 

@@ -8,6 +8,7 @@ import {
   HelperTextItem,
   Switch,
 } from '@patternfly/react-core'
+import { useT } from '../../i18n/useT'
 import { FieldHelp } from '../forms/FieldHelp'
 import {
   DISCONNECT_ACTION_OPTIONS,
@@ -29,9 +30,7 @@ function keyboardLayoutOptions(current: string): string[] {
 
 // Presentational Console section of the Edit Virtual Machine modal: every input
 // is controlled from `draft` and writes back through `set`. No data fetching and
-// no save logic — the owning modal holds the draft state. Hardcoded English (the
-// section is not yet wired to i18n; the vm.edit.console.* ids are pre-seeded for
-// a later pass).
+// no save logic — the owning modal holds the draft state.
 export function ConsoleSection({
   draft,
   set,
@@ -39,6 +38,7 @@ export function ConsoleSection({
   draft: EditVmDraft
   set: <K extends keyof EditVmDraft>(key: K, value: EditVmDraft[K]) => void
 }) {
+  const t = useT()
   const isVnc = draft.graphicsProtocol === 'vnc'
   const isSpice = draft.graphicsProtocol === 'spice'
   const isHeadless = draft.graphicsProtocol === 'headless'
@@ -46,46 +46,49 @@ export function ConsoleSection({
   return (
     <Form onSubmit={(event) => event.preventDefault()}>
       <FormGroup
-        label="Graphics protocol"
+        label={t('vm.edit.console.graphicsProtocol')}
         fieldId="edit-vm-console-protocol"
         labelHelp={
           <FieldHelp
-            field="Graphics protocol"
-            content="The remote-display stack for the graphical console. SPICE supports multi-monitor, USB redirection, and smartcards; VNC is broadly compatible; Headless runs with no graphical console at all."
+            field={t('vm.edit.console.graphicsProtocol')}
+            content={t('fieldHelp.vm.graphicsProtocol')}
           />
         }
       >
         <FormSelect
           id="edit-vm-console-protocol"
-          aria-label="Graphics protocol"
+          aria-label={t('vm.edit.console.graphicsProtocol')}
           value={draft.graphicsProtocol}
           onChange={(_event, value) => set('graphicsProtocol', value)}
         >
           {GRAPHICS_PROTOCOL_OPTIONS.map((option) => (
-            <FormSelectOption key={option.value} value={option.value} label={option.label} />
+            <FormSelectOption
+              key={option.value}
+              value={option.value}
+              label={option.labelId ? t(option.labelId) : (option.label ?? option.value)}
+            />
           ))}
         </FormSelect>
         {isHeadless && (
           <FormHelperText>
             <HelperText>
               <HelperTextItem variant="warning">
-                Run without a graphical console. Existing graphics devices are removed on the next
-                start.
+                {t('vm.edit.console.headless.hint')}
               </HelperTextItem>
             </HelperText>
           </FormHelperText>
         )}
       </FormGroup>
 
-      <FormGroup label="VNC keyboard layout" fieldId="edit-vm-console-keyboard">
+      <FormGroup label={t('vm.edit.console.vncKeyboard')} fieldId="edit-vm-console-keyboard">
         <FormSelect
           id="edit-vm-console-keyboard"
-          aria-label="VNC keyboard layout"
+          aria-label={t('vm.edit.console.vncKeyboard')}
           value={draft.vncKeyboardLayout}
           isDisabled={!isVnc}
           onChange={(_event, value) => set('vncKeyboardLayout', value)}
         >
-          <FormSelectOption value="" label="Engine default" />
+          <FormSelectOption value="" label={t('vm.edit.console.vncKeyboard.default')} />
           {keyboardLayoutOptions(draft.vncKeyboardLayout).map((layout) => (
             <FormSelectOption key={layout} value={layout} label={layout} />
           ))}
@@ -93,18 +96,15 @@ export function ConsoleSection({
       </FormGroup>
 
       <FormGroup
-        label="Monitors"
+        label={t('vm.edit.console.monitors')}
         fieldId="edit-vm-console-monitors"
         labelHelp={
-          <FieldHelp
-            field="Monitors"
-            content="Number of virtual displays exposed to the guest (SPICE only). More heads let the guest drive multiple monitors."
-          />
+          <FieldHelp field={t('vm.edit.console.monitors')} content={t('fieldHelp.vm.monitors')} />
         }
       >
         <FormSelect
           id="edit-vm-console-monitors"
-          aria-label="Monitors"
+          aria-label={t('vm.edit.console.monitors')}
           value={draft.monitors}
           onChange={(_event, value) => set('monitors', Number(value))}
         >
@@ -114,83 +114,83 @@ export function ConsoleSection({
         </FormSelect>
       </FormGroup>
 
-      <FormGroup label="USB support" fieldId="edit-vm-console-usb">
+      <FormGroup label={t('vm.edit.console.usbSupport')} fieldId="edit-vm-console-usb">
         <Switch
           id="edit-vm-console-usb"
-          label="USB enabled"
-          aria-label="USB enabled"
+          label={t('vm.edit.console.usb')}
+          aria-label={t('vm.edit.console.usb')}
           isChecked={draft.usbEnabled}
           onChange={(_event, checked) => set('usbEnabled', checked)}
         />
       </FormGroup>
 
       <FormGroup
-        label="Smartcard"
+        label={t('vm.edit.console.smartcard.field')}
         fieldId="edit-vm-console-smartcard"
         labelHelp={
           <FieldHelp
-            field="Smartcard"
-            content="Redirect a smartcard reader on the client through to the guest (SPICE only), for smartcard-based login inside the VM."
+            field={t('vm.edit.console.smartcard.field')}
+            content={t('fieldHelp.vm.smartcard')}
           />
         }
       >
         <Switch
           id="edit-vm-console-smartcard"
-          label="Smartcard enabled"
-          aria-label="Smartcard enabled"
+          label={t('vm.edit.console.smartcard')}
+          aria-label={t('vm.edit.console.smartcard')}
           isChecked={draft.smartcardEnabled}
           isDisabled={!isSpice}
           onChange={(_event, checked) => set('smartcardEnabled', checked)}
         />
       </FormGroup>
 
-      <FormGroup label="Soundcard" fieldId="edit-vm-console-soundcard">
+      <FormGroup label={t('vm.edit.console.soundcard.field')} fieldId="edit-vm-console-soundcard">
         <Switch
           id="edit-vm-console-soundcard"
-          label="Soundcard enabled"
-          aria-label="Soundcard enabled"
+          label={t('vm.edit.console.soundcard')}
+          aria-label={t('vm.edit.console.soundcard')}
           isChecked={draft.soundcardEnabled}
           onChange={(_event, checked) => set('soundcardEnabled', checked)}
         />
       </FormGroup>
 
       <FormGroup
-        label="Serial console"
+        label={t('vm.edit.console.serial.field')}
         fieldId="edit-vm-console-serial"
         labelHelp={
           <FieldHelp
-            field="Serial console"
-            content="Expose a VirtIO serial console so you can reach the guest’s text console over SSH through the engine — useful when graphics or networking are down."
+            field={t('vm.edit.console.serial.field')}
+            content={t('fieldHelp.vm.serialConsole')}
           />
         }
       >
         <Switch
           id="edit-vm-console-serial"
-          label="Enable VirtIO serial console"
-          aria-label="Enable VirtIO serial console"
+          label={t('vm.edit.console.serialConsole')}
+          aria-label={t('vm.edit.console.serialConsole')}
           isChecked={draft.serialConsoleEnabled}
           onChange={(_event, checked) => set('serialConsoleEnabled', checked)}
         />
       </FormGroup>
 
       <FormGroup
-        label="Console disconnect action"
+        label={t('vm.edit.console.disconnectAction')}
         fieldId="edit-vm-console-disconnect-action"
         labelHelp={
           <FieldHelp
-            field="Console disconnect action"
-            content="What the VM does when the last console session disconnects — nothing, lock the screen, log the user out, or shut the VM down."
+            field={t('vm.edit.console.disconnectAction')}
+            content={t('fieldHelp.vm.disconnectAction')}
           />
         }
       >
         <FormSelect
           id="edit-vm-console-disconnect-action"
-          aria-label="Console disconnect action"
+          aria-label={t('vm.edit.console.disconnectAction')}
           value={draft.disconnectAction}
           onChange={(_event, value) => set('disconnectAction', value)}
         >
           {DISCONNECT_ACTION_OPTIONS.map((option) => (
-            <FormSelectOption key={option.value} value={option.value} label={option.label} />
+            <FormSelectOption key={option.value} value={option.value} label={t(option.labelId)} />
           ))}
         </FormSelect>
       </FormGroup>

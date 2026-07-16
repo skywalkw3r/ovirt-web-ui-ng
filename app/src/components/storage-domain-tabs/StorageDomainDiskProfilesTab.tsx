@@ -100,6 +100,7 @@ function DiskProfileFormModal({
   hasDataCenter: boolean
   onClose: () => void
 }) {
+  const t = useT()
   const queryClient = useQueryClient()
   const { notify } = useNotify()
   const [name, setName] = useState(profile?.name ?? '')
@@ -154,53 +155,68 @@ function DiskProfileFormModal({
       aria-describedby="disk-profile-form-body"
     >
       <ModalHeader
-        title={profile ? `Edit disk profile ${profile.name ?? ''}`.trim() : 'New disk profile'}
+        title={
+          profile
+            ? t('storage.diskProfiles.edit.title', { name: profile.name ?? '' })
+            : t('storage.diskProfiles.new')
+        }
         labelId="disk-profile-form-title"
       />
       <ModalBody id="disk-profile-form-body">
         <Form onSubmit={(event) => event.preventDefault()}>
-          <FormGroup label="Name" isRequired fieldId="disk-profile-name">
+          <FormGroup label={t('common.field.name')} isRequired fieldId="disk-profile-name">
             <TextInput
               id="disk-profile-name"
-              aria-label="Name"
+              aria-label={t('common.field.name')}
               isRequired
               value={name}
               isDisabled={pending}
               onChange={(_event, value) => setName(value)}
             />
           </FormGroup>
-          <FormGroup label="Description" fieldId="disk-profile-description">
+          <FormGroup label={t('common.field.description')} fieldId="disk-profile-description">
             <TextInput
               id="disk-profile-description"
-              aria-label="Description"
+              aria-label={t('common.field.description')}
               value={description}
               isDisabled={pending}
               onChange={(_event, value) => setDescription(value)}
             />
           </FormGroup>
           <FormGroup
-            label="QoS"
+            label={t('storage.diskProfiles.qos')}
             fieldId="disk-profile-qos"
             labelHelp={
               <FieldHelp
-                field="QoS"
-                content="Caps the throughput and IOPS of every disk using this profile. The options are the storage QoS entries defined on the domain's data center; leave unlimited for no cap."
+                field={t('storage.diskProfiles.qos')}
+                content={t('fieldHelp.storage.diskProfileQos')}
               />
             }
           >
             <FormSelect
               id="disk-profile-qos"
-              aria-label="QoS"
+              aria-label={t('storage.diskProfiles.qos')}
               value={qosId}
               isDisabled={pending || !hasDataCenter || qossPending || qossError}
               onChange={(_event, value) => setQosId(value)}
             >
               {canClearQos ? (
-                <FormSelectOption value="" label={qossPending ? 'Loading QoS…' : '(unlimited)'} />
+                <FormSelectOption
+                  value=""
+                  label={
+                    qossPending
+                      ? t('storage.diskProfiles.qos.loading')
+                      : t('storage.diskProfiles.qos.unlimited')
+                  }
+                />
               ) : (
                 // the REST update cannot clear a bound QoS (see
                 // updateDiskProfile) — no way back to unlimited here
-                <FormSelectOption value="" label="Select a QoS" isDisabled />
+                <FormSelectOption
+                  value=""
+                  label={t('storage.diskProfiles.qos.select')}
+                  isDisabled
+                />
               )}
               {storageQoss.map((qos) => (
                 <FormSelectOption key={qos.id} value={qos.id} label={qos.name ?? qos.id ?? ''} />
@@ -209,9 +225,7 @@ function DiskProfileFormModal({
             {!hasDataCenter && (
               <FormHelperText>
                 <HelperText>
-                  <HelperTextItem>
-                    Attach the domain to a data center to bind a storage QoS.
-                  </HelperTextItem>
+                  <HelperTextItem>{t('storage.diskProfiles.qos.noDataCenter')}</HelperTextItem>
                 </HelperText>
               </FormHelperText>
             )}
@@ -219,9 +233,9 @@ function DiskProfileFormModal({
               <FormHelperText>
                 <HelperText>
                   <HelperTextItem variant="error">
-                    Could not load QoS entries.{' '}
+                    {t('storage.diskProfiles.qos.error')}{' '}
                     <Button variant="link" isInline onClick={onRetryQoss}>
-                      Retry
+                      {t('common.action.retry')}
                     </Button>
                   </HelperTextItem>
                 </HelperText>
@@ -237,10 +251,10 @@ function DiskProfileFormModal({
           isLoading={pending}
           isDisabled={pending || name.trim() === ''}
         >
-          {profile ? 'Save' : 'Create'}
+          {profile ? t('common.action.save') : t('common.action.create')}
         </Button>
         <Button variant="secondary" onClick={onClose} isDisabled={pending}>
-          Cancel
+          {t('common.action.cancel')}
         </Button>
       </ModalFooter>
     </Modal>
@@ -335,7 +349,7 @@ export function StorageDomainDiskProfilesTab({ domain }: { domain: StorageDomain
             <ToolbarGroup align={{ default: 'alignEnd' }}>
               <ToolbarItem>
                 <Button variant="secondary" onClick={() => setCreating(true)}>
-                  New disk profile
+                  {t('storage.diskProfiles.new')}
                 </Button>
               </ToolbarItem>
             </ToolbarGroup>
@@ -346,30 +360,32 @@ export function StorageDomainDiskProfilesTab({ domain }: { domain: StorageDomain
       {profiles.isPending && (
         <>
           <Skeleton height="2.5rem" style={{ marginBottom: '0.5rem' }} />
-          <Skeleton height="2.5rem" screenreaderText="Loading disk profiles" />
+          <Skeleton height="2.5rem" screenreaderText={t('storage.diskProfiles.loading')} />
         </>
       )}
 
       {profiles.isError && (
-        <EmptyState titleText="Could not load disk profiles" status="danger">
+        <EmptyState titleText={t('storage.diskProfiles.error.title')} status="danger">
           <EmptyStateBody>
             {profiles.error instanceof Error ? profiles.error.message : t('common.error.unknown')}
           </EmptyStateBody>
-          <Button variant="primary" onClick={() => void profiles.refetch()}>
-            {t('common.action.retry')}
-          </Button>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="primary" onClick={() => void profiles.refetch()}>
+                {t('common.action.retry')}
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 
       {profiles.isSuccess && profiles.data.length === 0 && (
-        <EmptyState titleText="No disk profiles">
-          <EmptyStateBody>
-            Disk profiles group this domain&apos;s disks under an optional storage QoS.
-          </EmptyStateBody>
+        <EmptyState titleText={t('storage.diskProfiles.empty.title')}>
+          <EmptyStateBody>{t('storage.diskProfiles.empty.body')}</EmptyStateBody>
           <EmptyStateFooter>
             <EmptyStateActions>
               <Button variant="primary" onClick={() => setCreating(true)}>
-                New disk profile
+                {t('storage.diskProfiles.new')}
               </Button>
             </EmptyStateActions>
           </EmptyStateFooter>
@@ -377,12 +393,12 @@ export function StorageDomainDiskProfilesTab({ domain }: { domain: StorageDomain
       )}
 
       {profiles.isSuccess && profiles.data.length > 0 && (
-        <Table aria-label="Disk profiles" variant="compact">
+        <Table aria-label={t('storage.diskProfiles.table.ariaLabel')} variant="compact">
           <Thead>
             <Tr>
               <Th sort={thSort(SD_DISK_PROFILE_KEYS, 0)}>{t('common.field.name')}</Th>
               <Th sort={thSort(SD_DISK_PROFILE_KEYS, 1)}>{t('common.field.description')}</Th>
-              <Th sort={thSort(SD_DISK_PROFILE_KEYS, 2)}>QoS</Th>
+              <Th sort={thSort(SD_DISK_PROFILE_KEYS, 2)}>{t('storage.diskProfiles.qos')}</Th>
               <Th screenReaderText={t('common.field.actions')} />
             </Tr>
           </Thead>
@@ -391,7 +407,7 @@ export function StorageDomainDiskProfilesTab({ domain }: { domain: StorageDomain
               <Tr key={profile.id}>
                 <Td dataLabel={t('common.field.name')}>{profile.name ?? DASH}</Td>
                 <Td dataLabel={t('common.field.description')}>{profile.description ?? DASH}</Td>
-                <Td dataLabel="QoS">{qosName(profile)}</Td>
+                <Td dataLabel={t('storage.diskProfiles.qos')}>{qosName(profile)}</Td>
                 <Td dataLabel={t('common.field.actions')} isActionCell>
                   <ActionsColumn
                     isDisabled={remove.isPending}
@@ -418,8 +434,10 @@ export function StorageDomainDiskProfilesTab({ domain }: { domain: StorageDomain
       {removing && (
         <ConfirmModal
           isOpen
-          title={`Remove disk profile ${removing.name ?? removing.id}?`}
-          body="Disks referencing this profile keep working; new disks can no longer pick it. The engine rejects removing a domain's last profile."
+          title={t('storage.diskProfiles.remove.confirm.title', {
+            name: removing.name ?? removing.id,
+          })}
+          body={t('storage.diskProfiles.remove.confirm.body')}
           confirmLabel={t('common.action.remove')}
           isConfirmDisabled={remove.isPending}
           onConfirm={() => {

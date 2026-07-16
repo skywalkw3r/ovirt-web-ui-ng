@@ -4,7 +4,9 @@ import {
   Button,
   Checkbox,
   EmptyState,
+  EmptyStateActions,
   EmptyStateBody,
+  EmptyStateFooter,
   Form,
   FormGroup,
   FormHelperText,
@@ -63,6 +65,7 @@ function ImportImageModal({
   image: StorageDomainImage
   onClose: () => void
 }) {
+  const t = useT()
   const queryClient = useQueryClient()
   const { notify } = useNotify()
   const [targetDomainId, setTargetDomainId] = useState('')
@@ -116,15 +119,22 @@ function ImportImageModal({
       aria-labelledby="import-image-title"
       aria-describedby="import-image-body"
     >
-      <ModalHeader title={`Import ${image.name ?? image.id}`} labelId="import-image-title" />
+      <ModalHeader
+        title={t('storage.images.import.title', { name: image.name ?? image.id })}
+        labelId="import-image-title"
+      />
       <ModalBody id="import-image-body">
         <Form onSubmit={(event) => event.preventDefault()}>
           {/* Four states on the source list: a failed fetch would otherwise
               leave Import permanently disabled with no explanation or retry. */}
-          <FormGroup label="Target storage domain" isRequired fieldId="import-image-domain">
+          <FormGroup
+            label={t('storage.images.import.targetDomain')}
+            isRequired
+            fieldId="import-image-domain"
+          >
             <FormSelect
               id="import-image-domain"
-              aria-label="Target storage domain"
+              aria-label={t('storage.images.import.targetDomain')}
               value={targetDomainId}
               isDisabled={pending || domains.isPending || domains.isError}
               onChange={(_event, value) => setTargetDomainId(value)}
@@ -133,10 +143,10 @@ function ImportImageModal({
                 value=""
                 label={
                   domains.isPending
-                    ? 'Loading storage domains…'
+                    ? t('storage.images.import.domainsLoading')
                     : targets.length === 0
-                      ? 'No data domain available'
-                      : 'Select a data domain'
+                      ? t('storage.images.import.noDomains')
+                      : t('storage.images.import.selectDomain')
                 }
                 isDisabled
               />
@@ -148,9 +158,9 @@ function ImportImageModal({
               <FormHelperText>
                 <HelperText>
                   <HelperTextItem variant="error">
-                    Could not load storage domains.{' '}
+                    {t('storage.images.import.domainsError')}{' '}
                     <Button variant="link" isInline onClick={() => void domains.refetch()}>
-                      Retry
+                      {t('common.action.retry')}
                     </Button>
                   </HelperTextItem>
                 </HelperText>
@@ -161,34 +171,40 @@ function ImportImageModal({
           <FormGroup fieldId="import-image-as-template">
             <Checkbox
               id="import-image-as-template"
-              label="Import as template"
-              aria-label="Import as template"
+              label={t('storage.images.import.asTemplate')}
+              aria-label={t('storage.images.import.asTemplate')}
               isChecked={asTemplate}
               isDisabled={pending}
               onChange={(_event, checked) => setAsTemplate(checked)}
             />
             <FormHelperText>
               <HelperText>
-                <HelperTextItem>
-                  Creates a template from the imported disk instead of a bare disk.
-                </HelperTextItem>
+                <HelperTextItem>{t('storage.images.import.asTemplateHelp')}</HelperTextItem>
               </HelperText>
             </FormHelperText>
           </FormGroup>
 
           {asTemplate && (
             <>
-              <FormGroup label="Cluster" isRequired fieldId="import-image-cluster">
+              <FormGroup
+                label={t('common.field.cluster')}
+                isRequired
+                fieldId="import-image-cluster"
+              >
                 <FormSelect
                   id="import-image-cluster"
-                  aria-label="Cluster"
+                  aria-label={t('common.field.cluster')}
                   value={clusterId}
                   isDisabled={pending || clusters.isPending || clusters.isError}
                   onChange={(_event, value) => setClusterId(value)}
                 >
                   <FormSelectOption
                     value=""
-                    label={clusters.isPending ? 'Loading clusters…' : 'Select a cluster'}
+                    label={
+                      clusters.isPending
+                        ? t('storageRegister.cluster.loading')
+                        : t('storageRegister.cluster.select')
+                    }
                     isDisabled
                   />
                   {(clusters.data ?? []).map((cluster) => (
@@ -203,28 +219,29 @@ function ImportImageModal({
                   <FormHelperText>
                     <HelperText>
                       <HelperTextItem variant="error">
-                        Could not load clusters.{' '}
+                        {t('storageRegister.cluster.error')}{' '}
                         <Button variant="link" isInline onClick={() => void clusters.refetch()}>
-                          Retry
+                          {t('common.action.retry')}
                         </Button>
                       </HelperTextItem>
                     </HelperText>
                   </FormHelperText>
                 )}
               </FormGroup>
-              <FormGroup label="Template name" fieldId="import-image-template-name">
+              <FormGroup
+                label={t('storage.images.import.templateName')}
+                fieldId="import-image-template-name"
+              >
                 <TextInput
                   id="import-image-template-name"
-                  aria-label="Template name"
+                  aria-label={t('storage.images.import.templateName')}
                   value={templateName}
                   isDisabled={pending}
                   onChange={(_event, value) => setTemplateName(value)}
                 />
                 <FormHelperText>
                   <HelperText>
-                    <HelperTextItem>
-                      Left blank, the engine names it GlanceTemplate-XXX.
-                    </HelperTextItem>
+                    <HelperTextItem>{t('storage.images.import.templateNameHelp')}</HelperTextItem>
                   </HelperText>
                 </FormHelperText>
               </FormGroup>
@@ -239,10 +256,10 @@ function ImportImageModal({
           isLoading={pending}
           isDisabled={pending || !valid}
         >
-          Import
+          {t('storage.images.import.action')}
         </Button>
         <Button variant="secondary" onClick={onClose} isDisabled={pending}>
-          Cancel
+          {t('common.action.cancel')}
         </Button>
       </ModalFooter>
     </Modal>
@@ -282,9 +299,13 @@ export function StorageDomainImagesTab({ storageDomainId }: { storageDomainId: s
           <EmptyStateBody>
             {images.error instanceof Error ? images.error.message : t('common.error.unknown')}
           </EmptyStateBody>
-          <Button variant="primary" onClick={() => void images.refetch()}>
-            {t('common.action.retry')}
-          </Button>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="primary" onClick={() => void images.refetch()}>
+                {t('common.action.retry')}
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 
@@ -316,7 +337,7 @@ export function StorageDomainImagesTab({ storageDomainId }: { storageDomainId: s
                         // meaningful on a Glance image domain; an ISO-domain
                         // row that can't be imported gets the engine's fault
                         // verbatim as a danger toast
-                        title: 'Import',
+                        title: t('storage.images.import.action'),
                         onClick: () => setImporting(image),
                       },
                     ]}

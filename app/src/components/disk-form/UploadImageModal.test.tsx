@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
 import { renderToStaticMarkup } from 'react-dom/server'
+import { IntlProvider } from 'react-intl'
 import type { ReactNode } from 'react'
+import { enMessages } from '../../i18n/messages/en'
 
 // vitest env is 'node' (no jsdom); PF is stubbed with semantic passthroughs
 // (mirrors AddPermissionModal.test.tsx). Assertions target the modal's
@@ -135,7 +137,11 @@ const DOMAINS = [
 ]
 
 function render() {
-  return renderToStaticMarkup(<UploadImageModal onClose={() => {}} />)
+  return renderToStaticMarkup(
+    <IntlProvider locale="en" messages={enMessages}>
+      <UploadImageModal onClose={() => {}} />
+    </IntlProvider>,
+  )
 }
 
 describe('UploadImageModal', () => {

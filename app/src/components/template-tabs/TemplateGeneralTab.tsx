@@ -26,9 +26,9 @@ function orDash(value: string | number | undefined | null): string {
 // The engine serializes booleans as JSON strings ("true"/"false"); the schema
 // coerces them, so by the time a bool reaches here it is a real boolean or
 // undefined. Show a human word, em dash when unknown.
-function boolWord(value: boolean | undefined): string {
+function boolWord(value: boolean | undefined, t: ReturnType<typeof useT>): string {
   if (value === undefined) return DASH
-  return value ? 'Yes' : 'No'
+  return value ? t('common.yes') : t('common.no')
 }
 
 // A term whose description is a plain string (em dash when missing).
@@ -59,12 +59,16 @@ function SectionCard({ title, children }: { title: string; children: ReactNode }
 // sockets : cores : threads, the webadmin "CPU" shorthand. Any missing leg
 // falls back to 1 so the triple still reads (the engine omits legs that equal
 // their default); an entirely absent topology shows the em dash.
-function formatCpuTopology(template: Template): string {
+function formatCpuTopology(template: Template, t: ReturnType<typeof useT>): string {
   const topology = template.cpu?.topology
   if (!topology) return DASH
   const { sockets, cores, threads } = topology
   if (sockets === undefined && cores === undefined && threads === undefined) return DASH
-  return `${sockets ?? 1} : ${cores ?? 1} : ${threads ?? 1} (sockets : cores : threads)`
+  return t('templateGeneral.cpuTopology', {
+    sockets: sockets ?? 1,
+    cores: cores ?? 1,
+    threads: threads ?? 1,
+  })
 }
 
 // creation_time is epoch ms (coerced from the engine's string form); render a
@@ -80,31 +84,36 @@ export function TemplateGeneralTab({ template }: { template: Template }) {
     <Grid hasGutter>
       <GridItem lg={6}>
         <SectionCard title={t('templateGeneral.card.general')}>
-          <TextGroup term="Name" value={template.name} />
-          <TextGroup term="Description" value={template.description} />
+          <TextGroup term={t('common.field.name')} value={template.name} />
+          <TextGroup term={t('common.field.description')} value={template.description} />
           {/* No cluster detail route exists yet — render the followed cluster
               name as text, mirroring HostGeneralTab / VM GeneralTab. */}
-          <TextGroup term="Cluster" value={template.cluster?.name} />
-          <TextGroup term="Operating system" value={template.os?.type} />
-          <TextGroup term="Origin" value={template.origin} />
-          <TextGroup term="Creation time" value={formatCreationTime(template.creation_time)} />
+          <TextGroup term={t('common.field.cluster')} value={template.cluster?.name} />
+          <TextGroup term={t('guestInfo.card.os')} value={template.os?.type} />
+          <TextGroup term={t('vmGeneral.term.origin')} value={template.origin} />
+          <TextGroup
+            term={t('templateGeneral.term.creationTime')}
+            value={formatCreationTime(template.creation_time)}
+          />
         </SectionCard>
       </GridItem>
 
       <GridItem lg={6}>
         <SectionCard title={t('templateGeneral.card.system')}>
-          <TextGroup term="Memory" value={formatBytes(template.memory)} />
-          <TextGroup term="CPU" value={formatCpuTopology(template)} />
-          <TextGroup term="BIOS type" value={template.bios?.type} />
-          <TextGroup term="Display type" value={template.display?.type} />
+          <TextGroup term={t('templateGeneral.term.memory')} value={formatBytes(template.memory)} />
+          <TextGroup term={t('templateGeneral.term.cpu')} value={formatCpuTopology(template, t)} />
+          <TextGroup term={t('templateGeneral.term.biosType')} value={template.bios?.type} />
+          <TextGroup term={t('templateGeneral.term.displayType')} value={template.display?.type} />
           <DescriptionListGroup>
-            <DescriptionListTerm>Stateless</DescriptionListTerm>
-            <DescriptionListDescription>{boolWord(template.stateless)}</DescriptionListDescription>
+            <DescriptionListTerm>{t('templateForm.stateless')}</DescriptionListTerm>
+            <DescriptionListDescription>
+              {boolWord(template.stateless, t)}
+            </DescriptionListDescription>
           </DescriptionListGroup>
           <DescriptionListGroup>
-            <DescriptionListTerm>High availability</DescriptionListTerm>
+            <DescriptionListTerm>{t('templateGeneral.term.ha')}</DescriptionListTerm>
             <DescriptionListDescription>
-              {boolWord(template.high_availability?.enabled)}
+              {boolWord(template.high_availability?.enabled, t)}
             </DescriptionListDescription>
           </DescriptionListGroup>
         </SectionCard>

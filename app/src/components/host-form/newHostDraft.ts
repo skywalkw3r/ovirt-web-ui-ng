@@ -1,4 +1,5 @@
 import type { AddHostSpec } from '../../api/resources/hosts'
+import type { MessageId } from '../../i18n/messages/en'
 
 // The flat, always-defined draft the New Host modal owns and its sections
 // read/write — same never-undefined rule as EditHostDraft so controlled
@@ -88,23 +89,25 @@ const IPV6_PATTERN = new RegExp(
 
 // Inline-error helpers: '' returns undefined — required-but-empty gates Save
 // without shouting at an untouched form (mirror NewStorageDomainModal), while
-// a non-empty invalid value gets an inline message.
+// a non-empty invalid value gets an inline message. Helpers return a MessageId
+// (the qosDraft idiom) so the module stays i18n-free; the caller resolves it
+// through t().
 
-export function newHostNameError(name: string): string | undefined {
+export function newHostNameError(name: string): MessageId | undefined {
   if (name === '') return undefined
-  if (name.length > 255) return 'Must be at most 255 characters'
+  if (name.length > 255) return 'hostForm.validation.maxLength255'
   if (!NAME_PATTERN.test(name)) {
-    return 'Only letters, numbers, dots, hyphens and underscores are allowed'
+    return 'hostForm.validation.nameChars'
   }
   return undefined
 }
 
-export function newHostAddressError(address: string): string | undefined {
+export function newHostAddressError(address: string): MessageId | undefined {
   const trimmed = address.trim()
   if (trimmed === '') return undefined
-  if (trimmed.length > 255) return 'Must be at most 255 characters'
+  if (trimmed.length > 255) return 'hostForm.validation.maxLength255'
   if (!FQDN_PATTERN.test(trimmed) && !IPV4_PATTERN.test(trimmed) && !IPV6_PATTERN.test(trimmed)) {
-    return 'Enter a valid hostname or IP address'
+    return 'hostForm.validation.address'
   }
   return undefined
 }
@@ -112,12 +115,12 @@ export function newHostAddressError(address: string): string | undefined {
 // Webadmin's authSshPort rule: NotEmpty + IntegerValidation(1, 65535). Unlike
 // name/address this errors on blank too — the field has a default, so a blank
 // means the user actively emptied it.
-export function newHostSshPortError(sshPort: string): string | undefined {
+export function newHostSshPortError(sshPort: string): MessageId | undefined {
   const trimmed = sshPort.trim()
-  if (trimmed === '') return 'Enter a port between 1 and 65535'
+  if (trimmed === '') return 'hostForm.validation.portRequired'
   const value = Number(trimmed)
   if (!Number.isInteger(value) || value < 1 || value > 65535) {
-    return 'Must be a whole number between 1 and 65535'
+    return 'hostForm.validation.portRange'
   }
   return undefined
 }

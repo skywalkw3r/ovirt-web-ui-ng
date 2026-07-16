@@ -104,14 +104,14 @@ export function ConsoleOptionsModal({ vm, onClose }: { vm: Vm; onClose: () => vo
             save()
           }}
         >
-          {/* Server-side display toggle (PUT /vms/{id}). Hardcoded English
-            this wave; the externalization pass owns the message ids. */}
+          {/* Server-side display toggle (PUT /vms/{id}), distinct from the
+            localStorage-only .vv overrides below. */}
           <FormGroup fieldId="console-options-file-transfer">
             <Checkbox
               id="console-options-file-transfer"
-              label="Enable file transfer to guest"
-              aria-label="Enable file transfer to guest"
-              description="Drag-and-drop files into the SPICE/VNC console. Saved to the VM on the engine when you click Save (the engine may require the VM to be down)."
+              label={t('console.options.fileTransfer')}
+              aria-label={t('console.options.fileTransfer')}
+              description={t('console.options.fileTransfer.description')}
               isChecked={fileTransfer}
               onChange={(_event, checked) => setFileTransfer(checked)}
             />

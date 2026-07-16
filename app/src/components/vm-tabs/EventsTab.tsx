@@ -1,7 +1,9 @@
 import {
   Button,
   EmptyState,
+  EmptyStateActions,
   EmptyStateBody,
+  EmptyStateFooter,
   Skeleton,
   Timestamp,
   TimestampTooltipVariant,
@@ -58,9 +60,13 @@ export function EventsTab({ vmName }: { vmName: string }) {
         <EmptyStateBody>
           {events.error instanceof Error ? events.error.message : t('common.error.unknown')}
         </EmptyStateBody>
-        <Button variant="primary" onClick={() => void events.refetch()}>
-          {t('common.action.retry')}
-        </Button>
+        <EmptyStateFooter>
+          <EmptyStateActions>
+            <Button variant="primary" onClick={() => void events.refetch()}>
+              {t('common.action.retry')}
+            </Button>
+          </EmptyStateActions>
+        </EmptyStateFooter>
       </EmptyState>
     )
   }

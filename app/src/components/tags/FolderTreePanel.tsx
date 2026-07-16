@@ -262,11 +262,15 @@ export function FolderTreePanel({
     return (
       <EmptyState variant="sm" titleText={t('folders.tree.error.title')} status="danger">
         <EmptyStateBody>
-          {tags.error instanceof Error ? tags.error.message : 'Unknown error'}
+          {tags.error instanceof Error ? tags.error.message : t('common.error.unknown')}
         </EmptyStateBody>
-        <Button variant="primary" onClick={() => void tags.refetch()}>
-          <FormattedMessage id="action.retry" />
-        </Button>
+        <EmptyStateFooter>
+          <EmptyStateActions>
+            <Button variant="primary" onClick={() => void tags.refetch()}>
+              <FormattedMessage id="action.retry" />
+            </Button>
+          </EmptyStateActions>
+        </EmptyStateFooter>
       </EmptyState>
     )
   }

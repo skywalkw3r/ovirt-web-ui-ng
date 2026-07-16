@@ -32,7 +32,7 @@ export function PoolPermissionsTab({ poolId }: { poolId: string }) {
     <PermissionsPanel
       entityKind="vmpool"
       entityId={poolId}
-      entityNoun="VM pool"
+      entityNoun={t('permissions.noun.pool')}
       permissions={permissions}
     />
   )

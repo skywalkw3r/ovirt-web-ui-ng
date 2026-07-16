@@ -8,7 +8,9 @@ import {
   DescriptionListGroup,
   DescriptionListTerm,
   EmptyState,
+  EmptyStateActions,
   EmptyStateBody,
+  EmptyStateFooter,
   Form,
   FormGroup,
   FormHelperText,
@@ -785,9 +787,13 @@ function ExportDomainVmsStep({
         <EmptyStateBody>
           {exportVms.error instanceof Error ? exportVms.error.message : t('common.error.unknown')}
         </EmptyStateBody>
-        <Button variant="primary" onClick={() => void exportVms.refetch()}>
-          {t('common.action.retry')}
-        </Button>
+        <EmptyStateFooter>
+          <EmptyStateActions>
+            <Button variant="primary" onClick={() => void exportVms.refetch()}>
+              {t('common.action.retry')}
+            </Button>
+          </EmptyStateActions>
+        </EmptyStateFooter>
       </EmptyState>
     )
   }

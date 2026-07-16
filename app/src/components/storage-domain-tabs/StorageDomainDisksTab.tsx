@@ -1,4 +1,11 @@
-import { Button, EmptyState, EmptyStateBody, Skeleton } from '@patternfly/react-core'
+import {
+  Button,
+  EmptyState,
+  EmptyStateActions,
+  EmptyStateBody,
+  EmptyStateFooter,
+  Skeleton,
+} from '@patternfly/react-core'
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table'
 import { Link } from '@tanstack/react-router'
 import { StatusBadge } from '../StatusBadge'
@@ -74,9 +81,13 @@ export function StorageDomainDisksTab({ storageDomainId }: { storageDomainId: st
           <EmptyStateBody>
             {disks.error instanceof Error ? disks.error.message : t('common.error.unknown')}
           </EmptyStateBody>
-          <Button variant="primary" onClick={() => void disks.refetch()}>
-            {t('common.action.retry')}
-          </Button>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="primary" onClick={() => void disks.refetch()}>
+                {t('common.action.retry')}
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 

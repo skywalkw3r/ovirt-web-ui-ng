@@ -21,6 +21,7 @@ import {
 import type { Quota } from '../../api/schemas/quota'
 import { useDataCenters } from '../../hooks/useAdminResources'
 import { useCreateQuota, useUpdateQuota } from '../../hooks/useQuotaMutations'
+import { useT } from '../../i18n/useT'
 import {
   blankQuotaDraft,
   buildQuotaPayload,
@@ -43,6 +44,7 @@ function PercentField({
   value: string
   onChange: (next: string) => void
 }) {
+  const t = useT()
   const n = Number(value)
   const invalid = !isPercentValid(value)
   return (
@@ -59,7 +61,7 @@ function PercentField({
       />
       {invalid && (
         <HelperText>
-          <HelperTextItem variant="error">Enter a whole number from 0 to 100.</HelperTextItem>
+          <HelperTextItem variant="error">{t('quotaForm.percent.invalid')}</HelperTextItem>
         </HelperText>
       )}
     </FormGroup>
@@ -90,6 +92,7 @@ export function QuotaFormModal({
   isOpen: boolean
   onClose: () => void
 }) {
+  const t = useT()
   const isEdit = quota !== undefined
   const [draft, setDraft] = useState<QuotaDraft>(() =>
     quota ? quotaToDraft(quota) : blankQuotaDraft(),
@@ -137,7 +140,9 @@ export function QuotaFormModal({
     }
   }
 
-  const title = isEdit ? `Edit quota — ${quota.name ?? quota.id}` : 'New quota'
+  const title = isEdit
+    ? t('quotaForm.title.edit', { name: quota.name ?? quota.id })
+    : t('quotas.new')
 
   return (
     <Modal
@@ -150,48 +155,56 @@ export function QuotaFormModal({
       <ModalHeader title={title} labelId="quota-modal-title" />
       <ModalBody id="quota-modal-body">
         <Form onSubmit={(event) => event.preventDefault()}>
-          <FormGroup label="Name" isRequired fieldId="quota-name">
+          <FormGroup label={t('common.field.name')} isRequired fieldId="quota-name">
             <TextInput
               id="quota-name"
               isRequired
-              aria-label="Quota name"
+              aria-label={t('quotaForm.aria.name')}
               value={draft.name}
               validated={nameEmpty ? 'error' : 'default'}
               onChange={(_event, value) => set('name', value)}
             />
             {nameEmpty && (
               <HelperText>
-                <HelperTextItem variant="error">A name is required.</HelperTextItem>
+                <HelperTextItem variant="error">{t('quotaForm.name.required')}</HelperTextItem>
               </HelperText>
             )}
           </FormGroup>
 
-          <FormGroup label="Description" fieldId="quota-description">
+          <FormGroup label={t('common.field.description')} fieldId="quota-description">
             <TextInput
               id="quota-description"
-              aria-label="Quota description"
+              aria-label={t('quotaForm.aria.description')}
               value={draft.description}
               onChange={(_event, value) => set('description', value)}
             />
           </FormGroup>
 
-          <FormGroup label="Data center" isRequired={!isEdit} fieldId="quota-data-center">
+          <FormGroup
+            label={t('networkGeneral.term.dataCenter')}
+            isRequired={!isEdit}
+            fieldId="quota-data-center"
+          >
             {isEdit ? (
               <TextInput
                 id="quota-data-center"
-                aria-label="Data center"
+                aria-label={t('networkGeneral.term.dataCenter')}
                 value={dataCenterName}
                 readOnlyVariant="default"
               />
             ) : (
               <FormSelect
                 id="quota-data-center"
-                aria-label="Data center"
+                aria-label={t('networkGeneral.term.dataCenter')}
                 value={draft.dataCenterId}
                 validated={dataCenterMissing ? 'error' : 'default'}
                 onChange={(_event, value) => set('dataCenterId', value)}
               >
-                <FormSelectOption value="" label="Select a data center" isDisabled />
+                <FormSelectOption
+                  value=""
+                  label={t('network.import.datacenter.placeholder')}
+                  isDisabled
+                />
                 {(dataCenters.data ?? []).map((dc) => (
                   <FormSelectOption key={dc.id} value={dc.id} label={dc.name} />
                 ))}
@@ -199,22 +212,24 @@ export function QuotaFormModal({
             )}
             {isEdit && (
               <HelperText>
-                <HelperTextItem>A quota's data center cannot be changed.</HelperTextItem>
+                <HelperTextItem>{t('quotaForm.dataCenter.fixed')}</HelperTextItem>
               </HelperText>
             )}
             {dataCenterMissing && (
               <HelperText>
-                <HelperTextItem variant="error">Choose a data center.</HelperTextItem>
+                <HelperTextItem variant="error">
+                  {t('quotaForm.dataCenter.required')}
+                </HelperTextItem>
               </HelperText>
             )}
           </FormGroup>
 
-          <FormSection title="Cluster (compute)" titleElement="h3">
+          <FormSection title={t('quotaForm.section.cluster')} titleElement="h3">
             <Grid hasGutter>
               <GridItem span={6}>
                 <PercentField
                   id="quota-cluster-soft"
-                  label="Warning threshold (%)"
+                  label={t('quotaForm.warningThreshold')}
                   value={draft.clusterSoftLimitPct}
                   onChange={(next) => set('clusterSoftLimitPct', next)}
                 />
@@ -222,7 +237,7 @@ export function QuotaFormModal({
               <GridItem span={6}>
                 <PercentField
                   id="quota-cluster-hard"
-                  label="Grace (% over limit)"
+                  label={t('quotaForm.grace')}
                   value={draft.clusterHardLimitPct}
                   onChange={(next) => set('clusterHardLimitPct', next)}
                 />
@@ -230,12 +245,12 @@ export function QuotaFormModal({
             </Grid>
           </FormSection>
 
-          <FormSection title="Storage" titleElement="h3">
+          <FormSection title={t('quotaForm.section.storage')} titleElement="h3">
             <Grid hasGutter>
               <GridItem span={6}>
                 <PercentField
                   id="quota-storage-soft"
-                  label="Warning threshold (%)"
+                  label={t('quotaForm.warningThreshold')}
                   value={draft.storageSoftLimitPct}
                   onChange={(next) => set('storageSoftLimitPct', next)}
                 />
@@ -243,7 +258,7 @@ export function QuotaFormModal({
               <GridItem span={6}>
                 <PercentField
                   id="quota-storage-hard"
-                  label="Grace (% over limit)"
+                  label={t('quotaForm.grace')}
                   value={draft.storageHardLimitPct}
                   onChange={(next) => set('storageHardLimitPct', next)}
                 />
@@ -254,20 +269,19 @@ export function QuotaFormModal({
           <Alert
             variant="info"
             isInline
-            title="Limits default to unlimited"
-            aria-label="Limits default to unlimited"
+            title={t('quotaForm.limitsAlert.title')}
+            aria-label={t('quotaForm.limitsAlert.title')}
           >
-            This quota tracks usage without capping it. Per-cluster (memory, vCPU) and per-storage
-            (GB) limits are managed separately.
+            {t('quotaForm.limitsAlert.body')}
           </Alert>
         </Form>
       </ModalBody>
       <ModalFooter>
         <Button variant="primary" onClick={save} isLoading={pending} isDisabled={saveDisabled}>
-          Save
+          {t('common.action.save')}
         </Button>
         <Button variant="secondary" onClick={onClose} isDisabled={pending}>
-          Cancel
+          {t('common.action.cancel')}
         </Button>
       </ModalFooter>
     </Modal>

@@ -4,7 +4,9 @@ import {
   BreadcrumbItem,
   Button,
   EmptyState,
+  EmptyStateActions,
   EmptyStateBody,
+  EmptyStateFooter,
   PageSection,
   Skeleton,
   Tab,
@@ -77,13 +79,15 @@ export function QuotaDetailPage() {
       )}
 
       {quota.isError && notFound && (
-        <EmptyState titleText="Quota not found" status="warning">
-          <EmptyStateBody>
-            No quota with ID {quotaId} is visible to you — it may have been removed.
-          </EmptyStateBody>
-          <Button variant="primary" onClick={() => void navigate({ to: '/quotas' })}>
-            {t('quotaDetail.breadcrumb')}
-          </Button>
+        <EmptyState titleText={t('quotaDetail.notFound.title')} status="warning">
+          <EmptyStateBody>{t('quotaDetail.notFound.body', { id: quotaId })}</EmptyStateBody>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="primary" onClick={() => void navigate({ to: '/quotas' })}>
+                {t('quotaDetail.breadcrumb')}
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 
@@ -92,9 +96,13 @@ export function QuotaDetailPage() {
           <EmptyStateBody>
             {quota.error instanceof Error ? quota.error.message : t('common.error.unknown')}
           </EmptyStateBody>
-          <Button variant="primary" onClick={() => void quota.refetch()}>
-            {t('common.action.retry')}
-          </Button>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="primary" onClick={() => void quota.refetch()}>
+                {t('common.action.retry')}
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 
@@ -158,9 +166,12 @@ export function QuotaDetailPage() {
             onSelect={(_event, tabKey) => setActiveKey(tabKey)}
             mountOnEnter
             unmountOnExit
-            aria-label="quota details tabs"
+            aria-label={t('quotaDetail.tabs.ariaLabel')}
           >
-            <Tab eventKey="general" title={<TabTitleText>General</TabTitleText>}>
+            <Tab
+              eventKey="general"
+              title={<TabTitleText>{t('quotaDetail.tab.general')}</TabTitleText>}
+            >
               <TabContentBody hasPadding>
                 <QuotaGeneralTab quota={quota.data} dataCenterName={dataCenterName} />
               </TabContentBody>
@@ -183,19 +194,21 @@ export function QuotaDetailPage() {
             </Tab>
             {/* Consumption subtabs (webadmin Quota detail parity): the VMs and
                 Templates tabs client-filter their global feeds on the quota
-                link; Users lists/edits the QuotaConsumer grants. English tab
-                titles are hardcoded this pass, matching General above. */}
-            <Tab eventKey="vms" title={<TabTitleText>Virtual Machines</TabTitleText>}>
+                link; Users lists/edits the QuotaConsumer grants. */}
+            <Tab eventKey="vms" title={<TabTitleText>{t('quotaDetail.tab.vms')}</TabTitleText>}>
               <TabContentBody hasPadding>
                 <QuotaVmsTab quotaId={quotaId} />
               </TabContentBody>
             </Tab>
-            <Tab eventKey="templates" title={<TabTitleText>Templates</TabTitleText>}>
+            <Tab
+              eventKey="templates"
+              title={<TabTitleText>{t('quotaDetail.tab.templates')}</TabTitleText>}
+            >
               <TabContentBody hasPadding>
                 <QuotaTemplatesTab quotaId={quotaId} />
               </TabContentBody>
             </Tab>
-            <Tab eventKey="users" title={<TabTitleText>Users</TabTitleText>}>
+            <Tab eventKey="users" title={<TabTitleText>{t('quotaDetail.tab.users')}</TabTitleText>}>
               <TabContentBody hasPadding>
                 <QuotaUsersTab quotaId={quotaId} dataCenterId={dataCenterId} />
               </TabContentBody>

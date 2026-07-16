@@ -4,7 +4,9 @@ import {
   BreadcrumbItem,
   Button,
   EmptyState,
+  EmptyStateActions,
   EmptyStateBody,
+  EmptyStateFooter,
   PageSection,
   Skeleton,
   Tab,
@@ -84,9 +86,13 @@ export function UserDetailPage() {
       {user.isError && notFound && (
         <EmptyState titleText={t('userDetail.notFound.title')} status="warning">
           <EmptyStateBody>{t('users.searchEmpty.body')}</EmptyStateBody>
-          <Button variant="primary" onClick={() => void navigate({ to: '/users' })}>
-            {t('userDetail.breadcrumb')}
-          </Button>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="primary" onClick={() => void navigate({ to: '/users' })}>
+                {t('userDetail.breadcrumb')}
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 
@@ -95,9 +101,13 @@ export function UserDetailPage() {
           <EmptyStateBody>
             {user.error instanceof Error ? user.error.message : t('common.error.unknown')}
           </EmptyStateBody>
-          <Button variant="primary" onClick={() => void user.refetch()}>
-            {t('common.action.retry')}
-          </Button>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="primary" onClick={() => void user.refetch()}>
+                {t('common.action.retry')}
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 
@@ -157,14 +167,15 @@ export function UserDetailPage() {
                 <EntityTagsTab kind="user" entityId={userId} entityName={displayName} />
               </TabContentBody>
             </Tab>
-            {/* Hardcoded English tab titles pending the i18n pass — wanted ids:
-                userDetail.tab.quota / userDetail.tab.eventNotifier */}
-            <Tab eventKey="quota" title={<TabTitleText>Quota</TabTitleText>}>
+            <Tab eventKey="quota" title={<TabTitleText>{t('userDetail.tab.quota')}</TabTitleText>}>
               <TabContentBody hasPadding>
                 <UserQuotaTab userId={userId} />
               </TabContentBody>
             </Tab>
-            <Tab eventKey="eventNotifier" title={<TabTitleText>Event Notifier</TabTitleText>}>
+            <Tab
+              eventKey="eventNotifier"
+              title={<TabTitleText>{t('userDetail.tab.eventNotifier')}</TabTitleText>}
+            >
               <TabContentBody hasPadding>
                 <UserEventSubscriptionsTab userId={userId} />
               </TabContentBody>

@@ -9,6 +9,7 @@ import {
   Switch,
   TextInput,
 } from '@patternfly/react-core'
+import { useT } from '../../i18n/useT'
 import { FieldHelp } from '../forms/FieldHelp'
 import { OPTIMIZED_FOR_OPTIONS, vmNameError, type EditVmDraft } from './editVmDraft'
 
@@ -27,17 +28,19 @@ export function GeneralSection({
   clusters: { id: string; name?: string }[]
   operatingSystems: { name: string; description?: string }[]
 }) {
+  const t = useT()
   // Inline field validation (webadmin parity) — the modal's Save gate uses the
   // same vmNameError, so an invalid name both shows why and blocks the save.
+  // vmNameError returns English (a shared validator; see editVmDraft).
   const nameError = vmNameError(draft.name)
 
   return (
     <Form onSubmit={(event) => event.preventDefault()}>
-      <FormGroup label="Name" isRequired fieldId="edit-vm-name">
+      <FormGroup label={t('common.field.name')} isRequired fieldId="edit-vm-name">
         <TextInput
           id="edit-vm-name"
           isRequired
-          aria-label="Virtual machine name"
+          aria-label={t('vm.edit.general.name.aria')}
           validated={nameError !== undefined ? 'error' : 'default'}
           value={draft.name}
           onChange={(_event, value) => set('name', value)}
@@ -51,28 +54,28 @@ export function GeneralSection({
         )}
       </FormGroup>
 
-      <FormGroup label="Description" fieldId="edit-vm-description">
+      <FormGroup label={t('common.field.description')} fieldId="edit-vm-description">
         <TextInput
           id="edit-vm-description"
-          aria-label="Virtual machine description"
+          aria-label={t('vm.edit.general.description.aria')}
           value={draft.description}
           onChange={(_event, value) => set('description', value)}
         />
       </FormGroup>
 
-      <FormGroup label="Comment" fieldId="edit-vm-comment">
+      <FormGroup label={t('common.field.comment')} fieldId="edit-vm-comment">
         <TextInput
           id="edit-vm-comment"
-          aria-label="Virtual machine comment"
+          aria-label={t('vm.edit.general.comment.aria')}
           value={draft.comment}
           onChange={(_event, value) => set('comment', value)}
         />
       </FormGroup>
 
-      <FormGroup label="Cluster" fieldId="edit-vm-cluster">
+      <FormGroup label={t('common.field.cluster')} fieldId="edit-vm-cluster">
         <FormSelect
           id="edit-vm-cluster"
-          aria-label="Cluster"
+          aria-label={t('common.field.cluster')}
           value={draft.clusterId}
           onChange={(_event, value) => set('clusterId', value)}
         >
@@ -87,18 +90,18 @@ export function GeneralSection({
       </FormGroup>
 
       <FormGroup
-        label="Operating System"
+        label={t('vmGeneral.term.operatingSystem')}
         fieldId="edit-vm-os"
         labelHelp={
           <FieldHelp
-            field="Operating System"
-            content="The guest OS hint. It does not install anything — it tells the engine which virtual hardware, drivers, and defaults suit the guest (VirtIO, clock, watchdog, and so on)."
+            field={t('vmGeneral.term.operatingSystem')}
+            content={t('fieldHelp.vm.operatingSystem')}
           />
         }
       >
         <FormSelect
           id="edit-vm-os"
-          aria-label="Operating system"
+          aria-label={t('vm.edit.general.os.aria')}
           value={draft.osType}
           onChange={(_event, value) => set('osType', value)}
         >
@@ -109,58 +112,55 @@ export function GeneralSection({
       </FormGroup>
 
       <FormGroup
-        label="Optimized for"
+        label={t('templateForm.optimizedFor')}
         fieldId="edit-vm-optimized-for"
         labelHelp={
           <FieldHelp
-            field="Optimized for"
-            content="Tunes memory, devices, and defaults for the workload. Desktop favors interactivity; Server favors throughput; High Performance strips overhead and pins resources for latency-sensitive VMs."
+            field={t('templateForm.optimizedFor')}
+            content={t('fieldHelp.vm.optimizedFor')}
           />
         }
       >
         <FormSelect
           id="edit-vm-optimized-for"
-          aria-label="Optimized for"
+          aria-label={t('templateForm.optimizedFor')}
           value={draft.optimizedFor}
           onChange={(_event, value) => set('optimizedFor', value)}
         >
           {OPTIMIZED_FOR_OPTIONS.map((option) => (
-            <FormSelectOption key={option.value} value={option.value} label={option.label} />
+            <FormSelectOption key={option.value} value={option.value} label={t(option.labelId)} />
           ))}
         </FormSelect>
       </FormGroup>
 
       <FormGroup
-        label="Stateless"
+        label={t('templateForm.stateless')}
         fieldId="edit-vm-stateless"
         labelHelp={
-          <FieldHelp
-            field="Stateless"
-            content="Run the VM from a temporary snapshot that is discarded on every shutdown, so it always boots from the template’s clean state. Data written during a session does not persist."
-          />
+          <FieldHelp field={t('templateForm.stateless')} content={t('fieldHelp.vm.stateless')} />
         }
       >
         <Switch
           id="edit-vm-stateless"
-          aria-label="Stateless"
+          aria-label={t('templateForm.stateless')}
           isChecked={draft.stateless}
           onChange={(_event, checked) => set('stateless', checked)}
         />
       </FormGroup>
 
       <FormGroup
-        label="Delete Protection"
+        label={t('templateForm.deleteProtection')}
         fieldId="edit-vm-delete-protected"
         labelHelp={
           <FieldHelp
-            field="Delete Protection"
-            content="Blocks this VM from being deleted until the protection is turned off — a guard against accidentally removing an important VM."
+            field={t('templateForm.deleteProtection')}
+            content={t('fieldHelp.vm.deleteProtection')}
           />
         }
       >
         <Switch
           id="edit-vm-delete-protected"
-          aria-label="Delete protection"
+          aria-label={t('templateForm.aria.deleteProtection')}
           isChecked={draft.deleteProtected}
           onChange={(_event, checked) => set('deleteProtected', checked)}
         />

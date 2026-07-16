@@ -92,16 +92,16 @@ export function VolumeActionsMenu({ volume }: { volume: GlusterVolume }) {
         ]
       : []),
     { title: t('volumes.action.bricks'), onClick: () => setBricksOpen(true) },
-    { title: 'Manage options', onClick: () => setOptionsOpen(true) },
+    { title: t('volumes.action.manageOptions'), onClick: () => setOptionsOpen(true) },
     // Profiling status isn't exposed on the volume read model, so both toggles
     // are always offered (webadmin shows Start/Stop Profiling the same way).
     {
-      title: 'Start profiling',
+      title: t('volumes.action.startProfiling'),
       onClick: () =>
         startProfile.mutate({ clusterId, volumeId: volume.id, volumeName: volume.name }),
     },
     {
-      title: 'Stop profiling',
+      title: t('volumes.action.stopProfiling'),
       onClick: () =>
         stopProfile.mutate({ clusterId, volumeId: volume.id, volumeName: volume.name }),
     },

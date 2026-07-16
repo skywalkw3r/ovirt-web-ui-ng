@@ -4,7 +4,9 @@ import {
   Button,
   Checkbox,
   EmptyState,
+  EmptyStateActions,
   EmptyStateBody,
+  EmptyStateFooter,
   Form,
   FormGroup,
   FormSelect,
@@ -153,7 +155,9 @@ export function ImportExternalNetworksModal({
                 <HelperTextItem variant="error">
                   {t('network.import.provider.error', {
                     message:
-                      providers.error instanceof Error ? providers.error.message : 'Unknown error',
+                      providers.error instanceof Error
+                        ? providers.error.message
+                        : t('common.error.unknown'),
                   })}
                 </HelperTextItem>
               </HelperText>
@@ -199,11 +203,15 @@ export function ImportExternalNetworksModal({
                 <EmptyStateBody>
                   {providerNetworks.error instanceof Error
                     ? providerNetworks.error.message
-                    : 'Unknown error'}
+                    : t('common.error.unknown')}
                 </EmptyStateBody>
-                <Button variant="primary" onClick={() => void providerNetworks.refetch()}>
-                  {t('common.action.retry')}
-                </Button>
+                <EmptyStateFooter>
+                  <EmptyStateActions>
+                    <Button variant="primary" onClick={() => void providerNetworks.refetch()}>
+                      {t('common.action.retry')}
+                    </Button>
+                  </EmptyStateActions>
+                </EmptyStateFooter>
               </EmptyState>
             ) : rows.length === 0 ? (
               <EmptyState titleText={t('network.import.networks.empty.title')} variant="sm">
@@ -264,7 +272,7 @@ export function ImportExternalNetworksModal({
                     message:
                       dataCenters.error instanceof Error
                         ? dataCenters.error.message
-                        : 'Unknown error',
+                        : t('common.error.unknown'),
                   })}
                 </HelperTextItem>
               </HelperText>

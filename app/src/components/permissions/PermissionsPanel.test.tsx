@@ -29,7 +29,9 @@ vi.mock('@patternfly/react-core', () => ({
       {children}
     </div>
   ),
+  EmptyStateActions: ({ children }: { children?: ReactNode }) => <div>{children}</div>,
   EmptyStateBody: ({ children }: { children?: ReactNode }) => <div>{children}</div>,
+  EmptyStateFooter: ({ children }: { children?: ReactNode }) => <div>{children}</div>,
   Label: ({ children }: { children?: ReactNode }) => <span>{children}</span>,
   // ConfirmModal (via RemovePermissionConfirm) pulls these in at import time
   Modal: ({ children }: { children?: ReactNode }) => <div role="dialog">{children}</div>,

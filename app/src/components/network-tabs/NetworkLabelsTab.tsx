@@ -2,7 +2,9 @@ import { useState } from 'react'
 import {
   Button,
   EmptyState,
+  EmptyStateActions,
   EmptyStateBody,
+  EmptyStateFooter,
   Label,
   Skeleton,
   TextInput,
@@ -104,9 +106,13 @@ export function NetworkLabelsTab({ networkId }: { networkId: string }) {
           <EmptyStateBody>
             {labels.error instanceof Error ? labels.error.message : t('common.error.unknown')}
           </EmptyStateBody>
-          <Button variant="primary" onClick={() => void labels.refetch()}>
-            {t('common.action.retry')}
-          </Button>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="primary" onClick={() => void labels.refetch()}>
+                {t('common.action.retry')}
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 

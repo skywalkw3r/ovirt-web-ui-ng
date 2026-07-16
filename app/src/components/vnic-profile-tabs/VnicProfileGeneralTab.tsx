@@ -12,6 +12,7 @@ import {
 import type { VnicProfile } from '../../api/schemas/vnic-profile'
 import { listDataCenterQoss } from '../../api/resources/datacenters'
 import { useNetworks } from '../../hooks/useNetworks'
+import { useT } from '../../i18n/useT'
 
 const DASH = '—'
 
@@ -19,10 +20,11 @@ const DASH = '—'
 // coerces them, so a real boolean (or undefined) reaches here — mirrors
 // NetworkGeneralTab's BoolLabel.
 function BoolLabel({ value }: { value: boolean | undefined }) {
+  const t = useT()
   if (value === undefined) return <>{DASH}</>
   return (
     <Label isCompact color={value ? 'green' : 'grey'}>
-      {value ? 'Enabled' : 'Disabled'}
+      {value ? t('common.enabled') : t('common.disabled')}
     </Label>
   )
 }
@@ -43,6 +45,7 @@ function TextGroup({ term, value }: { term: string; value: string | undefined | 
 // the network from the cached /networks list, the QoS from the owning data
 // center's /qoss subcollection (network → data_center.id → /datacenters/{dc}/qoss).
 export function VnicProfileGeneralTab({ profile }: { profile: VnicProfile }) {
+  const t = useT()
   const networks = useNetworks()
   const network = networks.data?.find((entry) => entry.id === profile.network?.id)
   const dataCenterId = network?.data_center?.id
@@ -65,32 +68,32 @@ export function VnicProfileGeneralTab({ profile }: { profile: VnicProfile }) {
 
   return (
     <Card isCompact>
-      <CardTitle component="h2">General</CardTitle>
+      <CardTitle component="h2">{t('vnicProfileDetail.tab.general')}</CardTitle>
       <CardBody>
         <DescriptionList isCompact columnModifier={{ default: '1Col', md: '2Col' }}>
-          <TextGroup term="Name" value={profile.name} />
-          <TextGroup term="Description" value={profile.description} />
-          <TextGroup term="Network" value={network?.name} />
-          <TextGroup term="Network QoS" value={qosName} />
+          <TextGroup term={t('common.field.name')} value={profile.name} />
+          <TextGroup term={t('common.field.description')} value={profile.description} />
+          <TextGroup term={t('nics.column.network')} value={network?.name} />
+          <TextGroup term={t('networkForm.qos')} value={qosName} />
           <DescriptionListGroup>
-            <DescriptionListTerm>Port mirroring</DescriptionListTerm>
+            <DescriptionListTerm>{t('networkVnic.column.portMirroring')}</DescriptionListTerm>
             <DescriptionListDescription>
               <BoolLabel value={profile.port_mirroring} />
             </DescriptionListDescription>
           </DescriptionListGroup>
           <DescriptionListGroup>
-            <DescriptionListTerm>Passthrough</DescriptionListTerm>
+            <DescriptionListTerm>{t('vnicProfileForm.passthrough')}</DescriptionListTerm>
             <DescriptionListDescription>
               <BoolLabel value={passthrough} />
             </DescriptionListDescription>
           </DescriptionListGroup>
           <DescriptionListGroup>
-            <DescriptionListTerm>Migratable</DescriptionListTerm>
+            <DescriptionListTerm>{t('vnicProfileForm.migratable')}</DescriptionListTerm>
             <DescriptionListDescription>
               <BoolLabel value={profile.migratable} />
             </DescriptionListDescription>
           </DescriptionListGroup>
-          <TextGroup term="ID" value={profile.id} />
+          <TextGroup term={t('common.field.id')} value={profile.id} />
         </DescriptionList>
       </CardBody>
     </Card>

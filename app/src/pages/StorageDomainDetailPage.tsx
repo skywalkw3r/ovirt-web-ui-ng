@@ -4,7 +4,9 @@ import {
   BreadcrumbItem,
   Button,
   EmptyState,
+  EmptyStateActions,
   EmptyStateBody,
+  EmptyStateFooter,
   PageSection,
   Skeleton,
   Tab,
@@ -110,9 +112,13 @@ export function StorageDomainDetailPage() {
           <EmptyStateBody>
             {t('storageDetail.notFound.body', { id: storageDomainId })}
           </EmptyStateBody>
-          <Button variant="primary" onClick={() => void navigate({ to: '/storage' })}>
-            {t('storageDetail.notFound.back')}
-          </Button>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="primary" onClick={() => void navigate({ to: '/storage' })}>
+                {t('storageDetail.notFound.back')}
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 
@@ -123,9 +129,13 @@ export function StorageDomainDetailPage() {
               ? storageDomain.error.message
               : t('common.error.unknown')}
           </EmptyStateBody>
-          <Button variant="primary" onClick={() => void storageDomain.refetch()}>
-            {t('common.action.retry')}
-          </Button>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="primary" onClick={() => void storageDomain.refetch()}>
+                {t('common.action.retry')}
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 
@@ -180,9 +190,11 @@ export function StorageDomainDetailPage() {
               </TabContentBody>
             </Tab>
             {/* Every DC the domain is attached to, with the per-DC lifecycle
-                verbs — the multi-DC ISO case the header kebab can't cover.
-                Tab title hardcoded English pending the i18n pass. */}
-            <Tab eventKey="data-centers" title={<TabTitleText>Data Centers</TabTitleText>}>
+                verbs — the multi-DC ISO case the header kebab can't cover. */}
+            <Tab
+              eventKey="data-centers"
+              title={<TabTitleText>{t('storageDetail.tab.dataCenters')}</TabTitleText>}
+            >
               <TabContentBody hasPadding>
                 <StorageDomainDataCentersTab domain={storageDomain.data} />
               </TabContentBody>
@@ -198,16 +210,22 @@ export function StorageDomainDetailPage() {
             {/* Disk profiles and disk snapshots only exist on data domains
                 (profiles are minted at attach time on data domains; snapshot
                 images are VM-disk volumes) — webadmin gates both subtabs the
-                same way. Titles hardcoded English pending the i18n pass. */}
+                same way. */}
             {storageDomain.data.type?.toLowerCase() === 'data' && (
-              <Tab eventKey="disk-profiles" title={<TabTitleText>Disk Profiles</TabTitleText>}>
+              <Tab
+                eventKey="disk-profiles"
+                title={<TabTitleText>{t('storageDetail.tab.diskProfiles')}</TabTitleText>}
+              >
                 <TabContentBody hasPadding>
                   <StorageDomainDiskProfilesTab domain={storageDomain.data} />
                 </TabContentBody>
               </Tab>
             )}
             {storageDomain.data.type?.toLowerCase() === 'data' && (
-              <Tab eventKey="disk-snapshots" title={<TabTitleText>Disk Snapshots</TabTitleText>}>
+              <Tab
+                eventKey="disk-snapshots"
+                title={<TabTitleText>{t('storageDetail.tab.diskSnapshots')}</TabTitleText>}
+              >
                 <TabContentBody hasPadding>
                   <StorageDomainDiskSnapshotsTab storageDomainId={storageDomainId} />
                 </TabContentBody>

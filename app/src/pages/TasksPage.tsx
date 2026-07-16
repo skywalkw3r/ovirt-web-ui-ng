@@ -141,8 +141,7 @@ export function TasksPage() {
   // parity behavior described on TERMINAL_STATUSES above.
   const [dismissed, setDismissed] = useState<ReadonlySet<string>>(new Set())
 
-  // Column labels resolve per active locale; the correlation-id header is
-  // hardcoded English this wave (the externalization pass owns the id).
+  // Column labels resolve per active locale.
   const columns = useMemo<TaskColumn[]>(
     () => [
       {
@@ -177,7 +176,7 @@ export function TasksPage() {
       },
       {
         key: 'correlationId',
-        label: 'Correlation ID',
+        label: t('tasks.column.correlationId'),
         defaultHidden: true,
         sortValue: (job) => job.correlation_id || undefined,
         cell: (job) =>
@@ -229,12 +228,10 @@ export function TasksPage() {
       <ListPageHeader title={t('tasks.title')} />
       <Toolbar style={{ paddingBottom: 'var(--pf-t--global--spacer--md)' }}>
         <ToolbarContent>
-          {/* Hardcoded English this wave (Correlation ID / Clear finished);
-            the externalization pass owns the message ids. */}
           <ToolbarItem style={{ width: '18rem' }}>
             <SearchInput
-              aria-label="Filter by Correlation ID"
-              placeholder="Filter by Correlation ID"
+              aria-label={t('tasks.filter.correlationId.ariaLabel')}
+              placeholder={t('tasks.filter.correlationId.ariaLabel')}
               value={correlationFilter}
               onChange={(_event, value) => setCorrelationFilter(value)}
               onClear={() => setCorrelationFilter('')}
@@ -242,7 +239,7 @@ export function TasksPage() {
           </ToolbarItem>
           <ToolbarItem>
             <Button variant="secondary" onClick={clearFinished} isDisabled={clearableCount === 0}>
-              Clear finished
+              {t('tasks.action.clearFinished')}
             </Button>
           </ToolbarItem>
           <ToolbarGroup align={{ default: 'alignEnd' }}>
@@ -274,9 +271,13 @@ export function TasksPage() {
           <EmptyStateBody>
             {jobs.error instanceof Error ? jobs.error.message : t('common.error.unknown')}
           </EmptyStateBody>
-          <Button variant="primary" onClick={() => void jobs.refetch()}>
-            {t('common.action.retry')}
-          </Button>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="primary" onClick={() => void jobs.refetch()}>
+                {t('common.action.retry')}
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 
@@ -288,22 +289,20 @@ export function TasksPage() {
 
       {/* Everything was filtered out or cleared — offer the relevant reset. */}
       {jobs.isSuccess && allRows.length > 0 && rows.length === 0 && (
-        <EmptyState titleText="No matching tasks">
+        <EmptyState titleText={t('tasks.searchEmpty.title')}>
           <EmptyStateBody>
-            {filterTrim
-              ? 'No tasks match the current Correlation ID filter.'
-              : 'All finished tasks have been cleared from this view.'}
+            {filterTrim ? t('tasks.searchEmpty.filterBody') : t('tasks.searchEmpty.clearedBody')}
           </EmptyStateBody>
           <EmptyStateFooter>
             <EmptyStateActions>
               {filterTrim && (
                 <Button variant="link" onClick={() => setCorrelationFilter('')}>
-                  Clear filter
+                  {t('common.action.clearFilter')}
                 </Button>
               )}
               {!filterTrim && dismissed.size > 0 && (
                 <Button variant="link" onClick={() => setDismissed(new Set())}>
-                  Show cleared tasks
+                  {t('tasks.showCleared')}
                 </Button>
               )}
             </EmptyStateActions>
@@ -320,7 +319,7 @@ export function TasksPage() {
           >
             <Thead>
               <Tr>
-                <Th screenReaderText="Row expansion" />
+                <Th screenReaderText={t('tasks.expand.ariaLabel')} />
                 {visibleColumns.map((column, index) => (
                   <ResizableTh
                     key={column.key}

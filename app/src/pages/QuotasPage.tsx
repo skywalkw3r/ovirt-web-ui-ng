@@ -130,9 +130,13 @@ export function QuotasPage() {
           <EmptyStateBody>
             {quotas.error instanceof Error ? quotas.error.message : t('common.error.unknown')}
           </EmptyStateBody>
-          <Button variant="primary" onClick={() => void quotas.refetch()}>
-            {t('common.action.retry')}
-          </Button>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="primary" onClick={() => void quotas.refetch()}>
+                {t('common.action.retry')}
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 
@@ -154,11 +158,13 @@ export function QuotasPage() {
         quotas.data.length > 0 &&
         sortedQuotas.length === 0 && (
           <EmptyState titleText={t('common.state.searchEmpty.title')}>
-            <EmptyStateBody>
-              <Button variant="link" isInline onClick={() => setFilter('')}>
-                {t('common.action.clearFilter')}
-              </Button>
-            </EmptyStateBody>
+            <EmptyStateFooter>
+              <EmptyStateActions>
+                <Button variant="link" isInline onClick={() => setFilter('')}>
+                  {t('common.action.clearFilter')}
+                </Button>
+              </EmptyStateActions>
+            </EmptyStateFooter>
           </EmptyState>
         )}
 

@@ -1,5 +1,12 @@
 import { useQuery } from '@tanstack/react-query'
-import { Button, EmptyState, EmptyStateBody, Skeleton } from '@patternfly/react-core'
+import {
+  Button,
+  EmptyState,
+  EmptyStateActions,
+  EmptyStateBody,
+  EmptyStateFooter,
+  Skeleton,
+} from '@patternfly/react-core'
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table'
 import { Link } from '@tanstack/react-router'
 import { listStorageDomainLeaseVms } from '../../api/resources/leases'
@@ -38,9 +45,13 @@ export function StorageDomainLeasesTab({ storageDomainId }: { storageDomainId: s
           <EmptyStateBody>
             {leases.error instanceof Error ? leases.error.message : t('common.error.unknown')}
           </EmptyStateBody>
-          <Button variant="primary" onClick={() => void leases.refetch()}>
-            {t('common.action.retry')}
-          </Button>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="primary" onClick={() => void leases.refetch()}>
+                {t('common.action.retry')}
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 

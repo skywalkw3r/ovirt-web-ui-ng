@@ -1,8 +1,10 @@
 import { describe, expect, it, vi } from 'vitest'
 import { renderToStaticMarkup } from 'react-dom/server'
 import type { ReactNode } from 'react'
+import { IntlProvider } from 'react-intl'
 import type { UseQueryResult } from '@tanstack/react-query'
 import type { Vm } from '../../api/schemas/vm'
+import { enMessages } from '../../i18n/messages/en'
 
 // Node test env + PF CSS imports → stub PF with semantic passthroughs (the
 // ClusterAffinityGroupsTab.test.tsx pattern). Assertions target the shell's
@@ -17,6 +19,8 @@ vi.mock('@patternfly/react-core', () => ({
     </div>
   ),
   EmptyStateBody: ({ children }: { children?: ReactNode }) => <div>{children}</div>,
+  EmptyStateFooter: ({ children }: { children?: ReactNode }) => <div>{children}</div>,
+  EmptyStateActions: ({ children }: { children?: ReactNode }) => <div>{children}</div>,
   Skeleton: ({ screenreaderText }: { screenreaderText?: string }) => (
     <span>{screenreaderText ?? 'skeleton'}</span>
   ),
@@ -109,13 +113,15 @@ const COLUMNS: VmMembershipColumn[] = [
 
 function render(query: UseQueryResult<Vm[], Error>, toolbar?: ReactNode) {
   return renderToStaticMarkup(
-    <VmMembershipTable
-      query={query}
-      columns={COLUMNS}
-      ariaLabel="Virtual machines in this cluster"
-      emptyBody="No virtual machines are running in this cluster."
-      toolbar={toolbar}
-    />,
+    <IntlProvider locale="en" messages={enMessages}>
+      <VmMembershipTable
+        query={query}
+        columns={COLUMNS}
+        ariaLabel="Virtual machines in this cluster"
+        emptyBody="No virtual machines are running in this cluster."
+        toolbar={toolbar}
+      />
+    </IntlProvider>,
   )
 }
 
@@ -157,13 +163,15 @@ describe('VmMembershipTable', () => {
   it('switches to resizable headers inside a scroll viewport when resizePrefs is set', () => {
     const prefs = { visible: new Set(), widths: {}, hasWidths: false } as never
     const html = renderToStaticMarkup(
-      <VmMembershipTable
-        query={asQuery({ isSuccess: true, data: VMS })}
-        columns={COLUMNS}
-        ariaLabel="Virtual machines consuming this quota"
-        emptyBody="No virtual machine consumes this quota."
-        resizePrefs={prefs}
-      />,
+      <IntlProvider locale="en" messages={enMessages}>
+        <VmMembershipTable
+          query={asQuery({ isSuccess: true, data: VMS })}
+          columns={COLUMNS}
+          ariaLabel="Virtual machines consuming this quota"
+          emptyBody="No virtual machine consumes this quota."
+          resizePrefs={prefs}
+        />
+      </IntlProvider>,
     )
     expect(html).toContain('class="app-table-viewport"')
     expect(html).toContain('class="app-table-fixed"')

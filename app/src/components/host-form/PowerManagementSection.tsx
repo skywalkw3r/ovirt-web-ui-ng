@@ -25,15 +25,18 @@ import { useHostFenceAgents } from '../../hooks/useHostDetail'
 import { useDeleteFenceAgent } from '../../hooks/useHostMutations'
 import { ConfirmModal } from '../ConfirmModal'
 import { FieldHelp } from '../forms/FieldHelp'
+import { useT } from '../../i18n/useT'
+import type { MessageId } from '../../i18n/messages/en'
 import { PM_PROXY_TYPES, type PmProxyType } from './editHostDraft'
 import { FenceAgentModal } from './FenceAgentModal'
 
-// Human labels for the three fence-proxy locations (types/PmProxyType). Kept
-// beside the picker so the wire tokens never leak into the UI.
-const PM_PROXY_LABELS: Record<PmProxyType, string> = {
-  cluster: 'Cluster',
-  dc: 'Data center',
-  other_dc: 'Other data center',
+// i18n ids for the three fence-proxy locations (types/PmProxyType). Kept beside
+// the picker so the wire tokens never leak into the UI; resolved via t() at
+// render (the qosDraft idiom).
+const PM_PROXY_LABEL_ID: Record<PmProxyType, MessageId> = {
+  cluster: 'common.field.cluster',
+  dc: 'hostForm.pmProxy.dc',
+  other_dc: 'hostForm.pmProxy.otherDc',
 }
 
 // The ordered fence-proxy preference editor: a compact, reorderable table of the
@@ -49,6 +52,7 @@ function FenceProxyEditor({
   proxies: PmProxyType[]
   setProxies: (proxies: PmProxyType[]) => void
 }) {
+  const t = useT()
   const [addOpen, setAddOpen] = useState(false)
   const available = PM_PROXY_TYPES.filter((type) => !proxies.includes(type))
 
@@ -64,46 +68,44 @@ function FenceProxyEditor({
   return (
     <>
       <Divider style={{ margin: 'var(--pf-t--global--spacer--md) 0' }} />
-      <FormGroup label="Fence proxy preferences" fieldId="edit-host-pm-proxies">
+      <FormGroup label={t('host.fenceProxy.title')} fieldId="edit-host-pm-proxies">
         <FormHelperText>
           <HelperText>
-            <HelperTextItem>
-              The engine tries these locations, in order, to find a host that can relay a fence
-              command to this host. Leave the list empty to use the engine default (cluster, then
-              data center).
-            </HelperTextItem>
+            <HelperTextItem>{t('hostForm.fenceProxy.help')}</HelperTextItem>
           </HelperText>
         </FormHelperText>
 
         {proxies.length > 0 && (
-          <Table aria-label="Fence proxy preferences" variant="compact">
+          <Table aria-label={t('host.fenceProxy.title')} variant="compact">
             <Thead>
               <Tr>
-                <Th width={10}>Order</Th>
-                <Th>Proxy location</Th>
-                <Th screenReaderText="Actions" />
+                <Th width={10}>{t('fenceAgent.field.order')}</Th>
+                <Th>{t('hostForm.fenceProxy.column.location')}</Th>
+                <Th screenReaderText={t('common.field.actions')} />
               </Tr>
             </Thead>
             <Tbody>
               {proxies.map((type, index) => (
                 <Tr key={type}>
-                  <Td dataLabel="Order">{index + 1}</Td>
-                  <Td dataLabel="Proxy location">{PM_PROXY_LABELS[type]}</Td>
-                  <Td dataLabel="Actions" isActionCell>
+                  <Td dataLabel={t('fenceAgent.field.order')}>{index + 1}</Td>
+                  <Td dataLabel={t('hostForm.fenceProxy.column.location')}>
+                    {t(PM_PROXY_LABEL_ID[type])}
+                  </Td>
+                  <Td dataLabel={t('common.field.actions')} isActionCell>
                     <ActionsColumn
                       items={[
                         {
-                          title: 'Move up',
+                          title: t('common.action.moveUp'),
                           isDisabled: index === 0,
                           onClick: () => move(index, -1),
                         },
                         {
-                          title: 'Move down',
+                          title: t('common.action.moveDown'),
                           isDisabled: index === proxies.length - 1,
                           onClick: () => move(index, 1),
                         },
                         {
-                          title: 'Remove',
+                          title: t('common.action.remove'),
                           isDanger: true,
                           onClick: () => setProxies(proxies.filter((entry) => entry !== type)),
                         },
@@ -128,7 +130,7 @@ function FenceProxyEditor({
                   onClick={() => setAddOpen(!addOpen)}
                   isExpanded={addOpen}
                 >
-                  Add proxy location
+                  {t('hostForm.fenceProxy.add')}
                 </MenuToggle>
               )}
             >
@@ -141,7 +143,7 @@ function FenceProxyEditor({
                       setProxies([...proxies, type])
                     }}
                   >
-                    {PM_PROXY_LABELS[type]}
+                    {t(PM_PROXY_LABEL_ID[type])}
                   </DropdownItem>
                 ))}
               </DropdownList>

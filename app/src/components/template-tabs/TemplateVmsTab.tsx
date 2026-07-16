@@ -1,4 +1,5 @@
 import { useVmMembership } from '../../hooks/useVmMembership'
+import { useT } from '../../i18n/useT'
 import { VM_NAME_COLUMN, VM_STATUS_COLUMN } from '../vm-membership/columns'
 import { VmMembershipTable } from '../vm-membership/VmMembershipTable'
 
@@ -9,13 +10,14 @@ const COLUMNS = [VM_NAME_COLUMN, VM_STATUS_COLUMN]
 // source template link (vm.template.id), so useVmMembership client-filters to
 // this template.
 export function TemplateVmsTab({ templateId }: { templateId: string }) {
+  const t = useT()
   const vms = useVmMembership('template', templateId, (vm) => vm.template?.id === templateId)
   return (
     <VmMembershipTable
       query={vms}
       columns={COLUMNS}
-      ariaLabel="Virtual machines created from this template"
-      emptyBody="No virtual machines have been created from this template."
+      ariaLabel={t('templateVms.table.ariaLabel')}
+      emptyBody={t('templateVms.empty.body')}
     />
   )
 }

@@ -81,9 +81,7 @@ export function PoolDetailPage() {
 
       {pool.isError && notFound && (
         <EmptyState titleText={t('poolDetail.notFound.title')} status="warning">
-          <EmptyStateBody>
-            No pool with ID {poolId} is visible to you — it may have been removed.
-          </EmptyStateBody>
+          <EmptyStateBody>{t('poolDetail.notFound.body', { id: poolId })}</EmptyStateBody>
           <EmptyStateFooter>
             <EmptyStateActions>
               <Button variant="primary" onClick={() => void navigate({ to: '/pools' })}>
@@ -147,22 +145,19 @@ export function PoolDetailPage() {
           {removing && (
             <ConfirmModal
               isOpen
-              title={`Remove ${pool.data.name}?`}
+              title={t('pools.remove.confirm.title', { name: pool.data.name })}
               body={
                 <Stack hasGutter>
-                  <StackItem>
-                    Every virtual machine in this pool will be stopped and permanently removed, then
-                    the pool itself. This cannot be undone.
-                  </StackItem>
+                  <StackItem>{t('pools.remove.confirm.body')}</StackItem>
                   <StackItem>
                     <FormGroup
-                      label={`Type "${pool.data.name}" to confirm`}
+                      label={t('pools.remove.confirm.typeLabel', { name: pool.data.name })}
                       isRequired
                       fieldId="remove-confirm-name"
                     >
                       <TextInput
                         id="remove-confirm-name"
-                        aria-label="Type the pool name to confirm removal"
+                        aria-label={t('pools.remove.confirm.inputAria')}
                         value={removing.nameInput}
                         onChange={(_event, value) => setRemoving({ nameInput: value })}
                       />
@@ -170,7 +165,7 @@ export function PoolDetailPage() {
                   </StackItem>
                 </Stack>
               }
-              confirmLabel="Remove"
+              confirmLabel={t('common.action.remove')}
               isConfirmDisabled={removing.nameInput !== pool.data.name}
               onConfirm={() => {
                 setRemoving(null)
@@ -190,7 +185,7 @@ export function PoolDetailPage() {
             onSelect={(_event, tabKey) => setActiveKey(tabKey)}
             mountOnEnter
             unmountOnExit
-            aria-label="pool details tabs"
+            aria-label={t('poolDetail.tabs.ariaLabel')}
           >
             <Tab
               eventKey="general"

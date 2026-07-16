@@ -180,26 +180,28 @@ export function QuotaUsersTab({
       {consumers.isPending && (
         <>
           <Skeleton height="2.5rem" style={{ marginBottom: '0.5rem' }} />
-          <Skeleton height="2.5rem" screenreaderText="Loading quota consumers" />
+          <Skeleton height="2.5rem" screenreaderText={t('quotaUsers.loading')} />
         </>
       )}
 
       {consumers.isError && (
-        <EmptyState titleText="Could not load quota consumers" status="danger">
+        <EmptyState titleText={t('quotaUsers.error.title')} status="danger">
           <EmptyStateBody>
-            {consumers.error instanceof Error ? consumers.error.message : 'Unknown error'}
+            {consumers.error instanceof Error ? consumers.error.message : t('common.error.unknown')}
           </EmptyStateBody>
-          <Button variant="primary" onClick={() => void consumers.refetch()}>
-            {t('common.action.retry')}
-          </Button>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="primary" onClick={() => void consumers.refetch()}>
+                {t('common.action.retry')}
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 
       {consumers.isSuccess && consumers.data.length === 0 && (
-        <EmptyState titleText="No consumers">
-          <EmptyStateBody>
-            No user or group holds the QuotaConsumer role on this quota yet.
-          </EmptyStateBody>
+        <EmptyState titleText={t('quotaUsers.empty.title')}>
+          <EmptyStateBody>{t('quotaUsers.empty.body')}</EmptyStateBody>
           <EmptyStateFooter>
             <EmptyStateActions>
               <Button variant="primary" onClick={() => setAssigning(true)}>
@@ -211,7 +213,7 @@ export function QuotaUsersTab({
       )}
 
       {consumers.isSuccess && consumers.data.length > 0 && (
-        <Table aria-label="Quota consumers" variant="compact">
+        <Table aria-label={t('quotaUsers.table.ariaLabel')} variant="compact">
           <Thead>
             <Tr>
               <Th>{t('permissions.column.assignee')}</Th>
@@ -275,8 +277,8 @@ export function QuotaUsersTab({
       {removing && (
         <ConfirmModal
           isOpen
-          title={`Remove quota consumer ${removing.name}?`}
-          body="The principal loses the QuotaConsumer role on this quota and can no longer assign it to new virtual machines or disks. Existing objects keep their quota."
+          title={t('quotaUsers.remove.confirm.title', { name: removing.name })}
+          body={t('quotaUsers.remove.confirm.body')}
           confirmLabel={t('common.action.remove')}
           isConfirmDisabled={remove.isPending}
           onConfirm={() => {
@@ -344,8 +346,8 @@ function AssignConsumerModal({
       aria-describedby="assign-consumer-body"
     >
       <ModalHeader
-        title="Add quota consumer"
-        description="Grant the QuotaConsumer role on this quota to a user or group, letting them assign it to virtual machines and disks."
+        title={t('quotaUsers.assign.title')}
+        description={t('quotaUsers.assign.description')}
         labelId="assign-consumer-title"
       />
       <ModalBody id="assign-consumer-body">

@@ -10,6 +10,7 @@ import {
   HelperTextItem,
   TextInput,
 } from '@patternfly/react-core'
+import { useT } from '../../i18n/useT'
 import { FieldHelp } from '../forms/FieldHelp'
 import {
   deriveMemoryOnCommit,
@@ -49,6 +50,7 @@ interface SystemSectionProps {
 //
 // CPU topology stays plain integer counts.
 export function SystemSection({ draft, set, overcommitPercent }: SystemSectionProps) {
+  const t = useT()
   // Topology inputs: TextInput hands back a string; the draft field is a number.
   // Empty input collapses to 0 rather than NaN so the controlled value stays a
   // real number.
@@ -83,11 +85,11 @@ export function SystemSection({ draft, set, overcommitPercent }: SystemSectionPr
 
   return (
     <Form>
-      <FormGroup label="Memory Size (GB)" fieldId="edit-vm-memory">
+      <FormGroup label={t('vm.edit.system.memorySize')} fieldId="edit-vm-memory">
         <TextInput
           id="edit-vm-memory"
           type="number"
-          aria-label="Memory Size (GB)"
+          aria-label={t('vm.edit.system.memorySize')}
           validated={memoryError !== undefined ? 'error' : 'default'}
           value={mibToGib(draft.memoryMb)}
           onChange={setMemoryGib('memoryMb')}
@@ -96,19 +98,19 @@ export function SystemSection({ draft, set, overcommitPercent }: SystemSectionPr
       </FormGroup>
 
       <FormGroup
-        label="Maximum memory (GB)"
+        label={t('vm.edit.system.maxMemory')}
         fieldId="edit-vm-max-memory"
         labelHelp={
           <FieldHelp
-            field="Maximum memory"
-            content="The ceiling memory can be hot-plugged up to while the VM runs, without a reboot. Must be at least the memory size; it defaults to 4× the memory size."
+            field={t('vm.edit.system.maxMemory.short')}
+            content={t('fieldHelp.vm.maxMemory')}
           />
         }
       >
         <TextInput
           id="edit-vm-max-memory"
           type="number"
-          aria-label="Maximum memory (GB)"
+          aria-label={t('vm.edit.system.maxMemory')}
           validated={memoryError !== undefined ? 'error' : 'default'}
           value={mibToGib(draft.maxMemoryMb)}
           onChange={setMemoryGib('maxMemoryMb')}
@@ -116,19 +118,19 @@ export function SystemSection({ draft, set, overcommitPercent }: SystemSectionPr
       </FormGroup>
 
       <FormGroup
-        label="Physical Memory Guaranteed (GB)"
+        label={t('vm.edit.system.guaranteedMemory')}
         fieldId="edit-vm-guaranteed-memory"
         labelHelp={
           <FieldHelp
-            field="Physical Memory Guaranteed"
-            content="The amount of physical RAM the engine reserves for this VM before scheduling it on a host. The VM may use up to its memory size, but this much is always backed by real RAM rather than swap or ballooning."
+            field={t('vmGeneral.term.memoryGuaranteed')}
+            content={t('fieldHelp.vm.guaranteedMemory')}
           />
         }
       >
         <TextInput
           id="edit-vm-guaranteed-memory"
           type="number"
-          aria-label="Physical Memory Guaranteed (GB)"
+          aria-label={t('vm.edit.system.guaranteedMemory')}
           validated={memoryError !== undefined ? 'error' : 'default'}
           value={mibToGib(draft.guaranteedMemoryMb)}
           onChange={setMemoryGib('guaranteedMemoryMb')}
@@ -136,71 +138,71 @@ export function SystemSection({ draft, set, overcommitPercent }: SystemSectionPr
         {memoryError !== undefined && (
           <FormHelperText>
             <HelperText>
-              <HelperTextItem variant="error">{memoryError}</HelperTextItem>
+              <HelperTextItem variant="error">{t(memoryError)}</HelperTextItem>
             </HelperText>
           </FormHelperText>
         )}
       </FormGroup>
 
-      <FormSection title="Virtual CPUs" titleElement="h3">
+      <FormSection title={t('vm.edit.system.virtualCpus')} titleElement="h3">
         <FormGroup
-          label="Virtual Sockets"
+          label={t('templateForm.sockets')}
           fieldId="edit-vm-sockets"
           labelHelp={
             <FieldHelp
-              field="Virtual Sockets"
-              content="Total vCPUs = sockets × cores per socket × threads per core. Socket count affects guest-OS licensing and NUMA; keep the layout within the guest OS’s CPU limits."
+              field={t('templateForm.sockets')}
+              content={t('fieldHelp.vm.virtualSockets')}
             />
           }
         >
           <TextInput
             id="edit-vm-sockets"
             type="number"
-            aria-label="Virtual Sockets"
+            aria-label={t('templateForm.sockets')}
             value={draft.sockets}
             onChange={setNumber('sockets')}
           />
         </FormGroup>
 
-        <FormGroup label="Cores per Virtual Socket" fieldId="edit-vm-cores">
+        <FormGroup label={t('templateForm.cores')} fieldId="edit-vm-cores">
           <TextInput
             id="edit-vm-cores"
             type="number"
-            aria-label="Cores per Virtual Socket"
+            aria-label={t('templateForm.cores')}
             value={draft.coresPerSocket}
             onChange={setNumber('coresPerSocket')}
           />
         </FormGroup>
 
-        <FormGroup label="Threads per Core" fieldId="edit-vm-threads">
+        <FormGroup label={t('templateForm.threads')} fieldId="edit-vm-threads">
           <TextInput
             id="edit-vm-threads"
             type="number"
-            aria-label="Threads per Core"
+            aria-label={t('templateForm.threads')}
             value={draft.threadsPerCore}
             onChange={setNumber('threadsPerCore')}
           />
         </FormGroup>
       </FormSection>
 
-      <FormSection title="Advanced Parameters" titleElement="h3">
+      <FormSection title={t('vm.edit.system.advancedParams')} titleElement="h3">
         <FormGroup
-          label="Hardware clock time offset"
+          label={t('vm.edit.system.timezone')}
           fieldId="edit-vm-timezone"
           labelHelp={
             <FieldHelp
-              field="Hardware clock time offset"
-              content="The time zone the guest’s virtual hardware (RTC) clock runs in. Use the guest’s local time zone for Windows; UTC is typical for Linux."
+              field={t('vm.edit.system.timezone')}
+              content={t('fieldHelp.vm.hardwareClock')}
             />
           }
         >
           <FormSelect
             id="edit-vm-timezone"
-            aria-label="Hardware clock time offset"
+            aria-label={t('vm.edit.system.timezone')}
             value={draft.hardwareClockTimezone}
             onChange={(_event, value) => set('hardwareClockTimezone', value)}
           >
-            <FormSelectOption value="" label="Engine default" />
+            <FormSelectOption value="" label={t('vm.edit.system.timezone.default')} />
             {timezoneOptions(draft.hardwareClockTimezone).map((zone) => (
               <FormSelectOption key={zone} value={zone} label={zone} />
             ))}
@@ -208,32 +210,32 @@ export function SystemSection({ draft, set, overcommitPercent }: SystemSectionPr
         </FormGroup>
 
         <FormGroup
-          label="Serial number policy"
+          label={t('vm.edit.system.serialPolicy')}
           fieldId="edit-vm-serial-policy"
           labelHelp={
             <FieldHelp
-              field="Serial number policy"
-              content="What the engine reports as the VM’s DMI system serial number — the host’s ID, the VM’s own UUID, or a custom string. Some guest software licensing keys off this value."
+              field={t('vm.edit.system.serialPolicy')}
+              content={t('fieldHelp.vm.serialNumberPolicy')}
             />
           }
         >
           <FormSelect
             id="edit-vm-serial-policy"
-            aria-label="Serial number policy"
+            aria-label={t('vm.edit.system.serialPolicy')}
             value={draft.serialNumberPolicy}
             onChange={(_event, value) => set('serialNumberPolicy', value)}
           >
             {SERIAL_NUMBER_POLICY_OPTIONS.map((option) => (
-              <FormSelectOption key={option.value} value={option.value} label={option.label} />
+              <FormSelectOption key={option.value} value={option.value} label={t(option.labelId)} />
             ))}
           </FormSelect>
         </FormGroup>
 
         {draft.serialNumberPolicy === 'custom' && (
-          <FormGroup label="Custom serial number" fieldId="edit-vm-custom-serial">
+          <FormGroup label={t('vm.edit.system.customSerial')} fieldId="edit-vm-custom-serial">
             <TextInput
               id="edit-vm-custom-serial"
-              aria-label="Custom serial number"
+              aria-label={t('vm.edit.system.customSerial')}
               value={draft.customSerialNumber}
               onChange={(_event, value) => set('customSerialNumber', value)}
             />

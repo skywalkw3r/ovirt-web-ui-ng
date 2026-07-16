@@ -9,7 +9,9 @@ import {
   Checkbox,
   Divider,
   EmptyState,
+  EmptyStateActions,
   EmptyStateBody,
+  EmptyStateFooter,
   Flex,
   FlexItem,
   Form,
@@ -38,6 +40,7 @@ import { MinusCircleIcon, NetworkIcon } from '@patternfly/react-icons'
 import { StatusBadge } from '../StatusBadge'
 import { FieldHelp } from '../forms/FieldHelp'
 import { useT } from '../../i18n/useT'
+import type { MessageId } from '../../i18n/messages/en'
 import type { HostNic } from '../../api/schemas/host-nic'
 import { listHostNicDetails, type HostNicDetail } from '../../api/resources/hosts'
 import { useClusterNetworks } from '../../hooks/useClusterDetail'
@@ -169,7 +172,7 @@ function StaticIpFields({
         {addressError !== undefined && (
           <FormHelperText>
             <HelperText>
-              <HelperTextItem variant="error">{addressError}</HelperTextItem>
+              <HelperTextItem variant="error">{t(addressError)}</HelperTextItem>
             </HelperText>
           </FormHelperText>
         )}
@@ -191,7 +194,7 @@ function StaticIpFields({
         {maskError !== undefined && (
           <FormHelperText>
             <HelperText>
-              <HelperTextItem variant="error">{maskError}</HelperTextItem>
+              <HelperTextItem variant="error">{t(maskError)}</HelperTextItem>
             </HelperText>
           </FormHelperText>
         )}
@@ -208,7 +211,7 @@ function StaticIpFields({
         <FormHelperText>
           <HelperText>
             <HelperTextItem variant={gatewayError !== undefined ? 'error' : 'default'}>
-              {gatewayError ?? t('setupNetworks.gateway.optional')}
+              {gatewayError !== undefined ? t(gatewayError) : t('setupNetworks.gateway.optional')}
             </HelperTextItem>
           </HelperText>
         </FormHelperText>
@@ -233,17 +236,18 @@ function QosField({
   help: string
   name: string
   value: string
-  error?: string
+  error?: MessageId
   locked: boolean
   onChange: (value: string) => void
 }) {
+  const t = useT()
   return (
     <FormGroup label={label} fieldId={id} labelHelp={<FieldHelp field={label} content={help} />}>
       <TextInput
         id={id}
         type="number"
         min={0}
-        aria-label={`${label} for ${name}`}
+        aria-label={t('setupNetworks.aria.qosField', { label, name })}
         validated={error !== undefined ? 'error' : 'default'}
         value={value}
         isDisabled={locked}
@@ -252,7 +256,7 @@ function QosField({
       {error !== undefined && (
         <FormHelperText>
           <HelperText>
-            <HelperTextItem variant="error">{error}</HelperTextItem>
+            <HelperTextItem variant="error">{t(error)}</HelperTextItem>
           </HelperText>
         </FormHelperText>
       )}
@@ -273,24 +277,22 @@ function QosOverrideEditor({
   locked: boolean
   patch: (update: NetworkRowPatch) => void
 }) {
+  const t = useT()
   const errors = rowFieldErrors(row)
   const idBase = `setup-networks-${row.networkId}-qos`
   return (
     <>
       <FormGroup
         fieldId={`${idBase}-toggle`}
-        label="Host-network QoS"
+        label={t('setupNetworks.qos.label')}
         labelHelp={
-          <FieldHelp
-            field="Host-network QoS"
-            content="Override the network's data-center QoS for this host's attachment. Leave off to inherit the network's QoS."
-          />
+          <FieldHelp field={t('setupNetworks.qos.label')} content={t('setupNetworks.qos.help')} />
         }
       >
         <Checkbox
           id={`${idBase}-toggle`}
-          label="Override the network QoS for this host"
-          aria-label={`Override host-network QoS for ${row.networkName}`}
+          label={t('setupNetworks.qos.override')}
+          aria-label={t('setupNetworks.aria.qosOverride', { name: row.networkName })}
           isChecked={row.qosOverride}
           isDisabled={locked}
           onChange={(_event, checked) => patch({ qosOverride: checked })}
@@ -300,8 +302,8 @@ function QosOverrideEditor({
         <>
           <QosField
             id={`${idBase}-linkshare`}
-            label="Weighted share"
-            help="The share of the link's capacity this network gets relative to the others on it."
+            label={t('setupNetworks.qos.linkshare')}
+            help={t('setupNetworks.qos.linkshareHelp')}
             name={row.networkName}
             value={row.qosLinkshare}
             error={errors.qosLinkshare}
@@ -310,8 +312,8 @@ function QosOverrideEditor({
           />
           <QosField
             id={`${idBase}-upperlimit`}
-            label="Rate limit (Mbps)"
-            help="The maximum outbound bandwidth this network may use, in Mbps."
+            label={t('setupNetworks.qos.upperlimit')}
+            help={t('setupNetworks.qos.upperlimitHelp')}
             name={row.networkName}
             value={row.qosUpperlimit}
             error={errors.qosUpperlimit}
@@ -320,8 +322,8 @@ function QosOverrideEditor({
           />
           <QosField
             id={`${idBase}-realtime`}
-            label="Committed rate (Mbps)"
-            help="The minimum outbound bandwidth requested for this network, in Mbps."
+            label={t('setupNetworks.qos.realtime')}
+            help={t('setupNetworks.qos.realtimeHelp')}
             name={row.networkName}
             value={row.qosRealtime}
             error={errors.qosRealtime}
@@ -579,6 +581,7 @@ function NicLabelsEditor({
   onAdd: (label: string) => void
   onRemove: (label: string) => void
 }) {
+  const t = useT()
   const [value, setValue] = useState('')
   const commit = () => {
     const trimmed = value.trim()
@@ -588,28 +591,31 @@ function NicLabelsEditor({
   }
   return (
     <FormGroup
-      label="Labels"
+      label={t('setupNetworks.labels.label')}
       role="group"
       labelHelp={
         <FieldHelp
-          field="Labels"
-          content="Network labels attached to this NIC. The engine auto-wires every network that carries a matching label onto the NIC."
+          field={t('setupNetworks.labels.label')}
+          content={t('setupNetworks.labels.help')}
         />
       }
     >
       <Stack hasGutter>
         <StackItem>
           {labels.length === 0 ? (
-            <span>No labels</span>
+            <span>{t('setupNetworks.labels.none')}</span>
           ) : (
-            <LabelGroup aria-label={`Labels on ${nicName}`} numLabels={10}>
+            <LabelGroup
+              aria-label={t('setupNetworks.aria.labelsOn', { name: nicName })}
+              numLabels={10}
+            >
               {labels.map((label) => (
                 <Label
                   key={label}
                   isCompact
                   color="blue"
                   onClose={() => onRemove(label)}
-                  closeBtnAriaLabel={`Remove label ${label} from ${nicName}`}
+                  closeBtnAriaLabel={t('setupNetworks.aria.removeLabel', { label, name: nicName })}
                 >
                   {label}
                 </Label>
@@ -622,8 +628,8 @@ function NicLabelsEditor({
             <SplitItem isFilled>
               <TextInput
                 id={`setup-networks-nic-label-${nicName}`}
-                aria-label={`New label for ${nicName}`}
-                placeholder="Label"
+                aria-label={t('setupNetworks.aria.newLabel', { name: nicName })}
+                placeholder={t('setupNetworks.labels.placeholder')}
                 value={value}
                 onChange={(_event, next) => setValue(next)}
                 onKeyDown={(event) => {
@@ -636,7 +642,7 @@ function NicLabelsEditor({
             </SplitItem>
             <SplitItem>
               <Button variant="secondary" isDisabled={value.trim() === ''} onClick={commit}>
-                Add label
+                {t('setupNetworks.labels.add')}
               </Button>
             </SplitItem>
           </Split>
@@ -674,6 +680,7 @@ function NicCard({
   onRemoveLabel: (label: string) => void
   onOpenSriov: () => void
 }) {
+  const t = useT()
   const nicName = nic.name ?? ''
   return (
     <Card isCompact>
@@ -700,7 +707,7 @@ function NicCard({
                     isInline
                     icon={<NetworkIcon />}
                     onClick={onOpenSriov}
-                    aria-label={`Configure SR-IOV for ${nicName}`}
+                    aria-label={t('setupNetworks.aria.configureSriov', { name: nicName })}
                   >
                     SR-IOV
                   </Button>
@@ -800,7 +807,7 @@ function BondCard({
                   <FormSelectOption
                     key={entry.mode}
                     value={String(entry.mode)}
-                    label={entry.label}
+                    label={t(entry.labelId)}
                   />
                 ))}
               </FormSelect>
@@ -939,7 +946,11 @@ function CreateBondForm({
               onChange={(_event, value) => setMode(Number(value))}
             >
               {BOND_MODES.map((entry) => (
-                <FormSelectOption key={entry.mode} value={String(entry.mode)} label={entry.label} />
+                <FormSelectOption
+                  key={entry.mode}
+                  value={String(entry.mode)}
+                  label={t(entry.labelId)}
+                />
               ))}
             </FormSelect>
           </FormGroup>
@@ -1013,7 +1024,7 @@ function NameServersEditor({
         {error !== undefined && (
           <StackItem>
             <HelperText>
-              <HelperTextItem variant="error">{error}</HelperTextItem>
+              <HelperTextItem variant="error">{t(error)}</HelperTextItem>
             </HelperText>
           </StackItem>
         )}
@@ -1134,9 +1145,13 @@ export function SetupNetworksModal({
                   .map((error) => error.message)
                   .join('; ') || t('common.error.unknown')}
               </EmptyStateBody>
-              <Button variant="primary" onClick={retryFailed}>
-                {t('common.action.retry')}
-              </Button>
+              <EmptyStateFooter>
+                <EmptyStateActions>
+                  <Button variant="primary" onClick={retryFailed}>
+                    {t('common.action.retry')}
+                  </Button>
+                </EmptyStateActions>
+              </EmptyStateFooter>
             </EmptyState>
           )}
 
@@ -1244,7 +1259,9 @@ export function SetupNetworksModal({
               {guardError !== undefined && (
                 <StackItem>
                   <HelperText>
-                    <HelperTextItem variant="error">{guardError}</HelperTextItem>
+                    <HelperTextItem variant="error">
+                      {t(guardError.id, guardError.values)}
+                    </HelperTextItem>
                   </HelperText>
                 </StackItem>
               )}

@@ -34,9 +34,10 @@ import { SanStorageSection, type LunVgDataLoss } from './SanStorageSection'
 // already backing THIS domain are grayed with a "this storage domain" tooltip
 // via currentStorageDomainId. A selection that would wipe a foreign volume
 // group routes through the same danger confirmation as the create wizard and
-// then rides with override_luns (the BLL force flag). Strings are hardcoded
-// English pending the externalization pass, except the ids the create modal
-// already shipped (host picker, SAN section labels).
+// then rides with override_luns (the BLL force flag). Strings resolve through
+// the i18n catalog (extendStorage.* plus the shared storageForm.* / SAN ids the
+// create modal already shipped); the success toast stays hardcoded English by
+// convention.
 export function ExtendStorageDomainModal({
   domain,
   isOpen,
@@ -120,7 +121,7 @@ export function ExtendStorageDomainModal({
         aria-describedby="extend-storage-domain-body"
       >
         <ModalHeader
-          title={`Extend ${domain.name} with new LUNs`}
+          title={t('extendStorage.title', { name: domain.name })}
           labelId="extend-storage-domain-title"
         />
         <ModalBody id="extend-storage-domain-body">
@@ -189,7 +190,7 @@ export function ExtendStorageDomainModal({
             isLoading={pending}
             isDisabled={pending || hostName === '' || lunIds.length === 0}
           >
-            Extend
+            {t('extendStorage.action')}
           </Button>
           <Button variant="secondary" onClick={onClose} isDisabled={pending}>
             {t('common.action.cancel')}
@@ -202,14 +203,11 @@ export function ExtendStorageDomainModal({
           the override flag; cancel returns to the form. */}
       <ConfirmModal
         isOpen={confirmingVgLoss}
-        title="Destroy existing volume groups?"
-        confirmLabel="Extend and destroy data"
+        title={t('storageForm.vgLoss.title')}
+        confirmLabel={t('extendStorage.vgLoss.confirm')}
         body={
           <Stack hasGutter>
-            <StackItem>
-              The selected LUNs still belong to existing volume groups. Extending the domain with
-              them destroys those volume groups and everything stored on them.
-            </StackItem>
+            <StackItem>{t('extendStorage.vgLoss.body')}</StackItem>
             <StackItem>
               <ul>
                 {vgDataLoss.map((warning) => (

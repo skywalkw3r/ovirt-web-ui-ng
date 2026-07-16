@@ -2,7 +2,9 @@ import { useState } from 'react'
 import {
   Button,
   EmptyState,
+  EmptyStateActions,
   EmptyStateBody,
+  EmptyStateFooter,
   Flex,
   FlexItem,
   Form,
@@ -83,16 +85,24 @@ export function AffinityLabelsTab({ vmId }: { vmId: string }) {
           <EmptyStateBody>
             {labels.error instanceof Error ? labels.error.message : t('common.error.unknown')}
           </EmptyStateBody>
-          <Button variant="primary" onClick={() => void labels.refetch()}>
-            {t('common.action.retry')}
-          </Button>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="primary" onClick={() => void labels.refetch()}>
+                {t('common.action.retry')}
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 
       {labels.isSuccess && labels.data.length === 0 && (
         <EmptyState titleText={t('vmAffinityLabels.empty.title')}>
           <EmptyStateBody>{t('vmAffinityLabels.empty.body')}</EmptyStateBody>
-          {addButton}
+          {addButton && (
+            <EmptyStateFooter>
+              <EmptyStateActions>{addButton}</EmptyStateActions>
+            </EmptyStateFooter>
+          )}
         </EmptyState>
       )}
 
@@ -132,7 +142,7 @@ export function AffinityLabelsTab({ vmId }: { vmId: string }) {
         <ConfirmModal
           isOpen
           title={t('vmAffinityLabels.remove.confirm.title', { name: removing.name ?? '' })}
-          body={"This VM will no longer carry the affinity label's scheduling constraints."}
+          body={t('vmAffinityLabels.remove.confirm.body')}
           confirmLabel={t('vmAffinityLabels.remove')}
           onConfirm={() => {
             const label = removing
@@ -187,9 +197,13 @@ function AddLabelModal({
                 ? allLabels.error.message
                 : t('common.error.unknown')}
             </EmptyStateBody>
-            <Button variant="primary" onClick={() => void allLabels.refetch()}>
-              {t('common.action.retry')}
-            </Button>
+            <EmptyStateFooter>
+              <EmptyStateActions>
+                <Button variant="primary" onClick={() => void allLabels.refetch()}>
+                  {t('common.action.retry')}
+                </Button>
+              </EmptyStateActions>
+            </EmptyStateFooter>
           </EmptyState>
         )}
         {allLabels.isSuccess && (
@@ -209,7 +223,11 @@ function AddLabelModal({
               >
                 <FormSelectOption
                   value=""
-                  label={eligible.length === 0 ? 'No affinity labels available' : 'Select a label'}
+                  label={
+                    eligible.length === 0
+                      ? t('vmAffinityLabels.add.none')
+                      : t('vmAffinityLabels.add.select')
+                  }
                   isPlaceholder
                   isDisabled
                 />

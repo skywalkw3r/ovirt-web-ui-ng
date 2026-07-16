@@ -2,7 +2,9 @@ import { useMemo, useState, type ReactNode } from 'react'
 import {
   Button,
   EmptyState,
+  EmptyStateActions,
   EmptyStateBody,
+  EmptyStateFooter,
   Form,
   FormGroup,
   FormSelect,
@@ -111,6 +113,7 @@ function NicRateCell({
   nicId: string
   direction: 'rx' | 'tx'
 }) {
+  const t = useT()
   const { refreshIntervalMs } = useSettings()
   const stats = useQuery({
     queryKey: ['vm', vmId, 'nics', nicId, 'statistics'],
@@ -122,7 +125,9 @@ function NicRateCell({
     return (
       <Skeleton
         width="60%"
-        screenreaderText={direction === 'rx' ? 'Loading Rx rate' : 'Loading Tx rate'}
+        screenreaderText={
+          direction === 'rx' ? t('vmNics.rate.loadingRx') : t('vmNics.rate.loadingTx')
+        }
       />
     )
   }
@@ -390,9 +395,13 @@ export function NicsTab({ vmId }: { vmId: string }) {
           <EmptyStateBody>
             {nics.error instanceof Error ? nics.error.message : t('common.error.unknown')}
           </EmptyStateBody>
-          <Button variant="primary" onClick={() => void nics.refetch()}>
-            {t('common.action.retry')}
-          </Button>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="primary" onClick={() => void nics.refetch()}>
+                {t('common.action.retry')}
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 

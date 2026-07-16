@@ -4,7 +4,9 @@ import {
   BreadcrumbItem,
   Button,
   EmptyState,
+  EmptyStateActions,
   EmptyStateBody,
+  EmptyStateFooter,
   PageSection,
   Skeleton,
   Tab,
@@ -39,7 +41,7 @@ export function VnicProfileDetailPage() {
   if (loaded && !isAdmin) {
     return (
       <PageSection>
-        <NotPermitted what="vNIC profiles" />
+        <NotPermitted what={t('vnicProfiles.notPermitted')} />
       </PageSection>
     )
   }
@@ -63,9 +65,13 @@ export function VnicProfileDetailPage() {
           <EmptyStateBody>
             {profile.error instanceof Error ? profile.error.message : t('common.error.unknown')}
           </EmptyStateBody>
-          <Button variant="primary" onClick={() => void profile.refetch()}>
-            {t('common.action.retry')}
-          </Button>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="primary" onClick={() => void profile.refetch()}>
+                {t('common.action.retry')}
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 
@@ -112,9 +118,10 @@ export function VnicProfileDetailPage() {
                 <VnicProfileVmsTab profileId={profileId} />
               </TabContentBody>
             </Tab>
-            {/* Title hardcoded pending the i18n externalization pass (the VMs
-                subtab's hardcoded-strings parity note applies here too). */}
-            <Tab eventKey="templates" title={<TabTitleText>Templates</TabTitleText>}>
+            <Tab
+              eventKey="templates"
+              title={<TabTitleText>{t('vnicProfileDetail.tab.templates')}</TabTitleText>}
+            >
               <TabContentBody hasPadding>
                 <VnicProfileTemplatesTab profileId={profileId} />
               </TabContentBody>

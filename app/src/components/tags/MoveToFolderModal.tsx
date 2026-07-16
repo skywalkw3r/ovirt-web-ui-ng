@@ -3,7 +3,9 @@ import {
   Button,
   DropdownItem,
   EmptyState,
+  EmptyStateActions,
   EmptyStateBody,
+  EmptyStateFooter,
   Modal,
   ModalBody,
   ModalFooter,
@@ -165,17 +167,21 @@ export function MoveToFolderModal({
         {(tags.isError || (single !== undefined && entityTags.isError)) && (
           <EmptyState variant="sm" titleText={t('folders.tree.error.title')} status="danger">
             <EmptyStateBody>
-              {error instanceof Error ? error.message : 'Unknown error'}
+              {error instanceof Error ? error.message : t('common.error.unknown')}
             </EmptyStateBody>
-            <Button
-              variant="primary"
-              onClick={() => {
-                void tags.refetch()
-                void entityTags.refetch()
-              }}
-            >
-              <FormattedMessage id="action.retry" />
-            </Button>
+            <EmptyStateFooter>
+              <EmptyStateActions>
+                <Button
+                  variant="primary"
+                  onClick={() => {
+                    void tags.refetch()
+                    void entityTags.refetch()
+                  }}
+                >
+                  <FormattedMessage id="action.retry" />
+                </Button>
+              </EmptyStateActions>
+            </EmptyStateFooter>
           </EmptyState>
         )}
 

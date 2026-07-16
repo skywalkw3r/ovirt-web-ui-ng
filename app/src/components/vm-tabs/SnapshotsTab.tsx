@@ -4,7 +4,9 @@ import {
   AlertActionLink,
   Button,
   EmptyState,
+  EmptyStateActions,
   EmptyStateBody,
+  EmptyStateFooter,
   Form,
   FormGroup,
   FormHelperText,
@@ -319,9 +321,13 @@ export function SnapshotsTab({ vmId }: { vmId: string }) {
           <EmptyStateBody>
             {snapshots.error instanceof Error ? snapshots.error.message : t('common.error.unknown')}
           </EmptyStateBody>
-          <Button variant="primary" onClick={() => void snapshots.refetch()}>
-            {t('common.action.retry')}
-          </Button>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="primary" onClick={() => void snapshots.refetch()}>
+                {t('common.action.retry')}
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 

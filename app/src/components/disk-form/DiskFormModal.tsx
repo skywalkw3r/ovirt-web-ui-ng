@@ -109,22 +109,23 @@ function DiskProfileField({
   onChange: (profileId: string) => void
   isDisabled?: boolean
 }) {
+  const t = useT()
   const profiles = useStorageDomainDiskProfiles(storageDomainId)
   const options = profiles.data ?? []
 
   return (
-    <FormGroup label="Disk profile" fieldId="disk-profile">
+    <FormGroup label={t('diskForm.diskProfile')} fieldId="disk-profile">
       {profiles.isPending && storageDomainId ? (
-        <Skeleton height="2.25rem" screenreaderText="Loading disk profiles" />
+        <Skeleton height="2.25rem" screenreaderText={t('diskForm.diskProfile.loading')} />
       ) : (
         <FormSelect
           id="disk-profile"
-          aria-label="Disk profile"
+          aria-label={t('diskForm.diskProfile')}
           value={value}
           isDisabled={isDisabled || !storageDomainId}
           onChange={(_event, next) => onChange(next)}
         >
-          <FormSelectOption value={DEFAULT_PROFILE} label="Default profile" />
+          <FormSelectOption value={DEFAULT_PROFILE} label={t('diskForm.diskProfile.default')} />
           {options.map((profile) => (
             <FormSelectOption
               key={profile.id}
@@ -138,8 +139,8 @@ function DiskProfileField({
         <HelperText>
           <HelperTextItem>
             {storageDomainId
-              ? 'Leave on Default profile to use the storage domain default.'
-              : 'Select a storage domain to choose a profile.'}
+              ? t('diskForm.diskProfile.help')
+              : t('diskForm.diskProfile.selectDomain')}
           </HelperTextItem>
         </HelperText>
       </FormHelperText>
@@ -332,7 +333,7 @@ function CreateDiskForm({
       aria-labelledby="disk-form-title"
       aria-describedby="disk-form-body"
     >
-      <ModalHeader title="New disk" labelId="disk-form-title" />
+      <ModalHeader title={t('disks.new')} labelId="disk-form-title" />
       <ModalBody id="disk-form-body">
         <Form
           id="disk-form"
@@ -366,11 +367,11 @@ function CreateDiskForm({
             />
           </FormGroup>
 
-          <FormGroup label="Alias" isRequired fieldId="disk-alias">
+          <FormGroup label={t('diskForm.alias')} isRequired fieldId="disk-alias">
             <TextInput
               id="disk-alias"
               isRequired
-              aria-label="Disk alias"
+              aria-label={t('diskForm.diskAlias')}
               value={alias}
               validated={aliasError ? 'error' : 'default'}
               onChange={(_event, value) => setAlias(value)}
@@ -379,23 +380,23 @@ function CreateDiskForm({
             {aliasError && (
               <FormHelperText>
                 <HelperText>
-                  <HelperTextItem variant="error">Alias is required</HelperTextItem>
+                  <HelperTextItem variant="error">{t('diskForm.alias.required')}</HelperTextItem>
                 </HelperText>
               </FormHelperText>
             )}
           </FormGroup>
 
-          <FormGroup label="Description" fieldId="disk-description">
+          <FormGroup label={t('common.field.description')} fieldId="disk-description">
             <TextInput
               id="disk-description"
-              aria-label="Disk description"
+              aria-label={t('diskForm.description.aria')}
               value={description}
               onChange={(_event, value) => setDescription(value)}
             />
           </FormGroup>
 
           {diskType === 'image' && (
-            <FormGroup label="Size" isRequired fieldId="disk-size">
+            <FormGroup label={t('vmDisks.addModal.size')} isRequired fieldId="disk-size">
               <NumberInput
                 value={sizeGib}
                 min={MIN_DISK_SIZE_GIB}
@@ -404,9 +405,9 @@ function CreateDiskForm({
                 onChange={onSizeChange}
                 onBlur={onSizeBlur}
                 inputName="disk-size"
-                inputAriaLabel="Size in GiB"
-                minusBtnAriaLabel="Decrease size"
-                plusBtnAriaLabel="Increase size"
+                inputAriaLabel={t('vmDisks.addModal.sizeAria')}
+                minusBtnAriaLabel={t('vmDisks.addModal.decrease')}
+                plusBtnAriaLabel={t('vmDisks.addModal.increase')}
                 unit="GiB"
                 widthChars={6}
                 validated={sizeValid ? 'default' : 'error'}
@@ -414,7 +415,7 @@ function CreateDiskForm({
               <FormHelperText>
                 <HelperText>
                   <HelperTextItem variant={sizeValid ? 'default' : 'error'}>
-                    At least {MIN_DISK_SIZE_GIB} GiB
+                    {t('vmDisks.addModal.atLeast', { min: MIN_DISK_SIZE_GIB })}
                   </HelperTextItem>
                 </HelperText>
               </FormHelperText>
@@ -536,27 +537,38 @@ function CreateDiskForm({
           )}
 
           {diskType === 'image' && (
-            <FormGroup label="Storage domain" isRequired fieldId="disk-storage-domain">
+            <FormGroup
+              label={t('vmDisks.addModal.storageDomain')}
+              isRequired
+              fieldId="disk-storage-domain"
+            >
               {domains.isPending && (
-                <Skeleton height="2.25rem" screenreaderText="Loading storage domains" />
+                <Skeleton
+                  height="2.25rem"
+                  screenreaderText={t('vmDisks.addModal.storageDomain.loading')}
+                />
               )}
               {domains.isError && (
                 <>
                   <HelperText>
                     <HelperTextItem variant="error">
-                      Could not load storage domains:{' '}
-                      {domains.error instanceof Error ? domains.error.message : 'Unknown error'}
+                      {t('vmDisks.addModal.storageDomain.error', {
+                        message:
+                          domains.error instanceof Error
+                            ? domains.error.message
+                            : t('common.error.unknown'),
+                      })}
                     </HelperTextItem>
                   </HelperText>
                   <Button variant="link" isInline onClick={() => void domains.refetch()}>
-                    Retry
+                    {t('common.action.retry')}
                   </Button>
                 </>
               )}
               {domains.isSuccess && (
                 <FormSelect
                   id="disk-storage-domain"
-                  aria-label="Storage domain"
+                  aria-label={t('vmDisks.addModal.storageDomain')}
                   value={storageDomainId}
                   onChange={(_event, value) => {
                     setStorageDomainId(value)
@@ -568,8 +580,8 @@ function CreateDiskForm({
                     value=""
                     label={
                       targets.length === 0
-                        ? 'No data storage domain available'
-                        : 'Select a storage domain'
+                        ? t('diskForm.storageDomain.none')
+                        : t('vmDisks.addModal.storageDomain.select')
                     }
                     isPlaceholder
                     isDisabled
@@ -584,7 +596,7 @@ function CreateDiskForm({
 
           {diskType === 'image' && (
             <FormGroup
-              label="Allocation policy"
+              label={t('diskForm.allocation')}
               role="radiogroup"
               isStack
               fieldId="disk-allocation"
@@ -592,8 +604,8 @@ function CreateDiskForm({
               <Radio
                 id="disk-allocation-thin"
                 name="disk-allocation"
-                label="Thin provision"
-                aria-label="Thin provision"
+                label={t('diskForm.allocation.thin')}
+                aria-label={t('diskForm.allocation.thin')}
                 isChecked={effectiveAllocation === 'thin'}
                 isDisabled={managedBlockDomain}
                 onChange={() => {
@@ -604,8 +616,8 @@ function CreateDiskForm({
               <Radio
                 id="disk-allocation-preallocated"
                 name="disk-allocation"
-                label="Preallocated"
-                aria-label="Preallocated"
+                label={t('disks.alloc.preallocated')}
+                aria-label={t('disks.alloc.preallocated')}
                 isChecked={effectiveAllocation === 'preallocated'}
                 isDisabled={managedBlockDomain}
                 onChange={() => {
@@ -617,10 +629,16 @@ function CreateDiskForm({
                 <HelperText>
                   <HelperTextItem>
                     {managedBlockDomain
-                      ? 'Managed block storage domains require preallocated disks.'
+                      ? t('diskForm.allocation.managedBlock')
                       : blockDefaultPreallocated && !allocationTouched
-                        ? 'Block storage domains default to preallocated — switch to thin if you prefer.'
-                        : `Format: ${derived.format === 'cow' ? 'QCOW2 (thin)' : 'Raw (preallocated)'}`}
+                        ? t('diskForm.allocation.blockDefault')
+                        : t('diskForm.format.label', {
+                            format: t(
+                              derived.format === 'cow'
+                                ? 'diskForm.format.qcow2'
+                                : 'diskForm.format.raw',
+                            ),
+                          })}
                   </HelperTextItem>
                 </HelperText>
               </FormHelperText>
@@ -631,7 +649,7 @@ function CreateDiskForm({
             <FormGroup fieldId="disk-bootable">
               <Switch
                 id="disk-bootable"
-                label="Bootable"
+                label={t('vmDisks.addModal.bootable')}
                 isChecked={bootable}
                 onChange={(_event, checked) => setBootable(checked)}
               />
@@ -641,7 +659,7 @@ function CreateDiskForm({
           <FormGroup fieldId="disk-shareable">
             <Switch
               id="disk-shareable"
-              label="Shareable"
+              label={t('diskGeneral.term.shareable')}
               isChecked={shareable}
               onChange={(_event, checked) => setShareable(checked)}
             />
@@ -650,7 +668,7 @@ function CreateDiskForm({
           <FormGroup fieldId="disk-wipe">
             <Switch
               id="disk-wipe"
-              label="Wipe after delete"
+              label={t('diskGeneral.term.wipeAfterDelete')}
               isChecked={diskType === 'image' ? effectiveWipe : wipeAfterDelete}
               onChange={(_event, checked) => {
                 setWipeTouched(true)
@@ -676,10 +694,10 @@ function CreateDiskForm({
           isLoading={pending}
           isDisabled={!canSubmit}
         >
-          Create
+          {t('common.action.create')}
         </Button>
         <Button variant="link" onClick={onClose} isDisabled={pending}>
-          Cancel
+          {t('common.action.cancel')}
         </Button>
       </ModalFooter>
     </Modal>
@@ -762,7 +780,11 @@ function EditDiskForm({ disk, onClose }: { disk: Disk; onClose: () => void }) {
   }
 
   const allocationText =
-    disk.sparse === undefined ? '—' : disk.sparse ? 'Thin provision' : 'Preallocated'
+    disk.sparse === undefined
+      ? '—'
+      : disk.sparse
+        ? t('diskForm.allocation.thin')
+        : t('disks.alloc.preallocated')
 
   return (
     <Modal
@@ -772,7 +794,10 @@ function EditDiskForm({ disk, onClose }: { disk: Disk; onClose: () => void }) {
       aria-labelledby="disk-form-title"
       aria-describedby="disk-form-body"
     >
-      <ModalHeader title={`Edit disk '${diskLabel(disk)}'`} labelId="disk-form-title" />
+      <ModalHeader
+        title={t('diskForm.edit.title', { name: diskLabel(disk) })}
+        labelId="disk-form-title"
+      />
       <ModalBody id="disk-form-body">
         <Form
           id="disk-form"
@@ -781,11 +806,11 @@ function EditDiskForm({ disk, onClose }: { disk: Disk; onClose: () => void }) {
             submit()
           }}
         >
-          <FormGroup label="Alias" isRequired fieldId="disk-alias">
+          <FormGroup label={t('diskForm.alias')} isRequired fieldId="disk-alias">
             <TextInput
               id="disk-alias"
               isRequired
-              aria-label="Disk alias"
+              aria-label={t('diskForm.diskAlias')}
               value={alias}
               validated={aliasError ? 'error' : 'default'}
               onChange={(_event, value) => setAlias(value)}
@@ -794,16 +819,16 @@ function EditDiskForm({ disk, onClose }: { disk: Disk; onClose: () => void }) {
             {aliasError && (
               <FormHelperText>
                 <HelperText>
-                  <HelperTextItem variant="error">Alias is required</HelperTextItem>
+                  <HelperTextItem variant="error">{t('diskForm.alias.required')}</HelperTextItem>
                 </HelperText>
               </FormHelperText>
             )}
           </FormGroup>
 
-          <FormGroup label="Description" fieldId="disk-description">
+          <FormGroup label={t('common.field.description')} fieldId="disk-description">
             <TextInput
               id="disk-description"
-              aria-label="Disk description"
+              aria-label={t('diskForm.description.aria')}
               value={description}
               onChange={(_event, value) => setDescription(value)}
             />
@@ -813,12 +838,12 @@ function EditDiskForm({ disk, onClose }: { disk: Disk; onClose: () => void }) {
               allocation/format/base size). Allocation is an image concept —
               hidden for a direct-LUN disk. */}
           {!isLun && (
-            <FormGroup label="Allocation policy" fieldId="disk-allocation-ro">
+            <FormGroup label={t('diskForm.allocation')} fieldId="disk-allocation-ro">
               <TextInput id="disk-allocation-ro" value={allocationText} readOnlyVariant="default" />
             </FormGroup>
           )}
 
-          <FormGroup label="Current size" fieldId="disk-current-size">
+          <FormGroup label={t('diskForm.currentSize')} fieldId="disk-current-size">
             <TextInput
               id="disk-current-size"
               value={formatBytes(currentBytes)}
@@ -836,7 +861,7 @@ function EditDiskForm({ disk, onClose }: { disk: Disk; onClose: () => void }) {
           {/* Grow-only extend — image disks only. A direct-LUN disk has no
               image to grow (webadmin keeps sizeExtend unavailable for LUN). */}
           {!isLun && (
-            <FormGroup label="Extend size by" fieldId="disk-extend">
+            <FormGroup label={t('diskForm.extendSize')} fieldId="disk-extend">
               <NumberInput
                 value={extendGib}
                 min={0}
@@ -845,9 +870,9 @@ function EditDiskForm({ disk, onClose }: { disk: Disk; onClose: () => void }) {
                 onChange={onExtendChange}
                 onBlur={onExtendBlur}
                 inputName="disk-extend"
-                inputAriaLabel="Extend size by, in GiB"
-                minusBtnAriaLabel="Decrease extend amount"
-                plusBtnAriaLabel="Increase extend amount"
+                inputAriaLabel={t('diskForm.extendSize.aria')}
+                minusBtnAriaLabel={t('diskForm.extendSize.decrease')}
+                plusBtnAriaLabel={t('diskForm.extendSize.increase')}
                 unit="GiB"
                 widthChars={6}
                 validated={extendValid ? 'default' : 'error'}
@@ -856,8 +881,8 @@ function EditDiskForm({ disk, onClose }: { disk: Disk; onClose: () => void }) {
                 <HelperText>
                   <HelperTextItem variant={extendValid ? 'default' : 'error'}>
                     {extend > 0
-                      ? `New size: ${formatBytes(newBytes)}. Disks can only be grown.`
-                      : 'Disks can only be grown. Leave at 0 to keep the current size.'}
+                      ? t('diskForm.extendSize.newSize', { size: formatBytes(newBytes) })
+                      : t('diskForm.extendSize.help')}
                   </HelperTextItem>
                 </HelperText>
               </FormHelperText>
@@ -867,7 +892,7 @@ function EditDiskForm({ disk, onClose }: { disk: Disk; onClose: () => void }) {
           <FormGroup fieldId="disk-shareable">
             <Switch
               id="disk-shareable"
-              label="Shareable"
+              label={t('diskGeneral.term.shareable')}
               isChecked={shareable}
               onChange={(_event, checked) => setShareable(checked)}
             />
@@ -876,7 +901,7 @@ function EditDiskForm({ disk, onClose }: { disk: Disk; onClose: () => void }) {
           <FormGroup fieldId="disk-wipe">
             <Switch
               id="disk-wipe"
-              label="Wipe after delete"
+              label={t('diskGeneral.term.wipeAfterDelete')}
               isChecked={wipeAfterDelete}
               onChange={(_event, checked) => setWipeAfterDelete(checked)}
             />
@@ -901,10 +926,10 @@ function EditDiskForm({ disk, onClose }: { disk: Disk; onClose: () => void }) {
           isLoading={update.isPending}
           isDisabled={!canSubmit}
         >
-          Save
+          {t('common.action.save')}
         </Button>
         <Button variant="link" onClick={onClose} isDisabled={update.isPending}>
-          Cancel
+          {t('common.action.cancel')}
         </Button>
       </ModalFooter>
     </Modal>

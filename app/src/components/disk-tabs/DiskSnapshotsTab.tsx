@@ -1,5 +1,12 @@
 import { useQuery } from '@tanstack/react-query'
-import { Button, EmptyState, EmptyStateBody, Skeleton } from '@patternfly/react-core'
+import {
+  Button,
+  EmptyState,
+  EmptyStateActions,
+  EmptyStateBody,
+  EmptyStateFooter,
+  Skeleton,
+} from '@patternfly/react-core'
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table'
 import {
   listStorageDomainDiskSnapshots,
@@ -76,11 +83,8 @@ export function DiskSnapshotsTab({ disk }: { disk: Disk }) {
   // isPending would otherwise spin forever).
   if (storageDomainIds.length === 0) {
     return (
-      <EmptyState titleText="No snapshots">
-        <EmptyStateBody>
-          Only image disks on a storage domain carry snapshots — direct-LUN disks have no snapshot
-          chain.
-        </EmptyStateBody>
+      <EmptyState titleText={t('vmSnapshots.empty.title')}>
+        <EmptyStateBody>{t('diskSnapshots.emptyLun.body')}</EmptyStateBody>
       </EmptyState>
     )
   }
@@ -89,30 +93,32 @@ export function DiskSnapshotsTab({ disk }: { disk: Disk }) {
     return (
       <>
         <Skeleton height="2.5rem" style={{ marginBottom: '0.5rem' }} />
-        <Skeleton height="2.5rem" screenreaderText="Loading disk snapshots" />
+        <Skeleton height="2.5rem" screenreaderText={t('diskSnapshots.loading')} />
       </>
     )
   }
 
   if (snapshots.isError) {
     return (
-      <EmptyState titleText="Could not load disk snapshots" status="danger">
+      <EmptyState titleText={t('diskSnapshots.error.title')} status="danger">
         <EmptyStateBody>
           {snapshots.error instanceof Error ? snapshots.error.message : t('common.error.unknown')}
         </EmptyStateBody>
-        <Button variant="primary" onClick={() => void snapshots.refetch()}>
-          {t('common.action.retry')}
-        </Button>
+        <EmptyStateFooter>
+          <EmptyStateActions>
+            <Button variant="primary" onClick={() => void snapshots.refetch()}>
+              {t('common.action.retry')}
+            </Button>
+          </EmptyStateActions>
+        </EmptyStateFooter>
       </EmptyState>
     )
   }
 
   if (snapshots.data.length === 0) {
     return (
-      <EmptyState titleText="No snapshots">
-        <EmptyStateBody>
-          Taking a VM snapshot that includes this disk creates an image here.
-        </EmptyStateBody>
+      <EmptyState titleText={t('vmSnapshots.empty.title')}>
+        <EmptyStateBody>{t('diskSnapshots.empty.body')}</EmptyStateBody>
       </EmptyState>
     )
   }
@@ -130,13 +136,13 @@ export function DiskSnapshotsTab({ disk }: { disk: Disk }) {
   )
 
   return (
-    <Table aria-label="Disk snapshots" variant="compact">
+    <Table aria-label={t('diskSnapshots.table.ariaLabel')} variant="compact">
       <Thead>
         <Tr>
           <Th sort={thSort(DISK_SNAPSHOT_KEYS, 0)}>{t('common.field.description')}</Th>
           <Th>{t('common.field.status')}</Th>
-          <Th sort={thSort(DISK_SNAPSHOT_KEYS, 2)}>Provisioned Size</Th>
-          <Th sort={thSort(DISK_SNAPSHOT_KEYS, 3)}>Actual Size</Th>
+          <Th sort={thSort(DISK_SNAPSHOT_KEYS, 2)}>{t('diskSnapshots.column.provisionedSize')}</Th>
+          <Th sort={thSort(DISK_SNAPSHOT_KEYS, 3)}>{t('disks.column.actualSize')}</Th>
         </Tr>
       </Thead>
       <Tbody>
@@ -148,8 +154,10 @@ export function DiskSnapshotsTab({ disk }: { disk: Disk }) {
             <Td dataLabel={t('common.field.status')}>
               <SnapshotStatusLabel status={snapshot.status} />
             </Td>
-            <Td dataLabel="Provisioned Size">{formatBytes(snapshot.provisioned_size)}</Td>
-            <Td dataLabel="Actual Size">{formatBytes(snapshot.actual_size)}</Td>
+            <Td dataLabel={t('diskSnapshots.column.provisionedSize')}>
+              {formatBytes(snapshot.provisioned_size)}
+            </Td>
+            <Td dataLabel={t('disks.column.actualSize')}>{formatBytes(snapshot.actual_size)}</Td>
           </Tr>
         ))}
       </Tbody>

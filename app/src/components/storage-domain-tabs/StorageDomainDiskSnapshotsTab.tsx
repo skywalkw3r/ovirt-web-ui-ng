@@ -1,5 +1,12 @@
 import { useQuery } from '@tanstack/react-query'
-import { Button, EmptyState, EmptyStateBody, Skeleton } from '@patternfly/react-core'
+import {
+  Button,
+  EmptyState,
+  EmptyStateActions,
+  EmptyStateBody,
+  EmptyStateFooter,
+  Skeleton,
+} from '@patternfly/react-core'
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table'
 import { Link } from '@tanstack/react-router'
 import { listStorageDomainDiskSnapshots } from '../../api/resources/diskSnapshots'
@@ -62,30 +69,32 @@ export function StorageDomainDiskSnapshotsTab({ storageDomainId }: { storageDoma
     return (
       <>
         <Skeleton height="2.5rem" style={{ marginBottom: '0.5rem' }} />
-        <Skeleton height="2.5rem" screenreaderText="Loading disk snapshots" />
+        <Skeleton height="2.5rem" screenreaderText={t('storage.diskSnapshots.loading')} />
       </>
     )
   }
 
   if (snapshots.isError) {
     return (
-      <EmptyState titleText="Could not load disk snapshots" status="danger">
+      <EmptyState titleText={t('storage.diskSnapshots.error.title')} status="danger">
         <EmptyStateBody>
           {snapshots.error instanceof Error ? snapshots.error.message : t('common.error.unknown')}
         </EmptyStateBody>
-        <Button variant="primary" onClick={() => void snapshots.refetch()}>
-          {t('common.action.retry')}
-        </Button>
+        <EmptyStateFooter>
+          <EmptyStateActions>
+            <Button variant="primary" onClick={() => void snapshots.refetch()}>
+              {t('common.action.retry')}
+            </Button>
+          </EmptyStateActions>
+        </EmptyStateFooter>
       </EmptyState>
     )
   }
 
   if (snapshots.data.length === 0) {
     return (
-      <EmptyState titleText="No disk snapshots">
-        <EmptyStateBody>
-          Snapshot images of VM disks stored on this domain appear here.
-        </EmptyStateBody>
+      <EmptyState titleText={t('storage.diskSnapshots.empty.title')}>
+        <EmptyStateBody>{t('storage.diskSnapshots.empty.body')}</EmptyStateBody>
       </EmptyState>
     )
   }
@@ -104,13 +113,15 @@ export function StorageDomainDiskSnapshotsTab({ storageDomainId }: { storageDoma
   )
 
   return (
-    <Table aria-label="Disk snapshots" variant="compact">
+    <Table aria-label={t('storage.diskSnapshots.table.ariaLabel')} variant="compact">
       <Thead>
         <Tr>
-          <Th sort={thSort(SD_DISK_SNAPSHOT_KEYS, 0)}>Disk</Th>
+          <Th sort={thSort(SD_DISK_SNAPSHOT_KEYS, 0)}>{t('storage.diskSnapshots.column.disk')}</Th>
           <Th sort={thSort(SD_DISK_SNAPSHOT_KEYS, 1)}>{t('common.field.description')}</Th>
           <Th>{t('common.field.status')}</Th>
-          <Th sort={thSort(SD_DISK_SNAPSHOT_KEYS, 3)}>Provisioned Size</Th>
+          <Th sort={thSort(SD_DISK_SNAPSHOT_KEYS, 3)}>
+            {t('storage.diskSnapshots.column.provisionedSize')}
+          </Th>
           {/* actual_size is intentionally left out: 4 data columns keeps the
               tab under the ColumnPicker threshold and webadmin leads with the
               virtual size here too */}
@@ -119,7 +130,7 @@ export function StorageDomainDiskSnapshotsTab({ storageDomainId }: { storageDoma
       <Tbody>
         {sortedSnapshots.map((snapshot) => (
           <Tr key={snapshot.id}>
-            <Td dataLabel="Disk">
+            <Td dataLabel={t('storage.diskSnapshots.column.disk')}>
               {snapshot.disk?.id ? (
                 <Link to="/disks/$diskId" params={{ diskId: snapshot.disk.id }}>
                   {snapshot.alias ?? snapshot.disk.id}
@@ -134,7 +145,9 @@ export function StorageDomainDiskSnapshotsTab({ storageDomainId }: { storageDoma
             <Td dataLabel={t('common.field.status')}>
               <SnapshotStatusLabel status={snapshot.status} />
             </Td>
-            <Td dataLabel="Provisioned Size">{formatBytes(snapshot.provisioned_size)}</Td>
+            <Td dataLabel={t('storage.diskSnapshots.column.provisionedSize')}>
+              {formatBytes(snapshot.provisioned_size)}
+            </Td>
           </Tr>
         ))}
       </Tbody>

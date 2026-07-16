@@ -1,5 +1,13 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Bullseye, Button, EmptyState, EmptyStateBody, Spinner } from '@patternfly/react-core'
+import {
+  Bullseye,
+  Button,
+  EmptyState,
+  EmptyStateActions,
+  EmptyStateBody,
+  EmptyStateFooter,
+  Spinner,
+} from '@patternfly/react-core'
 import { FormattedMessage } from 'react-intl'
 import { buildConsoleConnection, listGraphicsConsoles } from '../api/resources/consoles'
 import type { GraphicsConsole } from '../api/schemas/console'
@@ -199,9 +207,13 @@ function FullWindowConsole({ vmId, onSessionEnded }: { vmId: string; onSessionEn
       <Bullseye style={{ height: '100vh' }}>
         <EmptyState titleText={t('vmConsole.listError.title')} status="danger">
           <EmptyStateBody>{listError}</EmptyStateBody>
-          <Button variant="primary" onClick={() => setAttempt((n) => n + 1)}>
-            <FormattedMessage id="common.action.retry" />
-          </Button>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="primary" onClick={() => setAttempt((n) => n + 1)}>
+                <FormattedMessage id="common.action.retry" />
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       </Bullseye>
     )

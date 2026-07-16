@@ -1,10 +1,18 @@
 import type { ReactNode } from 'react'
-import { Button, EmptyState, EmptyStateBody, Skeleton } from '@patternfly/react-core'
+import {
+  Button,
+  EmptyState,
+  EmptyStateActions,
+  EmptyStateBody,
+  EmptyStateFooter,
+  Skeleton,
+} from '@patternfly/react-core'
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table'
 import type { UseQueryResult } from '@tanstack/react-query'
 import type { Vm } from '../../api/schemas/vm'
 import type { ColumnPrefs } from '../../hooks/useColumnPrefs'
 import { sortRows, useColumnSort } from '../../hooks/useColumnSort'
+import { useT } from '../../i18n/useT'
 import { ResizableTh, resizableTableProps } from '../list-toolbar/ResizableTh'
 import type { VmMembershipColumn } from './columns'
 
@@ -31,36 +39,46 @@ export function VmMembershipTable({
   toolbar?: ReactNode
   resizePrefs?: ColumnPrefs
 }) {
+  const t = useT()
   // client-side header sort; no default — the engine list order stands until a
   // header is clicked (see hooks/useColumnSort). Called before the early returns
   // below so hook order stays stable across the four states.
   const { sort, thSort } = useColumnSort()
 
+  // A column's header/dataLabel text: resolve labelId through t() (the shared
+  // Name/Status columns), else the pre-resolved label the caller passed.
+  const labelOf = (column: VmMembershipColumn) =>
+    column.labelId ? t(column.labelId) : (column.label ?? '')
+
   if (query.isPending) {
     return (
       <>
         <Skeleton height="2.5rem" style={{ marginBottom: '0.5rem' }} />
-        <Skeleton height="2.5rem" screenreaderText="Loading virtual machines" />
+        <Skeleton height="2.5rem" screenreaderText={t('vms.loading')} />
       </>
     )
   }
 
   if (query.isError) {
     return (
-      <EmptyState titleText="Could not load virtual machines" status="danger">
+      <EmptyState titleText={t('vms.error.title')} status="danger">
         <EmptyStateBody>
-          {query.error instanceof Error ? query.error.message : 'Unknown error'}
+          {query.error instanceof Error ? query.error.message : t('common.error.unknown')}
         </EmptyStateBody>
-        <Button variant="primary" onClick={() => void query.refetch()}>
-          Retry
-        </Button>
+        <EmptyStateFooter>
+          <EmptyStateActions>
+            <Button variant="primary" onClick={() => void query.refetch()}>
+              {t('common.action.retry')}
+            </Button>
+          </EmptyStateActions>
+        </EmptyStateFooter>
       </EmptyState>
     )
   }
 
   if (query.data.length === 0) {
     return (
-      <EmptyState titleText="No virtual machines">
+      <EmptyState titleText={t('vms.empty.title')}>
         <EmptyStateBody>{emptyBody}</EmptyStateBody>
       </EmptyState>
     )
@@ -79,6 +97,7 @@ export function VmMembershipTable({
       <Thead>
         <Tr>
           {columns.map((column, index) => {
+            const label = labelOf(column)
             const sortProps =
               column.sortValue !== undefined
                 ? thSort(
@@ -90,16 +109,16 @@ export function VmMembershipTable({
               <ResizableTh
                 key={column.key}
                 columnKey={column.key}
-                label={column.label}
+                label={label}
                 prefs={resizePrefs}
                 presetWidth={column.width}
                 sort={sortProps}
               >
-                {column.label}
+                {label}
               </ResizableTh>
             ) : (
               <Th key={column.key} width={column.width} sort={sortProps}>
-                {column.label}
+                {label}
               </Th>
             )
           })}
@@ -111,7 +130,7 @@ export function VmMembershipTable({
             {columns.map((column) => (
               <Td
                 key={column.key}
-                dataLabel={column.label}
+                dataLabel={labelOf(column)}
                 modifier={column.modifier}
                 title={column.title?.(vm)}
               >

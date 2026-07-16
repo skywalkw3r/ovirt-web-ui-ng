@@ -6,6 +6,7 @@ import {
   HelperTextItem,
   Radio,
 } from '@patternfly/react-core'
+import { useT } from '../../i18n/useT'
 import { FieldHelp } from '../forms/FieldHelp'
 import { SPM_PRIORITY_OPTIONS } from './editHostDraft'
 
@@ -29,20 +30,18 @@ export function SpmSection({
   draft: SpmDraft
   set: (key: 'spmPriority', value: number) => void
 }) {
+  const t = useT()
   const isCustom = !SPM_PRIORITY_OPTIONS.some((option) => option.value === draft.spmPriority)
 
   return (
     <Form onSubmit={(event) => event.preventDefault()}>
       <FormGroup
-        label="SPM priority"
+        label={t('hostForm.spm.priority')}
         role="radiogroup"
         isStack
         fieldId="edit-host-spm-priority"
         labelHelp={
-          <FieldHelp
-            field="SPM priority"
-            content="The Storage Pool Manager is the single host that performs a data center’s storage metadata operations — creating, deleting, and extending disks. Only one host holds the role at a time; this setting biases which host is elected."
-          />
+          <FieldHelp field={t('hostForm.spm.priority')} content={t('hostForm.spm.priority.help')} />
         }
       >
         {SPM_PRIORITY_OPTIONS.map((option) => (
@@ -50,7 +49,7 @@ export function SpmSection({
             key={option.value}
             id={`edit-host-spm-priority-${option.value}`}
             name="edit-host-spm-priority"
-            label={option.label}
+            label={t(option.labelId)}
             isChecked={draft.spmPriority === option.value}
             onChange={() => set('spmPriority', option.value)}
           />
@@ -59,7 +58,7 @@ export function SpmSection({
           <Radio
             id="edit-host-spm-priority-custom"
             name="edit-host-spm-priority"
-            label={`Custom (${draft.spmPriority})`}
+            label={t('hostForm.spm.custom', { priority: draft.spmPriority })}
             isChecked
             isDisabled
             onChange={() => {}}
@@ -67,10 +66,7 @@ export function SpmSection({
         )}
         <FormHelperText>
           <HelperText>
-            <HelperTextItem>
-              Higher priority makes this host more likely to be elected Storage Pool Manager; Never
-              excludes it from the election.
-            </HelperTextItem>
+            <HelperTextItem>{t('hostForm.spm.help')}</HelperTextItem>
           </HelperText>
         </FormHelperText>
       </FormGroup>

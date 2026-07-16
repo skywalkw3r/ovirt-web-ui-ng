@@ -2,7 +2,9 @@ import { useMemo, useState, type FormEvent, type ReactNode } from 'react'
 import {
   Button,
   EmptyState,
+  EmptyStateActions,
   EmptyStateBody,
+  EmptyStateFooter,
   Form,
   FormGroup,
   FormHelperText,
@@ -402,9 +404,13 @@ export function DisksTab({ vmId }: { vmId: string }) {
           <EmptyStateBody>
             {disks.error instanceof Error ? disks.error.message : t('common.error.unknown')}
           </EmptyStateBody>
-          <Button variant="primary" onClick={() => void disks.refetch()}>
-            {t('common.action.retry')}
-          </Button>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="primary" onClick={() => void disks.refetch()}>
+                {t('common.action.retry')}
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 
@@ -589,22 +595,23 @@ function DiskProfileSelect({
   value: string
   onChange: (profileId: string) => void
 }) {
+  const t = useT()
   const profiles = useStorageDomainDiskProfiles(storageDomainId)
   const options = profiles.data ?? []
 
   return (
-    <FormGroup label="Disk profile" fieldId="add-disk-profile">
+    <FormGroup label={t('vmDisks.addModal.diskProfile')} fieldId="add-disk-profile">
       {profiles.isPending && storageDomainId ? (
-        <Skeleton height="2.25rem" screenreaderText="Loading disk profiles" />
+        <Skeleton height="2.25rem" screenreaderText={t('vmDisks.addModal.diskProfile.loading')} />
       ) : (
         <FormSelect
           id="add-disk-profile"
-          aria-label="Disk profile"
+          aria-label={t('vmDisks.addModal.diskProfile')}
           value={value}
           isDisabled={!storageDomainId}
           onChange={(_event, next) => onChange(next)}
         >
-          <FormSelectOption value="" label="Default profile" />
+          <FormSelectOption value="" label={t('vmDisks.addModal.diskProfile.default')} />
           {options.map((profile) => (
             <FormSelectOption
               key={profile.id}
@@ -618,8 +625,8 @@ function DiskProfileSelect({
         <HelperText>
           <HelperTextItem>
             {storageDomainId
-              ? 'Leave on Default profile to use the storage domain default.'
-              : 'Select a storage domain to choose a profile.'}
+              ? t('vmDisks.addModal.diskProfile.help')
+              : t('vmDisks.addModal.diskProfile.helpNoDomain')}
           </HelperTextItem>
         </HelperText>
       </FormHelperText>
@@ -903,10 +910,10 @@ function AddDiskModal({
             />
           )}
           {diskType === 'image' && (
-            <FormGroup label="Interface" fieldId="add-disk-interface">
+            <FormGroup label={t('vmDisks.column.interface')} fieldId="add-disk-interface">
               <FormSelect
                 id="add-disk-interface"
-                aria-label="Interface"
+                aria-label={t('vmDisks.column.interface')}
                 value={diskInterface}
                 onChange={(_event, value) => setDiskInterface(value)}
               >
@@ -918,7 +925,7 @@ function AddDiskModal({
           )}
           {diskType === 'image' && (
             <FormGroup
-              label="Allocation policy"
+              label={t('vmDisks.addModal.allocation')}
               role="radiogroup"
               isStack
               fieldId="add-disk-allocation"
@@ -926,8 +933,8 @@ function AddDiskModal({
               <Radio
                 id="add-disk-allocation-thin"
                 name="add-disk-allocation"
-                label="Thin provision"
-                aria-label="Thin provision"
+                label={t('vmDisks.addModal.allocation.thin')}
+                aria-label={t('vmDisks.addModal.allocation.thin')}
                 isChecked={effectiveAllocation === 'thin'}
                 isDisabled={managedBlockDomain}
                 onChange={() => {
@@ -938,8 +945,8 @@ function AddDiskModal({
               <Radio
                 id="add-disk-allocation-preallocated"
                 name="add-disk-allocation"
-                label="Preallocated"
-                aria-label="Preallocated"
+                label={t('disks.alloc.preallocated')}
+                aria-label={t('disks.alloc.preallocated')}
                 isChecked={effectiveAllocation === 'preallocated'}
                 isDisabled={managedBlockDomain}
                 onChange={() => {
@@ -951,10 +958,15 @@ function AddDiskModal({
                 <HelperText>
                   <HelperTextItem>
                     {managedBlockDomain
-                      ? 'Managed block storage domains require preallocated disks.'
+                      ? t('vmDisks.addModal.allocation.managedBlock')
                       : blockDefaultPreallocated && !allocationTouched
-                        ? 'Block storage domains default to preallocated — switch to thin if you prefer.'
-                        : `Format: ${derived.format === 'cow' ? 'QCOW2 (thin)' : 'Raw (preallocated)'}`}
+                        ? t('vmDisks.addModal.allocation.blockDefault')
+                        : t('vmDisks.addModal.allocation.format', {
+                            format:
+                              derived.format === 'cow'
+                                ? t('vmDisks.addModal.format.qcow2')
+                                : t('vmDisks.addModal.format.raw'),
+                          })}
                   </HelperTextItem>
                 </HelperText>
               </FormHelperText>
@@ -1085,7 +1097,7 @@ function AddDiskModal({
             <FormGroup fieldId="add-disk-shareable">
               <Switch
                 id="add-disk-shareable"
-                label="Shareable"
+                label={t('vmDisks.column.shareable')}
                 isChecked={shareable}
                 onChange={(_event, checked) => setShareable(checked)}
               />
@@ -1095,7 +1107,7 @@ function AddDiskModal({
             <FormGroup fieldId="add-disk-read-only">
               <Switch
                 id="add-disk-read-only"
-                label="Read-only"
+                label={t('vmDisks.column.readOnly')}
                 isChecked={readOnly}
                 onChange={(_event, checked) => setReadOnly(checked)}
               />

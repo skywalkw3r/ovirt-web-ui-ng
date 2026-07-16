@@ -14,6 +14,7 @@ import {
 import type { UseQueryResult } from '@tanstack/react-query'
 import { buildAffinityLabelPayload, type AffinityLabel } from '../../api/resources/clusters'
 import { useCreateAffinityLabel, useUpdateAffinityLabel } from '../../hooks/useClusterMutations'
+import { useT } from '../../i18n/useT'
 import { EntitySelection, type SelectableEntity } from './EntitySelection'
 
 // The flat draft the modal owns: a name plus the tagged VM/host id arrays.
@@ -63,6 +64,7 @@ export function AffinityLabelModal({
   isOpen: boolean
   onClose: () => void
 }) {
+  const t = useT()
   const isEdit = label !== undefined
   const [draft, setDraft] = useState<LabelDraft>(() => (label ? labelToDraft(label) : blankDraft()))
   const [seededId, setSeededId] = useState(label?.id)
@@ -102,7 +104,9 @@ export function AffinityLabelModal({
     }
   }
 
-  const title = isEdit ? `Edit affinity label — ${label.name ?? label.id}` : 'New affinity label'
+  const title = isEdit
+    ? t('affinity.label.editTitle', { name: label.name ?? label.id })
+    : t('affinity.label.newTitle')
 
   return (
     <Modal
@@ -115,43 +119,43 @@ export function AffinityLabelModal({
       <ModalHeader title={title} labelId="affinity-label-modal-title" />
       <ModalBody id="affinity-label-modal-body">
         <Form onSubmit={(event) => event.preventDefault()}>
-          <FormGroup label="Name" isRequired fieldId="affinity-label-name">
+          <FormGroup label={t('common.field.name')} isRequired fieldId="affinity-label-name">
             <TextInput
               id="affinity-label-name"
               isRequired
-              aria-label="Affinity label name"
+              aria-label={t('affinity.label.nameAria')}
               value={draft.name}
               validated={nameEmpty ? 'error' : 'default'}
               onChange={(_event, value) => set('name', value)}
             />
             {nameEmpty && (
               <HelperText>
-                <HelperTextItem variant="error">A name is required.</HelperTextItem>
+                <HelperTextItem variant="error">{t('affinity.nameRequired')}</HelperTextItem>
               </HelperText>
             )}
           </FormGroup>
 
-          <FormGroup label="Virtual machines" fieldId="affinity-label-vms">
+          <FormGroup label={t('affinity.entity.vms')} fieldId="affinity-label-vms">
             <EntitySelection
-              label="Virtual machines"
-              ariaLabel="Select virtual machines"
+              label={t('affinity.entity.vms')}
+              ariaLabel={t('affinity.select.vms')}
               candidates={vmCandidates}
               selectedIds={draft.vmIds}
               onToggle={(id, next) => toggleId('vmIds', id, next)}
-              emptyText="No virtual machines are available."
-              loadingText="Loading virtual machines"
+              emptyText={t('affinity.label.vms.empty')}
+              loadingText={t('affinity.loading.vms')}
             />
           </FormGroup>
 
-          <FormGroup label="Hosts" fieldId="affinity-label-hosts">
+          <FormGroup label={t('affinity.entity.hosts')} fieldId="affinity-label-hosts">
             <EntitySelection
-              label="Hosts"
-              ariaLabel="Select hosts"
+              label={t('affinity.entity.hosts')}
+              ariaLabel={t('affinity.select.hosts')}
               candidates={hostCandidates}
               selectedIds={draft.hostIds}
               onToggle={(id, next) => toggleId('hostIds', id, next)}
-              emptyText="No hosts are available."
-              loadingText="Loading hosts"
+              emptyText={t('affinity.label.hosts.empty')}
+              loadingText={t('affinity.loading.hosts')}
             />
           </FormGroup>
         </Form>
@@ -163,10 +167,10 @@ export function AffinityLabelModal({
           isLoading={pending}
           isDisabled={pending || nameEmpty}
         >
-          Save
+          {t('common.action.save')}
         </Button>
         <Button variant="secondary" onClick={onClose} isDisabled={pending}>
-          Cancel
+          {t('common.action.cancel')}
         </Button>
       </ModalFooter>
     </Modal>

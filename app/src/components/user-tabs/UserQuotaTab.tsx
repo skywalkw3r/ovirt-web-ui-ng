@@ -1,4 +1,12 @@
-import { Button, EmptyState, EmptyStateBody, Label, Skeleton } from '@patternfly/react-core'
+import {
+  Button,
+  EmptyState,
+  EmptyStateActions,
+  EmptyStateBody,
+  EmptyStateFooter,
+  Label,
+  Skeleton,
+} from '@patternfly/react-core'
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
@@ -56,20 +64,21 @@ export function UserQuotaTab({ userId }: { userId: string }) {
         <EmptyStateBody>
           {grants.error instanceof Error ? grants.error.message : t('common.error.unknown')}
         </EmptyStateBody>
-        <Button variant="primary" onClick={() => void grants.refetch()}>
-          {t('common.action.retry')}
-        </Button>
+        <EmptyStateFooter>
+          <EmptyStateActions>
+            <Button variant="primary" onClick={() => void grants.refetch()}>
+              {t('common.action.retry')}
+            </Button>
+          </EmptyStateActions>
+        </EmptyStateFooter>
       </EmptyState>
     )
   }
 
   if (grants.data.length === 0) {
     return (
-      <EmptyState titleText="No quota assignments">
-        <EmptyStateBody>
-          Quotas this user can consume appear here. Assign the user (or one of their groups) as a
-          consumer from the quota&apos;s Permissions.
-        </EmptyStateBody>
+      <EmptyState titleText={t('userQuota.empty.title')}>
+        <EmptyStateBody>{t('userQuota.empty.body')}</EmptyStateBody>
       </EmptyState>
     )
   }
@@ -77,11 +86,11 @@ export function UserQuotaTab({ userId }: { userId: string }) {
   const grantedVia = (grant: UserQuotaGrant) => {
     switch (grant.via.kind) {
       case 'user':
-        return 'Direct'
+        return t('permissions.filter.direct')
       case 'group':
         return <Label isCompact>{grant.via.name}</Label>
       case 'everyone':
-        return <Label isCompact>Everyone</Label>
+        return <Label isCompact>{t('userQuota.everyone')}</Label>
     }
   }
 
@@ -92,7 +101,7 @@ export function UserQuotaTab({ userId }: { userId: string }) {
           <Th>{t('common.field.name')}</Th>
           <Th>{t('common.field.description')}</Th>
           <Th>{t('quotas.column.dataCenter')}</Th>
-          <Th>Granted via</Th>
+          <Th>{t('userQuota.column.grantedVia')}</Th>
         </Tr>
       </Thead>
       <Tbody>
@@ -109,7 +118,7 @@ export function UserQuotaTab({ userId }: { userId: string }) {
                 ? dataCenterNames.get(grant.quota.data_center.id)
                 : undefined) ?? '—'}
             </Td>
-            <Td dataLabel="Granted via">{grantedVia(grant)}</Td>
+            <Td dataLabel={t('userQuota.column.grantedVia')}>{grantedVia(grant)}</Td>
           </Tr>
         ))}
       </Tbody>

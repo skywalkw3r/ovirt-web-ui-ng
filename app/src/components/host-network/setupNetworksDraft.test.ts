@@ -289,7 +289,9 @@ describe('validation', () => {
   it('guards the management network against ending up detached', () => {
     expect(managementGuardError(seeded())).toBeUndefined()
     const detached = updateRow(seeded(), 'net-01', { nicName: null })
-    expect(managementGuardError(detached)).toContain("'ovirtmgmt'")
+    // the helper now carries the offending network name as an ICU value the
+    // modal resolves through t()
+    expect(managementGuardError(detached)?.values.name).toBe('ovirtmgmt')
     expect(draftBlocksSave(detached)).toBe(true)
     // moving it to another NIC in the same action is allowed
     const moved = updateRow(seeded(), 'net-01', { nicName: 'eno2' })

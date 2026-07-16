@@ -1,8 +1,10 @@
-import { useState, type ReactNode } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import {
   Button,
   EmptyState,
+  EmptyStateActions,
   EmptyStateBody,
+  EmptyStateFooter,
   Label,
   LabelGroup,
   Skeleton,
@@ -18,6 +20,7 @@ import type { NetworkAttachment } from '../../api/schemas/network-attachment'
 import { useColumnPrefs, type ColumnDef } from '../../hooks/useColumnPrefs'
 import { sortRows, useColumnSort } from '../../hooks/useColumnSort'
 import { useHostNetworkAttachments, useHostNics } from '../../hooks/useHostDetail'
+import { useT } from '../../i18n/useT'
 import { statusText } from '../../lib/format'
 import { ColumnPicker } from '../list-toolbar/ColumnPicker'
 import { ResizableTh, resizableTableProps } from '../list-toolbar/ResizableTh'
@@ -52,6 +55,7 @@ function NicNetworksCell({
   nic: HostNic
   attachments: NetworkAttachment[] | undefined
 }) {
+  const t = useT()
   if (attachments === undefined) return <>—</>
   const attached = attachments.filter(
     (attachment) =>
@@ -60,13 +64,16 @@ function NicNetworksCell({
   )
   if (attached.length === 0) return <>—</>
   return (
-    <LabelGroup numLabels={attached.length} aria-label={`Networks on ${nic.name ?? nic.id}`}>
+    <LabelGroup
+      numLabels={attached.length}
+      aria-label={t('hostNics.aria.networksOn', { name: nic.name ?? nic.id })}
+    >
       {attached.map((attachment) => {
         const inSync = attachment.in_sync ?? true
         return (
           <Label key={attachment.id} isCompact color={inSync ? 'blue' : 'orange'}>
             {attachment.network?.name ?? attachment.network?.id ?? '—'}
-            {inSync ? '' : ' — out of sync'}
+            {inSync ? '' : t('setupNetworks.attachment.outOfSyncSuffix')}
           </Label>
         )
       })}
@@ -82,37 +89,45 @@ interface NicColumn extends ColumnDef {
   sortValue?: (nic: HostNic) => string | number | undefined
 }
 
-// >4 columns ⇒ the COLUMNS + useColumnPrefs + ColumnPicker house pattern
-// (Name pinned). Labels stay hardcoded English like the rest of this tab.
-// Headers and cells both map over the same isVisible-filtered array so they
-// can never desync.
-const COLUMNS: NicColumn[] = [
-  { key: 'name', label: 'Name', always: true, sortValue: (nic) => nic.name },
-  { key: 'mac', label: 'MAC address', sortValue: (nic) => nic.mac?.address },
-  { key: 'ipv4', label: 'IPv4 address', sortValue: (nic) => nic.ip?.address },
-  { key: 'networks', label: 'Networks' },
-  { key: 'status', label: 'Status' },
-  // sorts on the raw bits/s rather than the rendered Mbps text, so 100 Mbps
-  // orders below 1 Gbps; 0 (down/unreported, an em dash in the cell) sinks
-  // to the end alongside the absent ones
-  { key: 'speed', label: 'Speed', sortValue: (nic) => nic.speed || undefined },
-]
-
 export function HostNicsTab({ hostId, clusterId }: { hostId: string; clusterId?: string }) {
   const nics = useHostNics(hostId)
+  const t = useT()
   // Attachments enrich the table but must not block it: the column renders an
   // em dash until they land (and stays that way if they fail — the dialog has
   // its own error state).
   const attachments = useHostNetworkAttachments(hostId)
   const [settingUp, setSettingUp] = useState(false)
 
-  const prefs = useColumnPrefs('host-nics', COLUMNS)
+  // >4 columns ⇒ the COLUMNS + useColumnPrefs + ColumnPicker house pattern
+  // (Name pinned). Built in-component so the labels localize via t(). Headers
+  // and cells both map over the same isVisible-filtered array so they can never
+  // desync.
+  const columns: NicColumn[] = useMemo(
+    () => [
+      { key: 'name', label: t('common.field.name'), always: true, sortValue: (nic) => nic.name },
+      { key: 'mac', label: t('vmNics.column.mac'), sortValue: (nic) => nic.mac?.address },
+      { key: 'ipv4', label: t('hostNics.column.ipv4'), sortValue: (nic) => nic.ip?.address },
+      { key: 'networks', label: t('hostNics.column.networks') },
+      { key: 'status', label: t('common.field.status') },
+      // sorts on the raw bits/s rather than the rendered Mbps text, so 100 Mbps
+      // orders below 1 Gbps; 0 (down/unreported, an em dash in the cell) sinks
+      // to the end alongside the absent ones
+      {
+        key: 'speed',
+        label: t('hostNics.column.speed'),
+        sortValue: (nic) => nic.speed || undefined,
+      },
+    ],
+    [t],
+  )
+
+  const prefs = useColumnPrefs('host-nics', columns)
   // client-side header sort; no default — the engine list order stands until a
   // header is clicked (see hooks/useColumnSort)
   const { sort, thSort } = useColumnSort()
-  const visibleColumns = COLUMNS.filter((column) => prefs.isVisible(column.key))
+  const visibleColumns = columns.filter((column) => prefs.isVisible(column.key))
   const sortedNics = sortRows(nics.data ?? [], sort, (nic, key) =>
-    COLUMNS.find((column) => column.key === key)?.sortValue?.(nic),
+    columns.find((column) => column.key === key)?.sortValue?.(nic),
   )
 
   const cellOf = (nic: HostNic, key: string): ReactNode => {
@@ -147,13 +162,13 @@ export function HostNicsTab({ hostId, clusterId }: { hostId: string; clusterId?:
               // nothing to offer
               isDisabled={clusterId === undefined || clusterId === ''}
             >
-              Setup networks
+              {t('hostNics.setupNetworks')}
             </Button>
           </ToolbarItem>
           <ToolbarGroup align={{ default: 'alignEnd' }}>
             <ToolbarItem>
               <ColumnPicker
-                columns={COLUMNS}
+                columns={columns}
                 isVisible={prefs.isVisible}
                 onToggle={prefs.toggle}
                 onReset={prefs.reset}
@@ -167,31 +182,35 @@ export function HostNicsTab({ hostId, clusterId }: { hostId: string; clusterId?:
         <>
           <Skeleton height="2.5rem" style={{ marginBottom: '0.5rem' }} />
           <Skeleton height="2.5rem" style={{ marginBottom: '0.5rem' }} />
-          <Skeleton height="2.5rem" screenreaderText="Loading network interfaces" />
+          <Skeleton height="2.5rem" screenreaderText={t('hostNics.loading')} />
         </>
       )}
 
       {nics.isError && (
-        <EmptyState titleText="Could not load network interfaces" status="danger">
+        <EmptyState titleText={t('hostNics.error.title')} status="danger">
           <EmptyStateBody>
-            {nics.error instanceof Error ? nics.error.message : 'Unknown error'}
+            {nics.error instanceof Error ? nics.error.message : t('common.error.unknown')}
           </EmptyStateBody>
-          <Button variant="primary" onClick={() => void nics.refetch()}>
-            Retry
-          </Button>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="primary" onClick={() => void nics.refetch()}>
+                {t('common.action.retry')}
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 
       {nics.isSuccess && nics.data.length === 0 && (
-        <EmptyState titleText="No network interfaces">
-          <EmptyStateBody>This host has no network interfaces.</EmptyStateBody>
+        <EmptyState titleText={t('hostNics.empty.title')}>
+          <EmptyStateBody>{t('hostNics.empty.body')}</EmptyStateBody>
         </EmptyState>
       )}
 
       {nics.isSuccess && nics.data.length > 0 && (
         <div className="app-table-viewport">
           <Table
-            aria-label="Host network interfaces"
+            aria-label={t('hostNics.table.ariaLabel')}
             variant="compact"
             {...resizableTableProps(prefs)}
           >

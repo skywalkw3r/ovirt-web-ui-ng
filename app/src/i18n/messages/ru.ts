@@ -2743,4 +2743,1769 @@ export const ru: LocaleCatalog = {
   'platform.action.discard': 'Отменить изменения',
   'platform.toast.saved': 'Настройки платформы сохранены',
   'settings.menu.support': 'Получить поддержку',
+
+  // ===== Backfill: newly-added ids translated to Russian =====
+  // addUser
+  'addUser.description': 'Найдите субъекты в каталоге и добавьте их в движок.',
+  'addUser.domains.error': 'Не удалось загрузить домены: {message}',
+  'addUser.domains.loading': 'Загрузка доменов',
+  'addUser.domains.none': 'Домены аутентификации не настроены.',
+  'addUser.results.empty.match': 'Нет результатов «{noun}» по этому запросу в каталоге.',
+  'addUser.results.empty.none': 'Каталог не вернул ни одного результата «{noun}».',
+  'addUser.results.empty.title': '«{noun}»: ничего не найдено',
+  'addUser.results.error': 'Не удалось загрузить «{noun}»: {message}',
+  'addUser.results.loading': 'Загрузка «{noun}»',
+  'addUser.search.hint': 'name=jdoe* — или обычный текст; пусто — показать все',
+  'addUser.search.label': 'Поиск в каталоге «{noun}»',
+  'addUser.selectDomain': 'Выберите домен для поиска в его каталоге.',
+  'addUser.selectedCount': 'Выбрано: {size} среди пользователей и групп.',
+  'addUser.selectToAdd': 'Выберите один или несколько «{noun}» для добавления.',
+  'addUser.title': 'Добавить пользователя или группу',
+  'addUser.type.ariaLabel': 'Тип субъекта каталога',
+
+  // affinity
+  'affinity.entity.filter': 'Фильтр: {label}',
+  'affinity.entity.hosts': 'Хосты',
+  'affinity.entity.loadError': 'Не удалось загрузить {label}',
+  'affinity.entity.noMatch': 'Нет совпадений',
+  'affinity.entity.vms': 'Виртуальные машины',
+  'affinity.group.descriptionAria': 'Описание группы сходства',
+  'affinity.group.editTitle': 'Изменить группу сходства — {name}',
+  'affinity.group.enforcing': 'Принудительно (жёсткое правило)',
+  'affinity.group.hostEnforcingAria': 'Принудительное правило для хостов',
+  'affinity.group.hostRule': 'Правило для хостов',
+  'affinity.group.hostRuleAria': 'Правило сходства хостов',
+  'affinity.group.hosts.empty': 'В этом кластере нет хостов.',
+  'affinity.group.nameAria': 'Имя группы сходства',
+  'affinity.group.needRule.body':
+    'Группе нужно включённое правило для ВМ или для хостов — иначе применять нечего.',
+  'affinity.group.needRule.title': 'Включите хотя бы одно правило',
+  'affinity.group.newTitle': 'Новая группа сходства',
+  'affinity.group.priority': 'Приоритет',
+  'affinity.group.priorityAria': 'Приоритет группы сходства',
+  'affinity.group.priorityError': 'Приоритет должен быть целым числом не меньше 1.',
+  'affinity.group.sectionsAria': 'Разделы группы сходства',
+  'affinity.group.vmEnforcingAria': 'Принудительное правило для ВМ',
+  'affinity.group.vmRule': 'Правило для ВМ',
+  'affinity.group.vmRuleAria': 'Правило сходства ВМ',
+  'affinity.group.vms.empty': 'В этом кластере нет виртуальных машин.',
+  'affinity.label.editTitle': 'Изменить метку сходства — {name}',
+  'affinity.label.hosts.empty': 'Нет доступных хостов.',
+  'affinity.label.nameAria': 'Имя метки сходства',
+  'affinity.label.newTitle': 'Новая метка сходства',
+  'affinity.label.vms.empty': 'Нет доступных виртуальных машин.',
+  'affinity.loading.hosts': 'Загрузка хостов',
+  'affinity.loading.vms': 'Загрузка виртуальных машин',
+  'affinity.nameRequired': 'Необходимо указать имя.',
+  'affinity.polarity.negative': 'Отрицательная — держать раздельно',
+  'affinity.polarity.positive': 'Положительная — держать вместе',
+  'affinity.section.general': 'Общее',
+  'affinity.section.vms': 'Виртуальные машины',
+  'affinity.select.hosts': 'Выберите хосты',
+  'affinity.select.vms': 'Выберите виртуальные машины',
+  'affinity.selectedCount': 'Выбрано: {count}',
+
+  // bulk
+  'bulk.confirm.stop':
+    'Выключение питания принудительно обрывает виртуальное питание — гостевая ОС не завершает работу корректно, и несохранённые данные могут быть потеряны.',
+  'bulk.migrate.auto.description': 'Позвольте планировщику движка разместить каждую ВМ.',
+  'bulk.migrate.auto.label': 'Автоматически выбрать хост',
+  'bulk.migrate.noHosts': 'Нет доступных хостов',
+  'bulk.migrate.pinned.label': 'Выберите целевой хост',
+  'bulk.migrate.title': 'Миграция {length} виртуальных машин',
+
+  // cloneVm
+  'cloneVm.collapseSnapshots.help':
+    'Диски клона сводятся в один том; отключите, чтобы сохранить в клоне цепочку снимков исходной ВМ.',
+  'cloneVm.collapseSnapshots.label': 'Свести снимки',
+  'cloneVm.deniedReason': 'Виртуальную машину нельзя клонировать, пока она в состоянии {status}',
+  'cloneVm.item': 'Клонировать ВМ',
+  'cloneVm.lunWarning': 'Диски прямого LUN этой ВМ не будут клонированы.',
+  'cloneVm.name.label': 'Имя клона',
+  'cloneVm.nameTaken': 'Имя уже используется в среде — выберите уникальное имя',
+  'cloneVm.storageDomain.default': 'Исходные домены хранения (по умолчанию для движка)',
+  'cloneVm.storageDomain.label': 'Целевой домен хранения',
+  'cloneVm.storageDomain.loadError':
+    'Не удалось загрузить домены хранения дата-центра этой ВМ — клон сохранит размещение исходных дисков.',
+  'cloneVm.submit': 'Клонировать',
+  'cloneVm.title': 'Клонировать виртуальную машину — {name}',
+
+  // clusterAffinityGroups
+  'clusterAffinityGroups.column.enforcing': 'Принудительно',
+  'clusterAffinityGroups.column.polarity': 'Полярность',
+  'clusterAffinityGroups.empty.body': 'В этом кластере не определены группы сходства ВМ.',
+  'clusterAffinityGroups.empty.title': 'Нет групп сходства',
+  'clusterAffinityGroups.error.title': 'Не удалось загрузить группы сходства',
+  'clusterAffinityGroups.loading': 'Загрузка групп сходства',
+  'clusterAffinityGroups.new': 'Новая группа сходства',
+  'clusterAffinityGroups.polarity.negative': 'Отрицательная',
+  'clusterAffinityGroups.polarity.positive': 'Положительная',
+  'clusterAffinityGroups.remove.confirm.body':
+    'Группа сходства удаляется безвозвратно, и её правило планирования перестаёт применяться. Это действие нельзя отменить.',
+  'clusterAffinityGroups.remove.confirm.title': 'Удалить группу сходства «{name}»?',
+  'clusterAffinityGroups.table.ariaLabel': 'Группы сходства',
+
+  // clusterAffinityLabels
+  'clusterAffinityLabels.empty.body': 'В этом кластере нет меток сходства.',
+  'clusterAffinityLabels.empty.title': 'Нет меток сходства',
+  'clusterAffinityLabels.error.title': 'Не удалось загрузить метки сходства',
+  'clusterAffinityLabels.loading': 'Загрузка меток сходства',
+  'clusterAffinityLabels.new': 'Новая метка сходства',
+  'clusterAffinityLabels.remove.confirm.body':
+    'Метка сходства удаляется безвозвратно и снимается со всех ВМ и хостов, которые её несли. Это действие нельзя отменить.',
+  'clusterAffinityLabels.remove.confirm.title': 'Удалить метку сходства «{name}»?',
+  'clusterAffinityLabels.table.ariaLabel': 'Метки сходства',
+
+  // clusterDetail
+  'clusterDetail.error.title': 'Не удалось загрузить кластер',
+  'clusterDetail.loading': 'Загрузка кластера',
+  'clusterDetail.notFound.back': 'Назад к кластерам',
+  'clusterDetail.notFound.body':
+    'Кластер с идентификатором {id} вам не виден — возможно, он был удалён.',
+  'clusterDetail.notFound.title': 'Кластер не найден',
+  'clusterDetail.tab.affinityGroups': 'Группы сходства',
+  'clusterDetail.tab.affinityLabels': 'Метки сходства',
+  'clusterDetail.tab.cpuProfiles': 'Профили ЦП',
+  'clusterDetail.tab.general': 'Общее',
+  'clusterDetail.tab.hosts': 'Хосты',
+  'clusterDetail.tab.networks': 'Логические сети',
+  'clusterDetail.tab.permissions': 'Разрешения',
+  'clusterDetail.tab.vms': 'Виртуальные машины',
+  'clusterDetail.tabs.ariaLabel': 'вкладки сведений о кластере',
+
+  // clusterGeneral
+  'clusterGeneral.term.ballooning': 'Раздувание памяти',
+  'clusterGeneral.term.compatVersion': 'Версия совместимости',
+  'clusterGeneral.term.cpuType': 'Тип ЦП',
+  'clusterGeneral.term.dataCenter': 'Дата-центр',
+  'clusterGeneral.term.overCommit': 'Переподписка памяти',
+  'clusterGeneral.term.schedulingPolicy': 'Политика планирования',
+  'clusterGeneral.term.switchType': 'Тип коммутатора',
+
+  // clusterHosts
+  'clusterHosts.empty.body': 'Этому кластеру не принадлежит ни один хост.',
+  'clusterHosts.error.title': 'Не удалось загрузить хосты',
+  'clusterHosts.table.ariaLabel': 'Хосты в этом кластере',
+
+  // clusterUpgrade
+  'clusterUpgrade.aria.selectHost': 'Выбрать {name}',
+  'clusterUpgrade.hostUpgrading': 'Обновление',
+
+  // clusterVms
+  'clusterVms.empty.body': 'В этом кластере не запущено ни одной виртуальной машины.',
+  'clusterVms.table.ariaLabel': 'Виртуальные машины в этом кластере',
+
+  // common
+  'common.action.confirm': 'Подтвердить',
+  'common.action.moreActionsFor': 'Другие действия для {name}',
+  'common.action.moveDown': 'Переместить вниз',
+  'common.action.moveUp': 'Переместить вверх',
+  'common.field.password': 'Пароль',
+
+  // console
+  'console.options.fileTransfer': 'Включить передачу файлов в гостя',
+  'console.options.fileTransfer.description':
+    'Перетаскивайте файлы в консоль SPICE/VNC. Сохраняются в ВМ на движке при нажатии «Сохранить» (движку может потребоваться, чтобы ВМ была выключена).',
+
+  // cpuProfiles
+  'cpuProfiles.column.qos': 'QoS',
+  'cpuProfiles.description.aria': 'Описание профиля ЦП',
+  'cpuProfiles.editTitle': 'Изменить профиль ЦП — {name}',
+  'cpuProfiles.empty.body': 'В этом кластере не определены профили ЦП.',
+  'cpuProfiles.empty.title': 'Нет профилей ЦП',
+  'cpuProfiles.error.title': 'Не удалось загрузить профили ЦП',
+  'cpuProfiles.loading': 'Загрузка профилей ЦП',
+  'cpuProfiles.name.aria': 'Имя профиля ЦП',
+  'cpuProfiles.new': 'Новый профиль ЦП',
+  'cpuProfiles.qos.dcLoading': 'Дата-центр ещё загружает свои профили QoS.',
+  'cpuProfiles.qos.none': 'Без QoS',
+  'cpuProfiles.remove.confirm.body':
+    'Профиль ЦП удаляется безвозвратно. Профиль, который ещё используется какой-либо ВМ, удалить нельзя. Это действие нельзя отменить.',
+  'cpuProfiles.table.ariaLabel': 'Профили ЦП',
+
+  // dataCenterGeneral
+  'dataCenterGeneral.term.compatVersion': 'Версия совместимости',
+  'dataCenterGeneral.term.macPool': 'Пул MAC',
+  'dataCenterGeneral.term.quotaMode': 'Режим квот',
+  'dataCenterGeneral.term.storageType': 'Тип хранилища',
+
+  // datacenters
+  'datacenters.forceRemove.confirm.inputAria':
+    'Введите имя дата-центра для подтверждения принудительного удаления',
+  'datacenters.remove.confirm.body':
+    'Дата-центр будет удалён безвозвратно. Это действие нельзя отменить.',
+  'datacenters.remove.confirm.inputAria': 'Введите имя дата-центра для подтверждения удаления',
+  'datacenters.remove.confirm.title': 'Удалить {name}?',
+  'datacenters.remove.confirm.typeLabel': 'Введите «{name}» для подтверждения',
+
+  // dc (iSCSI multipathing)
+  'dc.iscsiMultipath.column.connections': 'Подключения к хранилищу',
+  'dc.iscsiMultipath.column.networks': 'Логические сети',
+  'dc.iscsiMultipath.connections.empty':
+    'Нет доступных подключений к хранилищу iSCSI. Сначала добавьте домен хранения iSCSI.',
+  'dc.iscsiMultipath.connections.error.title': 'Не удалось загрузить подключения к хранилищу',
+  'dc.iscsiMultipath.connections.loading': 'Загрузка подключений к хранилищу',
+  'dc.iscsiMultipath.empty.body':
+    'Бонды многопутевого iSCSI связывают логические сети с подключениями к хранилищу, чтобы блочное хранилище могло использовать несколько путей. В этом дата-центре они ещё не настроены.',
+  'dc.iscsiMultipath.empty.title': 'Нет iSCSI-бондов',
+  'dc.iscsiMultipath.error.title': 'Не удалось загрузить iSCSI-бонды',
+  'dc.iscsiMultipath.field.descriptionAria': 'Описание iSCSI-бонда',
+  'dc.iscsiMultipath.field.nameAria': 'Имя iSCSI-бонда',
+  'dc.iscsiMultipath.loading': 'Загрузка iSCSI-бондов',
+  'dc.iscsiMultipath.membership.none': 'Нет',
+  'dc.iscsiMultipath.membershipsReadonly':
+    'Сети и подключения к хранилищу нельзя изменить после создания. Чтобы изменить их, удалите и создайте бонд заново.',
+  'dc.iscsiMultipath.modal.editTitle': 'Изменить iSCSI-бонд — {name}',
+  'dc.iscsiMultipath.remove.confirm.body':
+    'iSCSI-бонд удаляется из этого дата-центра безвозвратно. Хранилище, полагавшееся на его несколько путей, вернётся к одному пути, пока не будет создан новый бонд. Это действие нельзя отменить.',
+  'dc.iscsiMultipath.remove.confirm.title': 'Удалить iSCSI-бонд «{name}»?',
+  'dc.iscsiMultipath.table.ariaLabel': 'iSCSI-бонды',
+
+  // dcClusters
+  'dcClusters.column.compatVersion': 'Версия совместимости',
+  'dcClusters.column.cpuType': 'Тип ЦП',
+  'dcClusters.empty.body': 'В этом дата-центре не определены кластеры.',
+  'dcClusters.table.ariaLabel': 'Кластеры в этом дата-центре',
+
+  // dcDetail
+  'dcDetail.action.cleanTasks': 'Очистить завершённые задачи',
+  'dcDetail.action.reinitialize': 'Повторно инициализировать дата-центр',
+  'dcDetail.error.title': 'Не удалось загрузить дата-центр',
+  'dcDetail.loading': 'Загрузка дата-центра',
+  'dcDetail.notFound.back': 'Назад к дата-центрам',
+  'dcDetail.notFound.body':
+    'Дата-центр с идентификатором {id} вам не виден — возможно, он был удалён.',
+  'dcDetail.notFound.title': 'Дата-центр не найден',
+  'dcDetail.tab.clusters': 'Кластеры',
+  'dcDetail.tab.general': 'Общее',
+  'dcDetail.tab.networks': 'Логические сети',
+  'dcDetail.tab.permissions': 'Разрешения',
+  'dcDetail.tab.qos': 'QoS',
+  'dcDetail.tab.quota': 'Квота',
+  'dcDetail.tab.storage': 'Хранилище',
+  'dcDetail.tabs.ariaLabel': 'вкладки сведений о дата-центре',
+
+  // dcForm
+  'dcForm.compatVersion.label': 'Версия совместимости',
+  'dcForm.description.aria': 'Описание дата-центра',
+  'dcForm.editTitle': 'Изменить дата-центр — {name}',
+  'dcForm.macPool.default': 'Пул MAC по умолчанию',
+  'dcForm.macPool.error': 'Не удалось загрузить пулы MAC.',
+  'dcForm.macPool.loading': 'Загрузка пулов MAC…',
+  'dcForm.name.aria': 'Имя дата-центра',
+  'dcForm.quotaMode.audit': 'Аудит',
+  'dcForm.quotaMode.label': 'Режим квот',
+  'dcForm.storageLocal.aria': 'Локальное хранилище',
+  'dcForm.storageShared.aria': 'Общее хранилище',
+  'dcForm.storageType.label': 'Тип хранилища',
+
+  // dcNetworks
+  'dcNetworks.empty.body': 'В этом дата-центре не определены логические сети.',
+  'dcNetworks.remove.confirm.body':
+    'Логическая сеть удаляется из этого дата-центра безвозвратно. Все сетевые адаптеры хостов и профили vNIC, использовавшие её, теряют привязку. Это действие нельзя отменить.',
+  'dcNetworks.remove.confirm.title': 'Удалить {name}?',
+  'dcNetworks.remove.managementTooltip': 'Сеть управления удалить нельзя.',
+
+  // dcQuotas
+  'dcQuotas.empty.body': 'В этом дата-центре не определены квоты.',
+
+  // dcReinit
+  'dcReinit.confirm': 'Повторно инициализировать',
+  'dcReinit.field': 'Домен хранения данных',
+  'dcReinit.intro':
+    'Главный домен хранения дата-центра {name} недоступен. Выберите неприкреплённый домен хранения данных, чтобы заново сформировать пул — он станет новым главным и вернёт дата-центр в работу.',
+  'dcReinit.noCandidates': 'Нет неприкреплённых доменов хранения данных',
+  'dcReinit.placeholder': 'Выберите домен хранения данных',
+  'dcReinit.title': 'Повторно инициализировать дата-центр',
+
+  // dcStorage
+  'dcStorage.action.activate': 'Активировать',
+  'dcStorage.action.maintenance': 'Обслуживание',
+  'dcStorage.attach.field': 'Домен хранения',
+  'dcStorage.attach.loadError': 'Не удалось загрузить домены хранения.',
+  'dcStorage.attach.noCandidates': 'Нет неприкреплённых доменов хранения',
+  'dcStorage.attach.optionLoading': 'Загрузка доменов хранения…',
+  'dcStorage.attach.placeholder': 'Выберите домен хранения',
+  'dcStorage.attach.title': 'Прикрепить домен хранения',
+  'dcStorage.capacity.aria': 'Использование {name}',
+  'dcStorage.capacity.measure': 'Использовано {used} из {total} ({percent}%)',
+  'dcStorage.column.domainType': 'Тип домена',
+  'dcStorage.column.utilization': 'Использование',
+  'dcStorage.detach.confirm.body':
+    'Домен покидает этот дата-центр, но его данные сохраняются — вы можете прикрепить его снова позже.',
+  'dcStorage.detach.confirm.title': 'Отсоединить {name}?',
+  'dcStorage.domainType.master': '{type} (главный)',
+  'dcStorage.empty.body': 'К этому дата-центру не прикреплено ни одного домена хранения.',
+  'dcStorage.maintenance.confirm.body':
+    'Виртуальные машины с дисками на этом домене теряют доступ к этому хранилищу, пока он в режиме обслуживания. Сначала убедитесь, что на нём не работает ничего критичного.',
+  'dcStorage.maintenance.confirm.label': 'Перевести в обслуживание',
+  'dcStorage.maintenance.confirm.title': 'Перевести {name} в обслуживание?',
+  'dcStorage.table.ariaLabel': 'Домены хранения',
+  // discoverIscsi
+  'discoverIscsi.address': 'Адрес цели',
+  'discoverIscsi.address.aria': 'Адрес цели iSCSI',
+  'discoverIscsi.chapPassword': 'Пароль CHAP',
+  'discoverIscsi.chapUser': 'Имя пользователя CHAP',
+  'discoverIscsi.column.portal': 'Портал',
+  'discoverIscsi.column.target': 'Цель (IQN)',
+  'discoverIscsi.discover': 'Обнаружить',
+  'discoverIscsi.empty.body':
+    'Хост не нашёл целей iSCSI по этому адресу. Проверьте адрес и учётные данные CHAP, затем повторите обнаружение.',
+  'discoverIscsi.empty.title': 'Цели не обнаружены',
+  'discoverIscsi.error.title': 'Не удалось обнаружить цели',
+  'discoverIscsi.loading': 'Обнаружение целей iSCSI',
+  'discoverIscsi.port': 'Порт',
+  'discoverIscsi.port.aria': 'Порт цели iSCSI',
+  'discoverIscsi.port.help': 'Оставьте пустым, чтобы использовать порт iSCSI по умолчанию — 3260.',
+  'discoverIscsi.table.ariaLabel': 'Обнаруженные цели iSCSI',
+  'discoverIscsi.title': 'Обнаружить цели iSCSI с {name}',
+  'discoverIscsi.useChap': 'Использовать аутентификацию CHAP',
+
+  // diskDetail
+  'diskDetail.tab.snapshots': 'Снимки',
+
+  // diskForm
+  'diskForm.alias': 'Псевдоним',
+  'diskForm.alias.required': 'Псевдоним обязателен',
+  'diskForm.allocation': 'Политика выделения',
+  'diskForm.allocation.blockDefault':
+    'Для блочных доменов хранения по умолчанию используется зарезервированное выделение — при желании переключитесь на тонкое.',
+  'diskForm.allocation.managedBlock':
+    'Управляемые блочные домены хранения требуют зарезервированных дисков.',
+  'diskForm.allocation.thin': 'Тонкое выделение',
+  'diskForm.copy.newAlias': 'Новый псевдоним',
+  'diskForm.copy.newAlias.aria': 'Новый псевдоним диска',
+  'diskForm.copy.newAlias.help': 'Оставьте без изменений, чтобы сохранить исходный псевдоним.',
+  'diskForm.copy.title': "Копировать диск ''{name}''",
+  'diskForm.currentSize': 'Текущий размер',
+  'diskForm.description.aria': 'Описание диска',
+  'diskForm.diskAlias': 'Псевдоним диска',
+  'diskForm.diskProfile': 'Профиль диска',
+  'diskForm.diskProfile.default': 'Профиль по умолчанию',
+  'diskForm.diskProfile.help':
+    'Оставьте «Профиль по умолчанию», чтобы использовать значение по умолчанию домена хранения.',
+  'diskForm.diskProfile.loading': 'Загрузка профилей диска',
+  'diskForm.diskProfile.selectDomain': 'Выберите домен хранения, чтобы выбрать профиль.',
+  'diskForm.edit.title': "Изменить диск ''{name}''",
+  'diskForm.extendSize': 'Увеличить размер на',
+  'diskForm.extendSize.aria': 'Увеличить размер на, в ГиБ',
+  'diskForm.extendSize.decrease': 'Уменьшить величину увеличения',
+  'diskForm.extendSize.help':
+    'Диски можно только увеличивать. Оставьте 0, чтобы сохранить текущий размер.',
+  'diskForm.extendSize.increase': 'Увеличить величину увеличения',
+  'diskForm.extendSize.newSize': 'Новый размер: {size}. Диски можно только увеличивать.',
+  'diskForm.format.iso': 'ISO (установочный носитель)',
+  'diskForm.format.label': 'Формат: {format}',
+  'diskForm.format.qcow2': 'QCOW2 (тонкий)',
+  'diskForm.format.raw': 'Raw (зарезервированный)',
+  'diskForm.move.title': "Переместить диск ''{name}''",
+  'diskForm.storageDomain.none': 'Нет доступного домена хранения данных',
+  'diskForm.targetDomain': 'Целевой домен хранения',
+  'diskForm.targetDomain.emptyCopy':
+    'Нет другого домена хранения данных, куда можно скопировать этот диск.',
+  'diskForm.targetDomain.emptyMove':
+    'Нет другого домена хранения данных, куда можно переместить этот диск.',
+  'diskForm.targetDomain.none': 'Нет подходящего домена хранения',
+  'diskForm.upload.cancel': 'Отменить загрузку',
+  'diskForm.upload.cancelledBody': 'Передача отменена, а частично загруженный диск удалён.',
+  'diskForm.upload.caveat.body':
+    'Данные образа передаются напрямую в imageio-прокси движка. Ваш браузер должен иметь к нему доступ и уже доверять CA-сертификату движка, иначе передача завершится сетевой ошибкой. Любая ошибка движка показана ниже — она не скрывается.',
+  'diskForm.upload.caveat.title':
+    'Для загрузки в реальном времени imageio-прокси должен быть доступен и доверенным',
+  'diskForm.upload.failedTitle': 'Не удалось загрузить',
+  'diskForm.upload.file': 'Файл образа',
+  'diskForm.upload.fileInfo': '{size} · определённый формат: {format}',
+  'diskForm.upload.pausedBody':
+    'Передача приостановлена движком. Повторите попытку после его восстановления.',
+  'diskForm.upload.pausedBodyDetail':
+    'Передача приостановлена ({error}). Это может произойти, если imageio-прокси недоступен или истёк срок действия билета передачи. Повторите попытку сейчас или после восстановления движка.',
+  'diskForm.upload.pausedTitle': 'Загрузка приостановлена движком',
+  'diskForm.upload.progressAria': 'Ход загрузки',
+  'diskForm.upload.step.cancelled': 'Загрузка отменена.',
+  'diskForm.upload.step.creatingDisk': 'Создание целевого диска…',
+  'diskForm.upload.step.creatingTransfer': 'Открытие передачи образа…',
+  'diskForm.upload.step.failed': 'Не удалось загрузить.',
+  'diskForm.upload.step.finalizing': 'Завершение и проверка образа…',
+  'diskForm.upload.step.initializing': 'Ожидание готовности передачи…',
+  'diskForm.upload.step.paused': 'Загрузка приостановлена движком.',
+  'diskForm.upload.step.succeeded': 'Загрузка завершена.',
+  'diskForm.upload.step.transferring': 'Передача данных образа…',
+  'diskForm.upload.step.waitingForDisk': 'Ожидание готовности диска…',
+  'diskForm.upload.targetDomain.none': 'Нет домена хранения данных',
+  'diskForm.upload.title': 'Загрузить образ',
+
+  // diskSnapshots
+  'diskSnapshots.column.provisionedSize': 'Предусмотренный размер',
+  'diskSnapshots.empty.body': 'Создание снимка ВМ, включающего этот диск, создаёт здесь образ.',
+  'diskSnapshots.emptyLun.body':
+    'Снимки есть только у образных дисков на домене хранения — у дисков прямого LUN нет цепочки снимков.',
+  'diskSnapshots.error.title': 'Не удалось загрузить снимки диска',
+  'diskSnapshots.loading': 'Загрузка снимков диска',
+  'diskSnapshots.table.ariaLabel': 'Снимки диска',
+
+  // entityTags
+  'entityTags.assign': 'Назначить метки',
+  'entityTags.empty.body': 'Этому пользователю не назначено ни одной метки.',
+  'entityTags.empty.title': 'Метки не назначены',
+  'entityTags.group.ariaLabel': 'Назначенные метки',
+
+  // eventSub
+  'eventSub.add.address.help':
+    'Куда отправляются письма с уведомлениями. Оставьте пустым, чтобы использовать собственный адрес электронной почты пользователя. Движок поддерживает один адрес уведомлений на пользователя — добавление подписки с адресом, отличным от уже существующих, отклоняется.',
+  'eventSub.add.address.label': 'Адрес уведомлений',
+  'eventSub.add.address.placeholder': 'По умолчанию — эл. почта пользователя',
+  'eventSub.add.filter': 'Фильтровать события',
+  'eventSub.add.noMatch': 'Нет событий, соответствующих фильтру.',
+  'eventSub.add.notifiableEvents': 'События с уведомлением',
+  'eventSub.add.submitCount': 'Добавить ({size})',
+  'eventSub.add.title': 'Добавить уведомления о событиях',
+  'eventSub.addressFallback': 'Эл. почта пользователя',
+  'eventSub.column.address': 'Адрес',
+  'eventSub.column.event': 'Событие',
+  'eventSub.column.method': 'Способ',
+  'eventSub.empty.body':
+    'Подпишите этого пользователя на события движка, чтобы служба уведомлений отправляла ему письмо при возникновении события.',
+  'eventSub.empty.title': 'Нет уведомлений о событиях',
+  'eventSub.error.title': 'Не удалось загрузить подписки на события',
+  'eventSub.group.clusterNetwork': 'Кластер и сеть',
+  'eventSub.group.engine': 'Движок и хранилище данных',
+  'eventSub.group.gluster': 'Gluster',
+  'eventSub.group.hosts': 'Хосты',
+  'eventSub.group.storage': 'Хранилище',
+  'eventSub.group.vms': 'Виртуальные машины',
+  'eventSub.loading': 'Загрузка подписок на события',
+  'eventSub.remove.confirm.body':
+    'Пользователь перестаёт получать письма с уведомлениями об этом событии. На другие его подписки это не влияет.',
+  'eventSub.remove.confirm.title': 'Удалить уведомление для «{removing}»?',
+  'eventSub.table.ariaLabel': 'Подписки на события',
+
+  // exportOva
+  'exportOva.deniedReason':
+    'Виртуальную машину нельзя экспортировать, пока она в состоянии {status}',
+  'exportOva.directory.placeholder': '/var/tmp/ova',
+
+  // extendStorage
+  'extendStorage.action': 'Расширить',
+  'extendStorage.title': 'Расширить {name} новыми LUN',
+  'extendStorage.vgLoss.body':
+    'Выбранные LUN всё ещё принадлежат существующим группам томов. Расширение домена этими LUN уничтожает эти группы томов и всё, что на них хранится.',
+  'extendStorage.vgLoss.confirm': 'Расширить и уничтожить данные',
+
+  // fenceAgent
+  'fenceAgent.add': 'Добавить агент изоляции',
+  'fenceAgent.address.required': 'Адрес устройства изоляции обязателен.',
+  'fenceAgent.concurrent.help':
+    'Запускать этот агент одновременно со следующим по порядку, а не последовательно — используется для двойных блоков питания, оба из которых должны быть обесточены, чтобы сброс сработал.',
+  'fenceAgent.empty.body':
+    'На этом хосте не настроены агенты изоляции. Добавьте агент, чтобы движок мог выполнять изоляцию питанием.',
+  'fenceAgent.empty.title': 'Нет агентов изоляции',
+  'fenceAgent.encrypt.help':
+    'Подключаться к устройству изоляции по SSL/TLS (добавляет параметр ssl). Включите, если контроллер требует или предлагает зашифрованный канал управления.',
+  'fenceAgent.error.title': 'Не удалось загрузить агенты изоляции',
+  'fenceAgent.field.address': 'Адрес',
+  'fenceAgent.field.addressAria': 'Адрес агента изоляции',
+  'fenceAgent.field.concurrent': 'Одновременно со следующим агентом',
+  'fenceAgent.field.encrypt': 'Шифровать параметры (SSL/TLS)',
+  'fenceAgent.field.encryptAria': 'Шифровать параметры',
+  'fenceAgent.field.options': 'Параметры',
+  'fenceAgent.field.order': 'Порядок',
+  'fenceAgent.field.orderAria': 'Порядок агента изоляции',
+  'fenceAgent.field.passwordAria': 'Пароль агента изоляции',
+  'fenceAgent.field.port': 'Порт',
+  'fenceAgent.field.portAria': 'Порт агента изоляции',
+  'fenceAgent.field.typeAria': 'Тип агента изоляции',
+  'fenceAgent.field.username': 'Имя пользователя',
+  'fenceAgent.field.usernameAria': 'Имя пользователя агента изоляции',
+  'fenceAgent.loading': 'Загрузка агентов изоляции',
+  'fenceAgent.modal.editTitle': 'Изменить агент изоляции — {name}',
+  'fenceAgent.option.add': 'Добавить параметр',
+  'fenceAgent.option.nameAria': 'Имя параметра',
+  'fenceAgent.option.namePlaceholder': 'имя',
+  'fenceAgent.option.removeAria': 'Удалить параметр',
+  'fenceAgent.option.valueAria': 'Значение параметра',
+  'fenceAgent.option.valuePlaceholder': 'значение',
+  'fenceAgent.options.none':
+    'Нет параметров. Добавьте пары ключ/значение для конкретного агента (например, lanplus = 1).',
+  'fenceAgent.order.help':
+    'Когда у хоста несколько агентов изоляции, они запускаются по возрастанию — сначала меньшие номера. Задайте основному контроллеру меньший порядок, чем резервному.',
+  'fenceAgent.order.invalid': 'Порядок должен быть целым числом не меньше 1.',
+  'fenceAgent.password.createHelp':
+    'Отправляется движку один раз, который хранит его для изоляции — обратно никогда не считывается.',
+  'fenceAgent.password.editHelp':
+    'Оставьте пустым, чтобы сохранить текущий пароль. Движок никогда не возвращает его.',
+  'fenceAgent.port.help': 'Необязательно — порт управления устройства изоляции.',
+  'fenceAgent.port.invalid': 'Порт должен быть целым числом не меньше 1.',
+  'fenceAgent.remove.body':
+    'Агент изоляции удаляется с этого хоста безвозвратно. Если это был единственный агент при включённом управлении питанием, движок больше не сможет изолировать хост. Это действие нельзя отменить.',
+  'fenceAgent.remove.title': 'Удалить агент изоляции «{name}»?',
+  'fenceAgent.table.ariaLabel': 'Агенты изоляции',
+  'fenceAgent.type.help':
+    'Драйвер устройства изоляции, соответствующий внеполосному контроллеру хоста — например, ipmilan для IPMI/iLO/DRAC, apc для управляемого PDU, cisco_ucs. Он определяет, какие параметры ниже допустимы.',
+
+  // fieldHelp
+  'fieldHelp.importStorage.domainId':
+    'UUID, записанный в собственных метаданных существующего домена на LUN — идентификатор, который он имел в предыдущем движке. Хост перечисляет подключённые цели и импортирует домен, соответствующий этому идентификатору; имя и настройки берутся из метаданных домена.',
+  'fieldHelp.provider.readOnly':
+    'Провайдер только для чтения импортируется лишь для справки: движок не будет создавать, изменять или удалять сети и подсети провайдера. Оставьте выключенным, чтобы oVirt управлял сетями на этом провайдере.',
+  'fieldHelp.schedulingPolicy.filterModules':
+    'Фильтры — это жёсткие ограничения: чтобы хост рассматривался для ВМ, он должен пройти каждый включённый фильтр. Фильтр с пометкой «Первый» выполняется в начале цепочки, а с пометкой «Последний» — в конце; фильтры без позиции выполняются между ними. Каждую позицию может занимать не более одного фильтра.',
+  'fieldHelp.schedulingPolicy.loadBalancer':
+    'Единственный модуль балансировки нагрузки, который периодически выбирает перегруженные или недогруженные хосты и мигрирует ВМ с них. Его пороги настраиваются через свойства политики ниже (например, HighUtilization или CpuOverCommitDurationMinutes).',
+  'fieldHelp.schedulingPolicy.properties':
+    'Произвольные пары имя/значение, используемые выбранными модулями политики — например, HighUtilization=80, LowUtilization=20 или CpuOverCommitDurationMinutes=2 для балансировщиков по загрузке. Движок проверяет имена и значения по выбранным модулям.',
+  'fieldHelp.schedulingPolicy.weightModules':
+    'Веса — это мягкие предпочтения: каждый включённый модуль оценивает хосты-кандидаты, и оценки объединяются, каждая умножается на свой коэффициент. Больший коэффициент даёт модулю большее влияние на выбор хоста.',
+  'fieldHelp.storage.diskProfileQos':
+    'Ограничивает пропускную способность и IOPS каждого диска, использующего этот профиль. Варианты — записи QoS хранилища, определённые в дата-центре домена; оставьте «без ограничений», чтобы не задавать предел.',
+  'fieldHelp.vm.bootFirstDevice':
+    'Устройство, с которого ВМ пытается загрузиться первым; при неудаче пробуется второе устройство. Задайте первому устройству CD или сеть, чтобы загрузить установщик, затем верните на диск.',
+  'fieldHelp.vm.bootMenu':
+    'Показывать меню загрузки прошивки при включении, чтобы можно было интерактивно выбрать устройство загрузки, с короткой паузой перед загрузкой.',
+  'fieldHelp.vm.deleteProtection':
+    'Запрещает удаление этой ВМ, пока защита не будет отключена — защита от случайного удаления важной ВМ.',
+  'fieldHelp.vm.disconnectAction':
+    'Что делает ВМ, когда отключается последний сеанс консоли — ничего, заблокировать экран, выйти из системы пользователя или выключить ВМ.',
+  'fieldHelp.vm.graphicsProtocol':
+    'Стек удалённого отображения для графической консоли. SPICE поддерживает несколько мониторов, перенаправление USB и смарт-карты; VNC широко совместим; Headless работает вообще без графической консоли.',
+  'fieldHelp.vm.guaranteedMemory':
+    'Объём физической ОЗУ, который движок резервирует для этой ВМ перед её размещением на хосте. ВМ может использовать до своего размера памяти, но этот объём всегда обеспечивается реальной ОЗУ, а не подкачкой или раздуванием памяти.',
+  'fieldHelp.vm.haPriority':
+    'Когда несколько высокодоступных ВМ должны перезапуститься одновременно, а ресурсов не хватает, ВМ с более высоким приоритетом перезапускаются первыми.',
+  'fieldHelp.vm.hardwareClock':
+    'Часовой пояс, в котором работают виртуальные аппаратные часы (RTC) гостя. Для Windows используйте местный часовой пояс гостя; для Linux обычно UTC.',
+  'fieldHelp.vm.highlyAvailable':
+    'Если хост ВМ выходит из строя или изолируется, движок автоматически перезапускает ВМ на другом хосте. Зависит от настроенной изоляции/управления питанием, чтобы отказавший хост сначала был безопасно выключен.',
+  'fieldHelp.vm.icon':
+    'PNG, JPEG или GIF до 24 КБ (лучше всего 150×120). Он заменяет значок ОС по умолчанию, отображаемый в инвентаре. Применяется сразу при сохранении.',
+  'fieldHelp.vm.initrdPath':
+    'Путь к начальному ramdisk, который сочетается с ядром прямой загрузки выше. Для опытных — оставьте пустым, если не используете прямую загрузку ядра.',
+  'fieldHelp.vm.kernelParams':
+    'Параметры ядра, передаваемые ядру прямой загрузки (например, для автоматических или kickstart-установок). Используются только вместе с путём к ядру выше.',
+  'fieldHelp.vm.kernelPath':
+    'Прямая загрузка ядра: абсолютный путь (на хосте или в домене ISO) к образу ядра, с которого ВМ загружается напрямую, минуя собственный загрузчик. Для опытных — обычно оставьте пустым.',
+  'fieldHelp.vm.leaseSd':
+    'Хранит аренду HA на общем хранилище. Перед перезапуском ВМ в другом месте движок получает эту аренду, не давая одной и той же ВМ работать на двух хостах (split-brain), когда исходный хост лишь сетево изолирован. Выберите «Нет», чтобы пропустить аренду.',
+  'fieldHelp.vm.maxMemory':
+    'Верхний предел, до которого память можно нарастить «на горячую» во время работы ВМ, без перезагрузки. Должен быть не меньше размера памяти; по умолчанию — 4× размера памяти.',
+  'fieldHelp.vm.monitors':
+    'Число виртуальных дисплеев, предоставляемых гостю (только SPICE). Больше выходов позволяет гостю управлять несколькими мониторами.',
+  'fieldHelp.vm.operatingSystem':
+    'Подсказка о гостевой ОС. Она ничего не устанавливает — она сообщает движку, какое виртуальное оборудование, драйверы и значения по умолчанию подходят гостю (VirtIO, часы, watchdog и т. д.).',
+  'fieldHelp.vm.optimizedFor':
+    'Настраивает память, устройства и значения по умолчанию под нагрузку. «Рабочий стол» отдаёт предпочтение интерактивности; «Сервер» — пропускной способности; «Высокая производительность» убирает накладные расходы и закрепляет ресурсы для ВМ, чувствительных к задержкам.',
+  'fieldHelp.vm.serialConsole':
+    'Предоставляет последовательную консоль VirtIO, чтобы можно было добраться до текстовой консоли гостя по SSH через движок — полезно, когда графика или сеть недоступны.',
+  'fieldHelp.vm.serialNumberPolicy':
+    'Что движок сообщает как серийный номер системы DMI для ВМ — идентификатор хоста, собственный UUID ВМ или произвольную строку. Лицензирование некоторого гостевого ПО опирается на это значение.',
+  'fieldHelp.vm.smartcard':
+    'Перенаправляет считыватель смарт-карт на клиенте в гостя (только SPICE) для входа по смарт-карте внутри ВМ.',
+  'fieldHelp.vm.stateless':
+    'Запускает ВМ из временного снимка, который отбрасывается при каждом выключении, так что она всегда загружается из чистого состояния шаблона. Данные, записанные за сеанс, не сохраняются.',
+  'fieldHelp.vm.virtualSockets':
+    'Всего vCPU = сокеты × ядра на сокет × потоки на ядро. Число сокетов влияет на лицензирование гостевой ОС и NUMA; удерживайте конфигурацию в пределах ограничений ЦП гостевой ОС.',
+  'fieldHelp.vnicProfile.customProperties':
+    'Пары ключ/значение, передаваемые хукам устройства vNIC на хосте, например queues или security_groups. Доступные ключи зависят от конфигурации пользовательских свойств устройств движка.',
+  'fieldHelp.volume.addOption':
+    'Настраиваемый параметр тома gluster, вводимый как ключ и значение — например, auth.allow со значением 10.0.0.* или performance.cache-size со значением 256MB. Установка существующего ключа изменяет его значение.',
+  'fieldHelp.volume.newReplicaCount':
+    'Фактор реплики тома после удаления. Оставьте текущее значение, чтобы удалять целые наборы реплик без изменения фактора; уменьшите его, чтобы сократить число копий данных, которые хранит том.',
+  // host
+  'host.action.assignTags': 'Назначить метки',
+  'host.action.discoverIscsi': 'Обнаружить iSCSI',
+  'host.action.reinstall': 'Переустановить',
+  'host.deactivate.confirm.body':
+    'Работающие виртуальные машины будут мигрированы с {name} перед его переводом в обслуживание. Все, кто пользуется ВМ на этом хосте, могут заметить краткую паузу во время миграции.',
+  'host.deactivate.confirm.title': 'Перевести {name} в обслуживание?',
+  'host.enrollCertificate.confirm.body':
+    '{name} повторно зарегистрирует свой сертификат в движке. Это ненадолго перезапустит службы управления хостом.',
+  'host.enrollCertificate.confirm.title': 'Зарегистрировать сертификат на {name}?',
+  'host.fence.confirm.restart':
+    'Перезапустить {name} через его агент управления питанием. Работающие виртуальные машины обрабатываются политикой изоляции кластера; некоторые могут перезапуститься в другом месте.',
+  'host.fence.confirm.start':
+    'Отправить сигнал включения на {name} через его агент управления питанием?',
+  'host.fence.confirm.stop':
+    'Выключить {name} через его агент управления питанием. Все работающие виртуальные машины, которые не удалось мигрировать, остановятся резко.',
+  'host.fence.confirm.title': '{action} {name}?',
+
+  // hostAffinityLabels
+  'hostAffinityLabels.empty.body': 'К этому хосту не прикреплено ни одной метки сходства.',
+  'hostAffinityLabels.empty.title': 'Нет меток сходства',
+  'hostAffinityLabels.error.title': 'Не удалось загрузить метки сходства',
+  'hostAffinityLabels.loading': 'Загрузка меток сходства',
+  'hostAffinityLabels.notPermitted': 'Метки сходства',
+
+  // hostDetail
+  'hostDetail.error.title': 'Не удалось загрузить хост',
+  'hostDetail.loading': 'Загрузка хоста',
+  'hostDetail.notFound.back': 'Назад к хостам',
+  'hostDetail.notFound.body': 'Хост с идентификатором {id} вам не виден — возможно, он был удалён.',
+  'hostDetail.notFound.title': 'Хост не найден',
+  'hostDetail.remove.maintenanceTooltip': 'Переведите хост в обслуживание перед удалением',
+
+  // hostDevices
+  'hostDevices.column.driver': 'Драйвер',
+  'hostDevices.empty.body': 'Этот хост не сообщает ни о каких устройствах PCI или USB.',
+  'hostDevices.table.ariaLabel': 'Устройства хоста',
+
+  // hostErrata
+  'hostErrata.empty.body':
+    'Движок сообщает об исправлениях (errata) только при подключении к экземпляру Foreman/Satellite.',
+
+  // hostEvents
+  'hostEvents.empty.body': 'Здесь появятся события журнала аудита движка для этого хоста.',
+  'hostEvents.empty.title': 'Нет событий',
+  'hostEvents.error.title': 'Не удалось загрузить события',
+  'hostEvents.loading': 'Загрузка событий',
+  'hostEvents.table.ariaLabel': 'События этого хоста',
+
+  // hostForm
+  'hostForm.activateAfterInstall.help':
+    'Перевести хост сразу в состояние Up (готов запускать ВМ) по завершении установки, а не оставлять его в обслуживании для ручной активации.',
+  'hostForm.address.help': 'Адрес, к которому движок подключается по SSH для установки хоста',
+  'hostForm.auth.publicKey': 'Открытый ключ SSH',
+  'hostForm.cluster.editHelp': 'Переведите хост в обслуживание, чтобы сменить его кластер',
+  'hostForm.cluster.help':
+    'Кластер, к которому присоединяется хост. Его ЦП должен быть совместим с типом ЦП кластера; после этого хост запускает ВМ этого кластера и видит его сети и хранилище.',
+  'hostForm.clusters.error': 'Не удалось загрузить кластеры.',
+  'hostForm.clusters.loading': 'Загрузка кластеров…',
+  'hostForm.clusters.none': 'Нет доступных кластеров',
+  'hostForm.console.address': 'Адрес отображения консоли',
+  'hostForm.console.address.help':
+    'Графические консоли подключаются к этому адресу вместо адреса хоста.',
+  'hostForm.console.override': 'Переопределить адрес отображения',
+  'hostForm.console.override.help':
+    'По умолчанию консоли подключаются к собственному адресу хоста. Переопределите его, когда этот адрес недоступен клиентам консоли — например, когда хост за NAT и клиентам нужен публичный или иным образом маршрутизируемый адрес.',
+  'hostForm.console.override.note':
+    'Когда выключено, графические консоли подключаются к адресу хоста; отключение также очищает ранее сохранённое переопределение.',
+  'hostForm.edit.sectionsAria': 'Разделы изменения хоста',
+  'hostForm.edit.title': 'Изменить хост — {name}',
+  'hostForm.fenceProxy.add': 'Добавить расположение прокси',
+  'hostForm.fenceProxy.column.location': 'Расположение прокси',
+  'hostForm.fenceProxy.help':
+    'Движок пробует эти расположения по порядку, чтобы найти хост, способный передать команду изоляции на этот хост. Оставьте список пустым, чтобы использовать значение движка по умолчанию (кластер, затем дата-центр).',
+  'hostForm.field.activateAfterInstall': 'Активировать хост после установки',
+  'hostForm.field.address': 'Имя хоста / IP',
+  'hostForm.field.addressAria': 'Имя хоста или IP-адрес',
+  'hostForm.field.authentication': 'Аутентификация',
+  'hostForm.field.hostComment': 'Комментарий хоста',
+  'hostForm.field.hostName': 'Имя хоста',
+  'hostForm.field.rebootAfterInstall': 'Перезагрузить хост после установки',
+  'hostForm.field.rootPassword': 'Пароль root',
+  'hostForm.field.sshPort': 'Порт SSH',
+  'hostForm.field.sshUser': 'Пользователь SSH',
+  'hostForm.hostedEngine.deploy': 'Развернуть hosted engine',
+  'hostForm.hostedEngine.deploy.help':
+    'Установка также развёртывает компоненты самоуправляемого движка, чтобы этот хост мог запускать ВМ движка наряду с существующими хостами hosted engine. Оставьте выключенным для обычного хоста виртуализации.',
+  'hostForm.kernel.cmdline': 'Пользовательская командная строка ядра',
+  'hostForm.kernel.cmdline.help':
+    'Дополнительные параметры загрузки ядра, применяемые к хосту (например, iommu=pt для проброса устройств, hugepages, isolcpus). Применяются при следующей переустановке или перезагрузке хоста.',
+  'hostForm.kernel.cmdline.warning': 'Применяется при следующей переустановке/перезагрузке хоста.',
+  'hostForm.new.sectionsAria': 'Разделы нового хоста',
+  'hostForm.pm.automatic': 'Автоматическое управление питанием',
+  'hostForm.pm.automatic.help':
+    'Позволить политике планирования кластера выключать этот хост при простое и включать его снова, когда нужны ресурсы, для экономии энергии.',
+  'hostForm.pm.createWarning':
+    'Агенты изоляции нельзя включить при добавлении хоста, поэтому он будет создан с включённым, но неработающим управлением питанием, пока агент изоляции не будет добавлен позже. Добавьте агенты изоляции, изменив хост после его создания.',
+  'hostForm.pm.enable': 'Включить управление питанием',
+  'hostForm.pm.enable.help':
+    'Позволить движку управлять питанием хоста через агент изоляции — чтобы сбрасывать неотвечающий хост (изоляция) и включать/выключать хосты для обслуживания и балансировки. Для работы требуется хотя бы один агент изоляции.',
+  'hostForm.pm.kdump': 'Интеграция с kdump',
+  'hostForm.pm.kdump.help':
+    'Перед изоляцией дождаться, пока хост завершит запись аварийного дампа ядра (kdump), чтобы не потерять данные о сбое. Требует настроенного kdump на хосте.',
+  'hostForm.pm.noAgentWarning':
+    'Управление питанием включено, но агент изоляции не настроен — движок отклонит сохранение, пока вы не добавите хотя бы один агент ниже.',
+  'hostForm.pmProxy.dc': 'Дата-центр',
+  'hostForm.pmProxy.otherDc': 'Другой дата-центр',
+  'hostForm.publicKey.hint':
+    'Перед добавлением добавьте открытый ключ SSH движка в /root/.ssh/authorized_keys на хосте. Ключ выдаётся движком по адресу /ovirt-engine/services/pki-resource?resource=engine-certificate&format=OPENSSH-PUBKEY.',
+  'hostForm.rebootAfterInstall.help':
+    'Перезагрузить хост по завершении установки, чтобы изменения ядра или прошивки вступили в силу до того, как он начнёт запускать ВМ.',
+  'hostForm.rootPassword.help':
+    'Используется один раз по SSH для установки хоста — движок его не хранит.',
+  'hostForm.section.consoleGpu': 'Консоль и GPU',
+  'hostForm.section.general': 'Общее',
+  'hostForm.section.hostedEngine': 'Hosted Engine',
+  'hostForm.section.kernel': 'Ядро',
+  'hostForm.section.powerManagement': 'Управление питанием',
+  'hostForm.section.spm': 'SPM',
+  'hostForm.spm.custom': 'Настраиваемый ({priority})',
+  'hostForm.spm.help':
+    'Более высокий приоритет повышает вероятность того, что этот хост будет выбран Storage Pool Manager; «Никогда» исключает его из выбора.',
+  'hostForm.spm.high': 'Высокий',
+  'hostForm.spm.low': 'Низкий',
+  'hostForm.spm.never': 'Никогда',
+  'hostForm.spm.normal': 'Обычный',
+  'hostForm.spm.priority': 'Приоритет SPM',
+  'hostForm.spm.priority.help':
+    'Storage Pool Manager — это единственный хост, выполняющий операции с метаданными хранилища дата-центра — создание, удаление и расширение дисков. Роль в каждый момент времени держит только один хост; эта настройка влияет на то, какой хост будет выбран.',
+  'hostForm.validation.address': 'Введите корректное имя хоста или IP-адрес',
+  'hostForm.validation.maxLength255': 'Не более 255 символов',
+  'hostForm.validation.nameChars': 'Разрешены только буквы, цифры, точки, дефисы и подчёркивания',
+  'hostForm.validation.portRange': 'Должно быть целым числом от 1 до 65535',
+  'hostForm.validation.portRequired': 'Введите порт от 1 до 65535',
+
+  // hostGeneral
+  'hostGeneral.field.activeTotalVms': 'Активные/всего ВМ',
+  'hostGeneral.field.coresPerSocket': 'Ядер на сокет',
+  'hostGeneral.field.cpuModelName': 'Название модели ЦП',
+  'hostGeneral.field.cpuType': 'Тип ЦП',
+  'hostGeneral.field.devicePassthrough': 'Проброс устройств',
+  'hostGeneral.field.family': 'Семейство',
+  'hostGeneral.field.hostedEngineHa': 'HA hosted engine',
+  'hostGeneral.field.kdumpStatus': 'Состояние kdump',
+  'hostGeneral.field.logicalCpuCores': 'Логические ядра ЦП',
+  'hostGeneral.field.manufacturer': 'Производитель',
+  'hostGeneral.field.maxSchedulingMemory': 'Макс. свободная память для планирования',
+  'hostGeneral.field.onlineCpuCores': 'Активные ядра ЦП',
+  'hostGeneral.field.operatingSystem': 'Операционная система',
+  'hostGeneral.field.physicalMemory': 'Физическая память',
+  'hostGeneral.field.productName': 'Название продукта',
+  'hostGeneral.field.selinuxMode': 'Режим SELinux',
+  'hostGeneral.field.serialNumber': 'Серийный номер',
+  'hostGeneral.field.sockets': 'Сокеты',
+  'hostGeneral.field.spmPriority': 'Приоритет SPM',
+  'hostGeneral.field.spmStatus': 'Состояние SPM',
+  'hostGeneral.field.threadsPerCore': 'Потоков на ядро',
+  'hostGeneral.field.uuid': 'UUID',
+  'hostGeneral.field.vdsmVersion': 'Версия VDSM',
+  'hostGeneral.field.version': 'Версия',
+  'hostGeneral.hostedEngine.activeScore': 'Активен (оценка: {score})',
+  'hostGeneral.hostedEngine.down': 'Отключён',
+  'hostGeneral.pm.alert.body':
+    'Настройте управление питанием на хосте, чтобы включить изоляцию и автоматическое восстановление.',
+  'hostGeneral.pm.alert.title': 'Управление питанием не настроено для этого хоста',
+
+  // hostHooks
+  'hostHooks.column.event': 'Событие',
+  'hostHooks.empty.body':
+    'Хуки VDSM появляются здесь, когда на хосте развёрнуты пользовательские скрипты-хуки.',
+  'hostHooks.empty.title': 'Хуки хоста не настроены',
+  'hostHooks.error.title': 'Не удалось загрузить хуки хоста',
+  'hostHooks.loading': 'Загрузка хуков хоста',
+  'hostHooks.notPermitted': 'Хуки хоста',
+  'hostHooks.table.ariaLabel': 'Хуки хоста',
+
+  // hostNics
+  'hostNics.aria.networksOn': 'Сети на {name}',
+  'hostNics.column.ipv4': 'IPv4-адрес',
+  'hostNics.column.networks': 'Сети',
+  'hostNics.column.speed': 'Скорость',
+  'hostNics.empty.body': 'У этого хоста нет сетевых интерфейсов.',
+  'hostNics.empty.title': 'Нет сетевых интерфейсов',
+  'hostNics.error.title': 'Не удалось загрузить сетевые интерфейсы',
+  'hostNics.loading': 'Загрузка сетевых интерфейсов',
+  'hostNics.setupNetworks': 'Настроить сети',
+  'hostNics.table.ariaLabel': 'Сетевые интерфейсы хоста',
+
+  // hostNuma
+  'hostNuma.pinning.column.physicalNode': 'Физический узел',
+  'hostNuma.pinning.column.vcpus': 'vCPU',
+  'hostNuma.pinning.column.virtualNode': 'Виртуальный узел',
+  'hostNuma.pinning.column.vm': 'Виртуальная машина',
+  'hostNuma.pinning.empty.body':
+    'Ни одна работающая виртуальная машина на этом хосте не закрепляет виртуальный узел NUMA за одним из его физических узлов. Закреплённые узлы появятся здесь, как только у работающей ВМ будет настроено закрепление vNUMA.',
+  'hostNuma.pinning.empty.title': 'Нет закрепления виртуального NUMA',
+  'hostNuma.pinning.error.title': 'Не удалось загрузить закрепление виртуального NUMA',
+  'hostNuma.pinning.loading': 'Загрузка закрепления виртуального NUMA',
+  'hostNuma.pinning.title': 'Закрепление виртуального NUMA',
+  'hostNuma.topology.title': 'Топология физического NUMA',
+
+  // hosts
+  'hosts.remove.confirm.body': 'Хост будет удалён безвозвратно. Это действие нельзя отменить.',
+  'hosts.remove.confirm.inputAria': 'Введите имя хоста для подтверждения удаления',
+  'hosts.remove.confirm.title': 'Удалить {name}?',
+  'hosts.remove.confirm.typeLabel': 'Введите «{name}» для подтверждения',
+
+  // hostVms
+  'hostVms.empty.body': 'На этом хосте не запущено ни одной виртуальной машины.',
+  'hostVms.empty.title': 'Нет виртуальных машин',
+  'hostVms.error.title': 'Не удалось загрузить виртуальные машины',
+  'hostVms.loading': 'Загрузка виртуальных машин',
+  'hostVms.table.ariaLabel': 'Виртуальные машины на этом хосте',
+
+  // importStorage
+  'importStorage.detectedIds.aria': 'Обнаруженные идентификаторы доменов хранения',
+  'importStorage.detectedIds.help':
+    'Идентификаторы доменов, сообщённые на LUN хоста (могут включать домены, которыми этот движок уже управляет):',
+  'importStorage.detectedIds.use': 'Использовать идентификатор домена {id}',
+  'importStorage.domainId.hint': 'Введите UUID существующего домена.',
+  'importStorage.domainId.label': 'Идентификатор домена хранения',
+
+  // instanceTypeForm
+  'instanceTypeForm.aria.description': 'Описание типа экземпляра',
+  'instanceTypeForm.aria.name': 'Имя типа экземпляра',
+  'instanceTypeForm.memory.error.guaranteed':
+    'Гарантированная физическая память не может превышать размер памяти',
+  'instanceTypeForm.memory.error.max': 'Максимальная память не может быть меньше размера памяти',
+  'instanceTypeForm.memory.error.positive': 'Размер памяти должен быть больше 0',
+  'instanceTypeForm.section.cpu': 'Виртуальные ЦП',
+  'instanceTypeForm.title.edit': 'Изменить тип экземпляра — {name}',
+  'instanceTypeForm.title.new': 'Новый тип экземпляра',
+
+  // instanceTypes
+  'instanceTypes.column.guaranteed': 'Гарантированная память',
+  'instanceTypes.column.ha': 'Высокодоступный',
+  'instanceTypes.column.memory': 'Память',
+  'instanceTypes.column.sockets': 'Сокеты',
+  'instanceTypes.column.vcpus': 'vCPU',
+  'instanceTypes.empty.body':
+    'Здесь появятся типы экземпляров, на просмотр которых у вас есть разрешение.',
+  'instanceTypes.empty.title': 'Нет типов экземпляров',
+  'instanceTypes.error.title': 'Не удалось загрузить типы экземпляров',
+  'instanceTypes.loading': 'Загрузка типов экземпляров',
+  'instanceTypes.new': 'Новый тип экземпляра',
+  'instanceTypes.notPermitted': 'типы экземпляров',
+  'instanceTypes.pagination.ariaLabel': 'Пагинация типов экземпляров',
+  'instanceTypes.remove.confirm.body':
+    'Тип экземпляра удаляется безвозвратно. Любая созданная из него ВМ продолжает работать — её конфигурация просто становится настраиваемой.',
+  'instanceTypes.remove.confirm.title': "Удалить тип экземпляра ''{name}''?",
+  'instanceTypes.search.ariaLabel': 'Поиск типов экземпляров',
+  'instanceTypes.search.hint': 'name=small* — или обычный текст',
+  'instanceTypes.searchEmpty.body': 'По вашему запросу не найдено ни одного типа экземпляра.',
+  'instanceTypes.searchEmpty.title': 'Нет подходящих типов экземпляров',
+  'instanceTypes.table.ariaLabel': 'Типы экземпляров',
+  'instanceTypes.title': 'Типы экземпляров',
+
+  // macPool
+  'macPool.allowDuplicates': 'Разрешить дубликаты',
+  'macPool.allowDuplicates.help':
+    'Когда включено, один и тот же MAC-адрес можно назначить более чем одному vNIC.',
+  'macPool.description.aria': 'Описание пула MAC',
+  'macPool.name.aria': 'Имя пула MAC',
+  'macPool.name.required': 'Имя пула обязательно.',
+  'macPool.range.fromAria': 'Диапазон от',
+  'macPool.range.removeAria': 'Удалить диапазон',
+  'macPool.range.toAria': 'Диапазон до',
+  'macPool.ranges.add': 'Добавить диапазон',
+  'macPool.ranges.hint': 'Каждый диапазон — это включающая пара MAC-адресов начало–конец.',
+  'macPool.ranges.invalid':
+    'Каждому диапазону нужны корректные начальный и конечный MAC-адреса (xx:xx:xx:xx:xx:xx).',
+  'macPool.ranges.label': 'Диапазоны MAC-адресов',
+  'macPool.ranges.required': 'Требуется хотя бы один диапазон MAC-адресов.',
+  'macPool.title.edit': 'Изменить пул MAC — {name}',
+  'macPool.title.new': 'Новый пул MAC',
+
+  // macPools
+  'macPools.column.allowDuplicates': 'Разрешить дубликаты',
+  'macPools.column.ranges': 'Диапазоны',
+  'macPools.empty.body': 'Здесь появляются пулы MAC-адресов, определённые в движке.',
+  'macPools.empty.title': 'Нет пулов MAC-адресов',
+  'macPools.error.title': 'Не удалось загрузить пулы MAC-адресов',
+  'macPools.filter.ariaLabel': 'Фильтровать пулы MAC-адресов по имени',
+  'macPools.filter.hint': 'Фильтр по имени',
+  'macPools.loading': 'Загрузка пулов MAC-адресов',
+  'macPools.new': 'Новый пул',
+  'macPools.notPermitted': 'Пулы MAC-адресов',
+  'macPools.ranges.count':
+    '{count, plural, one {# диапазон} few {# диапазона} many {# диапазонов} other {# диапазона}}',
+  'macPools.ranges.none': 'Нет диапазонов',
+  'macPools.remove.confirm.body':
+    'Пул удаляется безвозвратно. Пул, всё ещё назначенный кластеру, удалить нельзя — сначала переназначьте эти кластеры, иначе движок отклонит удаление. Это действие нельзя отменить.',
+  'macPools.remove.confirm.title': "Удалить пул MAC ''{name}''?",
+  'macPools.remove.defaultReason': 'Встроенный пул Default удалить нельзя.',
+  'macPools.table.ariaLabel': 'Пулы MAC-адресов',
+  'macPools.title': 'Пулы MAC-адресов',
+
+  // migrate
+  'migrate.host.label.v9': 'Хост',
+
+  // moreTabs
+  'moreTabs.ariaLabel': 'Ещё вкладки',
+  'moreTabs.label': 'Ещё',
+  // networkClusters
+  'networkClusters.action.markRequired': 'Отметить как обязательную',
+  'networkClusters.action.unmarkRequired': 'Снять отметку обязательной',
+  'networkClusters.column.roles': 'Роли сети',
+  'networkClusters.detach.confirm.body':
+    'Отсоединение удаляет эту сеть со всех хостов кластера; vNIC, использующие её профили там, теряют связь.',
+  'networkClusters.detach.confirm.title': 'Отсоединить {network} от {cluster}?',
+  'networkClusters.empty.body': 'В дата-центре этой сети нет кластеров.',
+  'networkClusters.empty.title': 'Нет кластеров',
+  'networkClusters.error.title': 'Не удалось загрузить кластеры',
+  'networkClusters.noDataCenter':
+    'У этой сети нет связи с дата-центром, поэтому её кластеры нельзя перечислить.',
+  'networkClusters.rolesOn': 'Роли сети на {name}',
+  'networkClusters.table.ariaLabel': 'Кластеры в дата-центре этой сети',
+
+  // networkDetail
+  'networkDetail.tab.clusters': 'Кластеры',
+
+  // networkForm
+  'networkForm.aria.description': 'Описание сети',
+  'networkForm.aria.name': 'Имя сети',
+  'networkForm.attach.aria': 'Прикрепить к {name}',
+  'networkForm.clusters': 'Прикрепить к кластерам',
+  'networkForm.clusters.error': 'Не удалось загрузить кластеры: {message}',
+  'networkForm.clusters.loading': 'Загрузка кластеров',
+  'networkForm.clusters.none': 'В этом дата-центре нет кластеров.',
+  'networkForm.clusters.selectDc': 'Выберите дата-центр, чтобы прикрепить сеть к его кластерам.',
+  'networkForm.column.required': 'Обязательно',
+  'networkForm.label': 'Метка сети',
+  'networkForm.label.hint':
+    'Необязательная метка позволяет сетевым адаптерам хостов, несущим её, автоматически прикреплять эту сеть.',
+  'networkForm.qos': 'QoS сети',
+  'networkForm.qos.error': 'Не удалось загрузить профили QoS: {message}',
+  'networkForm.qos.selectDc': 'Выберите дата-центр, чтобы выбрать профиль QoS.',
+  'networkForm.qos.unlimited': 'Без ограничений (без QoS)',
+  'networkForm.require.aria': 'Требовать на {name}',
+  'networkForm.title.edit': 'Изменить сеть — {name}',
+  'networkForm.title.new': 'Новая логическая сеть',
+  'networkForm.vlanEnabled': 'Включить тегирование VLAN',
+  'networkForm.vmNetwork': 'Сеть ВМ',
+
+  // networkVnic
+  'networkVnic.new': 'Новый профиль vNIC',
+  'networkVnic.remove.confirm.body':
+    'Профиль, всё ещё используемый каким-либо vNIC ВМ или шаблона, удалить нельзя — движок его отклоняет.',
+  'networkVnic.remove.confirm.title': 'Удалить профиль vNIC {name}?',
+
+  // permissions
+  'permissions.noun.pool': 'Пул ВМ',
+  'permissions.noun.vnicProfile': 'Профиль vNIC',
+
+  // poolDetail
+  'poolDetail.notFound.body': 'Пул с идентификатором {id} вам не виден — возможно, он был удалён.',
+  'poolDetail.tabs.ariaLabel': 'вкладки сведений о пуле',
+
+  // poolVms
+  'poolVms.empty.body': 'В этом пуле нет виртуальных машин-участников.',
+  'poolVms.table.ariaLabel': 'Виртуальные машины в этом пуле',
+
+  // power
+  'power.menu.label': 'Питание',
+  'power.reboot.confirm':
+    'Гостевой ОС будет предложено перезапуститься; все, кто пользуется этой ВМ, будут прерваны.',
+  'power.reboot.description': 'Попросить гостевую ОС корректно перезапуститься.',
+  'power.reset.confirm':
+    'Жёстко сбрасывает ВМ, не спрашивая гостевую ОС — как нажатие кнопки сброса; несохранённые данные теряются.',
+  'power.reset.description':
+    'Мгновенно перезапустить, не сообщая гостевой ОС — как нажатие кнопки сброса.',
+  'power.shutdown.confirm':
+    'Гостевой ОС будет предложено завершить работу; все, кто пользуется этой ВМ, будут прерваны.',
+  'power.shutdown.description':
+    'Попросить гостевую ОС корректно завершить работу, затем выключить питание.',
+  'power.start.description': 'Загрузить ВМ на хосте в её кластере.',
+  'power.stop.confirm':
+    'Выключение питания обрывает питание, не прося гостевую ОС завершить работу — несохранённые данные могут быть потеряны.',
+  'power.stop.description':
+    'Немедленно обрезать питание, не сообщая гостевой ОС — как выдёргивание вилки.',
+  'power.suspend.description':
+    'Сохранить состояние ВМ на диск и приостановить её; возобновить позже через «Запустить».',
+
+  // providerForm
+  'providerForm.aria.description': 'Описание провайдера',
+  'providerForm.aria.name': 'Имя провайдера',
+  'providerForm.aria.password': 'Пароль провайдера',
+  'providerForm.aria.type': 'Тип провайдера',
+  'providerForm.aria.username': 'Имя пользователя провайдера',
+  'providerForm.authUrl.hint': 'Конечная точка OpenStack Identity (Keystone).',
+  'providerForm.authVersion': 'Версия Identity API',
+  'providerForm.authVersion.v2': 'Версия 2.0 (арендатор)',
+  'providerForm.authVersion.v2.aria': 'Identity API версии 2.0',
+  'providerForm.authVersion.v3': 'Версия 3 (домены + проект)',
+  'providerForm.authVersion.v3.aria': 'Identity API версии 3',
+  'providerForm.domain.placeholder': 'По умолчанию',
+  'providerForm.name.required': 'Имя провайдера обязательно.',
+  'providerForm.networkType.external': 'Внешний (драйвер от провайдера)',
+  'providerForm.networkType.neutron': 'Neutron (встроенный драйвер)',
+  'providerForm.password.hint.create':
+    'Отправляется движку один раз, который хранит его — обратно никогда не считывается.',
+  'providerForm.password.hint.edit':
+    'Оставьте пустым, чтобы сохранить текущий пароль. Движок никогда не возвращает его.',
+  'providerForm.project.hint': 'Проект OpenStack (в Identity API v3 заменяет арендатора).',
+  'providerForm.projectDomain.hint': 'Домен, к которому принадлежит проект.',
+  'providerForm.readOnly': 'Только для чтения',
+  'providerForm.readOnly.aria': 'Провайдер только для чтения',
+  'providerForm.tenant.hint': 'Необязательно — арендатор/проект OpenStack (Identity API v2.0).',
+  'providerForm.test.action': 'Проверить',
+  'providerForm.test.fail.title': 'Не удалось подключиться',
+  'providerForm.test.success.body':
+    'Движок связался с провайдером, используя сохранённые учётные данные.',
+  'providerForm.test.success.title': 'Подключение успешно',
+  'providerForm.title.edit': 'Изменить провайдер — {name}',
+  'providerForm.title.new': 'Добавить провайдер',
+  'providerForm.url': 'URL провайдера',
+  'providerForm.url.required': 'URL провайдера обязателен.',
+  'providerForm.userDomain.hint': 'Домен, к которому принадлежит имя пользователя.',
+
+  // quotaDetail
+  'quotaDetail.notFound.body':
+    'Квота с идентификатором {id} вам не видна — возможно, она была удалена.',
+  'quotaDetail.notFound.title': 'Квота не найдена',
+  'quotaDetail.tab.templates': 'Шаблоны',
+  'quotaDetail.tab.users': 'Пользователи',
+  'quotaDetail.tab.vms': 'Виртуальные машины',
+  'quotaDetail.tabs.ariaLabel': 'вкладки сведений о квоте',
+
+  // quotaForm
+  'quotaForm.aria.description': 'Описание квоты',
+  'quotaForm.aria.name': 'Имя квоты',
+  'quotaForm.dataCenter.fixed': 'Дата-центр квоты изменить нельзя.',
+  'quotaForm.dataCenter.required': 'Выберите дата-центр.',
+  'quotaForm.grace': 'Льготный запас (% сверх лимита)',
+  'quotaForm.limitsAlert.body':
+    'Эта квота отслеживает использование, не ограничивая его. Лимиты по кластерам (память, vCPU) и по хранилищу (ГБ) управляются отдельно.',
+  'quotaForm.limitsAlert.title': 'Лимиты по умолчанию без ограничений',
+  'quotaForm.name.required': 'Необходимо указать имя.',
+  'quotaForm.percent.invalid': 'Введите целое число от 0 до 100.',
+  'quotaForm.section.cluster': 'Кластер (вычисления)',
+  'quotaForm.section.storage': 'Хранилище',
+  'quotaForm.title.edit': 'Изменить квоту — {name}',
+  'quotaForm.warningThreshold': 'Порог предупреждения (%)',
+
+  // quotaTemplates
+  'quotaTemplates.column.cluster': 'Кластер',
+  'quotaTemplates.column.name': 'Имя',
+  'quotaTemplates.column.status': 'Состояние',
+  'quotaTemplates.empty.body': 'Эту квоту не потребляет ни один шаблон.',
+  'quotaTemplates.table.ariaLabel': 'Шаблоны, потребляющие эту квоту',
+
+  // quotaUsers
+  'quotaUsers.assign.description':
+    'Предоставьте роль QuotaConsumer на этой квоте пользователю или группе, позволяя им назначать её виртуальным машинам и дискам.',
+  'quotaUsers.assign.title': 'Добавить потребителя квоты',
+  'quotaUsers.empty.body':
+    'Пока ни один пользователь или группа не имеет роли QuotaConsumer на этой квоте.',
+  'quotaUsers.empty.title': 'Нет потребителей',
+  'quotaUsers.error.title': 'Не удалось загрузить потребителей квоты',
+  'quotaUsers.loading': 'Загрузка потребителей квоты',
+  'quotaUsers.remove.confirm.body':
+    'Субъект теряет роль QuotaConsumer на этой квоте и больше не может назначать её новым виртуальным машинам или дискам. Существующие объекты сохраняют свою квоту.',
+  'quotaUsers.remove.confirm.title': 'Удалить потребителя квоты {name}?',
+  'quotaUsers.table.ariaLabel': 'Потребители квоты',
+
+  // quotaVms
+  'quotaVms.column.cluster': 'Кластер',
+  'quotaVms.column.definedMemory': 'Определённая память',
+  'quotaVms.column.name': 'Имя',
+  'quotaVms.column.status': 'Состояние',
+  'quotaVms.empty.body': 'Эту квоту не потребляет ни одна виртуальная машина.',
+  'quotaVms.table.ariaLabel': 'Виртуальные машины, потребляющие эту квоту',
+
+  // reinstall
+  'reinstall.activate': 'Активировать хост после переустановки',
+  'reinstall.body':
+    'Переустановка заново выполняет полное развёртывание хоста (VDSM и связанное ПО). Во время процесса хост остаётся в обслуживании, затем возвращается в прежнее состояние.',
+  'reinstall.hostedEngine': 'Hosted engine',
+  'reinstall.hostedEngine.aria': 'Развёртывание hosted engine',
+  'reinstall.hostedEngine.deploy': 'Развернуть',
+  'reinstall.hostedEngine.none': 'Не изменять',
+  'reinstall.hostedEngine.undeploy': 'Свернуть',
+  'reinstall.publicKey.hint':
+    'Повторно использует ключ SSH движка, уже находящийся в authorized_keys хоста.',
+  'reinstall.rootPassword.help':
+    'Используется один раз по SSH для повторного развёртывания хоста — движок его не хранит.',
+  'reinstall.title': 'Переустановить {name}?',
+
+  // removeUser
+  'removeUser.body':
+    'Это удаляет <strong>{userName}</strong> из движка. Учётная запись в каталоге не удаляется — вы можете снова добавить пользователя из каталога позже.',
+  'removeUser.title': 'Удалить пользователя',
+
+  // roles
+  'roles.category.countLabel': '{categoryLabel} ({checkedCount}/{length})',
+
+  // runOnce
+  'runOnce.boot.none': 'Нет',
+  'runOnce.cloudInit.addNic': 'Добавить NIC',
+  'runOnce.cloudInit.customScript': 'Пользовательский скрипт',
+  'runOnce.cloudInit.customScript.ariaLabel': 'Пользовательский скрипт cloud-init',
+  'runOnce.cloudInit.dnsSearch': 'Домены поиска DNS',
+  'runOnce.cloudInit.dnsSearch.ariaLabel': 'Домены поиска DNS cloud-init',
+  'runOnce.cloudInit.dnsSearch.placeholder': 'например, example.com',
+  'runOnce.cloudInit.dnsServers': 'Серверы DNS',
+  'runOnce.cloudInit.dnsServers.ariaLabel': 'Серверы DNS cloud-init',
+  'runOnce.cloudInit.dnsServers.placeholder': 'например, 8.8.8.8 8.8.4.4',
+  'runOnce.cloudInit.hostname': 'Имя хоста',
+  'runOnce.cloudInit.hostname.ariaLabel': 'Имя хоста cloud-init',
+  'runOnce.cloudInit.network.ariaLabel': 'Сеть cloud-init',
+  'runOnce.cloudInit.nic.address': 'Адрес',
+  'runOnce.cloudInit.nic.address.ariaLabel': 'Адрес NIC {index}',
+  'runOnce.cloudInit.nic.gateway.ariaLabel': 'Шлюз NIC {index}',
+  'runOnce.cloudInit.nic.name.ariaLabel': 'Имя NIC {index}',
+  'runOnce.cloudInit.nic.netmask.ariaLabel': 'Маска подсети NIC {index}',
+  'runOnce.cloudInit.nic.remove.ariaLabel': 'Удалить NIC {index}',
+  'runOnce.cloudInit.noNics': 'Для этого запуска не настроены статические NIC.',
+  'runOnce.customProps.ariaLabel': 'Пользовательские свойства однократного запуска',
+  'runOnce.customProps.empty': 'Нет пользовательских свойств для этого запуска.',
+  'runOnce.customProps.name.ariaLabel': 'Имя свойства {index}',
+  'runOnce.customProps.remove.ariaLabel': 'Удалить свойство {index}',
+  'runOnce.customProps.title': 'Пользовательские свойства',
+  'runOnce.customProps.value.ariaLabel': 'Значение свойства {index}',
+  'runOnce.initialRun.cloudInit': 'Запустить cloud-init при этой загрузке',
+  'runOnce.initialRun.sysprep': 'Запустить sysprep при этой загрузке',
+  'runOnce.kernel.ariaLabel': 'Пользовательское ядро',
+  'runOnce.kernel.initrd': 'Путь к initrd',
+  'runOnce.kernel.path.placeholder': 'например, iso://vmlinuz',
+  'runOnce.kernel.title': 'Пользовательское ядро (для опытных)',
+  'runOnce.secondBootDevice': 'Второе устройство загрузки',
+  'runOnce.sysprep.adminPassword': 'Пароль администратора',
+  'runOnce.sysprep.adminPassword.ariaLabel': 'Пароль администратора sysprep',
+  'runOnce.sysprep.customScript': 'Пользовательский скрипт (unattend)',
+  'runOnce.sysprep.customScript.ariaLabel': 'Пользовательский скрипт sysprep',
+  'runOnce.sysprep.domain.ariaLabel': 'Домен sysprep',
+
+  // schedulingPolicies
+  'schedulingPolicies.action.clone': 'Клонировать',
+  'schedulingPolicies.defaultSuffix': ' (по умолчанию)',
+  'schedulingPolicies.empty.body':
+    'Политики планирования управляют тем, как движок размещает и балансирует ВМ по хостам кластера.',
+  'schedulingPolicies.empty.title': 'Нет политик планирования',
+  'schedulingPolicies.error.title': 'Не удалось загрузить политики планирования',
+  'schedulingPolicies.filter.ariaLabel': 'Фильтровать политики планирования по имени',
+  'schedulingPolicies.filter.hint': 'Фильтр по имени',
+  'schedulingPolicies.loading': 'Загрузка политик планирования',
+  'schedulingPolicies.locked.editReason':
+    'Встроенные политики планирования заблокированы, их нельзя изменять.',
+  'schedulingPolicies.locked.removeReason':
+    'Встроенные политики планирования заблокированы, их нельзя удалять.',
+  'schedulingPolicies.new': 'Новая политика',
+  'schedulingPolicies.notPermitted': 'Политики планирования',
+  'schedulingPolicies.remove.confirm.body':
+    'Политика удаляется безвозвратно. Политику, всё ещё назначенную кластеру, удалить нельзя — сначала переведите эти кластеры на другую политику, иначе движок отклонит удаление. Это действие нельзя отменить.',
+  'schedulingPolicies.remove.confirm.title': "Удалить политику планирования ''{name}''?",
+  'schedulingPolicies.table.ariaLabel': 'Политики планирования',
+  'schedulingPolicies.title': 'Политики планирования',
+  'schedulingPolicies.type.custom': 'Настраиваемая',
+  'schedulingPolicies.type.locked': 'Заблокирована',
+
+  // schedulingPolicy
+  'schedulingPolicy.assignments.error.title': 'Не удалось загрузить назначения модулей политики',
+  'schedulingPolicy.balancer.label': 'Балансировщик нагрузки',
+  'schedulingPolicy.balancer.none': 'Нет',
+  'schedulingPolicy.cloneName': 'Копия {name}',
+  'schedulingPolicy.description.aria': 'Описание политики планирования',
+  'schedulingPolicy.filter.positionAria': 'Позиция {name}',
+  'schedulingPolicy.filters.label': 'Модули фильтров',
+  'schedulingPolicy.loading': 'Загрузка политики планирования',
+  'schedulingPolicy.name.aria': 'Имя политики планирования',
+  'schedulingPolicy.name.required': 'Имя политики обязательно.',
+  'schedulingPolicy.position.first': 'Первый',
+  'schedulingPolicy.position.last': 'Последний',
+  'schedulingPolicy.position.none': 'Без позиции',
+  'schedulingPolicy.properties.label': 'Свойства',
+  'schedulingPolicy.property.add': 'Добавить свойство',
+  'schedulingPolicy.property.nameAria': 'Имя свойства',
+  'schedulingPolicy.property.namePlaceholder': 'HighUtilization',
+  'schedulingPolicy.property.removeAria': 'Удалить свойство',
+  'schedulingPolicy.property.valueAria': 'Значение свойства',
+  'schedulingPolicy.title.clone': 'Клонировать политику планирования — {name}',
+  'schedulingPolicy.title.edit': 'Изменить политику планирования — {name}',
+  'schedulingPolicy.title.new': 'Новая политика планирования',
+  'schedulingPolicy.units.empty.body':
+    'Движок не вернул модулей политики планирования, поэтому фильтры, веса и балансировку нагрузки здесь настроить нельзя.',
+  'schedulingPolicy.units.empty.title': 'Нет доступных модулей политики',
+  'schedulingPolicy.units.error.title': 'Не удалось загрузить каталог модулей политики',
+  'schedulingPolicy.units.loading': 'Загрузка модулей политики',
+  'schedulingPolicy.weight.factorAria': 'Коэффициент {name}',
+  'schedulingPolicy.weights.factorError':
+    'Каждый коэффициент должен быть целым числом не меньше 1.',
+  'schedulingPolicy.weights.label': 'Модули весов',
+
+  // setupNetworks
+  'setupNetworks.aria.configureSriov': 'Настроить SR-IOV для {name}',
+  'setupNetworks.aria.labelsOn': 'Метки на {name}',
+  'setupNetworks.aria.newLabel': 'Новая метка для {name}',
+  'setupNetworks.aria.qosField': '{label} для {name}',
+  'setupNetworks.aria.qosOverride': 'Переопределить QoS сети хоста для {name}',
+  'setupNetworks.aria.removeLabel': 'Удалить метку {label} с {name}',
+  'setupNetworks.bondMode.mode1': 'Active-backup (режим 1)',
+  'setupNetworks.bondMode.mode2': 'Балансировка нагрузки — balance-xor (режим 2)',
+  'setupNetworks.bondMode.mode4': 'Динамическая агрегация каналов — 802.3ad (режим 4)',
+  'setupNetworks.bondMode.mode5':
+    'Адаптивная балансировка нагрузки передачи — balance-tlb (режим 5)',
+  'setupNetworks.labels.add': 'Добавить метку',
+  'setupNetworks.labels.help':
+    'Метки сети, прикреплённые к этому NIC. Движок автоматически подключает к NIC каждую сеть с соответствующей меткой.',
+  'setupNetworks.labels.label': 'Метки',
+  'setupNetworks.labels.none': 'Нет меток',
+  'setupNetworks.labels.placeholder': 'Метка',
+  'setupNetworks.qos.help':
+    'Переопределить QoS дата-центра сети для привязки на этом хосте. Оставьте выключенным, чтобы наследовать QoS сети.',
+  'setupNetworks.qos.label': 'QoS сети хоста',
+  'setupNetworks.qos.linkshare': 'Взвешенная доля',
+  'setupNetworks.qos.linkshareHelp':
+    'Доля пропускной способности канала, которую получает эта сеть относительно других на нём.',
+  'setupNetworks.qos.override': 'Переопределить QoS сети для этого хоста',
+  'setupNetworks.qos.realtime': 'Гарантированная скорость (Мбит/с)',
+  'setupNetworks.qos.realtimeHelp':
+    'Минимальная запрашиваемая исходящая пропускная способность для этой сети, в Мбит/с.',
+  'setupNetworks.qos.upperlimit': 'Ограничение скорости (Мбит/с)',
+  'setupNetworks.qos.upperlimitHelp':
+    'Максимальная исходящая пропускная способность, которую может использовать эта сеть, в Мбит/с.',
+  'setupNetworks.sriov.allowAll': 'Разрешить все сети на виртуальных функциях',
+  'setupNetworks.sriov.allowAll.alert':
+    'Разрешены все сети — списки разрешённых меток и сетей ниже не применяются.',
+  'setupNetworks.sriov.allowAll.help':
+    'Когда выключено, виртуальным функциям можно назначать только разрешённые метки и сети ниже.',
+  'setupNetworks.sriov.apply': 'Применить конфигурацию',
+  'setupNetworks.sriov.aria.count': 'Число виртуальных функций для {name}',
+  'setupNetworks.sriov.count': 'Число виртуальных функций',
+  'setupNetworks.sriov.count.help':
+    'Число виртуальных функций SR-IOV, предоставляемых на этом NIC. Должно быть от 0 до аппаратного максимума NIC.',
+  'setupNetworks.sriov.countHint': 'Задайте число виртуальных функций',
+  'setupNetworks.sriov.countMax': 'Не может превышать максимум {max}',
+  'setupNetworks.sriov.labels': 'Разрешённые метки',
+  'setupNetworks.sriov.labels.aria': 'Разрешённые метки для {name}',
+  'setupNetworks.sriov.labels.empty': 'Метки не разрешены.',
+  'setupNetworks.sriov.labels.error': 'Не удалось загрузить разрешённые метки.',
+  'setupNetworks.sriov.labels.help':
+    'Метки сети, чьи сети можно назначать виртуальным функциям этого NIC. Применяется только когда «Разрешить все сети» выключено.',
+  'setupNetworks.sriov.labels.newAria': 'Новая разрешённая метка для {name}',
+  'setupNetworks.sriov.labels.removeAria': 'Удалить разрешённую метку {label}',
+  'setupNetworks.sriov.max': 'Максимум: {max}',
+  'setupNetworks.sriov.networks': 'Разрешённые сети',
+  'setupNetworks.sriov.networks.add': 'Добавить сеть',
+  'setupNetworks.sriov.networks.addAria': 'Добавить разрешённую сеть для {name}',
+  'setupNetworks.sriov.networks.aria': 'Разрешённые сети для {name}',
+  'setupNetworks.sriov.networks.empty': 'Сети не разрешены.',
+  'setupNetworks.sriov.networks.error': 'Не удалось загрузить разрешённые сети.',
+  'setupNetworks.sriov.networks.help':
+    'Сети, которые можно назначать виртуальным функциям этого NIC. Применяется только когда «Разрешить все сети» выключено.',
+  'setupNetworks.sriov.networks.removeAria': 'Удалить разрешённую сеть {name}',
+  'setupNetworks.sriov.networks.selectPlaceholder': 'Выберите сеть',
+  'setupNetworks.sriov.title': 'Конфигурация SR-IOV — {name}',
+  'setupNetworks.validation.ipv4': 'Введите корректный IPv4-адрес',
+  'setupNetworks.validation.ipv6': 'Введите корректный IPv6-адрес',
+  'setupNetworks.validation.managementGuard':
+    'Сеть управления «{name}» должна оставаться прикреплённой к сетевому интерфейсу',
+  'setupNetworks.validation.nameServer':
+    'Каждый сервер имён должен быть корректным IPv4- или IPv6-адресом',
+  'setupNetworks.validation.netmask':
+    'Введите маску подсети (например, 255.255.255.0) или длину префикса (0–32)',
+  'setupNetworks.validation.prefixV6': 'Введите длину префикса IPv6 (0–128)',
+  'setupNetworks.validation.qosValue': 'Введите неотрицательное целое число',
+
+  // SKIP (non-translatable placeholder values mirrored verbatim from en)
+  SKIP: '80',
+  'SKIP.v7': '00:1a:4a:00:00:ff',
+  // storage
+  'storage.action.activate': 'Активировать',
+  'storage.action.attachToDc': 'Прикрепить к дата-центру',
+  'storage.action.destroy': 'Уничтожить',
+  'storage.action.extendLuns': 'Добавить LUN (расширить)',
+  'storage.action.maintenance': 'Обслуживание',
+  'storage.action.manageDomain': 'Управлять доменом',
+  'storage.action.reduceLuns': 'Удалить LUN (уменьшить)',
+  'storage.attach.title': 'Прикрепить {name}',
+  'storage.confirmName.typeLabel': 'Введите «{name}» для подтверждения',
+  'storage.dc.attach.noneAvailable': 'Нет неприкреплённых дата-центров',
+  'storage.dc.attach.title': 'Прикрепить {name} к дата-центру',
+  'storage.dc.attachButton': 'Прикрепить дата-центр',
+  'storage.dc.detach.confirm.title': 'Отсоединить {name} от {dataCenter}?',
+  'storage.dc.empty.body':
+    'Этот домен не прикреплён ни к одному дата-центру. Прикрепите его, чтобы активировать в пуле.',
+  'storage.dc.empty.title': 'Не прикреплён к дата-центру',
+  'storage.dc.maintenance.confirm.title': 'Перевести {name} в обслуживание в {dataCenter}?',
+  'storage.dc.table.ariaLabel': 'Прикреплённые дата-центры',
+  'storage.dc.thisDataCenter': 'этот дата-центр',
+  'storage.destroy.body':
+    'Это принудительно удаляет домен из базы данных движка, не обращаясь ни к одному хосту. Используйте это, только когда хранилище окончательно недоступно — резервные данные, если они остаются, остаются нетронутыми и после этого не восстанавливаются через движок. Это действие нельзя отменить.',
+  'storage.destroy.confirmAria': 'Введите имя домена хранения для подтверждения уничтожения',
+  'storage.destroy.title': 'Уничтожить {name}?',
+  'storage.detach.confirm.body':
+    'Домен покидает этот дата-центр, но его данные сохраняются — вы можете прикрепить его снова позже.',
+  'storage.detach.confirm.title': 'Отсоединить {name}?',
+  'storage.disabled.activate':
+    'Активировать можно только неактивный домен или домен в обслуживании',
+  'storage.disabled.attach': 'Уже прикреплён к дата-центру',
+  'storage.disabled.detach': 'Переведите домен в обслуживание перед отсоединением',
+  'storage.disabled.extendLuns':
+    'Расширить новыми LUN можно только активный блочный домен iSCSI или FCP',
+  'storage.disabled.maintenance': 'Перевести в обслуживание можно только активный домен',
+  'storage.disabled.reduceLuns':
+    'Удалять LUN может только блочный домен iSCSI или FCP в обслуживании (формат метаданных v2 или новее)',
+  'storage.disabled.refreshLuns': 'LUN для обновления есть только у блочного домена iSCSI или FCP',
+  'storage.disabled.remove': 'Переведите домен в обслуживание перед удалением',
+  'storage.disabled.updateOvfs': 'Обновить своё хранилище OVF может только активный домен данных',
+  'storage.diskProfiles.edit.title': 'Изменить профиль диска {name}',
+  'storage.diskProfiles.empty.body':
+    'Профили диска группируют диски этого домена под необязательным QoS хранилища.',
+  'storage.diskProfiles.empty.title': 'Нет профилей диска',
+  'storage.diskProfiles.error.title': 'Не удалось загрузить профили диска',
+  'storage.diskProfiles.loading': 'Загрузка профилей диска',
+  'storage.diskProfiles.new': 'Новый профиль диска',
+  'storage.diskProfiles.qos': 'QoS',
+  'storage.diskProfiles.qos.error': 'Не удалось загрузить записи QoS.',
+  'storage.diskProfiles.qos.loading': 'Загрузка QoS…',
+  'storage.diskProfiles.qos.noDataCenter':
+    'Прикрепите домен к дата-центру, чтобы привязать QoS хранилища.',
+  'storage.diskProfiles.qos.select': 'Выберите QoS',
+  'storage.diskProfiles.qos.unlimited': '(без ограничений)',
+  'storage.diskProfiles.remove.confirm.body':
+    'Диски, ссылающиеся на этот профиль, продолжают работать; новые диски больше не могут его выбрать. Движок отклоняет удаление последнего профиля домена.',
+  'storage.diskProfiles.remove.confirm.title': 'Удалить профиль диска {name}?',
+  'storage.diskProfiles.table.ariaLabel': 'Профили диска',
+  'storage.diskSnapshots.column.disk': 'Диск',
+  'storage.diskSnapshots.column.provisionedSize': 'Предусмотренный размер',
+  'storage.diskSnapshots.empty.body':
+    'Здесь появляются образы снимков дисков ВМ, хранящиеся на этом домене.',
+  'storage.diskSnapshots.empty.title': 'Нет снимков диска',
+  'storage.diskSnapshots.error.title': 'Не удалось загрузить снимки диска',
+  'storage.diskSnapshots.loading': 'Загрузка снимков диска',
+  'storage.diskSnapshots.table.ariaLabel': 'Снимки диска',
+  'storage.edit.nameRequired': 'Введите имя',
+  'storage.edit.title': 'Изменить {name}',
+  'storage.images.import.action': 'Импортировать',
+  'storage.images.import.asTemplate': 'Импортировать как шаблон',
+  'storage.images.import.asTemplateHelp':
+    'Создаёт шаблон из импортированного диска вместо простого диска.',
+  'storage.images.import.domainsError': 'Не удалось загрузить домены хранения.',
+  'storage.images.import.domainsLoading': 'Загрузка доменов хранения…',
+  'storage.images.import.noDomains': 'Нет доступного домена данных',
+  'storage.images.import.selectDomain': 'Выберите домен данных',
+  'storage.images.import.targetDomain': 'Целевой домен хранения',
+  'storage.images.import.templateName': 'Имя шаблона',
+  'storage.images.import.templateNameHelp':
+    'Если оставить пустым, движок назовёт его GlanceTemplate-XXX.',
+  'storage.images.import.title': 'Импортировать {name}',
+  'storage.lun.column.lunId': 'Идентификатор LUN',
+  'storage.lun.column.product': 'Продукт',
+  'storage.lun.column.serial': 'Серийный номер',
+  'storage.lun.column.size': 'Размер',
+  'storage.lun.selectColumn': 'Выбрать LUN',
+  'storage.maintenance.confirm.body':
+    'Виртуальные машины с дисками на этом домене теряют доступ к этому хранилищу, пока он в режиме обслуживания. Сначала убедитесь, что на нём не работает ничего критичного.',
+  'storage.maintenance.confirm.label': 'Перевести в обслуживание',
+  'storage.maintenance.confirm.title': 'Перевести {name} в обслуживание?',
+  'storage.reduceLuns.action': 'Удалить LUN',
+  'storage.reduceLuns.allSelectedError':
+    'Блочный домен не может потерять все свои LUN — оставьте хотя бы один невыбранным.',
+  'storage.reduceLuns.confirm.body':
+    'Движок перемещает данные с выбранных LUN на оставшиеся, затем отсоединяет их от домена. Это может занять время и не может быть прервано.',
+  'storage.reduceLuns.confirm.title':
+    'Удалить {count, plural, one {# LUN} few {# LUN} many {# LUN} other {# LUN}} из «{name}»?',
+  'storage.reduceLuns.empty.body':
+    'Чтение домена не включало его резервные LUN. Обновите домен и повторите попытку.',
+  'storage.reduceLuns.empty.title': 'LUN не сообщены',
+  'storage.reduceLuns.intro':
+    'Данные с удаляемых LUN перемещаются на оставшиеся LUN перед их отсоединением от домена. Хотя бы один LUN должен остаться.',
+  'storage.reduceLuns.tableAria': 'LUN, обеспечивающие {name}',
+  'storage.reduceLuns.title': 'Удалить LUN из {name}',
+  'storage.remove.body':
+    'Домен будет удалён из системы. Выберите хост, который его отсоединит, и нужно ли форматировать (стереть) резервное хранилище. Это действие нельзя отменить.',
+  'storage.remove.confirmAria': 'Введите имя домена хранения для подтверждения удаления',
+  'storage.remove.format': 'Форматировать домен',
+  'storage.remove.formatAria': 'Форматировать домен',
+  'storage.remove.formatDesc':
+    'Стереть все данные на резервном хранилище. Оставьте флажок снятым, чтобы данные оставались восстановимыми.',
+  'storage.remove.hostAria': 'Хост для выполнения удаления',
+  'storage.remove.hostLabel': 'Хост',
+  'storage.remove.title': 'Удалить {name}?',
+  'storage.san.chapPassword': 'Пароль CHAP',
+  'storage.san.chapUser': 'Имя пользователя CHAP',
+  'storage.san.column.login': 'Войти',
+  'storage.san.column.portal': 'Портал',
+  'storage.san.column.targetIqn': 'Цель (IQN)',
+  'storage.san.dataLossBadge': 'Потеря данных',
+  'storage.san.discover': 'Обнаружить',
+  'storage.san.discoverError': 'Не удалось обнаружить цели',
+  'storage.san.loggedIn': 'Выполнен вход',
+  'storage.san.loginError': 'Не удалось войти в цель',
+  'storage.san.lun.boundToDisk': 'Уже привязан к диску прямого LUN',
+  'storage.san.lun.inAnotherDomain': 'Уже часть другого домена хранения',
+  'storage.san.lun.inThisDomain': 'Уже часть этого домена хранения',
+  'storage.san.lun.unusable': 'Хост сообщает о непригодности',
+  'storage.san.lun.vgDataLoss':
+    'LUN {id} используется группой томов {vg}, и его данные будут потеряны',
+  'storage.san.lunsError': 'Не удалось загрузить LUN',
+  'storage.san.lunsLoading': 'Загрузка LUN',
+  'storage.san.lunsTableAria': 'Доступные LUN',
+  'storage.san.noLuns': 'LUN не найдены',
+  'storage.san.noLunsFcp': 'Хост не видит LUN Fibre Channel в фабрике.',
+  'storage.san.noLunsIscsi': 'Цель, в которую выполнен вход, не предоставляет LUN этому хосту.',
+  'storage.san.noTargets': 'Цели не обнаружены',
+  'storage.san.noTargetsBody':
+    'Хост не нашёл целей iSCSI по этому адресу. Проверьте адрес и учётные данные CHAP, затем повторите обнаружение.',
+  'storage.san.port': 'Порт',
+  'storage.san.portAria': 'Порт цели iSCSI',
+  'storage.san.portHelp': 'Оставьте пустым, чтобы использовать порт iSCSI по умолчанию — 3260.',
+  'storage.san.selectHost': 'Выберите хост для использования, прежде чем выбирать LUN.',
+  'storage.san.targetAddress': 'Адрес цели',
+  'storage.san.targetAddressAria': 'Адрес цели iSCSI',
+  'storage.san.targetsTableAria': 'Обнаруженные цели iSCSI',
+  'storage.san.useChap': 'Использовать аутентификацию CHAP',
+
+  // storageDetail
+  'storageDetail.tab.dataCenters': 'Дата-центры',
+  'storageDetail.tab.diskProfiles': 'Профили диска',
+  'storageDetail.tab.diskSnapshots': 'Снимки диска',
+
+  // tags
+  'tags.assign.noneDefined.body':
+    'Создайте метки в диспетчере меток в списке виртуальных машин, затем назначьте их здесь.',
+  'tags.assign.noneDefined.title': 'Метки не определены',
+  'tags.assignTags.title / tags.assignTags.titleNoName':
+    "Назначить метки для {entityName}` / 'Назначить метки'",
+  'tags.assignVm.partial': 'На {attachedTo} из {length}',
+  'tags.assignVm.title.single / tags.assignVm.title.batch':
+    'Добавить метки для {name}` / `Добавить метки для {length} ВМ',
+
+  // tasks
+  'tasks.action.clearFinished': 'Очистить завершённые',
+  'tasks.badge.overCap': 'Задачи — выполняется более {BADGE_CAP}',
+  'tasks.column.correlationId': 'Идентификатор корреляции',
+  'tasks.drawer.empty.body': 'Задачи движка появятся здесь по мере выполнения действий.',
+  'tasks.drawer.empty.title': 'Нет задач',
+  'tasks.drawer.error.title': 'Не удалось загрузить задачи',
+  'tasks.drawer.list.ariaLabel': 'Недавние задачи',
+  'tasks.drawer.loading': 'Загрузка задач',
+  'tasks.expand.ariaLabel': 'Развёртывание строки',
+  'tasks.filter.correlationId.ariaLabel': 'Фильтр по идентификатору корреляции',
+  'tasks.searchEmpty.clearedBody': 'Все завершённые задачи очищены из этого представления.',
+  'tasks.searchEmpty.filterBody':
+    'Нет задач, соответствующих текущему фильтру по идентификатору корреляции.',
+  'tasks.searchEmpty.title': 'Нет подходящих задач',
+  'tasks.showCleared': 'Показать очищенные задачи',
+  'tasks.status.aborted': 'Прервана',
+  'tasks.status.failed': 'Не выполнена',
+  'tasks.status.finished': 'Завершена',
+  'tasks.status.running': 'Выполняется',
+  'tasks.status.unknown': 'Неизвестно',
+  // templateDisks
+  'templateDisks.empty.body': 'К этому шаблону не прикреплены диски.',
+  'templateDisks.table.ariaLabel': 'Диски шаблона',
+
+  // templateExport
+  'templateExport.dest.ova': 'OVA на хосте',
+  'templateExport.destination': 'Назначение',
+  'templateExport.directory.placeholder': '/var/tmp/ova',
+  'templateExport.domain.error': 'Не удалось загрузить домены хранения: {message}',
+  'templateExport.domain.loading': 'Загрузка доменов экспорта',
+  'templateExport.domain.none':
+    'К дата-центру этого шаблона не прикреплён активный домен экспорта.',
+  'templateExport.domain.placeholder': 'Выберите домен экспорта',
+  'templateExport.exportDomain': 'Домен экспорта',
+  'templateExport.modalTitle': 'Экспортировать {name}',
+  'templateExport.overwrite': 'Перезаписать существующий шаблон в домене',
+
+  // templateGeneral
+  'templateGeneral.cpuTopology': '{sockets} : {cores} : {threads} (сокеты : ядра : потоки)',
+  'templateGeneral.term.biosType': 'Тип BIOS',
+  'templateGeneral.term.cpu': 'ЦП',
+  'templateGeneral.term.creationTime': 'Время создания',
+  'templateGeneral.term.displayType': 'Тип отображения',
+  'templateGeneral.term.ha': 'Высокая доступность',
+  'templateGeneral.term.memory': 'Память',
+
+  // templateNics
+  'templateNics.column.linkState': 'Состояние канала',
+  'templateNics.empty.body':
+    'У этого шаблона нет сетевых интерфейсов. Добавьте один, чтобы созданные из него ВМ наследовали привязку.',
+  'templateNics.linked': 'Подключён',
+  'templateNics.remove.confirm.body':
+    'Созданные из этого шаблона ВМ больше не будут наследовать этот сетевой интерфейс.',
+  'templateNics.remove.confirm.title': 'Удалить {name}?',
+  'templateNics.table.ariaLabel': 'Сетевые интерфейсы шаблона',
+  'templateNics.unlinked': 'Отключён',
+
+  // templateVms
+  'templateVms.empty.body': 'Из этого шаблона не создано ни одной виртуальной машины.',
+  'templateVms.table.ariaLabel': 'Виртуальные машины, созданные из этого шаблона',
+
+  // userDetail
+  'userDetail.tab.eventNotifier': 'Уведомитель о событиях',
+  'userDetail.tab.quota': 'Квота',
+
+  // userQuota
+  'userQuota.column.grantedVia': 'Предоставлено через',
+  'userQuota.empty.body':
+    'Квоты, которые может потреблять этот пользователь, появляются здесь. Назначьте пользователя (или одну из его групп) потребителем в разрешениях квоты.',
+  'userQuota.empty.title': 'Нет назначений квот',
+  'userQuota.everyone': 'Все',
+
+  // vm
+  'vm.create.cancel.body': 'Всё введённое в мастере будет потеряно.',
+  'vm.create.cancel.title': 'Отменить создание виртуальной машины?',
+  'vm.create.close.ariaLabel': 'Закрыть мастер создания виртуальной машины',
+  'vm.create.cloudInit.addNic': 'Добавить NIC',
+  'vm.create.cloudInit.customScript': 'Пользовательский скрипт',
+  'vm.create.cloudInit.customScript.aria': 'Пользовательский скрипт cloud-init',
+  'vm.create.cloudInit.dnsSearch': 'Домены поиска DNS',
+  'vm.create.cloudInit.dnsSearch.placeholder': 'например, example.com',
+  'vm.create.cloudInit.dnsServers': 'Серверы DNS',
+  'vm.create.cloudInit.dnsServers.placeholder': 'например, 8.8.8.8 8.8.4.4',
+  'vm.create.cloudInit.hostname': 'Имя хоста',
+  'vm.create.cloudInit.hostname.help':
+    'Имя хоста, которое cloud-init задаёт внутри гостя при первой загрузке.',
+  'vm.create.cloudInit.network.aria': 'Сеть cloud-init',
+  'vm.create.cloudInit.nic.address': 'Адрес',
+  'vm.create.cloudInit.nic.address.aria': 'Адрес NIC {index}',
+  'vm.create.cloudInit.nic.gateway.aria': 'Шлюз NIC {index}',
+  'vm.create.cloudInit.nic.name.aria': 'Имя NIC {index}',
+  'vm.create.cloudInit.nic.netmask.aria': 'Маска подсети NIC {index}',
+  'vm.create.cloudInit.nic.remove.aria': 'Удалить NIC {index}',
+  'vm.create.cloudInit.noNics': 'Статические NIC не настроены.',
+  'vm.create.cloudInit.rootPassword': 'Пароль root',
+  'vm.create.cloudInit.rootPassword.help':
+    'Cloud-init задаёт это как пароль root гостя при первой загрузке. Отправляется движку один раз и внедряется в ВМ; для обратного считывания не хранится.',
+  'vm.create.cloudInit.sshKey': 'Авторизованный ключ SSH',
+  'vm.create.cloudInit.sshKey.help':
+    'Открытый ключ SSH, который cloud-init добавляет в authorized_keys пользователя по умолчанию, чтобы можно было входить без пароля.',
+  'vm.create.clusters.error': 'Не удалось загрузить кластеры: {message}',
+  'vm.create.description': 'Новая ВМ запускается выключенной.',
+  'vm.create.field.memory': 'Память',
+  'vm.create.init.cloudInit.help':
+    'Cloud-init настраивает гостя при первой загрузке — задавая имя хоста, учётные данные, ключи SSH, DNS и пользовательский скрипт — для образов, поставляемых с агентом cloud-init (большинство современных облачных образов Linux).',
+  'vm.create.init.cloudInit.label': 'Настроить cloud-init',
+  'vm.create.init.sysprep.help':
+    'Sysprep настраивает гостя Windows при первой загрузке — присоединяя к домену и запуская сценарий автоматической установки.',
+  'vm.create.init.sysprep.label': 'Настроить sysprep',
+  'vm.create.memory.aria': 'Память в ГиБ',
+  'vm.create.memory.atLeast': 'Не менее {min} ГиБ',
+  'vm.create.memory.decrease': 'Уменьшить память',
+  'vm.create.memory.help':
+    'ОЗУ, предоставляемая гостю. ВМ не запустится, пока у хоста не будет достаточно свободной памяти, с учётом переподписки памяти кластера.',
+  'vm.create.memory.increase': 'Увеличить память',
+  'vm.create.review.cloudInit': 'Cloud-init',
+  'vm.create.review.notConfigured': 'Не настроено',
+  'vm.create.review.provided': 'Предоставлено',
+  'vm.create.review.staticNics': 'Статические NIC',
+  'vm.create.step.initialization': 'Инициализация',
+  'vm.create.step.resources': 'Ресурсы',
+  'vm.create.sysprep.adminPassword': 'Пароль администратора',
+  'vm.create.sysprep.adminPassword.aria': 'Пароль администратора sysprep',
+  'vm.create.sysprep.adminPassword.help':
+    'Sysprep задаёт это как пароль администратора гостя при первой загрузке. Отправляется один раз и внедряется в ВМ; для обратного считывания не хранится.',
+  'vm.create.sysprep.customScript': 'Пользовательский скрипт (unattend)',
+  'vm.create.sysprep.customScript.aria': 'Пользовательский скрипт sysprep',
+  'vm.create.sysprep.domain.aria': 'Домен sysprep',
+  'vm.create.templates.ariaLabel': 'Выберите шаблон',
+  'vm.create.templates.empty.body':
+    'Вам не виден ни один шаблон — даже шаблон Blank. ВМ он нужен, поэтому запросите у администратора разрешения на шаблоны.',
+  'vm.create.templates.selectRow': 'Выбрать',
+  'vm.create.title': 'Создать виртуальную машину',
+  'vm.create.vcpu.note':
+    'Топология vCPU (сокеты, ядра, потоки) пока сохраняет значения шаблона по умолчанию — её редактирование запланировано на Фазу 2.',
+  'vm.edit.boot.attachCd.empty': 'В этом дата-центре нет доступных образов ISO.',
+  'vm.edit.boot.attachCd.error': 'Не удалось загрузить образы ISO.',
+  'vm.edit.boot.bootMenu': 'Включить меню загрузки',
+  'vm.edit.boot.device.cdrom': 'CD-ROM',
+  'vm.edit.boot.device.hd': 'Жёсткий диск',
+  'vm.edit.boot.device.network': 'Сеть (PXE)',
+  'vm.edit.boot.device.none': 'Нет',
+  'vm.edit.boot.firstDevice': 'Первое устройство',
+  'vm.edit.boot.secondDevice': 'Второе устройство',
+  'vm.edit.console.disconnect.lock': 'Заблокировать экран',
+  'vm.edit.console.disconnect.logout': 'Выйти из системы',
+  'vm.edit.console.disconnect.none': 'Без действия',
+  'vm.edit.console.disconnect.shutdown': 'Завершить работу',
+  'vm.edit.console.disconnectAction': 'Действие при отключении консоли',
+  'vm.edit.console.monitors': 'Мониторы',
+  'vm.edit.console.serial.field': 'Последовательная консоль',
+  'vm.edit.console.smartcard.field': 'Смарт-карта',
+  'vm.edit.console.soundcard.field': 'Звуковая карта',
+  'vm.edit.console.usb': 'USB включён',
+  'vm.edit.console.usbSupport': 'Поддержка USB',
+  'vm.edit.general.comment.aria': 'Комментарий виртуальной машины',
+  'vm.edit.general.description.aria': 'Описание виртуальной машины',
+  'vm.edit.general.name.aria': 'Имя виртуальной машины',
+  'vm.edit.general.os.aria': 'Операционная система',
+  'vm.edit.ha.enabled': 'Высокодоступная',
+  'vm.edit.ha.leaseSd.error': 'Не удалось загрузить домены хранения.',
+  'vm.edit.ha.priority': 'Приоритет',
+  'vm.edit.ha.priority.high': 'Высокий',
+  'vm.edit.ha.priority.low': 'Низкий',
+  'vm.edit.ha.priority.medium': 'Средний',
+  'vm.edit.icon.badType': 'Используйте изображение PNG, JPEG или GIF.',
+  'vm.edit.icon.catalog': 'Выбрать из каталога',
+  'vm.edit.icon.catalogAria': 'Каталог значков',
+  'vm.edit.icon.current': 'Текущий значок',
+  'vm.edit.icon.currentAlt': 'Текущий значок виртуальной машины',
+  'vm.edit.icon.empty': 'Нет доступных значков каталога — загрузите пользовательский значок выше.',
+  'vm.edit.icon.error.title': 'Не удалось загрузить значки',
+  'vm.edit.icon.loading': 'Загрузка значков',
+  'vm.edit.icon.none': 'Нет пользовательского значка — используется значок ОС по умолчанию.',
+  'vm.edit.icon.readError': 'Не удалось прочитать файл. Попробуйте другое изображение.',
+  'vm.edit.icon.remove': 'Удалить пользовательский значок',
+  'vm.edit.icon.tooLarge': 'Значок должен быть не более 24 КБ.',
+  'vm.edit.icon.upload': 'Загрузить пользовательский значок',
+  'vm.edit.icon.uploadReady': 'Пользовательский значок готов к сохранению.',
+  'vm.edit.icon.use': 'Использовать значок {name}',
+  'vm.edit.name.invalid': 'Имя может содержать только буквы, цифры, «-», «_» и «.» — без пробелов',
+  'vm.edit.name.required': 'Необходимо указать имя',
+  'vm.edit.name.tooLong': 'Имя должно содержать не более {max} символов',
+  'vm.edit.optimizedFor.desktop': 'Рабочий стол',
+  'vm.edit.optimizedFor.highPerformance': 'Высокая производительность',
+  'vm.edit.optimizedFor.server': 'Сервер',
+  'vm.edit.section.bootOptions': 'Параметры загрузки',
+  'vm.edit.section.console': 'Консоль',
+  'vm.edit.section.general': 'Общее',
+  'vm.edit.section.highAvailability': 'Высокая доступность',
+  'vm.edit.section.icon': 'Значок',
+  'vm.edit.section.system': 'Система',
+  'vm.edit.sections.ariaLabel': 'Разделы изменения виртуальной машины',
+  'vm.edit.system.advancedParams': 'Дополнительные параметры',
+  'vm.edit.system.guaranteedMemory': 'Гарантированная физическая память (ГБ)',
+  'vm.edit.system.maxMemory': 'Максимальная память (ГБ)',
+  'vm.edit.system.maxMemory.short': 'Максимальная память',
+  'vm.edit.system.memorySize': 'Размер памяти (ГБ)',
+  'vm.edit.system.virtualCpus': 'Виртуальные ЦП',
+  'vm.edit.title': 'Изменить виртуальную машину — {name}',
+  // vmActions
+  'vmActions.cancelMigration': 'Отменить миграцию',
+  'vmActions.shutdown': 'Завершить работу',
+  'vmActions.stop': 'Выключить питание',
+
+  // vmAffinityGroups
+  'vmAffinityGroups.add.select': 'Выберите группу',
+  'vmAffinityGroups.remove.confirm.body':
+    '{name} больше не будет планироваться по правилам этой группы сходства.',
+
+  // vmAffinityLabels
+  'vmAffinityLabels.add.none': 'Нет доступных меток сходства',
+  'vmAffinityLabels.add.select': 'Выберите метку',
+  'vmAffinityLabels.remove.confirm.body':
+    'Эта ВМ больше не будет нести ограничения планирования метки сходства.',
+
+  // vmDisks
+  'vmDisks.addModal.allocation': 'Политика выделения',
+  'vmDisks.addModal.allocation.blockDefault':
+    'Для блочных доменов хранения по умолчанию используется зарезервированное выделение — при желании переключитесь на тонкое.',
+  'vmDisks.addModal.allocation.format': 'Формат: {format}',
+  'vmDisks.addModal.allocation.managedBlock':
+    'Управляемые блочные домены хранения требуют зарезервированных дисков.',
+  'vmDisks.addModal.allocation.thin': 'Тонкое выделение',
+  'vmDisks.addModal.diskProfile': 'Профиль диска',
+  'vmDisks.addModal.diskProfile.default': 'Профиль по умолчанию',
+  'vmDisks.addModal.diskProfile.help':
+    'Оставьте «Профиль по умолчанию», чтобы использовать значение по умолчанию домена хранения.',
+  'vmDisks.addModal.diskProfile.helpNoDomain': 'Выберите домен хранения, чтобы выбрать профиль.',
+  'vmDisks.addModal.diskProfile.loading': 'Загрузка профилей диска',
+  'vmDisks.addModal.format.qcow2': 'QCOW2 (тонкий)',
+  'vmDisks.addModal.format.raw': 'Raw (зарезервированный)',
+
+  // vmHostDevices
+  'vmHostDevices.vgpu.add': 'Добавить vGPU',
+  'vmHostDevices.vgpu.addModal.availableTypes': 'Доступные типы mdev',
+  'vmHostDevices.vgpu.addModal.duplicate': 'Этот тип mdev уже прикреплён к ВМ.',
+  'vmHostDevices.vgpu.addModal.mdevType.help':
+    'Имя типа опосредованного устройства, передаваемое как свойство spec_params «mdevType», например nvidia-11 или i915-GVTg_V5_4. В лаборатории без GPU с поддержкой vGPU хост не сообщает типов, поэтому введите имя напрямую.',
+  'vmHostDevices.vgpu.addModal.needsHost':
+    'Запустите или закрепите эту ВМ за хостом, чтобы перечислить его доступные типы mdev. Тип можно ввести и вручную.',
+  'vmHostDevices.vgpu.addModal.nodisplay': 'Отключить консоль кадрового буфера (nodisplay)',
+  'vmHostDevices.vgpu.addModal.nodisplay.aria': 'Отключить консоль кадрового буфера',
+  'vmHostDevices.vgpu.addModal.noTypes':
+    'Этот хост не сообщает типов mdev (нет GPU с поддержкой vGPU). Введите имя типа mdev вручную.',
+  'vmHostDevices.vgpu.addModal.selectType': 'Выберите тип…',
+  'vmHostDevices.vgpu.addModal.title': 'Добавить vGPU (опосредованное устройство)',
+  'vmHostDevices.vgpu.addModal.typeOption': '{name} (доступно: {count})',
+  'vmHostDevices.vgpu.column.framebuffer': 'Консоль кадрового буфера',
+  'vmHostDevices.vgpu.column.mdevType': 'Тип mdev',
+  'vmHostDevices.vgpu.empty.body':
+    'На этой ВМ не настроены опосредованные (vGPU) устройства. Добавьте одно, чтобы назначить долю GPU хоста.',
+  'vmHostDevices.vgpu.empty.title': 'Нет устройств vGPU',
+  'vmHostDevices.vgpu.error.title': 'Не удалось загрузить устройства vGPU',
+  'vmHostDevices.vgpu.heading': 'vGPU (опосредованные устройства)',
+  'vmHostDevices.vgpu.loading': 'Загрузка устройств vGPU',
+  'vmHostDevices.vgpu.remove.confirm.body':
+    'Опосредованное устройство освобождается от этой ВМ. Изменение применяется при следующем запуске ВМ.',
+  'vmHostDevices.vgpu.remove.confirm.title': 'Удалить vGPU {name}?',
+  'vmHostDevices.vgpu.table.ariaLabel': 'Опосредованные устройства vGPU',
+
+  // vmNics
+  'vmNics.rate.loadingRx': 'Загрузка скорости приёма (Rx)',
+  'vmNics.rate.loadingTx': 'Загрузка скорости передачи (Tx)',
+
+  // vnicProfileDetail
+  'vnicProfileDetail.notPermitted': 'Разрешения профиля vNIC',
+  'vnicProfileDetail.tab.templates': 'Шаблоны',
+  'vnicProfileDetail.templates.empty.body': 'Этот профиль vNIC не использует ни один шаблон.',
+  'vnicProfileDetail.templates.table.ariaLabel': 'Шаблоны, использующие этот профиль vNIC',
+  'vnicProfileDetail.vms.empty.body': 'Этот профиль vNIC не использует ни одна виртуальная машина.',
+  'vnicProfileDetail.vms.table.ariaLabel': 'Виртуальные машины, использующие этот профиль vNIC',
+
+  // vnicProfileForm
+  'vnicProfileForm.aria.description': 'Описание профиля vNIC',
+  'vnicProfileForm.aria.name': 'Имя профиля vNIC',
+  'vnicProfileForm.customProperties': 'Пользовательские свойства',
+  'vnicProfileForm.customProperty.add': 'Добавить пользовательское свойство',
+  'vnicProfileForm.customProperty.nameAria': 'Имя пользовательского свойства {index}',
+  'vnicProfileForm.customProperty.removeAria': 'Удалить пользовательское свойство {index}',
+  'vnicProfileForm.customProperty.valueAria': 'Значение пользовательского свойства {index}',
+  'vnicProfileForm.failover': 'Профиль vNIC для отработки отказа',
+  'vnicProfileForm.failover.none': 'Без отработки отказа',
+  'vnicProfileForm.failover.warning':
+    'Профиль отработки отказа здесь удалить нельзя — движок не предлагает явного пути. Выбор другого профиля по-прежнему работает.',
+  'vnicProfileForm.migratable': 'Мигрируемый',
+  'vnicProfileForm.network.placeholder': 'Выберите сеть',
+  'vnicProfileForm.networkFilter': 'Сетевой фильтр',
+  'vnicProfileForm.networkFilter.none': 'Без фильтра',
+  'vnicProfileForm.passthrough': 'Проброс',
+  'vnicProfileForm.passthrough.hint':
+    'Проброс очищает и блокирует зеркальное отображение портов, сетевой фильтр и QoS.',
+  'vnicProfileForm.passthrough.label': 'Проброс (SR-IOV)',
+  'vnicProfileForm.passthroughLocked': 'Недоступно, пока включён проброс.',
+  'vnicProfileForm.publicUse': 'Общее использование',
+  'vnicProfileForm.publicUse.hint':
+    'Позволяет каждому пользователю прикреплять этот профиль к своим vNIC.',
+  'vnicProfileForm.publicUse.readError':
+    'Не удалось прочитать текущее состояние общего использования.',
+  'vnicProfileForm.qos': 'QoS',
+  'vnicProfileForm.qos.chooseNetwork': 'Выберите сеть, чтобы перечислить её профили QoS.',
+  'vnicProfileForm.qos.none': 'Без QoS',
+  'vnicProfileForm.title.edit': 'Изменить профиль vNIC — {name}',
+  'vnicProfileForm.title.new': 'Новый профиль vNIC',
+
+  // vnicProfiles
+  'vnicProfiles.column.datacenter': 'Дата-центр',
+  'vnicProfiles.column.failover': 'Профиль vNIC для отработки отказа',
+  'vnicProfiles.column.network': 'Сеть',
+  'vnicProfiles.column.passthrough': 'Проброс',
+  'vnicProfiles.column.portMirroring': 'Зеркальное отображение портов',
+  'vnicProfiles.empty.body':
+    'Здесь появятся профили vNIC, на просмотр которых у вас есть разрешение.',
+  'vnicProfiles.empty.title': 'Нет профилей vNIC',
+  'vnicProfiles.error.title': 'Не удалось загрузить профили vNIC',
+  'vnicProfiles.filter.ariaLabel': 'Фильтровать профили vNIC по имени',
+  'vnicProfiles.filter.hint': 'Фильтр по имени',
+  'vnicProfiles.loading': 'Загрузка профилей vNIC',
+  'vnicProfiles.new': 'Новый профиль',
+  'vnicProfiles.notPermitted': 'Профили vNIC',
+  'vnicProfiles.pagination.ariaLabel': 'Пагинация профилей vNIC',
+  'vnicProfiles.remove.confirm.body':
+    'Профиль удаляется безвозвратно. Профиль, всё ещё прикреплённый к какому-либо vNIC ВМ или шаблона, удалить нельзя.',
+  'vnicProfiles.remove.confirm.title': "Удалить профиль vNIC ''{name}''?",
+  'vnicProfiles.table.ariaLabel': 'Профили vNIC',
+  'vnicProfiles.title': 'Профили vNIC',
+
+  // volumes
+  'volumes.action.manageOptions': 'Управлять параметрами',
+  'volumes.action.startProfiling': 'Начать профилирование',
+  'volumes.action.stopProfiling': 'Остановить профилирование',
+  'volumes.bricks.migrateFirst': 'Сначала мигрировать данные с кирпичей',
+  'volumes.bricks.newReplicaCount': 'Новое число реплик',
+  'volumes.bricks.remove.confirm.title':
+    'Удалить {count, plural, one {# кирпич} few {# кирпича} many {# кирпичей} other {# кирпича}} из «{name}»',
+  'volumes.bricks.remove.immediateBody':
+    'Выбранные кирпичи удаляются немедленно. Все данные, ещё находящиеся на них, теряются.',
+  'volumes.bricks.remove.migrateBody':
+    'Сначала данные мигрируются с выбранных кирпичей; удаление фиксируется по завершении миграции. Отменить можно через «Остановить миграцию».',
+  'volumes.bricks.removeSelected': 'Удалить выбранные',
+  'volumes.bricks.selectAll': 'Выбрать все кирпичи',
+  'volumes.bricks.selectBrick': 'Выбрать кирпич {name}',
+  'volumes.bricks.selectColumn': 'Выбрать',
+  'volumes.bricks.startMigration': 'Начать миграцию',
+  'volumes.bricks.stopMigration': 'Остановить миграцию',
+  'volumes.options.add': 'Добавить параметр',
+  'volumes.options.column.option': 'Параметр',
+  'volumes.options.column.value': 'Значение',
+  'volumes.options.empty.body':
+    'Каждый настраиваемый параметр имеет значение gluster по умолчанию. Добавьте параметр ниже, чтобы переопределить значение по умолчанию.',
+  'volumes.options.empty.title': 'Пользовательские параметры не заданы',
+  'volumes.options.error.body': 'Не удалось прочитать параметры тома.',
+  'volumes.options.error.title': 'Не удалось загрузить параметры тома',
+  'volumes.options.keyAria': 'Ключ параметра',
+  'volumes.options.keyPlaceholder': 'ключ (например, auth.allow)',
+  'volumes.options.loading': 'Загрузка параметров тома',
+  'volumes.options.resetAll': 'Сбросить все к значениям по умолчанию',
+  'volumes.options.resetAll.confirm.body':
+    'Каждый настраиваемый параметр этого тома возвращается к значению gluster по умолчанию. Заданные здесь параметры будут потеряны. Это действие нельзя отменить.',
+  'volumes.options.resetAll.confirm.label': 'Сбросить все',
+  'volumes.options.resetAll.confirm.title': 'Сбросить все параметры на {name}?',
+  'volumes.options.resetOption': 'Сбросить параметр {name}',
+  'volumes.options.tableAria': 'Параметры для {name}',
+  'volumes.options.title': 'Параметры тома — {name}',
+  'volumes.options.valueAria': 'Значение параметра',
+  'volumes.options.valuePlaceholder': 'значение',
 }

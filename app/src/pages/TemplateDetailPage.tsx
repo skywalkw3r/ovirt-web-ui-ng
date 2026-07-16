@@ -4,7 +4,9 @@ import {
   BreadcrumbItem,
   Button,
   EmptyState,
+  EmptyStateActions,
   EmptyStateBody,
+  EmptyStateFooter,
   FormGroup,
   PageSection,
   Skeleton,
@@ -94,9 +96,13 @@ export function TemplateDetailPage() {
       {template.isError && notFound && (
         <EmptyState titleText={t('templateDetail.notFound.title')} status="warning">
           <EmptyStateBody>{t('templateDetail.notFound.body', { id: templateId })}</EmptyStateBody>
-          <Button variant="primary" onClick={() => void navigate({ to: '/templates' })}>
-            {t('templateDetail.notFound.back')}
-          </Button>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="primary" onClick={() => void navigate({ to: '/templates' })}>
+                {t('templateDetail.notFound.back')}
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 
@@ -105,9 +111,13 @@ export function TemplateDetailPage() {
           <EmptyStateBody>
             {template.error instanceof Error ? template.error.message : t('common.error.unknown')}
           </EmptyStateBody>
-          <Button variant="primary" onClick={() => void template.refetch()}>
-            {t('common.action.retry')}
-          </Button>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="primary" onClick={() => void template.refetch()}>
+                {t('common.action.retry')}
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 

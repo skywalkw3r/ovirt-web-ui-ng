@@ -90,7 +90,11 @@ export function PermitTree({
                 id={`${groupId}-all`}
                 isChecked={state}
                 aria-label={t('roles.category.selectAll.ariaLabel', { category: categoryLabel })}
-                label={`${categoryLabel} (${checkedCount}/${group.permits.length})`}
+                label={t('roles.category.countLabel', {
+                  categoryLabel,
+                  checkedCount,
+                  length: group.permits.length,
+                })}
                 onChange={(_event, next) => onToggleCategory(group.category, next)}
               />
             </div>

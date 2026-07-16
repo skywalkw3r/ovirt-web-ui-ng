@@ -2,7 +2,9 @@ import { useState } from 'react'
 import {
   Button,
   EmptyState,
+  EmptyStateActions,
   EmptyStateBody,
+  EmptyStateFooter,
   Label,
   LabelGroup,
   Skeleton,
@@ -144,9 +146,7 @@ export function NetworkClustersTab({ network }: { network: Network }) {
     // without a DC there is no cluster list to join against.
     return (
       <EmptyState titleText={t('viewState.empty')}>
-        <EmptyStateBody>
-          This network carries no data center link, so its clusters cannot be listed.
-        </EmptyStateBody>
+        <EmptyStateBody>{t('networkClusters.noDataCenter')}</EmptyStateBody>
       </EmptyState>
     )
   }
@@ -156,35 +156,39 @@ export function NetworkClustersTab({ network }: { network: Network }) {
       {rows.isPending && (
         <>
           <Skeleton height="2.5rem" style={{ marginBottom: '0.5rem' }} />
-          <Skeleton height="2.5rem" screenreaderText="Loading clusters" />
+          <Skeleton height="2.5rem" screenreaderText={t('networkForm.clusters.loading')} />
         </>
       )}
 
       {rows.isError && (
-        <EmptyState titleText="Could not load clusters" status="danger">
+        <EmptyState titleText={t('networkClusters.error.title')} status="danger">
           <EmptyStateBody>
             {rows.error instanceof Error ? rows.error.message : t('common.error.unknown')}
           </EmptyStateBody>
-          <Button variant="primary" onClick={() => void rows.refetch()}>
-            {t('common.action.retry')}
-          </Button>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="primary" onClick={() => void rows.refetch()}>
+                {t('common.action.retry')}
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 
       {rows.isSuccess && rows.data.length === 0 && (
-        <EmptyState titleText="No clusters">
-          <EmptyStateBody>This network's data center has no clusters.</EmptyStateBody>
+        <EmptyState titleText={t('networkClusters.empty.title')}>
+          <EmptyStateBody>{t('networkClusters.empty.body')}</EmptyStateBody>
         </EmptyState>
       )}
 
       {rows.isSuccess && rows.data.length > 0 && (
-        <Table aria-label="Clusters in this network's data center" variant="compact">
+        <Table aria-label={t('networkClusters.table.ariaLabel')} variant="compact">
           <Thead>
             <Tr>
               <Th sort={thSort(NETWORK_CLUSTER_KEYS, 0)}>{t('common.field.cluster')}</Th>
               <Th>{t('networkDetail.hosts.attached')}</Th>
-              <Th sort={thSort(NETWORK_CLUSTER_KEYS, 2)}>Required</Th>
-              <Th>Network roles</Th>
+              <Th sort={thSort(NETWORK_CLUSTER_KEYS, 2)}>{t('networkForm.column.required')}</Th>
+              <Th>{t('networkClusters.column.roles')}</Th>
               {canManage && <Th screenReaderText={t('common.field.actions')} />}
             </Tr>
           </Thead>
@@ -205,15 +209,15 @@ export function NetworkClustersTab({ network }: { network: Network }) {
                       {attached ? t('common.yes') : t('common.no')}
                     </Label>
                   </Td>
-                  <Td dataLabel="Required">
+                  <Td dataLabel={t('networkForm.column.required')}>
                     {attached ? (required ? t('common.yes') : t('common.no')) : '—'}
                   </Td>
-                  <Td dataLabel="Network roles">
+                  <Td dataLabel={t('networkClusters.column.roles')}>
                     {roles.length === 0 ? (
                       '—'
                     ) : (
                       <LabelGroup
-                        aria-label={`Network roles on ${row.clusterName}`}
+                        aria-label={t('networkClusters.rolesOn', { name: row.clusterName })}
                         numLabels={roles.length}
                       >
                         {roles.map((role) => (
@@ -232,7 +236,9 @@ export function NetworkClustersTab({ network }: { network: Network }) {
                           attached
                             ? [
                                 {
-                                  title: required ? 'Unmark required' : 'Mark required',
+                                  title: required
+                                    ? t('networkClusters.action.unmarkRequired')
+                                    : t('networkClusters.action.markRequired'),
                                   onClick: () =>
                                     setRequired.mutate({
                                       clusterId: row.clusterId,
@@ -265,8 +271,11 @@ export function NetworkClustersTab({ network }: { network: Network }) {
       {detaching !== null && (
         <ConfirmModal
           isOpen
-          title={`Detach ${network.name} from ${detaching.clusterName}?`}
-          body="Detaching removes this network from every host in the cluster; vNICs using its profiles there lose connectivity."
+          title={t('networkClusters.detach.confirm.title', {
+            network: network.name,
+            cluster: detaching.clusterName,
+          })}
+          body={t('networkClusters.detach.confirm.body')}
           confirmLabel={t('common.action.detach')}
           onConfirm={() => {
             detach.mutate(detaching.clusterId)

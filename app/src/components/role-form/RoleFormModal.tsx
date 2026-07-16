@@ -2,7 +2,9 @@ import { useEffect, useMemo, useState } from 'react'
 import {
   Button,
   EmptyState,
+  EmptyStateActions,
   EmptyStateBody,
+  EmptyStateFooter,
   Flex,
   FlexItem,
   Form,
@@ -196,9 +198,13 @@ export function RoleFormModal({
             <EmptyStateBody>
               {sourcePermits.error instanceof Error ? sourcePermits.error.message : ''}
             </EmptyStateBody>
-            <Button variant="primary" onClick={() => void sourcePermits.refetch()}>
-              <FormattedMessage id="common.action.retry" />
-            </Button>
+            <EmptyStateFooter>
+              <EmptyStateActions>
+                <Button variant="primary" onClick={() => void sourcePermits.refetch()}>
+                  <FormattedMessage id="common.action.retry" />
+                </Button>
+              </EmptyStateActions>
+            </EmptyStateFooter>
           </EmptyState>
         ) : draft === null ? (
           <>
@@ -304,9 +310,13 @@ export function RoleFormModal({
                   <EmptyStateBody>
                     {catalog.error instanceof Error ? catalog.error.message : ''}
                   </EmptyStateBody>
-                  <Button variant="primary" onClick={() => void catalog.refetch()}>
-                    <FormattedMessage id="common.action.retry" />
-                  </Button>
+                  <EmptyStateFooter>
+                    <EmptyStateActions>
+                      <Button variant="primary" onClick={() => void catalog.refetch()}>
+                        <FormattedMessage id="common.action.retry" />
+                      </Button>
+                    </EmptyStateActions>
+                  </EmptyStateFooter>
                 </EmptyState>
               )}
               {catalog.isSuccess && groups.length === 0 && (

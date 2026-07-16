@@ -1,3 +1,5 @@
+import { FormattedMessage } from 'react-intl'
+import { useT } from '../../i18n/useT'
 import { ConfirmModal } from '../ConfirmModal'
 
 // Danger confirm for removing a user from the engine DB (DELETE /users/{id} =>
@@ -18,17 +20,18 @@ export function RemoveUserConfirm({
   onConfirm: () => void
   onCancel: () => void
 }) {
+  const t = useT()
   return (
     <ConfirmModal
       isOpen
-      title="Remove user"
+      title={t('removeUser.title')}
       body={
-        <>
-          This removes <strong>{userName}</strong> from the engine. The directory account is not
-          deleted — you can add the user again from the directory later.
-        </>
+        <FormattedMessage
+          id="removeUser.body"
+          values={{ userName, strong: (chunks) => <strong>{chunks}</strong> }}
+        />
       }
-      confirmLabel="Remove"
+      confirmLabel={t('common.action.remove')}
       onConfirm={onConfirm}
       onCancel={onCancel}
     />

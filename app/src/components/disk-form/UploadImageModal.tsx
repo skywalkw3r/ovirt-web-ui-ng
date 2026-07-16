@@ -24,6 +24,8 @@ import type { StorageDomain } from '../../api/schemas/storage-domain'
 import { useStorageDomains } from '../../hooks/useStorageDomains'
 import type { UploadState, UploadStep } from '../../hooks/useDiskMutations'
 import { useUploadDisk } from '../../hooks/useDiskMutations'
+import type { MessageId } from '../../i18n/messages/en'
+import { useT } from '../../i18n/useT'
 import { formatBytes } from '../../lib/format'
 
 // Extension → { format, contentType, sparse } for the floating upload disk.
@@ -36,15 +38,15 @@ interface DerivedFormat {
   format: string
   contentType: string
   sparse: boolean
-  label: string
+  labelId: MessageId
 }
 
 const FORMAT_BY_EXT: Record<string, DerivedFormat> = {
-  qcow2: { format: 'cow', contentType: 'data', sparse: true, label: 'QCOW2 (thin)' },
-  qcow: { format: 'cow', contentType: 'data', sparse: true, label: 'QCOW2 (thin)' },
-  raw: { format: 'raw', contentType: 'data', sparse: false, label: 'Raw (preallocated)' },
-  img: { format: 'raw', contentType: 'data', sparse: false, label: 'Raw (preallocated)' },
-  iso: { format: 'raw', contentType: 'iso', sparse: false, label: 'ISO (install media)' },
+  qcow2: { format: 'cow', contentType: 'data', sparse: true, labelId: 'diskForm.format.qcow2' },
+  qcow: { format: 'cow', contentType: 'data', sparse: true, labelId: 'diskForm.format.qcow2' },
+  raw: { format: 'raw', contentType: 'data', sparse: false, labelId: 'diskForm.format.raw' },
+  img: { format: 'raw', contentType: 'data', sparse: false, labelId: 'diskForm.format.raw' },
+  iso: { format: 'raw', contentType: 'iso', sparse: false, labelId: 'diskForm.format.iso' },
 }
 
 // Unknown/absent extension falls back to raw data — the safest superset; the
@@ -62,20 +64,20 @@ function uploadTargets(domains: StorageDomain[]): StorageDomain[] {
   return domains.filter((sd) => sd.type === 'data')
 }
 
-// Human copy for each machine step; the progress bar animates only during
-// `transferring`.
-const STEP_LABEL: Record<UploadStep, string> = {
+// Human copy for each machine step (resolved via t() at the render site); the
+// progress bar animates only during `transferring`. `idle` has no label.
+const STEP_LABEL_IDS: Record<UploadStep, MessageId | ''> = {
   idle: '',
-  'creating-disk': 'Creating the target disk…',
-  'waiting-for-disk': 'Waiting for the disk to be ready…',
-  'creating-transfer': 'Opening the image transfer…',
-  initializing: 'Waiting for the transfer to be ready…',
-  transferring: 'Uploading image data…',
-  finalizing: 'Finalizing and verifying the image…',
-  succeeded: 'Upload complete.',
-  failed: 'Upload failed.',
-  paused: 'Upload paused by the engine.',
-  cancelled: 'Upload cancelled.',
+  'creating-disk': 'diskForm.upload.step.creatingDisk',
+  'waiting-for-disk': 'diskForm.upload.step.waitingForDisk',
+  'creating-transfer': 'diskForm.upload.step.creatingTransfer',
+  initializing: 'diskForm.upload.step.initializing',
+  transferring: 'diskForm.upload.step.transferring',
+  finalizing: 'diskForm.upload.step.finalizing',
+  succeeded: 'diskForm.upload.step.succeeded',
+  failed: 'diskForm.upload.step.failed',
+  paused: 'diskForm.upload.step.paused',
+  cancelled: 'diskForm.upload.step.cancelled',
 }
 
 const PENDING_STEPS: ReadonlySet<UploadStep> = new Set<UploadStep>([
@@ -115,6 +117,7 @@ function progressPercent(state: UploadState): number {
 }
 
 export function UploadImageModal({ onClose }: { onClose: () => void }) {
+  const t = useT()
   const domains = useStorageDomains()
   const { state, start, cancel, reset } = useUploadDisk()
 
@@ -138,6 +141,10 @@ export function UploadImageModal({ onClose }: { onClose: () => void }) {
 
   const canStart =
     file !== null && storageDomainId !== '' && alias.trim() !== '' && state.step === 'idle'
+
+  // The progress bar's caption for the current step ('' for idle, which the
+  // progress block never renders anyway).
+  const stepLabelId = STEP_LABEL_IDS[state.step]
 
   const onFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const picked = event.target.files?.[0] ?? null
@@ -179,7 +186,7 @@ export function UploadImageModal({ onClose }: { onClose: () => void }) {
       aria-labelledby="upload-image-title"
       aria-describedby="upload-image-body"
     >
-      <ModalHeader title="Upload image" labelId="upload-image-title" />
+      <ModalHeader title={t('diskForm.upload.title')} labelId="upload-image-title" />
       <ModalBody id="upload-image-body">
         {/* Live-upload caveat — the imageio proxy PUT is USER-VERIFIED against a
             reachable, cert-trusted proxy; surfaced up front so a network/cert
@@ -187,12 +194,10 @@ export function UploadImageModal({ onClose }: { onClose: () => void }) {
         <Alert
           variant="info"
           isInline
-          title="Live upload needs the imageio proxy reachable and trusted"
+          title={t('diskForm.upload.caveat.title')}
           style={{ marginBottom: 'var(--pf-t--global--spacer--md)' }}
         >
-          The image data is streamed directly to the engine&apos;s imageio proxy. Your browser must
-          be able to reach it and must already trust the engine CA certificate, otherwise the
-          transfer fails with a network error. Any engine fault is shown below — it is not hidden.
+          {t('diskForm.upload.caveat.body')}
         </Alert>
 
         <Form
@@ -202,12 +207,12 @@ export function UploadImageModal({ onClose }: { onClose: () => void }) {
             submit()
           }}
         >
-          <FormGroup label="Image file" isRequired fieldId="upload-file">
+          <FormGroup label={t('diskForm.upload.file')} isRequired fieldId="upload-file">
             <input
               ref={fileInputRef}
               id="upload-file"
               type="file"
-              aria-label="Image file"
+              aria-label={t('diskForm.upload.file')}
               accept=".iso,.qcow2,.qcow,.img,.raw"
               disabled={pending || terminal}
               onChange={onFileChange}
@@ -216,17 +221,20 @@ export function UploadImageModal({ onClose }: { onClose: () => void }) {
               <FormHelperText>
                 <HelperText>
                   <HelperTextItem>
-                    {formatBytes(file.size)} · detected format: {derived.label}
+                    {t('diskForm.upload.fileInfo', {
+                      size: formatBytes(file.size),
+                      format: t(derived.labelId),
+                    })}
                   </HelperTextItem>
                 </HelperText>
               </FormHelperText>
             )}
           </FormGroup>
 
-          <FormGroup label="Disk alias" isRequired fieldId="upload-alias">
+          <FormGroup label={t('diskForm.diskAlias')} isRequired fieldId="upload-alias">
             <TextInput
               id="upload-alias"
-              aria-label="Disk alias"
+              aria-label={t('diskForm.diskAlias')}
               isRequired
               value={alias}
               isDisabled={pending || terminal}
@@ -234,27 +242,34 @@ export function UploadImageModal({ onClose }: { onClose: () => void }) {
             />
           </FormGroup>
 
-          <FormGroup label="Target storage domain" isRequired fieldId="upload-target">
+          <FormGroup label={t('diskForm.targetDomain')} isRequired fieldId="upload-target">
             {domains.isPending && (
-              <Skeleton height="2.25rem" screenreaderText="Loading storage domains" />
+              <Skeleton
+                height="2.25rem"
+                screenreaderText={t('vmDisks.addModal.storageDomain.loading')}
+              />
             )}
             {domains.isError && (
               <>
                 <HelperText>
                   <HelperTextItem variant="error">
-                    Could not load storage domains:{' '}
-                    {domains.error instanceof Error ? domains.error.message : 'Unknown error'}
+                    {t('vmDisks.addModal.storageDomain.error', {
+                      message:
+                        domains.error instanceof Error
+                          ? domains.error.message
+                          : t('common.error.unknown'),
+                    })}
                   </HelperTextItem>
                 </HelperText>
                 <Button variant="link" isInline onClick={() => void domains.refetch()}>
-                  Retry
+                  {t('common.action.retry')}
                 </Button>
               </>
             )}
             {domains.isSuccess && (
               <FormSelect
                 id="upload-target"
-                aria-label="Target storage domain"
+                aria-label={t('diskForm.targetDomain')}
                 value={storageDomainId}
                 isDisabled={pending || terminal}
                 onChange={(_event, value) => setStorageDomainId(value)}
@@ -262,7 +277,9 @@ export function UploadImageModal({ onClose }: { onClose: () => void }) {
                 <FormSelectOption
                   value=""
                   label={
-                    targets.length === 0 ? 'No data storage domain' : 'Select a storage domain'
+                    targets.length === 0
+                      ? t('diskForm.upload.targetDomain.none')
+                      : t('vmDisks.addModal.storageDomain.select')
                   }
                   isPlaceholder
                   isDisabled
@@ -278,9 +295,9 @@ export function UploadImageModal({ onClose }: { onClose: () => void }) {
         {state.step !== 'idle' && (
           <div style={{ marginTop: 'var(--pf-t--global--spacer--lg)' }}>
             <Progress
-              aria-label="Upload progress"
+              aria-label={t('diskForm.upload.progressAria')}
               value={progressPercent(state)}
-              title={STEP_LABEL[state.step]}
+              title={stepLabelId ? t(stepLabelId) : ''}
               measureLocation={ProgressMeasureLocation.outside}
               variant={
                 state.step === 'succeeded'
@@ -296,7 +313,7 @@ export function UploadImageModal({ onClose }: { onClose: () => void }) {
               <Alert
                 variant="danger"
                 isInline
-                title="Upload failed"
+                title={t('diskForm.upload.failedTitle')}
                 style={{ marginTop: 'var(--pf-t--global--spacer--md)' }}
               >
                 {state.error}
@@ -306,17 +323,17 @@ export function UploadImageModal({ onClose }: { onClose: () => void }) {
               <Alert
                 variant="warning"
                 isInline
-                title="Upload paused by the engine"
+                title={t('diskForm.upload.pausedTitle')}
                 style={{ marginTop: 'var(--pf-t--global--spacer--md)' }}
               >
                 {state.error
-                  ? `The transfer was paused (${state.error}). This can happen when the imageio proxy is unreachable or the transfer ticket expired. Try again, or retry once the engine recovers.`
-                  : 'The transfer was paused by the engine. Try again once it recovers.'}
+                  ? t('diskForm.upload.pausedBodyDetail', { error: state.error })
+                  : t('diskForm.upload.pausedBody')}
               </Alert>
             )}
             {state.step === 'cancelled' && (
               <Content component="p" style={{ marginTop: 'var(--pf-t--global--spacer--md)' }}>
-                The transfer was cancelled and the partial disk removed.
+                {t('diskForm.upload.cancelledBody')}
               </Content>
             )}
           </div>
@@ -325,12 +342,12 @@ export function UploadImageModal({ onClose }: { onClose: () => void }) {
       <ModalFooter>
         {state.step === 'idle' && (
           <Button variant="primary" type="submit" form="upload-image-form" isDisabled={!canStart}>
-            Upload
+            {t('disks.upload')}
           </Button>
         )}
         {pending && (
           <Button variant="secondary" onClick={cancel}>
-            Cancel upload
+            {t('diskForm.upload.cancel')}
           </Button>
         )}
         {terminal && state.step !== 'succeeded' && (
@@ -341,11 +358,11 @@ export function UploadImageModal({ onClose }: { onClose: () => void }) {
               reset()
             }}
           >
-            Try again
+            {t('common.action.tryAgain')}
           </Button>
         )}
         <Button variant="link" onClick={handleClose} isDisabled={pending}>
-          {terminal ? 'Close' : 'Cancel'}
+          {terminal ? t('common.action.close') : t('common.action.cancel')}
         </Button>
       </ModalFooter>
     </Modal>

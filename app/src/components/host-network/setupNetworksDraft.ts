@@ -8,6 +8,7 @@ import type {
 import type { HostNic } from '../../api/schemas/host-nic'
 import type { Network } from '../../api/schemas/network'
 import type { NetworkAttachment } from '../../api/schemas/network-attachment'
+import type { MessageId } from '../../i18n/messages/en'
 
 export type BootProtocol = 'none' | 'dhcp' | 'static'
 // The IPv6 stack adds SLAAC (autoconf); api-model BootProtocol also has
@@ -21,11 +22,13 @@ export type Ipv6BootProtocol = 'none' | 'dhcp' | 'autoconf' | 'static'
 
 // oVirt supports modes 1/2/4/5 for bridged (VM) networks; 0/3/6 are excluded
 // (docs: 0/6 cannot be used with a bridge). Mirrors SetupNetworksBondModel.
-export const BOND_MODES: { mode: number; label: string }[] = [
-  { mode: 1, label: 'Active-backup (mode 1)' },
-  { mode: 2, label: 'Load balance — balance-xor (mode 2)' },
-  { mode: 4, label: 'Dynamic link aggregation — 802.3ad (mode 4)' },
-  { mode: 5, label: 'Adaptive transmit load balancing — balance-tlb (mode 5)' },
+// Labels resolve per-locale in the consumer (the qosDraft idiom): the array
+// carries MessageIds, the modal maps them through t().
+export const BOND_MODES: { mode: number; labelId: MessageId }[] = [
+  { mode: 1, labelId: 'setupNetworks.bondMode.mode1' },
+  { mode: 2, labelId: 'setupNetworks.bondMode.mode2' },
+  { mode: 4, labelId: 'setupNetworks.bondMode.mode4' },
+  { mode: 5, labelId: 'setupNetworks.bondMode.mode5' },
 ]
 export const DEFAULT_BOND_MODE = 1
 
@@ -720,18 +723,19 @@ const IPV6_PATTERN =
 
 // '' returns undefined — required-but-empty gates Save without shouting at an
 // untouched form (house rule, mirror newHostDraft); non-empty invalid values
-// get an inline message.
-export function ipv4Error(value: string): string | undefined {
+// get an inline message. Validators return a MessageId (the qosDraft idiom) so
+// the module stays i18n-free; the modal resolves it through t().
+export function ipv4Error(value: string): MessageId | undefined {
   const trimmed = value.trim()
   if (trimmed === '') return undefined
-  if (!IPV4_PATTERN.test(trimmed)) return 'Enter a valid IPv4 address'
+  if (!IPV4_PATTERN.test(trimmed)) return 'setupNetworks.validation.ipv4'
   return undefined
 }
 
-export function ipv6Error(value: string): string | undefined {
+export function ipv6Error(value: string): MessageId | undefined {
   const trimmed = value.trim()
   if (trimmed === '') return undefined
-  if (!IPV6_PATTERN.test(trimmed)) return 'Enter a valid IPv6 address'
+  if (!IPV6_PATTERN.test(trimmed)) return 'setupNetworks.validation.ipv6'
   return undefined
 }
 
@@ -750,20 +754,20 @@ function isContiguousMask(value: string): boolean {
 
 // Webadmin's SubnetMaskValidation semantics: a dotted-quad netmask or a bare
 // prefix length. Prefixes are normalized to dotted-quad before the wire.
-export function netmaskError(value: string): string | undefined {
+export function netmaskError(value: string): MessageId | undefined {
   const trimmed = value.trim()
   if (trimmed === '') return undefined
   if (/^\d{1,2}$/.test(trimmed) && Number(trimmed) <= 32) return undefined
   if (isContiguousMask(trimmed)) return undefined
-  return 'Enter a subnet mask (e.g. 255.255.255.0) or prefix length (0–32)'
+  return 'setupNetworks.validation.netmask'
 }
 
 // IPv6 subnet prefix: an integer 0–128 (types/Ip). Empty stays quiet.
-export function prefixV6Error(value: string): string | undefined {
+export function prefixV6Error(value: string): MessageId | undefined {
   const trimmed = value.trim()
   if (trimmed === '') return undefined
   if (/^\d{1,3}$/.test(trimmed) && Number(trimmed) <= 128) return undefined
-  return 'Enter an IPv6 prefix length (0–128)'
+  return 'setupNetworks.validation.prefixV6'
 }
 
 export function prefixToNetmask(prefix: number): string {
@@ -780,12 +784,12 @@ function normalizeNetmask(value: string): string {
 
 // DNS name servers: each non-empty entry must be a valid IPv4 or IPv6 address
 // (DnsResolverConfiguration accepts either). Blank rows are ignored on the wire.
-export function nameServersError(nameServers: string[]): string | undefined {
+export function nameServersError(nameServers: string[]): MessageId | undefined {
   for (const server of nameServers) {
     const trimmed = server.trim()
     if (trimmed === '') continue
     if (ipv4Error(trimmed) !== undefined && ipv6Error(trimmed) !== undefined) {
-      return 'Each name server must be a valid IPv4 or IPv6 address'
+      return 'setupNetworks.validation.nameServer'
     }
   }
   return undefined
@@ -794,23 +798,23 @@ export function nameServersError(nameServers: string[]): string | undefined {
 // Host-network QoS outbound values are non-negative whole numbers (Mbps for
 // upperlimit/realtime, a relative weight for linkshare). Empty stays quiet — an
 // omitted field is simply not sent.
-export function qosValueError(value: string): string | undefined {
+export function qosValueError(value: string): MessageId | undefined {
   const trimmed = value.trim()
   if (trimmed === '') return undefined
   if (/^\d+$/.test(trimmed)) return undefined
-  return 'Enter a non-negative whole number'
+  return 'setupNetworks.validation.qosValue'
 }
 
 export interface RowFieldErrors {
-  address?: string
-  netmask?: string
-  gateway?: string
-  ipv6Address?: string
-  ipv6Prefix?: string
-  ipv6Gateway?: string
-  qosLinkshare?: string
-  qosUpperlimit?: string
-  qosRealtime?: string
+  address?: MessageId
+  netmask?: MessageId
+  gateway?: MessageId
+  ipv6Address?: MessageId
+  ipv6Prefix?: MessageId
+  ipv6Gateway?: MessageId
+  qosLinkshare?: MessageId
+  qosUpperlimit?: MessageId
+  qosRealtime?: MessageId
 }
 
 // Inline messages for the static-IP inputs — computed for any attached row so
@@ -879,15 +883,26 @@ export function rowBlocksSave(row: NetworkRow): boolean {
   return false
 }
 
+// The management-guard failure as a MessageId plus its ICU value — the network
+// name is only known here (the offender is found internally), so the helper
+// carries it out for the modal to resolve through t(id, values).
+export interface ManagementGuardError {
+  id: MessageId
+  values: { name: string }
+}
+
 // Webadmin's mgmtNotAttachedToolTip guard, scoped the way the engine enforces
 // it: only a management network that WAS attached must not end up detached
 // (moving it to another NIC/bond in the same action is fine).
-export function managementGuardError(draft: SetupNetworksDraft): string | undefined {
+export function managementGuardError(draft: SetupNetworksDraft): ManagementGuardError | undefined {
   const offender = draft.rows.find(
     (row) => row.isManagement && row.seed !== undefined && row.nicName === null,
   )
   if (offender === undefined) return undefined
-  return `The management network '${offender.networkName}' must stay attached to a network interface`
+  return {
+    id: 'setupNetworks.validation.managementGuard',
+    values: { name: offender.networkName },
+  }
 }
 
 export function draftBlocksSave(draft: SetupNetworksDraft): boolean {

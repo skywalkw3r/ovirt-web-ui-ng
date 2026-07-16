@@ -6,6 +6,7 @@ import {
   HelperTextItem,
   Switch,
 } from '@patternfly/react-core'
+import { useT } from '../../i18n/useT'
 
 // The slice of the New Host draft this section reads/writes.
 export interface HostedEngineDraft {
@@ -25,23 +26,20 @@ export function HostedEngineSection({
   draft: HostedEngineDraft
   set: (key: keyof HostedEngineDraft, value: boolean) => void
 }) {
+  const t = useT()
   return (
     <Form onSubmit={(event) => event.preventDefault()}>
       <FormGroup fieldId="new-host-deploy-hosted-engine">
         <Switch
           id="new-host-deploy-hosted-engine"
-          label="Deploy hosted engine"
-          aria-label="Deploy hosted engine"
+          label={t('hostForm.hostedEngine.deploy')}
+          aria-label={t('hostForm.hostedEngine.deploy')}
           isChecked={draft.deployHostedEngine}
           onChange={(_event, checked) => set('deployHostedEngine', checked)}
         />
         <FormHelperText>
           <HelperText>
-            <HelperTextItem>
-              The install also deploys the self-hosted engine components, so this host can run the
-              engine VM alongside the existing hosted-engine hosts. Leave off for a regular
-              virtualization host.
-            </HelperTextItem>
+            <HelperTextItem>{t('hostForm.hostedEngine.deploy.help')}</HelperTextItem>
           </HelperText>
         </FormHelperText>
       </FormGroup>

@@ -396,7 +396,11 @@ export function AppShell() {
             control, so there's one obvious affordance rather than two. */}
         <MastheadBrand>
           {/* the brand mark is the universal "take me home" affordance */}
-          <Link to="/" aria-label="Dashboard" style={{ display: 'inline-flex' }}>
+          <Link
+            to="/"
+            aria-label={intl.formatMessage({ id: 'nav.dashboard' })}
+            style={{ display: 'inline-flex' }}
+          >
             <BrandLogo />
           </Link>
         </MastheadBrand>

@@ -2,7 +2,9 @@ import { useRef, useState } from 'react'
 import {
   Button,
   EmptyState,
+  EmptyStateActions,
   EmptyStateBody,
+  EmptyStateFooter,
   Form,
   FormGroup,
   FormHelperText,
@@ -19,6 +21,7 @@ import {
   iconDataUrl,
   listIcons,
 } from '../../api/resources/icons'
+import { useT } from '../../i18n/useT'
 import { FieldHelp } from '../forms/FieldHelp'
 import type { EditVmDraft } from './editVmDraft'
 
@@ -41,8 +44,7 @@ function readIconFile(file: File): Promise<{ data: string; mediaType: string }> 
 // icon, a pick-from-catalog grid (GET /icons), and a custom PNG/JPEG/GIF upload
 // gated at 24 kB (webadmin's VmIconValidator). Every choice writes back through
 // `set` into the draft's iconId / iconUpload* fields; the modal turns those into
-// the large_icon PUT body (editVmDraft.buildLargeIcon). Hardcoded English (the
-// vm.edit.icon.* ids are pre-seeded for a later i18n pass).
+// the large_icon PUT body (editVmDraft.buildLargeIcon).
 export function IconSection({
   draft,
   set,
@@ -50,6 +52,7 @@ export function IconSection({
   draft: EditVmDraft
   set: <K extends keyof EditVmDraft>(key: K, value: EditVmDraft[K]) => void
 }) {
+  const t = useT()
   const [uploadError, setUploadError] = useState<string | undefined>(undefined)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -85,11 +88,11 @@ export function IconSection({
   const onFile = async (file: File | undefined) => {
     if (!file) return
     if (!ICON_ALLOWED_MEDIA_TYPES.includes(file.type)) {
-      setUploadError('Use a PNG, JPEG, or GIF image.')
+      setUploadError(t('vm.edit.icon.badType'))
       return
     }
     if (file.size > ICON_MAX_BYTES) {
-      setUploadError('Icon must be 24 KB or smaller.')
+      setUploadError(t('vm.edit.icon.tooLarge'))
       return
     }
     try {
@@ -98,7 +101,7 @@ export function IconSection({
       set('iconUploadMediaType', mediaType)
       set('iconUploadData', data)
     } catch {
-      setUploadError('Could not read the file. Try another image.')
+      setUploadError(t('vm.edit.icon.readError'))
     }
   }
 
@@ -113,44 +116,39 @@ export function IconSection({
 
   return (
     <Form onSubmit={(event) => event.preventDefault()}>
-      <FormGroup label="Current icon" fieldId="edit-vm-icon-preview">
+      <FormGroup label={t('vm.edit.icon.current')} fieldId="edit-vm-icon-preview">
         {previewUrl ? (
           <img
             id="edit-vm-icon-preview"
             src={previewUrl}
-            alt="Current virtual machine icon"
+            alt={t('vm.edit.icon.currentAlt')}
             style={{ maxWidth: 150, maxHeight: 120, borderRadius: 4 }}
           />
         ) : (
           <HelperText>
             <HelperTextItem>
-              {hasUpload ? 'Custom icon ready to save.' : 'No custom icon — using the OS default.'}
+              {hasUpload ? t('vm.edit.icon.uploadReady') : t('vm.edit.icon.none')}
             </HelperTextItem>
           </HelperText>
         )}
       </FormGroup>
 
       <FormGroup
-        label="Upload a custom icon"
+        label={t('vm.edit.icon.upload')}
         fieldId="edit-vm-icon-upload"
-        labelHelp={
-          <FieldHelp
-            field="Upload a custom icon"
-            content="A PNG, JPEG, or GIF up to 24 KB (best at 150×120). It replaces the OS-default icon shown across the inventory. Applied immediately on save."
-          />
-        }
+        labelHelp={<FieldHelp field={t('vm.edit.icon.upload')} content={t('fieldHelp.vm.icon')} />}
       >
         <input
           ref={fileInputRef}
           id="edit-vm-icon-upload"
           type="file"
-          aria-label="Upload a custom icon"
+          aria-label={t('vm.edit.icon.upload')}
           accept={ICON_ALLOWED_MEDIA_TYPES.join(',')}
           onChange={(event) => void onFile(event.target.files?.[0])}
         />
         {hasUpload && (
           <Button variant="link" isInline onClick={clearUpload} style={{ marginInlineStart: 8 }}>
-            Remove custom icon
+            {t('vm.edit.icon.remove')}
           </Button>
         )}
         {uploadError && (
@@ -162,36 +160,43 @@ export function IconSection({
         )}
       </FormGroup>
 
-      <FormGroup label="Pick from catalog" fieldId="edit-vm-icon-catalog" role="group">
+      <FormGroup label={t('vm.edit.icon.catalog')} fieldId="edit-vm-icon-catalog" role="group">
         {icons.isPending && (
-          <Gallery hasGutter aria-label="Loading icons">
+          <Gallery hasGutter aria-label={t('vm.edit.icon.loading')}>
             {[0, 1, 2, 3, 4, 5].map((n) => (
-              <Skeleton key={n} height="48px" width="48px" screenreaderText="Loading icons" />
+              <Skeleton
+                key={n}
+                height="48px"
+                width="48px"
+                screenreaderText={t('vm.edit.icon.loading')}
+              />
             ))}
           </Gallery>
         )}
 
         {icons.isError && (
-          <EmptyState titleText="Could not load icons" status="danger" headingLevel="h4">
+          <EmptyState titleText={t('vm.edit.icon.error.title')} status="danger" headingLevel="h4">
             <EmptyStateBody>
-              {icons.error instanceof Error ? icons.error.message : 'Unknown error'}
+              {icons.error instanceof Error ? icons.error.message : t('common.error.unknown')}
             </EmptyStateBody>
-            <Button variant="primary" onClick={() => void icons.refetch()}>
-              Retry
-            </Button>
+            <EmptyStateFooter>
+              <EmptyStateActions>
+                <Button variant="primary" onClick={() => void icons.refetch()}>
+                  {t('common.action.retry')}
+                </Button>
+              </EmptyStateActions>
+            </EmptyStateFooter>
           </EmptyState>
         )}
 
         {icons.isSuccess && iconsWithData.length === 0 && (
           <HelperText>
-            <HelperTextItem>
-              No catalog icons are available — upload a custom icon above.
-            </HelperTextItem>
+            <HelperTextItem>{t('vm.edit.icon.empty')}</HelperTextItem>
           </HelperText>
         )}
 
         {icons.isSuccess && iconsWithData.length > 0 && (
-          <Gallery hasGutter aria-label="Icon catalog">
+          <Gallery hasGutter aria-label={t('vm.edit.icon.catalogAria')}>
             {iconsWithData.map((icon) => {
               const selected = !hasUpload && draft.iconId === icon.id
               return (
@@ -199,7 +204,7 @@ export function IconSection({
                   key={icon.id}
                   variant="plain"
                   aria-pressed={selected}
-                  aria-label={`Use icon ${icon.name ?? icon.id}`}
+                  aria-label={t('vm.edit.icon.use', { name: icon.name ?? icon.id ?? '' })}
                   onClick={() => pickCatalog(icon.id ?? '')}
                   style={{
                     padding: 4,

@@ -151,15 +151,15 @@ export function EditVmModal({
       aria-labelledby="edit-vm-title"
       aria-describedby="edit-vm-body"
     >
-      <ModalHeader title={`Edit virtual machine — ${vm.name}`} labelId="edit-vm-title" />
+      <ModalHeader title={t('vm.edit.title', { name: vm.name })} labelId="edit-vm-title" />
       <ModalBody id="edit-vm-body">
         <ModalVerticalTabs
           idPrefix="edit-vm"
-          ariaLabel="Edit virtual machine sections"
+          ariaLabel={t('vm.edit.sections.ariaLabel')}
           sections={[
             {
               key: 'general',
-              title: 'General',
+              title: t('vm.edit.section.general'),
               content: (
                 <GeneralSection
                   draft={draft}
@@ -171,7 +171,7 @@ export function EditVmModal({
             },
             {
               key: 'system',
-              title: 'System',
+              title: t('vm.edit.section.system'),
               content: (
                 <SystemSection draft={draft} set={set} overcommitPercent={overcommitPercent} />
               ),
@@ -183,7 +183,7 @@ export function EditVmModal({
             },
             {
               key: 'icon',
-              title: 'Icon',
+              title: t('vm.edit.section.icon'),
               content: <IconSection draft={draft} set={set} />,
             },
             // DEFERRED — Foreman/Satellite host provider section. Webadmin's Edit
@@ -195,7 +195,7 @@ export function EditVmModal({
             // documented-deferral pattern as RunOnceModal's cloud-init note.
             {
               key: 'console',
-              title: 'Console',
+              title: t('vm.edit.section.console'),
               content: <ConsoleSection draft={draft} set={set} />,
             },
             // Host placement is engine-admin-only (GET /hosts requires an
@@ -219,7 +219,7 @@ export function EditVmModal({
               : []),
             {
               key: 'high-availability',
-              title: 'High Availability',
+              title: t('vm.edit.section.highAvailability'),
               content: <HighAvailabilitySection draft={draft} set={set} />,
             },
             {
@@ -231,7 +231,7 @@ export function EditVmModal({
             },
             {
               key: 'boot-options',
-              title: 'Boot Options',
+              title: t('vm.edit.section.bootOptions'),
               content: <BootOptionsSection draft={draft} set={set} />,
             },
             {
@@ -254,10 +254,10 @@ export function EditVmModal({
           isLoading={update.isPending}
           isDisabled={update.isPending || nameInvalid || memoryInvalid}
         >
-          Save
+          {t('common.action.save')}
         </Button>
         <Button variant="secondary" onClick={onClose} isDisabled={update.isPending}>
-          Cancel
+          {t('common.action.cancel')}
         </Button>
       </ModalFooter>
 

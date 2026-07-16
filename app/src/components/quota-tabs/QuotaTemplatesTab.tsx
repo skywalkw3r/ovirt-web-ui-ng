@@ -1,10 +1,19 @@
-import { Button, EmptyState, EmptyStateBody, Label, Skeleton } from '@patternfly/react-core'
+import {
+  Button,
+  EmptyState,
+  EmptyStateActions,
+  EmptyStateBody,
+  EmptyStateFooter,
+  Label,
+  Skeleton,
+} from '@patternfly/react-core'
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import { listTemplates } from '../../api/resources/templates'
 import { useClustersInventory } from '../../hooks/useAdminResources'
 import { CATALOG_STALE_MS } from '../../hooks/useCatalog'
+import { useT } from '../../i18n/useT'
 import { formatBytes, statusText } from '../../lib/format'
 
 // The templates consuming this quota. Webadmin's QuotaTemplateListModel has no
@@ -15,6 +24,7 @@ import { formatBytes, statusText } from '../../lib/format'
 // column stands in; 4 columns keeps the table under the ColumnPicker
 // threshold. Catalog data — staleTime over polling, matching useTemplates.
 export function QuotaTemplatesTab({ quotaId }: { quotaId: string }) {
+  const t = useT()
   const templates = useQuery({
     queryKey: ['quota', quotaId, 'templates'],
     queryFn: () => listTemplates(),
@@ -31,20 +41,24 @@ export function QuotaTemplatesTab({ quotaId }: { quotaId: string }) {
     return (
       <>
         <Skeleton height="2.5rem" style={{ marginBottom: '0.5rem' }} />
-        <Skeleton height="2.5rem" screenreaderText="Loading templates" />
+        <Skeleton height="2.5rem" screenreaderText={t('templates.loading')} />
       </>
     )
   }
 
   if (templates.isError) {
     return (
-      <EmptyState titleText="Could not load templates" status="danger">
+      <EmptyState titleText={t('templates.error.title')} status="danger">
         <EmptyStateBody>
-          {templates.error instanceof Error ? templates.error.message : 'Unknown error'}
+          {templates.error instanceof Error ? templates.error.message : t('common.error.unknown')}
         </EmptyStateBody>
-        <Button variant="primary" onClick={() => void templates.refetch()}>
-          Retry
-        </Button>
+        <EmptyStateFooter>
+          <EmptyStateActions>
+            <Button variant="primary" onClick={() => void templates.refetch()}>
+              {t('common.action.retry')}
+            </Button>
+          </EmptyStateActions>
+        </EmptyStateFooter>
       </EmptyState>
     )
   }
@@ -53,31 +67,31 @@ export function QuotaTemplatesTab({ quotaId }: { quotaId: string }) {
     // no CTA: a template adopts a quota when it is created, not from the
     // quota's side
     return (
-      <EmptyState titleText="No templates">
-        <EmptyStateBody>No template consumes this quota.</EmptyStateBody>
+      <EmptyState titleText={t('templates.empty.title')}>
+        <EmptyStateBody>{t('quotaTemplates.empty.body')}</EmptyStateBody>
       </EmptyState>
     )
   }
 
   return (
-    <Table aria-label="Templates consuming this quota" variant="compact">
+    <Table aria-label={t('quotaTemplates.table.ariaLabel')} variant="compact">
       <Thead>
         <Tr>
-          <Th width={30}>Name</Th>
-          <Th width={15}>Status</Th>
-          <Th>Cluster</Th>
-          <Th>Defined memory</Th>
+          <Th width={30}>{t('common.field.name')}</Th>
+          <Th width={15}>{t('common.field.status')}</Th>
+          <Th>{t('common.field.cluster')}</Th>
+          <Th>{t('quotaVms.column.definedMemory')}</Th>
         </Tr>
       </Thead>
       <Tbody>
         {templates.data.map((template) => (
           <Tr key={template.id}>
-            <Td dataLabel="Name">
+            <Td dataLabel={t('common.field.name')}>
               <Link to="/templates/$templateId" params={{ templateId: template.id }}>
                 {template.name}
               </Link>
             </Td>
-            <Td dataLabel="Status">
+            <Td dataLabel={t('common.field.status')}>
               {template.status === undefined ? (
                 '—'
               ) : (
@@ -97,10 +111,10 @@ export function QuotaTemplatesTab({ quotaId }: { quotaId: string }) {
                 </Label>
               )}
             </Td>
-            <Td dataLabel="Cluster">
+            <Td dataLabel={t('common.field.cluster')}>
               {template.cluster?.name ?? clusterNames.get(template.cluster?.id ?? '') ?? '—'}
             </Td>
-            <Td dataLabel="Defined memory">{formatBytes(template.memory)}</Td>
+            <Td dataLabel={t('quotaVms.column.definedMemory')}>{formatBytes(template.memory)}</Td>
           </Tr>
         ))}
       </Tbody>

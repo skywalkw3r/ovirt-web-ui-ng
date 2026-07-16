@@ -23,6 +23,8 @@ import {
 } from '../../api/resources/clusters'
 import { useClusterHosts, useClusterVms } from '../../hooks/useClusterDetail'
 import { useCreateAffinityGroup, useUpdateAffinityGroup } from '../../hooks/useClusterMutations'
+import type { MessageId } from '../../i18n/messages/en'
+import { useT } from '../../i18n/useT'
 import { ModalVerticalTabs } from '../forms/ModalVerticalTabs'
 import { EntitySelection } from './EntitySelection'
 
@@ -90,10 +92,10 @@ function blankDraft(): GroupDraft {
   }
 }
 
-const POLARITY_OPTIONS: { value: AffinityPolarity; label: string }[] = [
-  { value: 'positive', label: 'Positive — keep together' },
-  { value: 'negative', label: 'Negative — keep apart' },
-  { value: 'disabled', label: 'Disabled' },
+const POLARITY_OPTIONS: { value: AffinityPolarity; labelId: MessageId }[] = [
+  { value: 'positive', labelId: 'affinity.polarity.positive' },
+  { value: 'negative', labelId: 'affinity.polarity.negative' },
+  { value: 'disabled', labelId: 'common.disabled' },
 ]
 
 // The New/Edit affinity group modal. Owns a single flat draft (seeded from the
@@ -119,6 +121,7 @@ export function AffinityGroupModal({
   isOpen: boolean
   onClose: () => void
 }) {
+  const t = useT()
   const isEdit = group !== undefined
   const [draft, setDraft] = useState<GroupDraft>(() => (group ? groupToDraft(group) : blankDraft()))
   // Re-seed when the modal is pointed at a different group (or flips between
@@ -180,50 +183,50 @@ export function AffinityGroupModal({
     }
   }
 
-  const title = isEdit ? `Edit affinity group — ${group.name ?? group.id}` : 'New affinity group'
+  const title = isEdit
+    ? t('affinity.group.editTitle', { name: group.name ?? group.id })
+    : t('affinity.group.newTitle')
 
   const generalSection = (
     <Form onSubmit={(event) => event.preventDefault()}>
-      <FormGroup label="Name" isRequired fieldId="affinity-group-name">
+      <FormGroup label={t('common.field.name')} isRequired fieldId="affinity-group-name">
         <TextInput
           id="affinity-group-name"
           isRequired
-          aria-label="Affinity group name"
+          aria-label={t('affinity.group.nameAria')}
           value={draft.name}
           validated={nameEmpty ? 'error' : 'default'}
           onChange={(_event, value) => set('name', value)}
         />
         {nameEmpty && (
           <HelperText>
-            <HelperTextItem variant="error">A name is required.</HelperTextItem>
+            <HelperTextItem variant="error">{t('affinity.nameRequired')}</HelperTextItem>
           </HelperText>
         )}
       </FormGroup>
 
-      <FormGroup label="Description" fieldId="affinity-group-description">
+      <FormGroup label={t('common.field.description')} fieldId="affinity-group-description">
         <TextInput
           id="affinity-group-description"
-          aria-label="Affinity group description"
+          aria-label={t('affinity.group.descriptionAria')}
           value={draft.description}
           onChange={(_event, value) => set('description', value)}
         />
       </FormGroup>
 
-      <FormGroup label="Priority" fieldId="affinity-group-priority">
+      <FormGroup label={t('affinity.group.priority')} fieldId="affinity-group-priority">
         <NumberInput
           id="affinity-group-priority"
           value={priorityNumber}
           min={1}
-          inputAriaLabel="Affinity group priority"
+          inputAriaLabel={t('affinity.group.priorityAria')}
           onMinus={() => set('priority', String(Math.max(1, priorityNumber - 1)))}
           onPlus={() => set('priority', String(priorityNumber + 1))}
           onChange={(event) => set('priority', (event.target as HTMLInputElement).value)}
         />
         {priorityInvalid && (
           <HelperText>
-            <HelperTextItem variant="error">
-              Priority must be a whole number of at least 1.
-            </HelperTextItem>
+            <HelperTextItem variant="error">{t('affinity.group.priorityError')}</HelperTextItem>
           </HelperText>
         )}
       </FormGroup>
@@ -232,10 +235,10 @@ export function AffinityGroupModal({
         <Alert
           variant="warning"
           isInline
-          title="Enable at least one rule"
-          aria-label="Enable at least one rule"
+          title={t('affinity.group.needRule.title')}
+          aria-label={t('affinity.group.needRule.title')}
         >
-          A group needs a VM rule or a host rule enabled — otherwise there is nothing to enforce.
+          {t('affinity.group.needRule.body')}
         </Alert>
       )}
     </Form>
@@ -243,15 +246,15 @@ export function AffinityGroupModal({
 
   const vmSection = (
     <Form onSubmit={(event) => event.preventDefault()}>
-      <FormGroup label="VM rule" fieldId="affinity-group-vm-polarity">
+      <FormGroup label={t('affinity.group.vmRule')} fieldId="affinity-group-vm-polarity">
         <FormSelect
           id="affinity-group-vm-polarity"
-          aria-label="VM affinity rule"
+          aria-label={t('affinity.group.vmRuleAria')}
           value={draft.vmPolarity}
           onChange={(_event, value) => set('vmPolarity', value as AffinityPolarity)}
         >
           {POLARITY_OPTIONS.map((option) => (
-            <FormSelectOption key={option.value} value={option.value} label={option.label} />
+            <FormSelectOption key={option.value} value={option.value} label={t(option.labelId)} />
           ))}
         </FormSelect>
       </FormGroup>
@@ -259,23 +262,23 @@ export function AffinityGroupModal({
       <FormGroup fieldId="affinity-group-vm-enforcing">
         <Switch
           id="affinity-group-vm-enforcing"
-          label="Enforcing (hard rule)"
-          aria-label="VM rule enforcing"
+          label={t('affinity.group.enforcing')}
+          aria-label={t('affinity.group.vmEnforcingAria')}
           isChecked={draft.vmEnforcing}
           isDisabled={draft.vmPolarity === 'disabled'}
           onChange={(_event, checked) => set('vmEnforcing', checked)}
         />
       </FormGroup>
 
-      <FormGroup label="Virtual machines" fieldId="affinity-group-vms">
+      <FormGroup label={t('affinity.entity.vms')} fieldId="affinity-group-vms">
         <EntitySelection
-          label="Virtual machines"
-          ariaLabel="Select virtual machines"
+          label={t('affinity.entity.vms')}
+          ariaLabel={t('affinity.select.vms')}
           candidates={clusterVms}
           selectedIds={draft.vmIds}
           onToggle={(id, next) => toggleId('vmIds', id, next)}
-          emptyText="No virtual machines are in this cluster."
-          loadingText="Loading virtual machines"
+          emptyText={t('affinity.group.vms.empty')}
+          loadingText={t('affinity.loading.vms')}
         />
       </FormGroup>
     </Form>
@@ -283,15 +286,15 @@ export function AffinityGroupModal({
 
   const hostSection = (
     <Form onSubmit={(event) => event.preventDefault()}>
-      <FormGroup label="Host rule" fieldId="affinity-group-host-polarity">
+      <FormGroup label={t('affinity.group.hostRule')} fieldId="affinity-group-host-polarity">
         <FormSelect
           id="affinity-group-host-polarity"
-          aria-label="Host affinity rule"
+          aria-label={t('affinity.group.hostRuleAria')}
           value={draft.hostPolarity}
           onChange={(_event, value) => set('hostPolarity', value as AffinityPolarity)}
         >
           {POLARITY_OPTIONS.map((option) => (
-            <FormSelectOption key={option.value} value={option.value} label={option.label} />
+            <FormSelectOption key={option.value} value={option.value} label={t(option.labelId)} />
           ))}
         </FormSelect>
       </FormGroup>
@@ -299,23 +302,23 @@ export function AffinityGroupModal({
       <FormGroup fieldId="affinity-group-host-enforcing">
         <Switch
           id="affinity-group-host-enforcing"
-          label="Enforcing (hard rule)"
-          aria-label="Host rule enforcing"
+          label={t('affinity.group.enforcing')}
+          aria-label={t('affinity.group.hostEnforcingAria')}
           isChecked={draft.hostEnforcing}
           isDisabled={draft.hostPolarity === 'disabled'}
           onChange={(_event, checked) => set('hostEnforcing', checked)}
         />
       </FormGroup>
 
-      <FormGroup label="Hosts" fieldId="affinity-group-hosts">
+      <FormGroup label={t('affinity.entity.hosts')} fieldId="affinity-group-hosts">
         <EntitySelection
-          label="Hosts"
-          ariaLabel="Select hosts"
+          label={t('affinity.entity.hosts')}
+          ariaLabel={t('affinity.select.hosts')}
           candidates={clusterHosts}
           selectedIds={draft.hostIds}
           onToggle={(id, next) => toggleId('hostIds', id, next)}
-          emptyText="No hosts are in this cluster."
-          loadingText="Loading hosts"
+          emptyText={t('affinity.group.hosts.empty')}
+          loadingText={t('affinity.loading.hosts')}
         />
       </FormGroup>
     </Form>
@@ -333,11 +336,11 @@ export function AffinityGroupModal({
       <ModalBody id="affinity-group-modal-body">
         <ModalVerticalTabs
           idPrefix="affinity-group"
-          ariaLabel="Affinity group sections"
+          ariaLabel={t('affinity.group.sectionsAria')}
           sections={[
-            { key: 'general', title: 'General', content: generalSection },
-            { key: 'vms', title: 'Virtual Machines', content: vmSection },
-            { key: 'hosts', title: 'Hosts', content: hostSection },
+            { key: 'general', title: t('affinity.section.general'), content: generalSection },
+            { key: 'vms', title: t('affinity.section.vms'), content: vmSection },
+            { key: 'hosts', title: t('affinity.entity.hosts'), content: hostSection },
           ]}
         />
       </ModalBody>
@@ -348,10 +351,10 @@ export function AffinityGroupModal({
           isLoading={pending}
           isDisabled={pending || nameEmpty || noRuleEnabled || priorityInvalid}
         >
-          Save
+          {t('common.action.save')}
         </Button>
         <Button variant="secondary" onClick={onClose} isDisabled={pending}>
-          Cancel
+          {t('common.action.cancel')}
         </Button>
       </ModalFooter>
     </Modal>

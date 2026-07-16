@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
 import { renderToStaticMarkup } from 'react-dom/server'
+import { IntlProvider } from 'react-intl'
 import type { ReactNode } from 'react'
+import { enMessages } from '../../i18n/messages/en'
 
 // vitest env is 'node' (no jsdom) and PF react-core's CJS entry requires raw
 // .css node can't parse, so the PF pieces are stubbed with semantic
@@ -110,13 +112,15 @@ const diskOnSd01 = {
 
 function render(mode: 'move' | 'copy', disk: Record<string, unknown>) {
   return renderToStaticMarkup(
-    <MoveCopyDiskModal
-      mode={mode}
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      disk={disk as any}
-      onSubmit={() => {}}
-      onClose={() => {}}
-    />,
+    <IntlProvider locale="en" messages={enMessages}>
+      <MoveCopyDiskModal
+        mode={mode}
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        disk={disk as any}
+        onSubmit={() => {}}
+        onClose={() => {}}
+      />
+    </IntlProvider>,
   )
 }
 

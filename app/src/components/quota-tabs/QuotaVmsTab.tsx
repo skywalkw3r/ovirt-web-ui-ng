@@ -1,23 +1,33 @@
+import { useMemo } from 'react'
 import { Toolbar, ToolbarContent, ToolbarGroup, ToolbarItem } from '@patternfly/react-core'
 import type { Vm } from '../../api/schemas/vm'
 import { useClustersInventory } from '../../hooks/useAdminResources'
-import { useColumnPrefs, type ColumnDef } from '../../hooks/useColumnPrefs'
+import { useColumnPrefs } from '../../hooks/useColumnPrefs'
 import { useVmMembership } from '../../hooks/useVmMembership'
+import { useT } from '../../i18n/useT'
+import type { MessageId } from '../../i18n/messages/en'
 import { formatBytes } from '../../lib/format'
 import { ColumnPicker } from '../list-toolbar/ColumnPicker'
 import { VM_NAME_COLUMN, VM_STATUS_COLUMN, type VmMembershipColumn } from '../vm-membership/columns'
 import { VmMembershipTable } from '../vm-membership/VmMembershipTable'
 
+interface QuotaVmColumn {
+  key: string
+  labelId: MessageId
+  always?: boolean
+}
+
 // >4 columns ⇒ the COLUMNS + useColumnPrefs + ColumnPicker house pattern
-// (Name pinned). Memory/vCPUs are the "consumption" columns that come free on
-// the list read (defined memory + topology); live per-VM usage would need the
-// statistics subcollection per row, which is not cheap.
-const COLUMNS: ColumnDef[] = [
-  { key: 'name', label: 'Name', always: true },
-  { key: 'status', label: 'Status' },
-  { key: 'cluster', label: 'Cluster' },
-  { key: 'memory', label: 'Defined memory' },
-  { key: 'vcpus', label: 'vCPUs' },
+// (Name pinned). Labels are message ids resolved per-locale in the component
+// (the HostDevicesTab idiom). Memory/vCPUs are the "consumption" columns that
+// come free on the list read (defined memory + topology); live per-VM usage
+// would need the statistics subcollection per row, which is not cheap.
+const COLUMNS: QuotaVmColumn[] = [
+  { key: 'name', labelId: 'common.field.name', always: true },
+  { key: 'status', labelId: 'common.field.status' },
+  { key: 'cluster', labelId: 'common.field.cluster' },
+  { key: 'memory', labelId: 'quotaVms.column.definedMemory' },
+  { key: 'vcpus', labelId: 'quota.limits.vcpus' },
 ]
 
 // sockets × cores × threads, absent axes counting as 1 — the same product the
@@ -41,6 +51,7 @@ function vcpuCount(vm: Vm): string {
 // so useVmMembership client-filters the list. Keyed under ['quota', id, …] so
 // a quota edit's prefix invalidation refetches it too.
 export function QuotaVmsTab({ quotaId }: { quotaId: string }) {
+  const t = useT()
   const vms = useVmMembership('quota', quotaId, (vm) => vm.quota?.id === quotaId)
 
   // Cluster-name join: the live /vms feed serializes cluster as a bare { id }
@@ -49,7 +60,13 @@ export function QuotaVmsTab({ quotaId }: { quotaId: string }) {
   const clusters = useClustersInventory()
   const clusterNames = new Map((clusters.data ?? []).map((cluster) => [cluster.id, cluster.name]))
 
-  const prefs = useColumnPrefs('quota-vms', COLUMNS)
+  // Resolve column labels for the active locale; identity is stable per locale
+  // (t is memoized on intl) so useColumnPrefs' seeding stays sound.
+  const columns = useMemo(
+    () => COLUMNS.map((column) => ({ ...column, label: t(column.labelId) })),
+    [t],
+  )
+  const prefs = useColumnPrefs('quota-vms', columns)
 
   const renderOf: Record<string, VmMembershipColumn['render']> = {
     name: VM_NAME_COLUMN.render,
@@ -70,23 +87,23 @@ export function QuotaVmsTab({ quotaId }: { quotaId: string }) {
     vcpus: vcpuValue,
   }
 
-  const visibleColumns: VmMembershipColumn[] = COLUMNS.filter((column) =>
-    prefs.isVisible(column.key),
-  ).map((column) => ({
-    key: column.key,
-    label: column.label,
-    render: renderOf[column.key] ?? (() => '—'),
-    sortValue: sortOf[column.key],
-  }))
+  const visibleColumns: VmMembershipColumn[] = columns
+    .filter((column) => prefs.isVisible(column.key))
+    .map((column) => ({
+      key: column.key,
+      label: column.label,
+      render: renderOf[column.key] ?? (() => '—'),
+      sortValue: sortOf[column.key],
+    }))
 
   return (
     <VmMembershipTable
       query={vms}
       columns={visibleColumns}
-      ariaLabel="Virtual machines consuming this quota"
+      ariaLabel={t('quotaVms.table.ariaLabel')}
       // no CTA: a VM adopts a quota from its own edit dialog / creation flow,
       // not from the quota's side
-      emptyBody="No virtual machine consumes this quota."
+      emptyBody={t('quotaVms.empty.body')}
       resizePrefs={prefs}
       toolbar={
         <Toolbar>
@@ -94,7 +111,7 @@ export function QuotaVmsTab({ quotaId }: { quotaId: string }) {
             <ToolbarGroup align={{ default: 'alignEnd' }}>
               <ToolbarItem>
                 <ColumnPicker
-                  columns={COLUMNS}
+                  columns={columns}
                   isVisible={prefs.isVisible}
                   onToggle={prefs.toggle}
                   onReset={prefs.reset}

@@ -27,6 +27,7 @@ import {
   useDirectoryUsers,
   useDomains,
 } from '../../hooks/useUserMutations'
+import { useT } from '../../i18n/useT'
 import { SearchInput } from '../list-toolbar/SearchInput'
 import { groupPick, userPick, type DirectoryKind, type DirectoryPick } from './directoryPrincipals'
 
@@ -58,6 +59,7 @@ export function AddUserFromDirectoryModal({
   onClose: () => void
   onAdded?: () => void
 }) {
+  const t = useT()
   const domains = useDomains()
   const [domainId, setDomainId] = useState('')
   const [kind, setKind] = useState<DirectoryKind>('user')
@@ -202,7 +204,7 @@ export function AddUserFromDirectoryModal({
   }
 
   const noun = kind === 'user' ? 'user' : 'group'
-  const usernameHeader = kind === 'user' ? 'Username' : 'Group'
+  const usernameHeader = kind === 'user' ? t('users.column.username') : t('common.group')
 
   return (
     <Modal
@@ -213,8 +215,8 @@ export function AddUserFromDirectoryModal({
       aria-describedby="add-user-body"
     >
       <ModalHeader
-        title="Add user or group"
-        description="Search a directory for principals and add them to the engine."
+        title={t('addUser.title')}
+        description={t('addUser.description')}
         labelId="add-user-title"
       />
       <ModalBody id="add-user-body">
@@ -222,17 +224,17 @@ export function AddUserFromDirectoryModal({
             the search, never fire the add. The footer button is the single
             submit path. */}
         <Form id="add-user-form" onSubmit={(event) => event.preventDefault()}>
-          <FormGroup label="Type" fieldId="add-user-kind">
-            <ToggleGroup aria-label="Directory principal type">
+          <FormGroup label={t('common.field.type')} fieldId="add-user-kind">
+            <ToggleGroup aria-label={t('addUser.type.ariaLabel')}>
               <ToggleGroupItem
-                text="Users"
+                text={t('users.title')}
                 buttonId="add-user-kind-user"
                 isSelected={kind === 'user'}
                 isDisabled={isAdding}
                 onChange={() => changeKind('user')}
               />
               <ToggleGroupItem
-                text="Groups"
+                text={t('groups.title')}
                 buttonId="add-user-kind-group"
                 isSelected={kind === 'group'}
                 isDisabled={isAdding}
@@ -241,30 +243,36 @@ export function AddUserFromDirectoryModal({
             </ToggleGroup>
           </FormGroup>
 
-          <FormGroup label="Domain" isRequired fieldId="add-user-domain">
-            {domains.isPending && <Skeleton height="2.25rem" screenreaderText="Loading domains" />}
+          <FormGroup label={t('users.column.domain')} isRequired fieldId="add-user-domain">
+            {domains.isPending && (
+              <Skeleton height="2.25rem" screenreaderText={t('addUser.domains.loading')} />
+            )}
             {domains.isError && (
               <>
                 <HelperText>
                   <HelperTextItem variant="error">
-                    Could not load domains:{' '}
-                    {domains.error instanceof Error ? domains.error.message : 'Unknown error'}
+                    {t('addUser.domains.error', {
+                      message:
+                        domains.error instanceof Error
+                          ? domains.error.message
+                          : t('common.error.unknown'),
+                    })}
                   </HelperTextItem>
                 </HelperText>
                 <Button variant="link" isInline onClick={() => void domains.refetch()}>
-                  Retry
+                  {t('common.action.retry')}
                 </Button>
               </>
             )}
             {domains.isSuccess && domains.data.length === 0 && (
               <HelperText>
-                <HelperTextItem>No authentication domains are configured.</HelperTextItem>
+                <HelperTextItem>{t('addUser.domains.none')}</HelperTextItem>
               </HelperText>
             )}
             {domains.isSuccess && domains.data.length > 0 && (
               <FormSelect
                 id="add-user-domain"
-                aria-label="Domain"
+                aria-label={t('users.column.domain')}
                 value={domainId}
                 isDisabled={isAdding}
                 onChange={(_event, value) => changeDomain(value)}
@@ -280,27 +288,30 @@ export function AddUserFromDirectoryModal({
             )}
           </FormGroup>
 
-          <FormGroup label={`Search ${noun} directory`} fieldId="add-user-search">
+          <FormGroup label={t('addUser.search.label', { noun })} fieldId="add-user-search">
             <SearchInput
               value={draft}
               onChange={setDraft}
               onCommit={commit}
-              hint="name=jdoe* — or plain text; empty lists all"
-              ariaLabel={`Search ${noun} directory`}
+              hint={t('addUser.search.hint')}
+              ariaLabel={t('addUser.search.label', { noun })}
             />
           </FormGroup>
 
           <div style={{ maxHeight: '16rem', overflowY: 'auto' }}>
             {domainId === '' && domains.isSuccess && domains.data.length > 0 && (
               <HelperText>
-                <HelperTextItem>Select a domain to search its directory.</HelperTextItem>
+                <HelperTextItem>{t('addUser.selectDomain')}</HelperTextItem>
               </HelperText>
             )}
 
             {domainId !== '' && results.isPending && (
               <>
                 <Skeleton height="2.25rem" style={{ marginBottom: '0.5rem' }} />
-                <Skeleton height="2.25rem" screenreaderText={`Loading ${noun}s`} />
+                <Skeleton
+                  height="2.25rem"
+                  screenreaderText={t('addUser.results.loading', { noun })}
+                />
               </>
             )}
 
@@ -308,40 +319,52 @@ export function AddUserFromDirectoryModal({
               <>
                 <HelperText>
                   <HelperTextItem variant="error">
-                    Could not load {noun}s:{' '}
-                    {results.error instanceof Error ? results.error.message : 'Unknown error'}
+                    {t('addUser.results.error', {
+                      noun,
+                      message:
+                        results.error instanceof Error
+                          ? results.error.message
+                          : t('common.error.unknown'),
+                    })}
                   </HelperTextItem>
                 </HelperText>
                 <Button variant="link" isInline onClick={() => void results.refetch()}>
-                  Retry
+                  {t('common.action.retry')}
                 </Button>
               </>
             )}
 
             {domainId !== '' && results.isSuccess && rows.length === 0 && (
-              <EmptyState titleText={`No ${noun}s found`}>
+              <EmptyState titleText={t('addUser.results.empty.title', { noun })}>
                 <EmptyStateBody>
                   {committed !== ''
-                    ? `No directory ${noun} matches the search.`
-                    : `This directory returned no ${noun}s.`}
+                    ? t('addUser.results.empty.match', { noun })
+                    : t('addUser.results.empty.none', { noun })}
                 </EmptyStateBody>
               </EmptyState>
             )}
 
             {domainId !== '' && results.isSuccess && rows.length > 0 && (
-              <Table aria-label={kind === 'user' ? 'Users' : 'Groups'} variant="compact">
+              <Table
+                aria-label={kind === 'user' ? t('users.title') : t('groups.title')}
+                variant="compact"
+              >
                 <Thead>
                   <Tr>
                     <Th
-                      aria-label="Select all rows"
+                      aria-label={t('vms.selectAll')}
                       select={{
                         isSelected: allVisibleSelected,
                         onSelect: (_event, isSelecting) => toggleAllVisible(isSelecting),
                       }}
                     />
                     <Th>{usernameHeader}</Th>
-                    {kind === 'user' ? <Th>Name</Th> : <Th>Namespace</Th>}
-                    {kind === 'user' && <Th>Email</Th>}
+                    {kind === 'user' ? (
+                      <Th>{t('common.field.name')}</Th>
+                    ) : (
+                      <Th>{t('groups.column.namespace')}</Th>
+                    )}
+                    {kind === 'user' && <Th>{t('users.column.email')}</Th>}
                   </Tr>
                 </Thead>
                 <Tbody>
@@ -367,14 +390,14 @@ export function AddUserFromDirectoryModal({
 
             {domainId !== '' && results.isSuccess && rows.length > 0 && selected.size === 0 && (
               <HelperText style={{ marginTop: '0.5rem' }}>
-                <HelperTextItem>Select one or more {noun}s to add.</HelperTextItem>
+                <HelperTextItem>{t('addUser.selectToAdd', { noun })}</HelperTextItem>
               </HelperText>
             )}
           </div>
 
           {selected.size > 0 && (
             <HelperText>
-              <HelperTextItem>{selected.size} selected across users and groups.</HelperTextItem>
+              <HelperTextItem>{t('addUser.selectedCount', { size: selected.size })}</HelperTextItem>
             </HelperText>
           )}
         </Form>
@@ -386,10 +409,10 @@ export function AddUserFromDirectoryModal({
           isDisabled={!canSubmit}
           isLoading={isAdding}
         >
-          Add
+          {t('common.action.add')}
         </Button>
         <Button variant="link" onClick={onClose} isDisabled={isAdding}>
-          Cancel
+          {t('common.action.cancel')}
         </Button>
       </ModalFooter>
     </Modal>
@@ -398,11 +421,14 @@ export function AddUserFromDirectoryModal({
 
 // Row body for a directory user — the identity columns webadmin's picker shows.
 function UserRowCells({ user }: { user: OvirtUser }) {
+  const t = useT()
   return (
     <>
-      <Td dataLabel="Username">{user.user_name ?? '—'}</Td>
-      <Td dataLabel="Name">{[user.name, user.last_name].filter(Boolean).join(' ') || '—'}</Td>
-      <Td dataLabel="Email">{user.email ?? '—'}</Td>
+      <Td dataLabel={t('users.column.username')}>{user.user_name ?? '—'}</Td>
+      <Td dataLabel={t('common.field.name')}>
+        {[user.name, user.last_name].filter(Boolean).join(' ') || '—'}
+      </Td>
+      <Td dataLabel={t('users.column.email')}>{user.email ?? '—'}</Td>
     </>
   )
 }
@@ -410,10 +436,11 @@ function UserRowCells({ user }: { user: OvirtUser }) {
 // Row body for a directory group — name plus the base-DN namespace, the two
 // fields the directory search returns.
 function GroupRowCells({ group }: { group: OvirtGroup }) {
+  const t = useT()
   return (
     <>
-      <Td dataLabel="Group">{group.name ?? '—'}</Td>
-      <Td dataLabel="Namespace">{group.namespace ?? '—'}</Td>
+      <Td dataLabel={t('common.group')}>{group.name ?? '—'}</Td>
+      <Td dataLabel={t('groups.column.namespace')}>{group.namespace ?? '—'}</Td>
     </>
   )
 }

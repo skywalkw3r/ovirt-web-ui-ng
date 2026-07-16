@@ -93,6 +93,7 @@ function AttachDataCenterModal({
   attachedIds: Set<string>
   onClose: () => void
 }) {
+  const t = useT()
   const [dataCenterId, setDataCenterId] = useState('')
   const dataCenters = useDataCenters()
   const attach = useAttachStorageDomain()
@@ -116,15 +117,22 @@ function AttachDataCenterModal({
       aria-labelledby="sd-attach-dc-title"
       aria-describedby="sd-attach-dc-body"
     >
-      <ModalHeader title={`Attach ${domain.name} to a data center`} labelId="sd-attach-dc-title" />
+      <ModalHeader
+        title={t('storage.dc.attach.title', { name: domain.name })}
+        labelId="sd-attach-dc-title"
+      />
       <ModalBody id="sd-attach-dc-body">
         <Form onSubmit={(event) => event.preventDefault()}>
           {/* Four states on the source list: a failed fetch would otherwise
               leave Attach permanently disabled with no explanation or retry. */}
-          <FormGroup label="Data center" isRequired fieldId="sd-attach-dc-select">
+          <FormGroup
+            label={t('storageForm.field.dataCenter')}
+            isRequired
+            fieldId="sd-attach-dc-select"
+          >
             <FormSelect
               id="sd-attach-dc-select"
-              aria-label="Data center"
+              aria-label={t('storageForm.field.dataCenter')}
               value={dataCenterId}
               isDisabled={dataCenters.isPending || dataCenters.isError || candidates.length === 0}
               onChange={(_event, value) => setDataCenterId(value)}
@@ -133,10 +141,10 @@ function AttachDataCenterModal({
                 value=""
                 label={
                   dataCenters.isPending
-                    ? 'Loading data centers…'
+                    ? t('storageForm.dataCenter.loading')
                     : candidates.length === 0
-                      ? 'No unattached data centers'
-                      : 'Select a data center'
+                      ? t('storage.dc.attach.noneAvailable')
+                      : t('storageForm.dataCenter.select')
                 }
                 isDisabled
               />
@@ -152,9 +160,9 @@ function AttachDataCenterModal({
               <FormHelperText>
                 <HelperText>
                   <HelperTextItem variant="error">
-                    Could not load data centers.{' '}
+                    {t('storageForm.dataCenter.error')}{' '}
                     <Button variant="link" isInline onClick={() => void dataCenters.refetch()}>
-                      Retry
+                      {t('common.action.retry')}
                     </Button>
                   </HelperTextItem>
                 </HelperText>
@@ -170,10 +178,10 @@ function AttachDataCenterModal({
           isLoading={pending}
           isDisabled={pending || dataCenterId === ''}
         >
-          Attach
+          {t('common.action.attach')}
         </Button>
         <Button variant="secondary" onClick={onClose} isDisabled={pending}>
-          Cancel
+          {t('common.action.cancel')}
         </Button>
       </ModalFooter>
     </Modal>
@@ -254,9 +262,9 @@ export function StorageDomainDataCentersTab({ domain }: { domain: StorageDomain 
     const detachEnabled = hasDcId && (status === undefined || DETACHABLE_STATUSES.has(status))
     return [
       {
-        title: 'Activate',
+        title: t('storage.action.activate'),
         isAriaDisabled: !activateEnabled,
-        tooltipProps: activateEnabled ? undefined : { content: DISABLED_REASONS.activate },
+        tooltipProps: activateEnabled ? undefined : { content: t(DISABLED_REASONS.activate) },
         onClick: () =>
           activate.mutate({
             dataCenterId: dc.id ?? '',
@@ -265,16 +273,16 @@ export function StorageDomainDataCentersTab({ domain }: { domain: StorageDomain 
           }),
       },
       {
-        title: 'Maintenance',
+        title: t('storage.action.maintenance'),
         isAriaDisabled: !maintenanceEnabled,
-        tooltipProps: maintenanceEnabled ? undefined : { content: DISABLED_REASONS.maintenance },
+        tooltipProps: maintenanceEnabled ? undefined : { content: t(DISABLED_REASONS.maintenance) },
         onClick: () => setConfirm({ kind: 'maintenance', dc }),
       },
       {
-        title: 'Detach',
+        title: t('common.action.detach'),
         isDanger: detachEnabled,
         isAriaDisabled: !detachEnabled,
-        tooltipProps: detachEnabled ? undefined : { content: DISABLED_REASONS.detach },
+        tooltipProps: detachEnabled ? undefined : { content: t(DISABLED_REASONS.detach) },
         onClick: () => setConfirm({ kind: 'detach', dc }),
       },
     ]
@@ -292,7 +300,7 @@ export function StorageDomainDataCentersTab({ domain }: { domain: StorageDomain 
                   onClick={() => setAttaching(true)}
                   isAriaDisabled={!attachEnabled}
                 >
-                  Attach data center
+                  {t('storage.dc.attachButton')}
                 </Button>
               </ToolbarItem>
             </ToolbarGroup>
@@ -301,14 +309,12 @@ export function StorageDomainDataCentersTab({ domain }: { domain: StorageDomain 
       )}
 
       {rows.length === 0 && (
-        <EmptyState titleText="Not attached to a data center">
-          <EmptyStateBody>
-            This domain is not attached to any data center. Attach it to activate it in a pool.
-          </EmptyStateBody>
+        <EmptyState titleText={t('storage.dc.empty.title')}>
+          <EmptyStateBody>{t('storage.dc.empty.body')}</EmptyStateBody>
           <EmptyStateFooter>
             <EmptyStateActions>
               <Button variant="primary" onClick={() => setAttaching(true)}>
-                Attach data center
+                {t('storage.dc.attachButton')}
               </Button>
             </EmptyStateActions>
           </EmptyStateFooter>
@@ -316,7 +322,7 @@ export function StorageDomainDataCentersTab({ domain }: { domain: StorageDomain 
       )}
 
       {rows.length > 0 && (
-        <Table aria-label="Attached data centers" variant="compact">
+        <Table aria-label={t('storage.dc.table.ariaLabel')} variant="compact">
           <Thead>
             <Tr>
               <Th sort={thSort(SD_DC_KEYS, 0)}>{t('common.field.name')}</Th>
@@ -359,14 +365,14 @@ export function StorageDomainDataCentersTab({ domain }: { domain: StorageDomain 
       {confirm?.kind === 'maintenance' && (
         <ConfirmModal
           isOpen
-          title={`Move ${domain.name} to maintenance in ${dcDisplayName(confirm.dc) ?? 'this data center'}?`}
-          confirmLabel="Move to maintenance"
+          title={t('storage.dc.maintenance.confirm.title', {
+            name: domain.name,
+            dataCenter: dcDisplayName(confirm.dc) ?? t('storage.dc.thisDataCenter'),
+          })}
+          confirmLabel={t('storage.maintenance.confirm.label')}
           body={
             <Stack hasGutter>
-              <StackItem>
-                Virtual machines with disks on this domain lose access to that storage while it is
-                in maintenance. Make sure nothing critical is running against it first.
-              </StackItem>
+              <StackItem>{t('storage.maintenance.confirm.body')}</StackItem>
             </Stack>
           }
           onConfirm={() => {
@@ -385,13 +391,14 @@ export function StorageDomainDataCentersTab({ domain }: { domain: StorageDomain 
       {confirm?.kind === 'detach' && (
         <ConfirmModal
           isOpen
-          title={`Detach ${domain.name} from ${dcDisplayName(confirm.dc) ?? 'this data center'}?`}
-          confirmLabel="Detach"
+          title={t('storage.dc.detach.confirm.title', {
+            name: domain.name,
+            dataCenter: dcDisplayName(confirm.dc) ?? t('storage.dc.thisDataCenter'),
+          })}
+          confirmLabel={t('common.action.detach')}
           body={
             <Stack hasGutter>
-              <StackItem>
-                The domain leaves this data center but its data is kept — you can reattach it later.
-              </StackItem>
+              <StackItem>{t('storage.detach.confirm.body')}</StackItem>
             </Stack>
           }
           onConfirm={() => {

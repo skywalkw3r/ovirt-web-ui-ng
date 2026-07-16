@@ -3,7 +3,9 @@ import {
   Button,
   Checkbox,
   EmptyState,
+  EmptyStateActions,
   EmptyStateBody,
+  EmptyStateFooter,
   Label,
   Modal,
   ModalBody,
@@ -15,6 +17,7 @@ import {
   type ModalProps,
 } from '@patternfly/react-core'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { FormattedMessage } from 'react-intl'
 import {
   attachHostTag,
   attachUserTag,
@@ -25,6 +28,7 @@ import {
 } from '../../api/resources/tags'
 import type { Tag } from '../../api/schemas/tag'
 import { labelTagsOf, tagColor, useTags } from '../../hooks/useTags'
+import { useT } from '../../i18n/useT'
 import { useNotify } from '../../notifications/context'
 import { entityTagsKey, type TaggableKind } from './entityTags'
 import { pfLabelColor } from './label-palette'
@@ -59,6 +63,7 @@ export function AssignTagsModal({
   onClose: () => void
   appendTo?: ModalProps['appendTo']
 }) {
+  const t = useT()
   const resource = RESOURCE[kind]
   const allTags = useTags()
   const current = useQuery({
@@ -136,33 +141,37 @@ export function AssignTagsModal({
           <>
             <Skeleton height="1.5rem" style={{ marginBottom: '0.5rem' }} />
             <Skeleton height="1.5rem" style={{ marginBottom: '0.5rem' }} />
-            <Skeleton height="1.5rem" screenreaderText="Loading tags" />
+            <Skeleton height="1.5rem" screenreaderText={t('tags.manager.loading')} />
           </>
         )}
 
         {(allTags.isError || current.isError) && (
-          <EmptyState variant="sm" titleText="Could not load tags" status="danger">
+          <EmptyState variant="sm" titleText={t('tags.manager.error.title')} status="danger">
             <EmptyStateBody>
               {(allTags.error ?? current.error) instanceof Error
                 ? (allTags.error ?? current.error)!.message
-                : 'Unknown error'}
+                : t('common.error.unknown')}
             </EmptyStateBody>
-            <Button
-              variant="primary"
-              onClick={() => {
-                void allTags.refetch()
-                void current.refetch()
-              }}
-            >
-              Retry
-            </Button>
+            <EmptyStateFooter>
+              <EmptyStateActions>
+                <Button
+                  variant="primary"
+                  onClick={() => {
+                    void allTags.refetch()
+                    void current.refetch()
+                  }}
+                >
+                  <FormattedMessage id="action.retry" />
+                </Button>
+              </EmptyStateActions>
+            </EmptyStateFooter>
           </EmptyState>
         )}
 
         {allTags.isSuccess && current.isSuccess && checklist.length === 0 && (
-          <EmptyState variant="sm" titleText="No tags defined">
+          <EmptyState variant="sm" titleText={t('tags.assign.noneDefined.title')}>
             <EmptyStateBody>
-              Create tags in the Tag Manager on the Virtual Machines list, then assign them here.
+              <FormattedMessage id="tags.assign.noneDefined.body" />
             </EmptyStateBody>
           </EmptyState>
         )}
@@ -192,10 +201,10 @@ export function AssignTagsModal({
           isDisabled={!isDirty || save.isPending || !current.isSuccess}
           onClick={() => save.mutate()}
         >
-          Save
+          <FormattedMessage id="common.action.save" />
         </Button>
         <Button variant="link" onClick={onClose}>
-          Cancel
+          <FormattedMessage id="common.action.cancel" />
         </Button>
       </ModalFooter>
     </Modal>

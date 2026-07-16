@@ -5,7 +5,9 @@ import {
   BreadcrumbItem,
   Button,
   EmptyState,
+  EmptyStateActions,
   EmptyStateBody,
+  EmptyStateFooter,
   PageSection,
   Skeleton,
   Tab,
@@ -79,17 +81,25 @@ export function ProviderDetailPage() {
           <EmptyStateBody>
             {providers.error instanceof Error ? providers.error.message : t('common.error.unknown')}
           </EmptyStateBody>
-          <Button variant="primary" onClick={() => void providers.refetch()}>
-            {t('common.action.retry')}
-          </Button>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="primary" onClick={() => void providers.refetch()}>
+                {t('common.action.retry')}
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 
       {providers.isSuccess && !provider && (
         <EmptyState titleText={t('providerDetail.error.title')} status="warning">
-          <Button variant="primary" onClick={() => void navigate({ to: '/providers' })}>
-            {t('providerDetail.breadcrumb')}
-          </Button>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="primary" onClick={() => void navigate({ to: '/providers' })}>
+                {t('providerDetail.breadcrumb')}
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 

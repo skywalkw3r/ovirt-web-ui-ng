@@ -5,7 +5,9 @@ import {
   Content,
   Divider,
   EmptyState,
+  EmptyStateActions,
   EmptyStateBody,
+  EmptyStateFooter,
   Flex,
   FlexItem,
   Form,
@@ -115,11 +117,15 @@ function TagManagerModal({ onClose }: { onClose: () => void }) {
         {tags.isError && (
           <EmptyState titleText={t('tags.manager.error.title')} status="danger">
             <EmptyStateBody>
-              {tags.error instanceof Error ? tags.error.message : 'Unknown error'}
+              {tags.error instanceof Error ? tags.error.message : t('common.error.unknown')}
             </EmptyStateBody>
-            <Button variant="primary" onClick={() => void tags.refetch()}>
-              <FormattedMessage id="action.retry" />
-            </Button>
+            <EmptyStateFooter>
+              <EmptyStateActions>
+                <Button variant="primary" onClick={() => void tags.refetch()}>
+                  <FormattedMessage id="action.retry" />
+                </Button>
+              </EmptyStateActions>
+            </EmptyStateFooter>
           </EmptyState>
         )}
 

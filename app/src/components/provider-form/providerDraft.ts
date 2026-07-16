@@ -1,5 +1,6 @@
 import type { ProviderDraft } from '../../api/resources/providers'
 import type { Provider, ProviderType } from '../../api/schemas/provider'
+import type { MessageId } from '../../i18n/messages/en'
 
 // The persistent provider kinds the New/Edit modal offers, in menu order. Each
 // maps to a typed engine collection (see resources/providers.ts). Kept as a
@@ -9,25 +10,22 @@ import type { Provider, ProviderType } from '../../api/schemas/provider'
 // The transient VM-import providers (VMware/Xen/KVM/KubeVirt) are intentionally
 // omitted: the engine does not store them as providers — they are supplied
 // inline on an import request.
-export const PROVIDER_TYPES: { value: ProviderType; label: string }[] = [
-  { value: 'image', label: 'OpenStack Image (Glance)' },
-  { value: 'network', label: 'OpenStack Networking (Neutron)' },
-  { value: 'volume', label: 'OpenStack Volume (Cinder)' },
-  { value: 'host', label: 'External host provider (Foreman/Katello)' },
+// Label ids, not strings: the modal (FormSelect) resolves each through t() so
+// the menu follows the active locale (the COLOR_LABEL_IDS pattern).
+export const PROVIDER_TYPES: { value: ProviderType; labelId: MessageId }[] = [
+  { value: 'image', labelId: 'providers.type.image' },
+  { value: 'network', labelId: 'providers.type.network' },
+  { value: 'volume', labelId: 'providers.type.volume' },
+  { value: 'host', labelId: 'providers.type.host' },
 ]
 
 // The neutron/external classification the network provider carries. 'neutron'
 // uses the built-in interface driver; 'external' delegates to a provider that
 // implements the Neutron API itself.
-export const NETWORK_PROVIDER_TYPES: { value: string; label: string }[] = [
-  { value: 'neutron', label: 'Neutron (built-in driver)' },
-  { value: 'external', label: 'External (provider-supplied driver)' },
+export const NETWORK_PROVIDER_TYPES: { value: string; labelId: MessageId }[] = [
+  { value: 'neutron', labelId: 'providerForm.networkType.neutron' },
+  { value: 'external', labelId: 'providerForm.networkType.external' },
 ]
-
-// The human label for a provider kind (the list Type cell reuses this).
-export function providerTypeLabel(type: ProviderType): string {
-  return PROVIDER_TYPES.find((option) => option.value === type)?.label ?? type
-}
 
 // Create-mode defaults: the most common kind (Glance image provider), auth off,
 // neutron classification pre-selected for when the user switches to Network.

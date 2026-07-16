@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react'
 import { Button, Modal, ModalBody, ModalFooter, ModalHeader } from '@patternfly/react-core'
 import type { Host } from '../../api/schemas/host'
 import { useUpdateHost } from '../../hooks/useHostMutations'
+import { useT } from '../../i18n/useT'
 import { ModalVerticalTabs } from '../forms/ModalVerticalTabs'
 import { ConsoleGpuSection } from './ConsoleGpuSection'
 import { draftToPayload, hostToDraft, type EditHostDraft } from './editHostDraft'
@@ -25,6 +26,7 @@ export function HostFormModal({
   isOpen: boolean
   onClose: () => void
 }) {
+  const t = useT()
   // The seed is kept in state alongside the draft so the save-time diff runs
   // against the values the modal opened with — not a host object that may
   // have refetched underneath the open modal.
@@ -63,20 +65,23 @@ export function HostFormModal({
       aria-labelledby="host-form-title"
       aria-describedby="host-form-body"
     >
-      <ModalHeader title={`Edit host — ${host.name}`} labelId="host-form-title" />
+      <ModalHeader
+        title={t('hostForm.edit.title', { name: host.name })}
+        labelId="host-form-title"
+      />
       <ModalBody id="host-form-body">
         <ModalVerticalTabs
           idPrefix="edit-host"
-          ariaLabel="Edit host sections"
+          ariaLabel={t('hostForm.edit.sectionsAria')}
           sections={[
             {
               key: 'general',
-              title: 'General',
+              title: t('hostForm.section.general'),
               content: <GeneralSection host={host} draft={draft} set={set} />,
             },
             {
               key: 'power-management',
-              title: 'Power Management',
+              title: t('hostForm.section.powerManagement'),
               content: (
                 <PowerManagementSection
                   draft={draft}
@@ -87,13 +92,21 @@ export function HostFormModal({
                 />
               ),
             },
-            { key: 'spm', title: 'SPM', content: <SpmSection draft={draft} set={set} /> },
+            {
+              key: 'spm',
+              title: t('hostForm.section.spm'),
+              content: <SpmSection draft={draft} set={set} />,
+            },
             {
               key: 'console-gpu',
-              title: 'Console and GPU',
+              title: t('hostForm.section.consoleGpu'),
               content: <ConsoleGpuSection draft={draft} set={set} />,
             },
-            { key: 'kernel', title: 'Kernel', content: <KernelSection draft={draft} set={set} /> },
+            {
+              key: 'kernel',
+              title: t('hostForm.section.kernel'),
+              content: <KernelSection draft={draft} set={set} />,
+            },
           ]}
         />
       </ModalBody>
@@ -104,10 +117,10 @@ export function HostFormModal({
           isLoading={pending}
           isDisabled={pending || nameEmpty}
         >
-          Save
+          {t('common.action.save')}
         </Button>
         <Button variant="secondary" onClick={onClose} isDisabled={pending}>
-          Cancel
+          {t('common.action.cancel')}
         </Button>
       </ModalFooter>
     </Modal>

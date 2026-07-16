@@ -1,5 +1,12 @@
 import { useState } from 'react'
-import { Button, EmptyState, EmptyStateBody, Skeleton } from '@patternfly/react-core'
+import {
+  Button,
+  EmptyState,
+  EmptyStateActions,
+  EmptyStateBody,
+  EmptyStateFooter,
+  Skeleton,
+} from '@patternfly/react-core'
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table'
 import type { Vm } from '../../api/schemas/vm'
 import { useUnregisteredStorageDomainVms } from '../../hooks/useStorageDomainDetail'
@@ -35,9 +42,13 @@ export function StorageDomainRegisterVmsTab({ storageDomainId }: { storageDomain
         <EmptyStateBody>
           {vms.error instanceof Error ? vms.error.message : t('common.error.unknown')}
         </EmptyStateBody>
-        <Button variant="primary" onClick={() => void vms.refetch()}>
-          {t('common.action.retry')}
-        </Button>
+        <EmptyStateFooter>
+          <EmptyStateActions>
+            <Button variant="primary" onClick={() => void vms.refetch()}>
+              {t('common.action.retry')}
+            </Button>
+          </EmptyStateActions>
+        </EmptyStateFooter>
       </EmptyState>
     )
   }

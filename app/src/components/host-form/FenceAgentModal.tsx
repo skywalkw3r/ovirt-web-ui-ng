@@ -23,6 +23,7 @@ import { FieldHelp } from '../forms/FieldHelp'
 import { buildFenceAgentPayload } from '../../api/resources/hosts'
 import type { FenceAgent } from '../../api/schemas/fence-agent'
 import { useCreateFenceAgent, useUpdateFenceAgent } from '../../hooks/useHostMutations'
+import { useT } from '../../i18n/useT'
 import {
   blankFenceAgentDraft,
   blankOptionRow,
@@ -52,6 +53,7 @@ export function FenceAgentModal({
   isOpen: boolean
   onClose: () => void
 }) {
+  const t = useT()
   const isEdit = agent !== undefined
   const [draft, setDraft] = useState<FenceAgentDraft>(() =>
     agent ? fenceAgentToDraft(agent) : blankFenceAgentDraft(),
@@ -102,7 +104,9 @@ export function FenceAgentModal({
       draft.options.map((o) => (o.id === id ? { ...o, [field]: value } : o)),
     )
 
-  const title = isEdit ? `Edit fence agent — ${agent.type ?? agent.id}` : 'Add fence agent'
+  const title = isEdit
+    ? t('fenceAgent.modal.editTitle', { name: agent.type ?? agent.id ?? '' })
+    : t('fenceAgent.add')
 
   return (
     <Modal
@@ -116,19 +120,16 @@ export function FenceAgentModal({
       <ModalBody id="fence-agent-modal-body">
         <Form onSubmit={(event) => event.preventDefault()}>
           <FormGroup
-            label="Type"
+            label={t('common.field.type')}
             isRequired
             fieldId="fence-agent-type"
             labelHelp={
-              <FieldHelp
-                field="Type"
-                content="The fence-device driver matching the host’s out-of-band controller — e.g. ipmilan for IPMI/iLO/DRAC, apc for a managed PDU, cisco_ucs. It determines which options are valid below."
-              />
+              <FieldHelp field={t('common.field.type')} content={t('fenceAgent.type.help')} />
             }
           >
             <FormSelect
               id="fence-agent-type"
-              aria-label="Fence agent type"
+              aria-label={t('fenceAgent.field.typeAria')}
               value={draft.type}
               onChange={(_event, value) => set('type', value)}
             >
@@ -138,11 +139,11 @@ export function FenceAgentModal({
             </FormSelect>
           </FormGroup>
 
-          <FormGroup label="Address" isRequired fieldId="fence-agent-address">
+          <FormGroup label={t('fenceAgent.field.address')} isRequired fieldId="fence-agent-address">
             <TextInput
               id="fence-agent-address"
               isRequired
-              aria-label="Fence agent address"
+              aria-label={t('fenceAgent.field.addressAria')}
               value={draft.address}
               validated={addressEmpty ? 'error' : 'default'}
               onChange={(_event, value) => set('address', value)}
@@ -151,57 +152,52 @@ export function FenceAgentModal({
               <FormHelperText>
                 <HelperText>
                   <HelperTextItem variant="error">
-                    The fence device address is required.
+                    {t('fenceAgent.address.required')}
                   </HelperTextItem>
                 </HelperText>
               </FormHelperText>
             )}
           </FormGroup>
 
-          <FormGroup label="Username" fieldId="fence-agent-username">
+          <FormGroup label={t('fenceAgent.field.username')} fieldId="fence-agent-username">
             <TextInput
               id="fence-agent-username"
-              aria-label="Fence agent username"
+              aria-label={t('fenceAgent.field.usernameAria')}
               value={draft.username}
               onChange={(_event, value) => set('username', value)}
             />
           </FormGroup>
 
-          <FormGroup label="Password" fieldId="fence-agent-password">
+          <FormGroup label={t('common.field.password')} fieldId="fence-agent-password">
             <TextInput
               id="fence-agent-password"
               type="password"
               autoComplete="new-password"
-              aria-label="Fence agent password"
+              aria-label={t('fenceAgent.field.passwordAria')}
               value={draft.password}
               onChange={(_event, value) => set('password', value)}
             />
             <FormHelperText>
               <HelperText>
                 <HelperTextItem>
-                  {isEdit
-                    ? 'Leave blank to keep the current password. The engine never returns it.'
-                    : 'Sent once to the engine, which stores it for fencing — never read back.'}
+                  {isEdit ? t('fenceAgent.password.editHelp') : t('fenceAgent.password.createHelp')}
                 </HelperTextItem>
               </HelperText>
             </FormHelperText>
           </FormGroup>
 
           <FormGroup
-            label="Order"
+            label={t('fenceAgent.field.order')}
             fieldId="fence-agent-order"
             labelHelp={
-              <FieldHelp
-                field="Order"
-                content="When a host has multiple fence agents, they run in ascending order — lower numbers first. Give a primary controller a lower order than its backup."
-              />
+              <FieldHelp field={t('fenceAgent.field.order')} content={t('fenceAgent.order.help')} />
             }
           >
             <NumberInput
               id="fence-agent-order"
               value={orderNumber}
               min={1}
-              inputAriaLabel="Fence agent order"
+              inputAriaLabel={t('fenceAgent.field.orderAria')}
               onMinus={() => set('order', String(Math.max(1, orderNumber - 1)))}
               onPlus={() => set('order', String(orderNumber + 1))}
               onChange={(event) => set('order', (event.target as HTMLInputElement).value)}
@@ -209,19 +205,17 @@ export function FenceAgentModal({
             {orderInvalid && (
               <FormHelperText>
                 <HelperText>
-                  <HelperTextItem variant="error">
-                    Order must be a whole number of at least 1.
-                  </HelperTextItem>
+                  <HelperTextItem variant="error">{t('fenceAgent.order.invalid')}</HelperTextItem>
                 </HelperText>
               </FormHelperText>
             )}
           </FormGroup>
 
-          <FormGroup label="Port" fieldId="fence-agent-port">
+          <FormGroup label={t('fenceAgent.field.port')} fieldId="fence-agent-port">
             <TextInput
               id="fence-agent-port"
               type="number"
-              aria-label="Fence agent port"
+              aria-label={t('fenceAgent.field.portAria')}
               value={draft.port}
               validated={portInvalid ? 'error' : 'default'}
               onChange={(_event, value) => set('port', value)}
@@ -229,20 +223,16 @@ export function FenceAgentModal({
             <FormHelperText>
               <HelperText>
                 <HelperTextItem variant={portInvalid ? 'error' : 'default'}>
-                  {portInvalid
-                    ? 'Port must be a whole number of at least 1.'
-                    : 'Optional — the fence device management port.'}
+                  {portInvalid ? t('fenceAgent.port.invalid') : t('fenceAgent.port.help')}
                 </HelperTextItem>
               </HelperText>
             </FormHelperText>
           </FormGroup>
 
-          <FormGroup label="Options" fieldId="fence-agent-options">
+          <FormGroup label={t('fenceAgent.field.options')} fieldId="fence-agent-options">
             {draft.options.length === 0 && (
               <HelperText>
-                <HelperTextItem>
-                  No options. Add agent-specific key/value pairs (e.g. lanplus = 1).
-                </HelperTextItem>
+                <HelperTextItem>{t('fenceAgent.options.none')}</HelperTextItem>
               </HelperText>
             )}
             {draft.options.map((option) => (
@@ -254,16 +244,16 @@ export function FenceAgentModal({
               >
                 <FlexItem grow={{ default: 'grow' }}>
                   <TextInput
-                    aria-label="Option name"
-                    placeholder="name"
+                    aria-label={t('fenceAgent.option.nameAria')}
+                    placeholder={t('fenceAgent.option.namePlaceholder')}
                     value={option.name}
                     onChange={(_event, value) => setOption(option.id, 'name', value)}
                   />
                 </FlexItem>
                 <FlexItem grow={{ default: 'grow' }}>
                   <TextInput
-                    aria-label="Option value"
-                    placeholder="value"
+                    aria-label={t('fenceAgent.option.valueAria')}
+                    placeholder={t('fenceAgent.option.valuePlaceholder')}
                     value={option.value}
                     onChange={(_event, value) => setOption(option.id, 'value', value)}
                   />
@@ -271,7 +261,7 @@ export function FenceAgentModal({
                 <FlexItem>
                   <Button
                     variant="plain"
-                    aria-label="Remove option"
+                    aria-label={t('fenceAgent.option.removeAria')}
                     icon={<MinusCircleIcon />}
                     onClick={() => removeOption(option.id)}
                   />
@@ -283,43 +273,43 @@ export function FenceAgentModal({
               isInline
               icon={<PlusCircleIcon />}
               onClick={addOption}
-              aria-label="Add option"
+              aria-label={t('fenceAgent.option.add')}
             >
-              Add option
+              {t('fenceAgent.option.add')}
             </Button>
           </FormGroup>
 
           <FormGroup
-            label="Encrypt options (SSL/TLS)"
+            label={t('fenceAgent.field.encrypt')}
             fieldId="fence-agent-encrypt"
             labelHelp={
               <FieldHelp
-                field="Encrypt options (SSL/TLS)"
-                content="Connect to the fence device over SSL/TLS (adds the ssl option). Enable when the controller requires or offers an encrypted management channel."
+                field={t('fenceAgent.field.encrypt')}
+                content={t('fenceAgent.encrypt.help')}
               />
             }
           >
             <Switch
               id="fence-agent-encrypt"
-              aria-label="Encrypt options"
+              aria-label={t('fenceAgent.field.encryptAria')}
               isChecked={draft.encryptOptions}
               onChange={(_event, checked) => set('encryptOptions', checked)}
             />
           </FormGroup>
 
           <FormGroup
-            label="Concurrent with next agent"
+            label={t('fenceAgent.field.concurrent')}
             fieldId="fence-agent-concurrent"
             labelHelp={
               <FieldHelp
-                field="Concurrent with next agent"
-                content="Run this agent at the same time as the next one in the order rather than sequentially — used for dual power supplies that must both be cut for the reset to take effect."
+                field={t('fenceAgent.field.concurrent')}
+                content={t('fenceAgent.concurrent.help')}
               />
             }
           >
             <Switch
               id="fence-agent-concurrent"
-              aria-label="Concurrent with next agent"
+              aria-label={t('fenceAgent.field.concurrent')}
               isChecked={draft.concurrent}
               onChange={(_event, checked) => set('concurrent', checked)}
             />
@@ -333,10 +323,10 @@ export function FenceAgentModal({
           isLoading={pending}
           isDisabled={pending || addressEmpty || orderInvalid || portInvalid}
         >
-          Save
+          {t('common.action.save')}
         </Button>
         <Button variant="secondary" onClick={onClose} isDisabled={pending}>
-          Cancel
+          {t('common.action.cancel')}
         </Button>
       </ModalFooter>
     </Modal>

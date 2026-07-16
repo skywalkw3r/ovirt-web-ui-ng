@@ -28,10 +28,11 @@ function orDash(value: string | number | undefined | null): string {
 // coerces them, so a real boolean (or undefined) reaches here. Mirrors
 // NetworkGeneralTab / HostGeneralTab's BoolLabel.
 function BoolLabel({ value }: { value: boolean | undefined }) {
+  const t = useT()
   if (value === undefined) return <>{DASH}</>
   return (
     <Label isCompact color={value ? 'green' : 'grey'}>
-      {value ? 'Yes' : 'No'}
+      {value ? t('common.yes') : t('common.no')}
     </Label>
   )
 }
@@ -107,26 +108,32 @@ export function ClusterGeneralTab({ cluster }: { cluster: Cluster }) {
     <Grid hasGutter>
       <GridItem lg={6}>
         <SectionCard title={t('clusterGeneral.card.general')}>
-          <TextGroup term="Name" value={cluster.name} />
-          <TextGroup term="Description" value={cluster.description} />
-          <NodeGroup term="Data center">
+          <TextGroup term={t('common.field.name')} value={cluster.name} />
+          <TextGroup term={t('common.field.description')} value={cluster.description} />
+          <NodeGroup term={t('clusterGeneral.term.dataCenter')}>
             <DataCenterValue dataCenter={cluster.data_center} />
           </NodeGroup>
-          <TextGroup term="CPU type" value={cluster.cpu?.type} />
-          <TextGroup term="Compatibility version" value={formatVersion(cluster.version)} />
-          <TextGroup term="Switch type" value={cluster.switch_type} />
+          <TextGroup term={t('clusterGeneral.term.cpuType')} value={cluster.cpu?.type} />
+          <TextGroup
+            term={t('clusterGeneral.term.compatVersion')}
+            value={formatVersion(cluster.version)}
+          />
+          <TextGroup term={t('clusterGeneral.term.switchType')} value={cluster.switch_type} />
         </SectionCard>
       </GridItem>
 
       <GridItem lg={6}>
         <SectionCard title={t('clusterGeneral.card.scheduling')}>
-          <TextGroup term="Scheduling policy" value={cluster.scheduling_policy?.name} />
           <TextGroup
-            term="Memory over-commit"
+            term={t('clusterGeneral.term.schedulingPolicy')}
+            value={cluster.scheduling_policy?.name}
+          />
+          <TextGroup
+            term={t('clusterGeneral.term.overCommit')}
             value={formatOverCommit(cluster.memory_policy?.over_commit?.percent)}
           />
           <DescriptionListGroup>
-            <DescriptionListTerm>Ballooning</DescriptionListTerm>
+            <DescriptionListTerm>{t('clusterGeneral.term.ballooning')}</DescriptionListTerm>
             <DescriptionListDescription>
               <BoolLabel value={cluster.ballooning_enabled} />
             </DescriptionListDescription>

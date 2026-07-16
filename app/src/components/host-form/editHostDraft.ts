@@ -1,4 +1,5 @@
 import type { Host } from '../../api/schemas/host'
+import type { MessageId } from '../../i18n/messages/en'
 
 // Fence proxy preference (power_management.pm_proxies[].type). The engine tries
 // these locations, in list order, when picking a proxy host to relay a fence
@@ -33,11 +34,13 @@ function readPmProxies(host: Host): PmProxyType[] {
 // of being silently rewritten to the nearest bucket.
 // Bucket values mirror webadmin's computation (default 5, max 10): Low =
 // default/2 = 2, Normal = default, High = default + (max-default)/2 = 7.
-export const SPM_PRIORITY_OPTIONS: { value: number; label: string }[] = [
-  { value: -1, label: 'Never' },
-  { value: 2, label: 'Low' },
-  { value: 5, label: 'Normal' },
-  { value: 7, label: 'High' },
+// Labels resolve per-locale in the consumer (the qosDraft idiom): the module
+// array carries MessageIds, SpmSection maps them through t().
+export const SPM_PRIORITY_OPTIONS: { value: number; labelId: MessageId }[] = [
+  { value: -1, labelId: 'hostForm.spm.never' },
+  { value: 2, labelId: 'hostForm.spm.low' },
+  { value: 5, labelId: 'hostForm.spm.normal' },
+  { value: 7, labelId: 'hostForm.spm.high' },
 ]
 
 // The shared, flat draft the Edit Host modal owns and each section component

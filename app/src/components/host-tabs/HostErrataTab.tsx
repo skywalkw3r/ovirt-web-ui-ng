@@ -1,7 +1,9 @@
 import {
   Button,
   EmptyState,
+  EmptyStateActions,
   EmptyStateBody,
+  EmptyStateFooter,
   Skeleton,
   Timestamp,
   TimestampFormat,
@@ -12,6 +14,7 @@ import { useCapabilities } from '../../auth/capabilities'
 import { NotPermitted } from '../NotPermitted'
 import { sortRows, useColumnSort } from '../../hooks/useColumnSort'
 import { useHostErrata } from '../../hooks/useHostDetail'
+import { useT } from '../../i18n/useT'
 
 // Katello severities: 'critical' | 'important' | 'moderate' | 'low' — open
 // strings from the engine, so anything unmodeled falls back to grey. Mirrors
@@ -37,6 +40,7 @@ const HOST_ERRATUM_KEYS = ['title', 'type', 'severity', 'issued'] as const
 export function HostErrataTab({ hostId }: { hostId: string }) {
   const { loaded, isAdmin } = useCapabilities()
   const errata = useHostErrata(hostId)
+  const t = useT()
 
   // The host detail page already gates admin at the page level; this covers a
   // non-admin who deep-links straight to a tab. Until the profile loads the
@@ -46,7 +50,7 @@ export function HostErrataTab({ hostId }: { hostId: string }) {
   // order stays stable.
   const { sort, thSort } = useColumnSort()
   if (loaded && !isAdmin) {
-    return <NotPermitted what="Errata" />
+    return <NotPermitted what={t('errata.notPermitted')} />
   }
 
   // title mirrors the cell's title/name fallback; issued sorts on the raw epoch
@@ -66,37 +70,39 @@ export function HostErrataTab({ hostId }: { hostId: string }) {
       {errata.isPending && (
         <>
           <Skeleton height="2.5rem" style={{ marginBottom: '0.5rem' }} />
-          <Skeleton height="2.5rem" screenreaderText="Loading errata" />
+          <Skeleton height="2.5rem" screenreaderText={t('errata.loading')} />
         </>
       )}
 
       {errata.isError && (
-        <EmptyState titleText="Could not load errata" status="danger">
+        <EmptyState titleText={t('errata.error.title')} status="danger">
           <EmptyStateBody>
-            {errata.error instanceof Error ? errata.error.message : 'Unknown error'}
+            {errata.error instanceof Error ? errata.error.message : t('common.error.unknown')}
           </EmptyStateBody>
-          <Button variant="primary" onClick={() => void errata.refetch()}>
-            Retry
-          </Button>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="primary" onClick={() => void errata.refetch()}>
+                {t('common.action.retry')}
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 
       {errata.isSuccess && errata.data.length === 0 && (
-        <EmptyState titleText="No errata">
-          <EmptyStateBody>
-            The engine reports errata only when connected to a Foreman/Satellite instance.
-          </EmptyStateBody>
+        <EmptyState titleText={t('errata.empty.title')}>
+          <EmptyStateBody>{t('hostErrata.empty.body')}</EmptyStateBody>
         </EmptyState>
       )}
 
       {errata.isSuccess && errata.data.length > 0 && (
-        <Table aria-label="Errata" variant="compact">
+        <Table aria-label={t('errata.table.ariaLabel')} variant="compact">
           <Thead>
             <Tr>
-              <Th sort={thSort(HOST_ERRATUM_KEYS, 0)}>Title</Th>
-              <Th sort={thSort(HOST_ERRATUM_KEYS, 1)}>Type</Th>
-              <Th>Severity</Th>
-              <Th sort={thSort(HOST_ERRATUM_KEYS, 3)}>Issued</Th>
+              <Th sort={thSort(HOST_ERRATUM_KEYS, 0)}>{t('errata.column.title')}</Th>
+              <Th sort={thSort(HOST_ERRATUM_KEYS, 1)}>{t('common.field.type')}</Th>
+              <Th>{t('errata.column.severity')}</Th>
+              <Th sort={thSort(HOST_ERRATUM_KEYS, 3)}>{t('errata.column.issued')}</Th>
             </Tr>
           </Thead>
           <Tbody>
@@ -104,12 +110,12 @@ export function HostErrataTab({ hostId }: { hostId: string }) {
               <Tr key={erratum.id}>
                 {/* Katello serializes the synopsis under title or name
                     depending on the engine version — take whichever came. */}
-                <Td dataLabel="Title">{erratum.title ?? erratum.name ?? '—'}</Td>
-                <Td dataLabel="Type">{erratum.type ?? '—'}</Td>
-                <Td dataLabel="Severity">
+                <Td dataLabel={t('errata.column.title')}>{erratum.title ?? erratum.name ?? '—'}</Td>
+                <Td dataLabel={t('common.field.type')}>{erratum.type ?? '—'}</Td>
+                <Td dataLabel={t('errata.column.severity')}>
                   <SeverityCell severity={erratum.severity} />
                 </Td>
-                <Td dataLabel="Issued" modifier="nowrap">
+                <Td dataLabel={t('errata.column.issued')} modifier="nowrap">
                   {erratum.issued !== undefined ? (
                     <Timestamp
                       date={new Date(erratum.issued)}

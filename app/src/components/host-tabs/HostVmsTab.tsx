@@ -1,8 +1,16 @@
-import { Button, EmptyState, EmptyStateBody, Skeleton } from '@patternfly/react-core'
+import {
+  Button,
+  EmptyState,
+  EmptyStateActions,
+  EmptyStateBody,
+  EmptyStateFooter,
+  Skeleton,
+} from '@patternfly/react-core'
 import { Link } from '@tanstack/react-router'
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table'
 import { sortRows, useColumnSort } from '../../hooks/useColumnSort'
 import { useHostVms } from '../../hooks/useHostDetail'
+import { useT } from '../../i18n/useT'
 import { VmStatusLabel } from '../VmStatusLabel'
 
 // Every column in visual order so each Th's index matches its position; Status
@@ -14,6 +22,7 @@ const HOST_VM_KEYS = ['name', 'status', 'fqdn'] as const
 // search DSL (host.name=<name>) in useHostVms.
 export function HostVmsTab({ hostName }: { hostName: string }) {
   const vms = useHostVms(hostName)
+  const t = useT()
   // client-side header sort; no default — the engine list order stands until a
   // header is clicked (see hooks/useColumnSort). Before the early returns so
   // hook order stays stable.
@@ -23,28 +32,32 @@ export function HostVmsTab({ hostName }: { hostName: string }) {
     return (
       <>
         <Skeleton height="2.5rem" style={{ marginBottom: '0.5rem' }} />
-        <Skeleton height="2.5rem" screenreaderText="Loading virtual machines" />
+        <Skeleton height="2.5rem" screenreaderText={t('hostVms.loading')} />
       </>
     )
   }
 
   if (vms.isError) {
     return (
-      <EmptyState titleText="Could not load virtual machines" status="danger">
+      <EmptyState titleText={t('hostVms.error.title')} status="danger">
         <EmptyStateBody>
-          {vms.error instanceof Error ? vms.error.message : 'Unknown error'}
+          {vms.error instanceof Error ? vms.error.message : t('common.error.unknown')}
         </EmptyStateBody>
-        <Button variant="primary" onClick={() => void vms.refetch()}>
-          Retry
-        </Button>
+        <EmptyStateFooter>
+          <EmptyStateActions>
+            <Button variant="primary" onClick={() => void vms.refetch()}>
+              {t('common.action.retry')}
+            </Button>
+          </EmptyStateActions>
+        </EmptyStateFooter>
       </EmptyState>
     )
   }
 
   if (vms.data.length === 0) {
     return (
-      <EmptyState titleText="No virtual machines">
-        <EmptyStateBody>No virtual machines are running on this host.</EmptyStateBody>
+      <EmptyState titleText={t('hostVms.empty.title')}>
+        <EmptyStateBody>{t('hostVms.empty.body')}</EmptyStateBody>
       </EmptyState>
     )
   }
@@ -57,26 +70,26 @@ export function HostVmsTab({ hostName }: { hostName: string }) {
   )
 
   return (
-    <Table aria-label="Virtual machines on this host" variant="compact">
+    <Table aria-label={t('hostVms.table.ariaLabel')} variant="compact">
       <Thead>
         <Tr>
-          <Th sort={thSort(HOST_VM_KEYS, 0)}>Name</Th>
-          <Th>Status</Th>
-          <Th sort={thSort(HOST_VM_KEYS, 2)}>FQDN</Th>
+          <Th sort={thSort(HOST_VM_KEYS, 0)}>{t('common.field.name')}</Th>
+          <Th>{t('common.field.status')}</Th>
+          <Th sort={thSort(HOST_VM_KEYS, 2)}>{t('vms.column.fqdn')}</Th>
         </Tr>
       </Thead>
       <Tbody>
         {sortedVms.map((vm) => (
           <Tr key={vm.id}>
-            <Td dataLabel="Name">
+            <Td dataLabel={t('common.field.name')}>
               <Link to="/vms/$vmId" params={{ vmId: vm.id }}>
                 {vm.name}
               </Link>
             </Td>
-            <Td dataLabel="Status">
+            <Td dataLabel={t('common.field.status')}>
               <VmStatusLabel status={vm.status} />
             </Td>
-            <Td dataLabel="FQDN">{vm.fqdn ?? '—'}</Td>
+            <Td dataLabel={t('vms.column.fqdn')}>{vm.fqdn ?? '—'}</Td>
           </Tr>
         ))}
       </Tbody>

@@ -32,6 +32,7 @@ import {
 import { useCapabilities } from '../../auth/capabilities'
 import { useAdminResourcePollInterval } from '../../hooks/useAdminResources'
 import { useNotify } from '../../notifications/context'
+import type { MessageId } from '../../i18n/messages/en'
 import { useT } from '../../i18n/useT'
 import { ConfirmModal } from '../ConfirmModal'
 import { FieldHelp } from '../forms/FieldHelp'
@@ -46,13 +47,13 @@ import { FieldHelp } from '../forms/FieldHelp'
 // list; regenerate against the source when bumping the supported engine.
 // Grouping is ours (by subsystem prefix) — the enum itself is flat.
 interface NotifiableEventGroup {
-  label: string
+  labelId: MessageId
   events: string[]
 }
 
 const NOTIFIABLE_EVENT_GROUPS: NotifiableEventGroup[] = [
   {
-    label: 'Engine and data warehouse',
+    labelId: 'eventSub.group.engine',
     events: [
       'engine_stop',
       'engine_backup_started',
@@ -67,7 +68,7 @@ const NOTIFIABLE_EVENT_GROUPS: NotifiableEventGroup[] = [
     ],
   },
   {
-    label: 'Hosts',
+    labelId: 'eventSub.group.hosts',
     events: [
       'host_failure',
       'host_updates_are_available',
@@ -102,7 +103,7 @@ const NOTIFIABLE_EVENT_GROUPS: NotifiableEventGroup[] = [
     ],
   },
   {
-    label: 'Virtual machines',
+    labelId: 'eventSub.group.vms',
     events: [
       'vm_failure',
       'vm_migration_start',
@@ -139,7 +140,7 @@ const NOTIFIABLE_EVENT_GROUPS: NotifiableEventGroup[] = [
     ],
   },
   {
-    label: 'Storage',
+    labelId: 'eventSub.group.storage',
     events: [
       'system_change_storage_pool_status_no_host_for_spm',
       'system_deactivated_storage_domain',
@@ -152,7 +153,7 @@ const NOTIFIABLE_EVENT_GROUPS: NotifiableEventGroup[] = [
     ],
   },
   {
-    label: 'Cluster and network',
+    labelId: 'eventSub.group.clusterNetwork',
     events: [
       'cluster_alert_ha_reservation',
       'network_update_display_for_cluster_with_active_vm',
@@ -161,7 +162,7 @@ const NOTIFIABLE_EVENT_GROUPS: NotifiableEventGroup[] = [
     ],
   },
   {
-    label: 'Gluster',
+    labelId: 'eventSub.group.gluster',
     events: [
       'gluster_volume_create',
       'gluster_volume_create_failed',
@@ -280,7 +281,7 @@ function AddEventSubscriptionsModal({
   const visibleGroups = useMemo(() => {
     const needle = filter.trim().toLowerCase()
     return NOTIFIABLE_EVENT_GROUPS.map((group) => ({
-      label: group.label,
+      labelId: group.labelId,
       events: group.events.filter(
         (event) => !subscribedEvents.has(event) && (needle === '' || event.includes(needle)),
       ),
@@ -351,16 +352,16 @@ function AddEventSubscriptionsModal({
       aria-labelledby="add-event-subscription-title"
       aria-describedby="add-event-subscription-body"
     >
-      <ModalHeader title="Add event notifications" labelId="add-event-subscription-title" />
+      <ModalHeader title={t('eventSub.add.title')} labelId="add-event-subscription-title" />
       <ModalBody id="add-event-subscription-body">
         <Form onSubmit={(event) => event.preventDefault()}>
           <FormGroup
-            label="Notification address"
+            label={t('eventSub.add.address.label')}
             fieldId="event-subscription-address"
             labelHelp={
               <FieldHelp
-                field="Notification address"
-                content="Where notification emails are sent. Leave empty to use the user's own email address. The engine supports a single notification address per user — adding a subscription with a different address than existing subscriptions is rejected."
+                field={t('eventSub.add.address.label')}
+                content={t('eventSub.add.address.help')}
               />
             }
           >
@@ -369,23 +370,23 @@ function AddEventSubscriptionsModal({
               type="email"
               value={address}
               onChange={(_event, value) => setAddress(value)}
-              placeholder="Defaults to the user's email"
-              aria-label="Notification address"
+              placeholder={t('eventSub.add.address.placeholder')}
+              aria-label={t('eventSub.add.address.label')}
             />
           </FormGroup>
 
-          <FormGroup label="Events" fieldId="event-subscription-filter">
+          <FormGroup label={t('events.title')} fieldId="event-subscription-filter">
             <SearchInput
               id="event-subscription-filter"
-              aria-label="Filter events"
-              placeholder="Filter events"
+              aria-label={t('eventSub.add.filter')}
+              placeholder={t('eventSub.add.filter')}
               value={filter}
               onChange={(_event, value) => setFilter(value)}
               onClear={() => setFilter('')}
             />
             <div
               role="group"
-              aria-label="Notifiable events"
+              aria-label={t('eventSub.add.notifiableEvents')}
               style={{
                 maxHeight: '18rem',
                 overflowY: 'auto',
@@ -393,11 +394,14 @@ function AddEventSubscriptionsModal({
               }}
             >
               {visibleGroups.length === 0 && (
-                <Content component="p">No events match the filter.</Content>
+                <Content component="p">{t('eventSub.add.noMatch')}</Content>
               )}
               {visibleGroups.map((group) => (
-                <div key={group.label} style={{ marginBottom: 'var(--pf-t--global--spacer--md)' }}>
-                  <Content component="h4">{group.label}</Content>
+                <div
+                  key={group.labelId}
+                  style={{ marginBottom: 'var(--pf-t--global--spacer--md)' }}
+                >
+                  <Content component="h4">{t(group.labelId)}</Content>
                   {group.events.map((event) => (
                     <Checkbox
                       key={event}
@@ -420,7 +424,9 @@ function AddEventSubscriptionsModal({
           isDisabled={add.isPending || selected.size === 0}
           onClick={() => add.mutate([...selected])}
         >
-          {selected.size > 0 ? `Add (${selected.size})` : t('common.action.add')}
+          {selected.size > 0
+            ? t('eventSub.add.submitCount', { size: selected.size })
+            : t('common.action.add')}
         </Button>
         <Button variant="secondary" onClick={onClose} isDisabled={add.isPending}>
           {t('common.action.cancel')}
@@ -491,29 +497,30 @@ export function UserEventSubscriptionsTab({ userId }: { userId: string }) {
       {subscriptions.isPending && (
         <>
           <Skeleton height="2.5rem" style={{ marginBottom: '0.5rem' }} />
-          <Skeleton height="2.5rem" screenreaderText="Loading event subscriptions" />
+          <Skeleton height="2.5rem" screenreaderText={t('eventSub.loading')} />
         </>
       )}
 
       {subscriptions.isError && (
-        <EmptyState titleText="Could not load event subscriptions" status="danger">
+        <EmptyState titleText={t('eventSub.error.title')} status="danger">
           <EmptyStateBody>
             {subscriptions.error instanceof Error
               ? subscriptions.error.message
               : t('common.error.unknown')}
           </EmptyStateBody>
-          <Button variant="primary" onClick={() => void subscriptions.refetch()}>
-            {t('common.action.retry')}
-          </Button>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="primary" onClick={() => void subscriptions.refetch()}>
+                {t('common.action.retry')}
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 
       {subscriptions.isSuccess && subscriptions.data.length === 0 && (
-        <EmptyState titleText="No event notifications">
-          <EmptyStateBody>
-            Subscribe this user to engine events to have the notifier service email them when the
-            event fires.
-          </EmptyStateBody>
+        <EmptyState titleText={t('eventSub.empty.title')}>
+          <EmptyStateBody>{t('eventSub.empty.body')}</EmptyStateBody>
           <EmptyStateFooter>
             <EmptyStateActions>
               <Button variant="primary" onClick={() => setAdding(true)}>
@@ -525,12 +532,12 @@ export function UserEventSubscriptionsTab({ userId }: { userId: string }) {
       )}
 
       {subscriptions.isSuccess && subscriptions.data.length > 0 && (
-        <Table aria-label="Event subscriptions" variant="compact">
+        <Table aria-label={t('eventSub.table.ariaLabel')} variant="compact">
           <Thead>
             <Tr>
-              <Th>Event</Th>
-              <Th>Method</Th>
-              <Th>Address</Th>
+              <Th>{t('eventSub.column.event')}</Th>
+              <Th>{t('eventSub.column.method')}</Th>
+              <Th>{t('eventSub.column.address')}</Th>
               <Th screenReaderText={t('common.field.actions')} />
             </Tr>
           </Thead>
@@ -539,15 +546,17 @@ export function UserEventSubscriptionsTab({ userId }: { userId: string }) {
               const event = subscription.event ?? subscription.id
               return (
                 <Tr key={event ?? index}>
-                  <Td dataLabel="Event" modifier="truncate" title={event}>
+                  <Td dataLabel={t('eventSub.column.event')} modifier="truncate" title={event}>
                     {event !== undefined ? humanizeEvent(event) : '—'}
                   </Td>
-                  <Td dataLabel="Method">
+                  <Td dataLabel={t('eventSub.column.method')}>
                     <Label isCompact>
                       {(subscription.notification_method ?? 'smtp').toUpperCase()}
                     </Label>
                   </Td>
-                  <Td dataLabel="Address">{subscription.address || "User's email"}</Td>
+                  <Td dataLabel={t('eventSub.column.address')}>
+                    {subscription.address || t('eventSub.addressFallback')}
+                  </Td>
                   <Td dataLabel={t('common.field.actions')} isActionCell>
                     <ActionsColumn
                       isDisabled={remove.isPending || event === undefined}
@@ -580,8 +589,8 @@ export function UserEventSubscriptionsTab({ userId }: { userId: string }) {
       {removing !== null && (
         <ConfirmModal
           isOpen
-          title={`Remove notification for '${humanizeEvent(removing)}'?`}
-          body="The user stops receiving notification emails for this event. This does not affect their other subscriptions."
+          title={t('eventSub.remove.confirm.title', { removing: humanizeEvent(removing) })}
+          body={t('eventSub.remove.confirm.body')}
           confirmLabel={t('common.action.remove')}
           isConfirmDisabled={remove.isPending}
           onConfirm={() => {

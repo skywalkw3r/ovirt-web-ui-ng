@@ -4,7 +4,9 @@ import {
   Button,
   Divider,
   EmptyState,
+  EmptyStateActions,
   EmptyStateBody,
+  EmptyStateFooter,
   MenuToggle,
   type MenuToggleElement,
   SearchInput,
@@ -14,6 +16,7 @@ import {
   Skeleton,
 } from '@patternfly/react-core'
 import type { UseQueryResult } from '@tanstack/react-query'
+import { useT } from '../../i18n/useT'
 
 // A selectable entity — the VM/host pickers only need an id and a display name.
 export interface SelectableEntity {
@@ -49,6 +52,7 @@ export function EntitySelection({
   emptyText: string
   loadingText: string
 }) {
+  const t = useT()
   const [isOpen, setIsOpen] = useState(false)
   const [filter, setFilter] = useState('')
 
@@ -79,13 +83,20 @@ export function EntitySelection({
 
   if (candidates.isError) {
     return (
-      <EmptyState titleText={`Could not load ${label.toLowerCase()}`} status="danger">
+      <EmptyState
+        titleText={t('affinity.entity.loadError', { label: label.toLowerCase() })}
+        status="danger"
+      >
         <EmptyStateBody>
-          {candidates.error instanceof Error ? candidates.error.message : 'Unknown error'}
+          {candidates.error instanceof Error ? candidates.error.message : t('common.error.unknown')}
         </EmptyStateBody>
-        <Button variant="link" isInline onClick={() => void candidates.refetch()}>
-          Retry
-        </Button>
+        <EmptyStateFooter>
+          <EmptyStateActions>
+            <Button variant="link" isInline onClick={() => void candidates.refetch()}>
+              {t('common.action.retry')}
+            </Button>
+          </EmptyStateActions>
+        </EmptyStateFooter>
       </EmptyState>
     )
   }
@@ -113,7 +124,9 @@ export function EntitySelection({
             isFullWidth
             badge={selectedIds.length > 0 ? <Badge isRead>{selectedIds.length}</Badge> : undefined}
           >
-            {selectedIds.length === 0 ? label : `${selectedIds.length} selected`}
+            {selectedIds.length === 0
+              ? label
+              : t('affinity.selectedCount', { count: selectedIds.length })}
           </MenuToggle>
         )}
       >
@@ -122,8 +135,8 @@ export function EntitySelection({
             value={filter}
             onChange={(_event, value) => setFilter(value)}
             onClear={() => setFilter('')}
-            placeholder={`Filter ${label.toLowerCase()}`}
-            aria-label={`Filter ${label.toLowerCase()}`}
+            placeholder={t('affinity.entity.filter', { label: label.toLowerCase() })}
+            aria-label={t('affinity.entity.filter', { label: label.toLowerCase() })}
           />
         </div>
         <Divider />
@@ -143,7 +156,7 @@ export function EntitySelection({
             ))}
             {visible.length === 0 && (
               <SelectOption isDisabled value="__none__">
-                No match
+                {t('affinity.entity.noMatch')}
               </SelectOption>
             )}
           </SelectList>

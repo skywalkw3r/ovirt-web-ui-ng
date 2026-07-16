@@ -3,7 +3,9 @@ import {
   BreadcrumbItem,
   Button,
   EmptyState,
+  EmptyStateActions,
   EmptyStateBody,
+  EmptyStateFooter,
   PageSection,
   Skeleton,
   Tab,
@@ -91,9 +93,13 @@ export function VmDetailsPage() {
       {vm.isError && notFound && (
         <EmptyState titleText={t('vmDetail.notFound.title')} status="warning">
           <EmptyStateBody>{t('vmDetail.notFound.body', { id: vmId })}</EmptyStateBody>
-          <Button variant="primary" onClick={() => void navigate({ to: '/vms-templates' })}>
-            {t('vmDetail.notFound.back')}
-          </Button>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="primary" onClick={() => void navigate({ to: '/vms-templates' })}>
+                {t('vmDetail.notFound.back')}
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 
@@ -102,9 +108,13 @@ export function VmDetailsPage() {
           <EmptyStateBody>
             {vm.error instanceof Error ? vm.error.message : t('common.error.unknown')}
           </EmptyStateBody>
-          <Button variant="primary" onClick={() => void vm.refetch()}>
-            {t('common.action.retry')}
-          </Button>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="primary" onClick={() => void vm.refetch()}>
+                {t('common.action.retry')}
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 
