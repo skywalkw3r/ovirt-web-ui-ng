@@ -67,7 +67,7 @@ import {
 import { useColumnPrefs } from '../../hooks/useColumnPrefs'
 import { sortRows, useColumnSort } from '../../hooks/useColumnSort'
 import type { MessageId } from '../../i18n/messages/en'
-import { diskFormatText, formatBytes } from '../../lib/format'
+import { diskFormatText, diskInterfaceText, formatBytes } from '../../lib/format'
 import { ColumnPicker } from '../list-toolbar/ColumnPicker'
 import { ResizableTh, resizableTableProps } from '../list-toolbar/ResizableTh'
 import { ConfirmModal } from '../ConfirmModal'
@@ -313,7 +313,7 @@ export function DisksTab({ vmId }: { vmId: string }) {
           '—'
         )
       case 'interface':
-        return attachment.interface ?? '—'
+        return diskInterfaceText(attachment.interface)
       case 'format':
         return diskFormatText(attachment.disk?.format)
       case 'size':
@@ -918,7 +918,7 @@ function AddDiskModal({
                 onChange={(_event, value) => setDiskInterface(value)}
               >
                 {DISK_INTERFACES.map((model) => (
-                  <FormSelectOption key={model} value={model} label={model} />
+                  <FormSelectOption key={model} value={model} label={diskInterfaceText(model)} />
                 ))}
               </FormSelect>
             </FormGroup>

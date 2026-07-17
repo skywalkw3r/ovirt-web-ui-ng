@@ -31,6 +31,23 @@ export function hostSpmText(spm: Host['spm']): string {
   return statusText(state ?? 'normal')
 }
 
+// Engine DiskInterface tokens → webadmin's display names. The api-model enum
+// is exactly ide, sata, spapr_vscsi, virtio, virtio_scsi; a token outside the
+// map (a newer engine's addition) passes through verbatim rather than getting
+// a guessed casing. Technical tokens — kept as-is in every locale, no i18n.
+const DISK_INTERFACE_NAMES: Record<string, string> = {
+  ide: 'IDE',
+  sata: 'SATA',
+  spapr_vscsi: 'SPAPR VSCSI',
+  virtio: 'VirtIO',
+  virtio_scsi: 'VirtIO-SCSI',
+}
+
+export function diskInterfaceText(value: string | undefined | null): string {
+  if (!value) return '—'
+  return DISK_INTERFACE_NAMES[value] ?? value
+}
+
 // Engine sizes are bytes; disks are user-provisioned so whole units are the
 // common case — fall back to one decimal otherwise.
 export function formatBytes(bytes?: number): string {

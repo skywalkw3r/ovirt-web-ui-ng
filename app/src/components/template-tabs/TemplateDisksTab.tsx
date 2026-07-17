@@ -11,7 +11,7 @@ import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table'
 import type { DiskAttachment } from '../../api/schemas/disk'
 import { useTemplateDiskAttachments } from '../../hooks/useTemplateDetail'
 import { useT } from '../../i18n/useT'
-import { formatBytes } from '../../lib/format'
+import { diskInterfaceText, formatBytes } from '../../lib/format'
 
 export function TemplateDisksTab({ templateId }: { templateId: string }) {
   const t = useT()
@@ -67,7 +67,9 @@ export function TemplateDisksTab({ templateId }: { templateId: string }) {
                 <Td dataLabel={t('vmDisks.column.provisionedSize')}>
                   {formatBytes(attachment.disk?.provisioned_size)}
                 </Td>
-                <Td dataLabel={t('vmDisks.column.interface')}>{attachment.interface ?? '—'}</Td>
+                <Td dataLabel={t('vmDisks.column.interface')}>
+                  {diskInterfaceText(attachment.interface)}
+                </Td>
                 <Td dataLabel={t('vmDisks.column.bootable')}>
                   {attachment.bootable ? (
                     <Label isCompact color="blue">

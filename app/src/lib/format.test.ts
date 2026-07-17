@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { diskFormatText, formatBytes, formatUptime, statusText, vmUptimeSeconds } from './format'
+import {
+  diskFormatText,
+  diskInterfaceText,
+  formatBytes,
+  formatUptime,
+  statusText,
+  vmUptimeSeconds,
+} from './format'
 
 const GiB = 1024 ** 3
 const TiB = 1024 ** 4
@@ -56,6 +63,26 @@ describe('diskFormatText', () => {
     expect(diskFormatText(undefined)).toBe('—')
     expect(diskFormatText(null)).toBe('—')
     expect(diskFormatText('')).toBe('—')
+  })
+})
+
+describe('diskInterfaceText', () => {
+  it('maps the api-model DiskInterface tokens to webadmin display names', () => {
+    expect(diskInterfaceText('virtio')).toBe('VirtIO')
+    expect(diskInterfaceText('virtio_scsi')).toBe('VirtIO-SCSI')
+    expect(diskInterfaceText('ide')).toBe('IDE')
+    expect(diskInterfaceText('sata')).toBe('SATA')
+    expect(diskInterfaceText('spapr_vscsi')).toBe('SPAPR VSCSI')
+  })
+
+  it('passes an unrecognized token through verbatim', () => {
+    expect(diskInterfaceText('nvme')).toBe('nvme')
+  })
+
+  it('renders an em dash for a missing interface', () => {
+    expect(diskInterfaceText(undefined)).toBe('—')
+    expect(diskInterfaceText(null)).toBe('—')
+    expect(diskInterfaceText('')).toBe('—')
   })
 })
 
