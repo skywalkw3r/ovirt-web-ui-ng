@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
+  diskContentTypeText,
   diskFormatText,
   diskInterfaceText,
+  diskStorageTypeText,
   formatBytes,
   formatUptime,
   statusText,
@@ -83,6 +85,40 @@ describe('diskInterfaceText', () => {
     expect(diskInterfaceText(undefined)).toBe('—')
     expect(diskInterfaceText(null)).toBe('—')
     expect(diskInterfaceText('')).toBe('—')
+  })
+})
+
+describe('diskContentTypeText', () => {
+  it('maps the api-model DiskContentType tokens to webadmin display names', () => {
+    expect(diskContentTypeText('data')).toBe('Data')
+    expect(diskContentTypeText('iso')).toBe('ISO')
+    expect(diskContentTypeText('ovf_store')).toBe('OVF Store')
+    expect(diskContentTypeText('memory_dump_volume')).toBe('Memory Dump')
+    expect(diskContentTypeText('memory_metadata_volume')).toBe('Memory Metadata')
+    expect(diskContentTypeText('hosted_engine')).toBe('Hosted Engine')
+    expect(diskContentTypeText('hosted_engine_sanlock')).toBe('Hosted Engine Sanlock')
+    expect(diskContentTypeText('hosted_engine_metadata')).toBe('Hosted Engine Metadata')
+    expect(diskContentTypeText('hosted_engine_configuration')).toBe('Hosted Engine Conf.')
+    expect(diskContentTypeText('backup_scratch')).toBe('Backup scratch disks')
+  })
+
+  it('passes an unrecognized token through and em-dashes missing', () => {
+    expect(diskContentTypeText('something_new')).toBe('something_new')
+    expect(diskContentTypeText(undefined)).toBe('—')
+  })
+})
+
+describe('diskStorageTypeText', () => {
+  it('maps the api-model DiskStorageType tokens to display names', () => {
+    expect(diskStorageTypeText('image')).toBe('Image')
+    expect(diskStorageTypeText('lun')).toBe('Direct LUN')
+    expect(diskStorageTypeText('cinder')).toBe('Cinder')
+    expect(diskStorageTypeText('managed_block_storage')).toBe('Managed block storage')
+  })
+
+  it('passes an unrecognized token through and em-dashes missing', () => {
+    expect(diskStorageTypeText('unknown_kind')).toBe('unknown_kind')
+    expect(diskStorageTypeText(undefined)).toBe('—')
   })
 })
 

@@ -58,7 +58,12 @@ import {
 } from '../hooks/useDiskMutations'
 import { useListSearch } from '../hooks/useListSearch'
 import { useStorageDomains } from '../hooks/useStorageDomains'
-import { diskFormatText, formatBytes, statusText } from '../lib/format'
+import {
+  diskContentTypeText,
+  diskFormatText,
+  diskStorageTypeText,
+  formatBytes,
+} from '../lib/format'
 
 // oVirt disk states are ok/locked/illegal; anything unrecognized stays grey.
 // Colored icon per state (matching the storage-domain status treatment):
@@ -193,14 +198,14 @@ const COLUMNS: DiskColumn[] = [
           {ctx.t('disk.lun.badge')}
         </Label>
       ) : (
-        statusText(disk.storage_type)
+        diskStorageTypeText(disk.storage_type)
       ),
   },
   {
     key: 'contentType',
     labelId: 'disks.column.content',
     sortValue: (disk) => disk.content_type,
-    cell: (disk) => statusText(disk.content_type),
+    cell: (disk) => diskContentTypeText(disk.content_type),
   },
   {
     key: 'description',
@@ -431,7 +436,11 @@ function DisksTable() {
                   >
                     <FormSelectOption value="all" label={t('common.filter.all')} />
                     {contentTypes.map((value) => (
-                      <FormSelectOption key={value} value={value} label={statusText(value)} />
+                      <FormSelectOption
+                        key={value}
+                        value={value}
+                        label={diskContentTypeText(value)}
+                      />
                     ))}
                   </FormSelect>
                 </Flex>

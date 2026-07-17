@@ -12,7 +12,13 @@ import {
 } from '@patternfly/react-core'
 import { diskSizeBytes, type Disk } from '../../api/schemas/disk'
 import { useT } from '../../i18n/useT'
-import { diskFormatText, formatBytes, statusText } from '../../lib/format'
+import {
+  diskContentTypeText,
+  diskFormatText,
+  diskStorageTypeText,
+  formatBytes,
+  statusText,
+} from '../../lib/format'
 
 const DASH = '—'
 
@@ -73,7 +79,10 @@ export function DiskGeneralTab({ disk }: { disk: Disk }) {
           <TextGroup term={t('common.field.description')} value={disk.description} />
           {/* statusText self-guards undefined with the em dash. */}
           <TextGroup term={t('common.field.status')} value={statusText(disk.status)} />
-          <TextGroup term={t('diskGeneral.term.contentType')} value={disk.content_type} />
+          <TextGroup
+            term={t('diskGeneral.term.contentType')}
+            value={diskContentTypeText(disk.content_type)}
+          />
         </SectionCard>
       </GridItem>
 
@@ -90,7 +99,10 @@ export function DiskGeneralTab({ disk }: { disk: Disk }) {
             value={formatBytes(disk.actual_size)}
           />
           <TextGroup term={t('diskGeneral.term.format')} value={diskFormatText(disk.format)} />
-          <TextGroup term={t('diskGeneral.term.storageType')} value={disk.storage_type} />
+          <TextGroup
+            term={t('diskGeneral.term.storageType')}
+            value={diskStorageTypeText(disk.storage_type)}
+          />
           {/* Direct-LUN backing facts — absent on image disks. */}
           {lun !== undefined && (
             <>

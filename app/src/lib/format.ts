@@ -12,17 +12,6 @@ export function statusText(status: string | undefined | null): string {
   return spaced.charAt(0).toUpperCase() + spaced.slice(1)
 }
 
-// The engine's DiskFormat enum serializes as 'cow' / 'raw', but users know
-// cow by its on-disk name QCOW2 — webadmin renders 'QCOW2' / 'Raw' too.
-// Unknown tokens pass through verbatim instead of being humanized: format
-// names are technical identifiers, kept as-is in every locale.
-const DISK_FORMAT_LABELS: Record<string, string> = { cow: 'QCOW2', raw: 'Raw' }
-
-export function diskFormatText(format: string | undefined | null): string {
-  if (!format) return '—'
-  return DISK_FORMAT_LABELS[format] ?? format
-}
-
 // Webadmin's host-grid SPM column: spm.status arrives as { state } or a bare
 // string depending on engine version; a host without the role reads 'Normal'.
 export function hostSpmText(spm: Host['spm']): string {
@@ -31,22 +20,57 @@ export function hostSpmText(spm: Host['spm']): string {
   return statusText(state ?? 'normal')
 }
 
-// Engine DiskInterface tokens → webadmin's display names. The api-model enum
-// is exactly ide, sata, spapr_vscsi, virtio, virtio_scsi; a token outside the
-// map (a newer engine's addition) passes through verbatim rather than getting
-// a guessed casing. Technical tokens — kept as-is in every locale, no i18n.
-const DISK_INTERFACE_NAMES: Record<string, string> = {
+// Disk enum tokens → webadmin's display names (verified against the
+// ovirt-engine-api-model enums and webadmin's LocalizedEnums.properties). A
+// token outside a map (a newer engine's addition) passes through verbatim
+// rather than getting a guessed casing; missing reads as the em dash.
+// Technical tokens — kept as-is in every locale, no i18n.
+function tokenText(names: Record<string, string>) {
+  return (value: string | undefined | null): string => {
+    if (!value) return '—'
+    return names[value] ?? value
+  }
+}
+
+// api-model DiskInterface: ide, sata, spapr_vscsi, virtio, virtio_scsi.
+export const diskInterfaceText = tokenText({
   ide: 'IDE',
   sata: 'SATA',
   spapr_vscsi: 'SPAPR VSCSI',
   virtio: 'VirtIO',
   virtio_scsi: 'VirtIO-SCSI',
-}
+})
 
-export function diskInterfaceText(value: string | undefined | null): string {
-  if (!value) return '—'
-  return DISK_INTERFACE_NAMES[value] ?? value
-}
+// api-model DiskFormat: cow, raw (webadmin VolumeFormat: COW reads QCOW2).
+export const diskFormatText = tokenText({
+  cow: 'QCOW2',
+  raw: 'Raw',
+})
+
+// api-model DiskContentType; 'Hosted Engine Conf.' and 'Backup scratch disks'
+// are webadmin's own strings, kept verbatim for parity.
+export const diskContentTypeText = tokenText({
+  backup_scratch: 'Backup scratch disks',
+  data: 'Data',
+  hosted_engine: 'Hosted Engine',
+  hosted_engine_configuration: 'Hosted Engine Conf.',
+  hosted_engine_metadata: 'Hosted Engine Metadata',
+  hosted_engine_sanlock: 'Hosted Engine Sanlock',
+  iso: 'ISO',
+  memory_dump_volume: 'Memory Dump',
+  memory_metadata_volume: 'Memory Metadata',
+  ovf_store: 'OVF Store',
+})
+
+// api-model DiskStorageType. Deliberate divergence: webadmin's LocalizedEnums
+// says bare 'LUN', but its disks-view filter — and this whole app (badges,
+// toggles) — says 'Direct LUN', so the value rendering matches that.
+export const diskStorageTypeText = tokenText({
+  cinder: 'Cinder',
+  image: 'Image',
+  lun: 'Direct LUN',
+  managed_block_storage: 'Managed block storage',
+})
 
 // Engine sizes are bytes; disks are user-provisioned so whole units are the
 // common case — fall back to one decimal otherwise.

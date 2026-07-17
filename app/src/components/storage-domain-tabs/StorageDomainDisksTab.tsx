@@ -13,7 +13,7 @@ import type { Disk } from '../../api/schemas/disk'
 import { sortRows, useColumnSort } from '../../hooks/useColumnSort'
 import { useStorageDomainDisks } from '../../hooks/useStorageDomainDetail'
 import { useT } from '../../i18n/useT'
-import { formatBytes, statusText } from '../../lib/format'
+import { diskContentTypeText, formatBytes, statusText } from '../../lib/format'
 
 // oVirt disk states are ok/locked/illegal; anything unrecognized stays grey
 const DISK_STATUS_COLOR: Record<string, 'green' | 'blue' | 'red'> = {
@@ -131,7 +131,9 @@ export function StorageDomainDisksTab({ storageDomainId }: { storageDomainId: st
                 <Td dataLabel={t('common.field.status')}>
                   <DiskStatusLabel status={disk.status} />
                 </Td>
-                <Td dataLabel={t('storageDisks.column.contentType')}>{disk.content_type ?? '—'}</Td>
+                <Td dataLabel={t('storageDisks.column.contentType')}>
+                  {diskContentTypeText(disk.content_type)}
+                </Td>
               </Tr>
             ))}
           </Tbody>
