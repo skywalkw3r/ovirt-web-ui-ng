@@ -67,7 +67,7 @@ import {
 import { useColumnPrefs } from '../../hooks/useColumnPrefs'
 import { sortRows, useColumnSort } from '../../hooks/useColumnSort'
 import type { MessageId } from '../../i18n/messages/en'
-import { formatBytes } from '../../lib/format'
+import { diskFormatText, formatBytes } from '../../lib/format'
 import { ColumnPicker } from '../list-toolbar/ColumnPicker'
 import { ResizableTh, resizableTableProps } from '../list-toolbar/ResizableTh'
 import { ConfirmModal } from '../ConfirmModal'
@@ -315,7 +315,7 @@ export function DisksTab({ vmId }: { vmId: string }) {
       case 'interface':
         return attachment.interface ?? '—'
       case 'format':
-        return attachment.disk?.format ?? '—'
+        return diskFormatText(attachment.disk?.format)
       case 'size':
         // a direct-LUN disk reports its size from the bound LUN
         return formatBytes(diskSizeBytes(attachment.disk))

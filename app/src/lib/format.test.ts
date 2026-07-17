@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatBytes, formatUptime, statusText, vmUptimeSeconds } from './format'
+import { diskFormatText, formatBytes, formatUptime, statusText, vmUptimeSeconds } from './format'
 
 const GiB = 1024 ** 3
 const TiB = 1024 ** 4
@@ -39,6 +39,23 @@ describe('statusText', () => {
     expect(statusText(undefined)).toBe('—')
     expect(statusText(null)).toBe('—')
     expect(statusText('')).toBe('—')
+  })
+})
+
+describe('diskFormatText', () => {
+  it("labels the engine's image formats by their on-disk names", () => {
+    expect(diskFormatText('cow')).toBe('QCOW2')
+    expect(diskFormatText('raw')).toBe('Raw')
+  })
+
+  it('passes unknown format tokens through verbatim', () => {
+    expect(diskFormatText('qcow2_v3')).toBe('qcow2_v3')
+  })
+
+  it('renders an em dash for a missing format', () => {
+    expect(diskFormatText(undefined)).toBe('—')
+    expect(diskFormatText(null)).toBe('—')
+    expect(diskFormatText('')).toBe('—')
   })
 })
 

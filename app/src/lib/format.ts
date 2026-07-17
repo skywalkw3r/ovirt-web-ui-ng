@@ -12,6 +12,17 @@ export function statusText(status: string | undefined | null): string {
   return spaced.charAt(0).toUpperCase() + spaced.slice(1)
 }
 
+// The engine's DiskFormat enum serializes as 'cow' / 'raw', but users know
+// cow by its on-disk name QCOW2 — webadmin renders 'QCOW2' / 'Raw' too.
+// Unknown tokens pass through verbatim instead of being humanized: format
+// names are technical identifiers, kept as-is in every locale.
+const DISK_FORMAT_LABELS: Record<string, string> = { cow: 'QCOW2', raw: 'Raw' }
+
+export function diskFormatText(format: string | undefined | null): string {
+  if (!format) return '—'
+  return DISK_FORMAT_LABELS[format] ?? format
+}
+
 // Webadmin's host-grid SPM column: spm.status arrives as { state } or a bare
 // string depending on engine version; a host without the role reads 'Normal'.
 export function hostSpmText(spm: Host['spm']): string {

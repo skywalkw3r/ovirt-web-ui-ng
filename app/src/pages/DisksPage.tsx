@@ -58,7 +58,7 @@ import {
 } from '../hooks/useDiskMutations'
 import { useListSearch } from '../hooks/useListSearch'
 import { useStorageDomains } from '../hooks/useStorageDomains'
-import { formatBytes, statusText } from '../lib/format'
+import { diskFormatText, formatBytes, statusText } from '../lib/format'
 
 // oVirt disk states are ok/locked/illegal; anything unrecognized stays grey.
 // Colored icon per state (matching the storage-domain status treatment):
@@ -214,7 +214,7 @@ const COLUMNS: DiskColumn[] = [
     sortValue: (disk) => disk.format,
     // not a webadmin grid column (details-only there); kept from the old set
     defaultHidden: true,
-    cell: (disk) => disk.format ?? '—',
+    cell: (disk) => diskFormatText(disk.format),
   },
 ]
 // Deferred vs webadmin's grid: Attached To (nothing about attachments rides

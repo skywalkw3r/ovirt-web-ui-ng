@@ -12,7 +12,7 @@ import {
 } from '@patternfly/react-core'
 import { diskSizeBytes, type Disk } from '../../api/schemas/disk'
 import { useT } from '../../i18n/useT'
-import { formatBytes, statusText } from '../../lib/format'
+import { diskFormatText, formatBytes, statusText } from '../../lib/format'
 
 const DASH = '—'
 
@@ -89,7 +89,7 @@ export function DiskGeneralTab({ disk }: { disk: Disk }) {
             term={t('diskGeneral.term.actualSize')}
             value={formatBytes(disk.actual_size)}
           />
-          <TextGroup term={t('diskGeneral.term.format')} value={disk.format} />
+          <TextGroup term={t('diskGeneral.term.format')} value={diskFormatText(disk.format)} />
           <TextGroup term={t('diskGeneral.term.storageType')} value={disk.storage_type} />
           {/* Direct-LUN backing facts — absent on image disks. */}
           {lun !== undefined && (
