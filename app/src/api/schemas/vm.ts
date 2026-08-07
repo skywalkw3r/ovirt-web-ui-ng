@@ -69,7 +69,51 @@ export const VmSchema = z.looseObject({
   run_once: z.union([z.boolean(), z.stringbool()]).optional(),
   origin: z.string().optional(),
   stateless: z.union([z.boolean(), z.stringbool()]).optional(),
+  // Start the VM in 'paused' state (General tab). JSON-string on the live engine.
+  start_paused: z.union([z.boolean(), z.stringbool()]).optional(),
   next_run_configuration_exists: z.union([z.boolean(), z.stringbool()]).optional(),
+  // System depth — override the cluster's emulated machine type / CPU model
+  // for this VM only (webadmin's Custom Emulated Machine / Custom CPU Type).
+  custom_emulated_machine: z.string().optional(),
+  custom_cpu_model: z.string().optional(),
+  // What the VM does when paused by an unrecoverable storage I/O error
+  // (api-model VmStorageErrorResumeBehaviour): auto_resume | leave_paused | kill.
+  storage_error_resume_behaviour: z.string().optional(),
+  // Host tab — maximum tolerated live-migration downtime in ms; the engine
+  // default applies when unset. JSON-string on the live engine.
+  migration_downtime: z.coerce.number().optional(),
+  // Host tab — per-VM migration options. auto_converge/compressed/encrypted are
+  // api-model InheritableBoolean — the string enum 'true' | 'false' | 'inherit',
+  // NOT a JSON boolean ('inherit' = follow the cluster). policy is a bare
+  // { id } guid like the cluster's. parallel_migrations_policy (4.7+) adds
+  // inherit | auto | auto_parallel | disabled | custom (+ count 2..255).
+  migration: z
+    .looseObject({
+      auto_converge: z.string().optional(),
+      compressed: z.string().optional(),
+      encrypted: z.string().optional(),
+      policy: z.looseObject({ id: z.string().optional() }).optional(),
+      parallel_migrations_policy: z.string().optional(),
+      custom_parallel_migrations: z.coerce.number().optional(),
+    })
+    .optional(),
+  // Console depth — guest single sign-on. methods.method[] holds { id:
+  // 'guest_agent' } when SSO is on; an empty/absent list means disabled.
+  sso: z
+    .looseObject({
+      methods: z
+        .looseObject({
+          method: z.array(z.looseObject({ id: z.string().optional() })).optional(),
+        })
+        .optional(),
+    })
+    .optional(),
+  // Resource Allocation — optimal per-vNIC queue count (4.2.5+).
+  multi_queues_enabled: z.union([z.boolean(), z.stringbool()]).optional(),
+  // Resource Allocation — VirtIO-SCSI controller multi-queue (4.4.5+); the
+  // explicit queue count (4.4.8+) rides only when set (else auto-derived).
+  virtio_scsi_multi_queues_enabled: z.union([z.boolean(), z.stringbool()]).optional(),
+  virtio_scsi_multi_queues: z.coerce.number().optional(),
   memory_policy: z
     .looseObject({
       guaranteed: z.coerce.number().optional(),

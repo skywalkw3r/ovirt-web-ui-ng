@@ -202,6 +202,72 @@ export function ResourceAllocationSection({
           onChange={(_event, checked) => set('virtioScsiEnabled', checked)}
         />
       </FormGroup>
+
+      {/* VirtIO-SCSI queue tuning only applies while the controller exists. */}
+      {draft.virtioScsiEnabled && (
+        <>
+          <FormGroup
+            label={t('vm.edit.resources.virtioScsiMq')}
+            fieldId="edit-vm-virtio-scsi-mq"
+            labelHelp={
+              <FieldHelp
+                field={t('vm.edit.resources.virtioScsiMq')}
+                content={t('fieldHelp.vm.virtioScsiMq')}
+              />
+            }
+          >
+            <Switch
+              id="edit-vm-virtio-scsi-mq"
+              aria-label={t('vm.edit.resources.virtioScsiMq')}
+              isChecked={draft.virtioScsiMultiQueuesEnabled}
+              onChange={(_event, checked) => set('virtioScsiMultiQueuesEnabled', checked)}
+            />
+          </FormGroup>
+
+          {draft.virtioScsiMultiQueuesEnabled && (
+            <FormGroup
+              label={t('vm.edit.resources.virtioScsiMq.count')}
+              fieldId="edit-vm-virtio-scsi-mq-count"
+              labelHelp={
+                <FieldHelp
+                  field={t('vm.edit.resources.virtioScsiMq.count')}
+                  content={t('fieldHelp.vm.virtioScsiMqCount')}
+                />
+              }
+            >
+              <TextInput
+                id="edit-vm-virtio-scsi-mq-count"
+                type="number"
+                min={0}
+                aria-label={t('vm.edit.resources.virtioScsiMq.count')}
+                placeholder={t('vm.edit.resources.virtioScsiMq.auto')}
+                value={draft.virtioScsiMultiQueues === 0 ? '' : draft.virtioScsiMultiQueues}
+                onChange={(_event, value) =>
+                  set('virtioScsiMultiQueues', value === '' ? 0 : Number(value))
+                }
+              />
+            </FormGroup>
+          )}
+        </>
+      )}
+
+      <FormGroup
+        label={t('vm.edit.resources.multiQueues')}
+        fieldId="edit-vm-multi-queues"
+        labelHelp={
+          <FieldHelp
+            field={t('vm.edit.resources.multiQueues')}
+            content={t('fieldHelp.vm.multiQueues')}
+          />
+        }
+      >
+        <Switch
+          id="edit-vm-multi-queues"
+          aria-label={t('vm.edit.resources.multiQueues')}
+          isChecked={draft.multiQueuesEnabled}
+          onChange={(_event, checked) => set('multiQueuesEnabled', checked)}
+        />
+      </FormGroup>
     </Form>
   )
 }

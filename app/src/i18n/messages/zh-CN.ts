@@ -4138,4 +4138,148 @@ export const zhCN: LocaleCatalog = {
   'exportOva.host.placeholder': '选择一个主机',
   'exportOva.item': '导出为 OVA',
   'exportOva.title': '将 {name} 导出为 OVA',
+  // ── 集群 + 虚拟机编辑对话框深化（与 webadmin 对齐） ─────────────────────────
+  'clusterForm.comment.ariaLabel': '集群注释',
+  'clusterForm.cpuArch': 'CPU 架构',
+  'clusterForm.arch.auto': '自动检测',
+  'clusterForm.biosType': '芯片组/固件类型',
+  'clusterForm.biosType.auto': '自动检测',
+  'clusterForm.bios.i440fx': 'I440FX 芯片组与 BIOS',
+  'clusterForm.bios.q35SeaBios': 'Q35 芯片组与 BIOS',
+  'clusterForm.bios.q35Ovmf': 'Q35 芯片组与 UEFI',
+  'clusterForm.bios.q35SecureBoot': 'Q35 芯片组与 UEFI SecureBoot',
+  'clusterForm.fipsMode': 'FIPS 模式',
+  'clusterForm.fips.undefined': '自动检测',
+  'clusterForm.fips.disabled': '已禁用',
+  'clusterForm.fips.enabled': '已启用',
+  'clusterForm.virtService': '启用 Virt 服务',
+  'clusterForm.glusterService': '启用 Gluster 服务',
+  'clusterForm.logMaxThreshold': '最大内存使用日志阈值',
+  'clusterForm.logThresholdUnit': '日志阈值单位',
+  'clusterForm.logThreshold.percentage': '百分比',
+  'clusterForm.logThreshold.absolute': '绝对值（MB）',
+  'clusterForm.hwrng': '要求 /dev/hwrng 熵源',
+  'clusterForm.threadsAsCores': '将线程计为核心',
+  'clusterForm.ksm': '启用 KSM',
+  'clusterForm.ksmMerge': '跨 NUMA 节点合并内存页',
+  'clusterForm.haReservation': '启用高可用预留',
+  'clusterForm.resilience': '弹性策略',
+  'clusterForm.resilience.migrate': '迁移虚拟机',
+  'clusterForm.resilience.migrateHa': '仅迁移高可用虚拟机',
+  'clusterForm.resilience.doNotMigrate': '不迁移虚拟机',
+  'clusterForm.migrationEncrypted': '迁移加密',
+  'clusterForm.inheritable.inherit': '引擎默认',
+  'clusterForm.inheritable.true': '已启用',
+  'clusterForm.inheritable.false': '已禁用',
+  'clusterForm.parallelMigrations': '并行迁移',
+  'clusterForm.parallel.disabled': '已禁用',
+  'clusterForm.parallel.auto': '自动',
+  'clusterForm.parallel.autoParallel': '自动并行',
+  'clusterForm.parallel.custom': '自定义',
+  'clusterForm.parallelConnections': '迁移连接数',
+  'clusterForm.skipGlusterBricks': '当 gluster brick 处于活动状态时跳过隔离',
+  'clusterForm.skipGlusterQuorum': '当会破坏 gluster 仲裁时跳过隔离',
+  'clusterForm.vncEncryption': '启用 VNC 加密',
+  'fieldHelp.cluster.cpuArch':
+    '集群主机的 CPU 架构（x86_64、ppc64、s390x、aarch64）。自动检测会根据所选 CPU 类型或第一台加入的主机推导。',
+  'fieldHelp.cluster.biosType':
+    '集群中新虚拟机的默认芯片组和固件：现代客户机使用带 BIOS 或 UEFI 的 Q35，I440FX 仅用于旧版兼容。自动检测由引擎按架构选择；各虚拟机可单独覆盖。',
+  'fieldHelp.cluster.fipsMode':
+    '集群主机是否运行在 FIPS 140-2 模式。自动检测采用第一台主机的模式；同一集群的所有主机必须一致。',
+  'fieldHelp.cluster.virtService': '此集群的主机运行虚拟机。仅在纯 Gluster 存储集群上禁用。',
+  'fieldHelp.cluster.glusterService':
+    '此集群的主机提供 GlusterFS 存储 brick。启用卷视图和 gluster 隔离保护。',
+  'fieldHelp.cluster.logThreshold':
+    '当主机已用内存超过该阈值时在审计日志中写入警告，可按其内存的百分比或以 MB 为单位的绝对值。',
+  'fieldHelp.cluster.hwrng':
+    '要求每台主机提供 /dev/hwrng 硬件熵设备，使虚拟机可将其用作随机数生成器来源。仅当所有主机都有该硬件时才启用。',
+  'fieldHelp.cluster.threadsAsCores':
+    '将 SMT 线程作为可调度核心公开：每台主机可承载更多 vCPU，但失去按核心的性能保证。',
+  'fieldHelp.cluster.ksm':
+    '内核同页合并（KSM）会对主机上各虚拟机的相同内存页去重，在密集集群中回收内存，但有一定 CPU 开销。',
+  'fieldHelp.cluster.ksmMerge':
+    '允许 KSM 跨 NUMA 节点合并内存页。节省更多内存，但远程访问可能拖慢对 NUMA 敏感的负载；禁用可使合并保持在节点内。',
+  'fieldHelp.cluster.haReservation':
+    '持续校验集群是否保留足够的空闲容量，以便在单台主机故障后重启其高可用虚拟机，不足时发出警报。',
+  'fieldHelp.cluster.resilience':
+    '主机故障后其虚拟机的处理方式：全部迁移、仅迁移高可用虚拟机，或保持关闭直到主机恢复。',
+  'fieldHelp.cluster.migrationEncrypted':
+    '加密主机间的实时迁移流量。“引擎默认”遵循引擎全局设置；在繁忙的迁移网络上加密会增加 CPU 开销。',
+  'fieldHelp.cluster.parallelMigrations':
+    '单次实时迁移可使用的连接数：“自动”由引擎决定，“自动并行”在合适的网络上启用多连接，“自定义”固定数量（2–255）。“引擎默认”遵循引擎全局设置。',
+  'fieldHelp.cluster.skipGlusterBricks':
+    '当主机的 gluster brick 仍在活动并提供数据时不隔离它，以免中断卷访问。',
+  'fieldHelp.cluster.skipGlusterQuorum':
+    '当隔离主机会破坏 gluster 卷仲裁并使卷变为只读时不隔离它。',
+  'fieldHelp.cluster.vncEncryption':
+    '加密集群虚拟机的 VNC 控制台流量。控制台客户端必须支持引擎 CA 签名的证书。',
+  'vm.edit.general.biosType': '芯片组/固件类型',
+  'vm.edit.general.bios.clusterDefault': '集群默认',
+  'vm.edit.general.startPaused': '以暂停模式启动',
+  'vm.edit.general.vmId': '虚拟机 ID',
+  'vm.edit.system.customEmulatedMachine': '自定义模拟机器',
+  'vm.edit.system.customCpuModel': '自定义 CPU 型号',
+  'vm.edit.system.clusterDefault.placeholder': '集群默认',
+  'vm.edit.console.sso.field': '单点登录',
+  'vm.edit.console.sso': '使用客户机代理单点登录',
+  'vm.edit.console.fileTransfer.field': 'SPICE 文件传输',
+  'vm.edit.console.fileTransfer': '启用拖放文件传输',
+  'vm.edit.console.copyPaste.field': 'SPICE 剪贴板',
+  'vm.edit.console.copyPaste': '启用剪贴板复制粘贴',
+  'vm.edit.host.migrationTuning': '迁移调优',
+  'vm.edit.host.migrationPolicy': '迁移策略',
+  'vm.edit.host.inherit': '集群默认',
+  'vm.edit.host.customDowntime': '使用自定义迁移停机时间',
+  'vm.edit.host.downtimeMs': '迁移停机时间（毫秒）',
+  'vm.edit.host.autoConverge': '迁移自动收敛',
+  'vm.edit.host.compressed': '启用迁移压缩',
+  'vm.edit.host.encrypted': '迁移加密',
+  'vm.edit.host.inheritable.on': '已启用',
+  'vm.edit.host.inheritable.off': '已禁用',
+  'vm.edit.host.parallelMigrations': '并行迁移',
+  'vm.edit.host.parallel.disabled': '已禁用',
+  'vm.edit.host.parallel.auto': '自动',
+  'vm.edit.host.parallel.autoParallel': '自动并行',
+  'vm.edit.host.parallel.custom': '自定义',
+  'vm.edit.host.parallelConnections': '迁移连接数',
+  'vm.edit.ha.resume': '恢复行为',
+  'vm.edit.ha.resume.autoResume': '自动恢复',
+  'vm.edit.ha.resume.leavePaused': '保持暂停',
+  'vm.edit.ha.resume.kill': '终止（kill）',
+  'vm.edit.resources.virtioScsiMq': 'VirtIO-SCSI 多队列',
+  'vm.edit.resources.virtioScsiMq.count': 'VirtIO-SCSI 队列数',
+  'vm.edit.resources.virtioScsiMq.auto': '自动',
+  'vm.edit.resources.multiQueues': '网络多队列',
+  'fieldHelp.vm.biosType':
+    '虚拟机的芯片组和固件。“集群默认”跟随集群；现代 Windows 客户机要求带 UEFI（或 SecureBoot）的 Q35，I440FX 仅用于旧系统。更改固件类型通常需要重装客户机。',
+  'fieldHelp.vm.startPaused':
+    '以暂停状态启动虚拟机，在客户机开始引导之前 — 便于先连接控制台以捕获早期引导输出。',
+  'fieldHelp.vm.customEmulatedMachine':
+    '为此虚拟机覆盖集群的 QEMU 机器类型（如 pc-q35-rhel9.2.0）。留空使用集群默认；此处拼写错误会导致虚拟机无法启动。',
+  'fieldHelp.vm.customCpuModel':
+    '为此虚拟机覆盖集群的 CPU 型号（如 Skylake-Server）。留空使用集群默认；该型号必须被虚拟机可运行的每台主机支持。',
+  'fieldHelp.vm.sso': '通过客户机代理，使用门户会话的凭据自动登录控制台用户到客户机。',
+  'fieldHelp.vm.spiceFileTransfer':
+    '允许通过 SPICE 通道将文件从客户端拖入客户机。仅限 SPICE 控制台。',
+  'fieldHelp.vm.spiceCopyPaste':
+    '允许通过 SPICE 通道在客户端与客户机之间复制粘贴。仅限 SPICE 控制台。',
+  'fieldHelp.vm.migrationPolicy':
+    '为此虚拟机覆盖集群的实时迁移收敛策略。“集群默认”继承集群的策略。',
+  'fieldHelp.vm.migrationDowntime':
+    '此虚拟机在实时迁移最后阶段可容忍的最长暂停（毫秒）。关闭时使用引擎默认值。',
+  'fieldHelp.vm.autoConverge':
+    '在迁移期间限制繁忙客户机的 CPU，使内存复制得以收敛。“集群默认”继承集群设置；仅在 Legacy 策略下生效。',
+  'fieldHelp.vm.migrationCompressed':
+    '压缩迁移内存流，以 CPU 开销换取带宽。“集群默认”继承集群设置；仅在 Legacy 策略下生效。',
+  'fieldHelp.vm.migrationEncrypted': '加密此虚拟机的实时迁移流量。“集群默认”继承集群设置。',
+  'fieldHelp.vm.parallelMigrations':
+    '此虚拟机实时迁移可使用的连接数：“自动”由引擎决定，“自动并行”启用多连接，“自定义”固定数量（2–255）。“集群默认”继承集群设置。',
+  'fieldHelp.vm.resumeBehaviour':
+    '虚拟机因存储 I/O 错误暂停后的行为：存储恢复后自动恢复、保持暂停等待手动处理，或被终止（以便高可用在别处重启它）。',
+  'fieldHelp.vm.virtioScsiMq':
+    '为 VirtIO-SCSI 控制器提供多个请求队列，提升多 vCPU、多磁盘虚拟机的存储吞吐量。',
+  'fieldHelp.vm.virtioScsiMqCount':
+    '确切的 VirtIO-SCSI 队列数。留空（自动）则根据虚拟机的 vCPU 和磁盘推导。',
+  'fieldHelp.vm.multiQueues':
+    '按虚拟机的 vCPU 为每个虚拟网卡分配最优队列数，提升多 vCPU 虚拟机的网络吞吐量。',
 }

@@ -72,11 +72,22 @@ export interface NovncConsoleProps {
    */
   resolveConnection: ResolveConnection
   onClose: () => void
+  /**
+   * Name of the machine this console is attached to, shown muted beside the
+   * connection badge so a wall of console tabs (or a blank guest screen) still
+   * tells you what you are looking at. Omitted while unknown.
+   */
+  vmName?: string
   /** Test seam: inject a fake RFB constructor. Defaults to the real noVNC RFB. */
   rfbFactory?: RfbFactory
 }
 
-export function NovncConsole({ resolveConnection, onClose, rfbFactory }: NovncConsoleProps) {
+export function NovncConsole({
+  resolveConnection,
+  onClose,
+  vmName,
+  rfbFactory,
+}: NovncConsoleProps) {
   const t = useT()
   const [status, setStatus] = useState<ConsoleStatus>('connecting')
   const [errorMessage, setErrorMessage] = useState<string | undefined>()
@@ -238,6 +249,23 @@ export function NovncConsole({ resolveConnection, onClose, rfbFactory }: NovncCo
         <StatusBadge color={STATUS_META[status].color}>
           <FormattedMessage id={STATUS_META[status].labelId} />
         </StatusBadge>
+        {/* The machine the console is attached to — muted, single-line, and
+            title-carrying so a long FQDN survives a narrow window. */}
+        {vmName !== undefined && vmName !== '' && (
+          <span
+            title={vmName}
+            style={{
+              color: 'var(--pf-t--global--text--color--subtle)',
+              fontSize: 'var(--pf-t--global--font--size--sm)',
+              maxWidth: '28ch',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {vmName}
+          </span>
+        )}
         <Divider
           orientation={{ default: 'vertical' }}
           style={{ blockSize: '1.25rem', alignSelf: 'center' }}

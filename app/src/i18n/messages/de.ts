@@ -4403,4 +4403,151 @@ export const de: LocaleCatalog = {
   'exportOva.host.placeholder': 'Host auswählen',
   'exportOva.item': 'Als OVA exportieren',
   'exportOva.title': '{name} als OVA exportieren',
+  // ── Cluster- + VM-Dialog-Vertiefung (Webadmin-Paritätspass) ────────────────
+  'clusterForm.comment.ariaLabel': 'Cluster-Kommentar',
+  'clusterForm.cpuArch': 'CPU-Architektur',
+  'clusterForm.arch.auto': 'Automatisch erkennen',
+  'clusterForm.biosType': 'Chipsatz-/Firmware-Typ',
+  'clusterForm.biosType.auto': 'Automatisch erkennen',
+  'clusterForm.bios.i440fx': 'I440FX-Chipsatz mit BIOS',
+  'clusterForm.bios.q35SeaBios': 'Q35-Chipsatz mit BIOS',
+  'clusterForm.bios.q35Ovmf': 'Q35-Chipsatz mit UEFI',
+  'clusterForm.bios.q35SecureBoot': 'Q35-Chipsatz mit UEFI SecureBoot',
+  'clusterForm.fipsMode': 'FIPS-Modus',
+  'clusterForm.fips.undefined': 'Automatisch erkennen',
+  'clusterForm.fips.disabled': 'Deaktiviert',
+  'clusterForm.fips.enabled': 'Aktiviert',
+  'clusterForm.virtService': 'Virt-Dienst aktivieren',
+  'clusterForm.glusterService': 'Gluster-Dienst aktivieren',
+  'clusterForm.logMaxThreshold': 'Protokollschwelle für maximale Speichernutzung',
+  'clusterForm.logThresholdUnit': 'Einheit der Protokollschwelle',
+  'clusterForm.logThreshold.percentage': 'Prozentsatz',
+  'clusterForm.logThreshold.absolute': 'Absoluter Wert (MB)',
+  'clusterForm.hwrng': '/dev/hwrng-Entropiequelle verlangen',
+  'clusterForm.threadsAsCores': 'Threads als Kerne zählen',
+  'clusterForm.ksm': 'KSM aktivieren',
+  'clusterForm.ksmMerge': 'Seiten über NUMA-Knoten hinweg zusammenführen',
+  'clusterForm.haReservation': 'HA-Reservierung aktivieren',
+  'clusterForm.resilience': 'Ausfallsicherheitsrichtlinie',
+  'clusterForm.resilience.migrate': 'Virtuelle Maschinen migrieren',
+  'clusterForm.resilience.migrateHa': 'Nur hochverfügbare virtuelle Maschinen migrieren',
+  'clusterForm.resilience.doNotMigrate': 'Virtuelle Maschinen nicht migrieren',
+  'clusterForm.migrationEncrypted': 'Migrationsverschlüsselung',
+  'clusterForm.inheritable.inherit': 'Engine-Standard',
+  'clusterForm.inheritable.true': 'Aktiviert',
+  'clusterForm.inheritable.false': 'Deaktiviert',
+  'clusterForm.parallelMigrations': 'Parallele Migrationen',
+  'clusterForm.parallel.disabled': 'Deaktiviert',
+  'clusterForm.parallel.auto': 'Automatisch',
+  'clusterForm.parallel.autoParallel': 'Automatisch parallel',
+  'clusterForm.parallel.custom': 'Benutzerdefiniert',
+  'clusterForm.parallelConnections': 'Migrationsverbindungen',
+  'clusterForm.skipGlusterBricks': 'Fencing überspringen, wenn Gluster-Bricks aktiv sind',
+  'clusterForm.skipGlusterQuorum': 'Fencing überspringen, wenn das Gluster-Quorum bräche',
+  'clusterForm.vncEncryption': 'VNC-Verschlüsselung aktivieren',
+  'fieldHelp.cluster.cpuArch':
+    'Die CPU-Architektur der Cluster-Hosts (x86_64, ppc64, s390x, aarch64). Automatisch erkennen leitet sie aus dem gewählten CPU-Typ oder dem ersten beitretenden Host ab.',
+  'fieldHelp.cluster.biosType':
+    'Chipsatz und Firmware-Standard für neue VMs im Cluster: Q35 mit BIOS oder UEFI für aktuelle Gastsysteme, I440FX für Altlast-Kompatibilität. Automatisch erkennen lässt die Engine je Architektur wählen; einzelne VMs können abweichen.',
+  'fieldHelp.cluster.fipsMode':
+    'Ob die Cluster-Hosts im FIPS-140-2-Modus laufen. Automatisch erkennen übernimmt den Modus des ersten Hosts; alle Hosts eines Clusters müssen übereinstimmen.',
+  'fieldHelp.cluster.virtService':
+    'Hosts in diesem Cluster führen virtuelle Maschinen aus. Nur für reine Gluster-Speichercluster deaktivieren.',
+  'fieldHelp.cluster.glusterService':
+    'Hosts in diesem Cluster stellen GlusterFS-Speicher-Bricks bereit. Aktiviert die Volume-Ansichten und die Gluster-Fencing-Schutzregeln.',
+  'fieldHelp.cluster.logThreshold':
+    'Schreibt eine Audit-Log-Warnung, wenn der genutzte Speicher eines Hosts diese Schwelle überschreitet — als Prozentsatz seines RAM oder als absoluter Wert in MB.',
+  'fieldHelp.cluster.hwrng':
+    'Verlangt von jedem Host das Hardware-Entropiegerät /dev/hwrng, damit VMs es als Zufallszahlenquelle nutzen können. Nur aktivieren, wenn alle Hosts die Hardware besitzen.',
+  'fieldHelp.cluster.threadsAsCores':
+    'SMT-Threads als einplanbare Kerne ausweisen — mehr vCPUs pro Host, aber ohne Garantie voller Kernleistung.',
+  'fieldHelp.cluster.ksm':
+    'Kernel Same-page Merging dedupliziert identische Speicherseiten der VMs eines Hosts und gewinnt auf dichten Clustern RAM zurück, kostet aber etwas CPU.',
+  'fieldHelp.cluster.ksmMerge':
+    'Erlaubt KSM, Seiten über NUMA-Knoten hinweg zusammenzuführen. Mehr Speicherersparnis, aber Remote-Zugriffe können NUMA-sensible Lasten bremsen; deaktivieren hält Zusammenführungen knotenlokal.',
+  'fieldHelp.cluster.haReservation':
+    'Prüft laufend, ob der Cluster genug freie Kapazität behält, um seine hochverfügbaren VMs nach dem Ausfall eines einzelnen Hosts neu zu starten, und alarmiert andernfalls.',
+  'fieldHelp.cluster.resilience':
+    'Was mit den VMs eines ausgefallenen Hosts geschieht: alle migrieren, nur die hochverfügbaren migrieren oder liegen lassen, bis der Host zurückkehrt.',
+  'fieldHelp.cluster.migrationEncrypted':
+    'Verschlüsselt Live-Migrationsverkehr zwischen Hosts. Engine-Standard folgt der engine-weiten Einstellung; Verschlüsselung kostet CPU auf ausgelasteten Migrationsnetzen.',
+  'fieldHelp.cluster.parallelMigrations':
+    'Wie viele Verbindungen eine einzelne Live-Migration nutzen darf: Automatisch entscheidet die Engine, Automatisch parallel erlaubt mehrere Verbindungen auf geeigneten Netzen, Benutzerdefiniert legt die Anzahl fest (2–255). Engine-Standard folgt der engine-weiten Einstellung.',
+  'fieldHelp.cluster.skipGlusterBricks':
+    'Einen Host nicht fencen, solange seine Gluster-Bricks noch aktiv sind und Daten ausliefern, um den Volume-Zugriff nicht zu unterbrechen.',
+  'fieldHelp.cluster.skipGlusterQuorum':
+    'Einen Host nicht fencen, wenn sein Ausfall das Gluster-Quorum bräche und Volumes schreibgeschützt würden.',
+  'fieldHelp.cluster.vncEncryption':
+    'Verschlüsselt VNC-Konsolenverkehr der Cluster-VMs. Konsolen-Clients müssen die CA-signierten Zertifikate der Engine unterstützen.',
+  'vm.edit.general.biosType': 'Chipsatz-/Firmware-Typ',
+  'vm.edit.general.bios.clusterDefault': 'Cluster-Standard',
+  'vm.edit.general.startPaused': 'Im Pausenmodus starten',
+  'vm.edit.general.vmId': 'VM-ID',
+  'vm.edit.system.customEmulatedMachine': 'Benutzerdefinierte emulierte Maschine',
+  'vm.edit.system.customCpuModel': 'Benutzerdefiniertes CPU-Modell',
+  'vm.edit.system.clusterDefault.placeholder': 'Cluster-Standard',
+  'vm.edit.console.sso.field': 'Single Sign-On',
+  'vm.edit.console.sso': 'Single Sign-On über den Gast-Agenten verwenden',
+  'vm.edit.console.fileTransfer.field': 'SPICE-Dateiübertragung',
+  'vm.edit.console.fileTransfer': 'Dateiübertragung per Drag-and-drop aktivieren',
+  'vm.edit.console.copyPaste.field': 'SPICE-Zwischenablage',
+  'vm.edit.console.copyPaste': 'Kopieren und Einfügen über die Zwischenablage aktivieren',
+  'vm.edit.host.migrationTuning': 'Migrations-Feineinstellung',
+  'vm.edit.host.migrationPolicy': 'Migrationsrichtlinie',
+  'vm.edit.host.inherit': 'Cluster-Standard',
+  'vm.edit.host.customDowntime': 'Benutzerdefinierte Migrations-Downtime verwenden',
+  'vm.edit.host.downtimeMs': 'Migrations-Downtime (ms)',
+  'vm.edit.host.autoConverge': 'Migrationen automatisch konvergieren',
+  'vm.edit.host.compressed': 'Migrationskomprimierung aktivieren',
+  'vm.edit.host.encrypted': 'Migrationsverschlüsselung',
+  'vm.edit.host.inheritable.on': 'Aktiviert',
+  'vm.edit.host.inheritable.off': 'Deaktiviert',
+  'vm.edit.host.parallelMigrations': 'Parallele Migrationen',
+  'vm.edit.host.parallel.disabled': 'Deaktiviert',
+  'vm.edit.host.parallel.auto': 'Automatisch',
+  'vm.edit.host.parallel.autoParallel': 'Automatisch parallel',
+  'vm.edit.host.parallel.custom': 'Benutzerdefiniert',
+  'vm.edit.host.parallelConnections': 'Migrationsverbindungen',
+  'vm.edit.ha.resume': 'Fortsetzungsverhalten',
+  'vm.edit.ha.resume.autoResume': 'Automatisch fortsetzen',
+  'vm.edit.ha.resume.leavePaused': 'Pausiert lassen',
+  'vm.edit.ha.resume.kill': 'Beenden (kill)',
+  'vm.edit.resources.virtioScsiMq': 'VirtIO-SCSI-Multi-Queues',
+  'vm.edit.resources.virtioScsiMq.count': 'Anzahl der VirtIO-SCSI-Queues',
+  'vm.edit.resources.virtioScsiMq.auto': 'Automatisch',
+  'vm.edit.resources.multiQueues': 'Netzwerk-Multi-Queues',
+  'fieldHelp.vm.biosType':
+    'Chipsatz und Firmware der VM. Cluster-Standard folgt dem Cluster; Q35 mit UEFI (oder SecureBoot) verlangen aktuelle Windows-Gäste, I440FX nur für Alt-Betriebssysteme. Ein Firmware-Wechsel erfordert meist eine Neuinstallation des Gasts.',
+  'fieldHelp.vm.startPaused':
+    'Startet die VM pausiert, bevor der Gast zu booten beginnt — nützlich, um zuerst eine Konsole zu verbinden und frühe Boot-Ausgaben zu sehen.',
+  'fieldHelp.vm.customEmulatedMachine':
+    'Überschreibt den QEMU-Maschinentyp des Clusters für diese VM (z. B. pc-q35-rhel9.2.0). Leer lassen für den Cluster-Standard; ein Tippfehler verhindert den Start der VM.',
+  'fieldHelp.vm.customCpuModel':
+    'Überschreibt das CPU-Modell des Clusters für diese VM (z. B. Skylake-Server). Leer lassen für den Cluster-Standard; jedes Ziel-Host-System muss das Modell unterstützen.',
+  'fieldHelp.vm.sso':
+    'Meldet den Konsolenbenutzer über den Gast-Agenten automatisch im Gast an, mit den Anmeldedaten der Portalsitzung.',
+  'fieldHelp.vm.spiceFileTransfer':
+    'Erlaubt das Ziehen von Dateien vom Client in den Gast über den SPICE-Kanal. Nur SPICE-Konsolen.',
+  'fieldHelp.vm.spiceCopyPaste':
+    'Erlaubt Kopieren und Einfügen zwischen Client und Gast über den SPICE-Kanal. Nur SPICE-Konsolen.',
+  'fieldHelp.vm.migrationPolicy':
+    'Überschreibt die Live-Migrations-Konvergenzstrategie des Clusters für diese VM. Cluster-Standard erbt die Richtlinie des Clusters.',
+  'fieldHelp.vm.migrationDowntime':
+    'Die längste Pause (in Millisekunden), die diese VM in der Endphase einer Live-Migration tolerieren darf. Aus verwendet den Engine-Standard.',
+  'fieldHelp.vm.autoConverge':
+    'Drosselt die CPU eines beschäftigten Gasts während der Migration, damit das Speicherkopieren konvergiert. Cluster-Standard erbt die Cluster-Einstellung; wirkt nur mit der Legacy-Richtlinie.',
+  'fieldHelp.vm.migrationCompressed':
+    'Komprimiert Migrations-Speicherströme und spart Bandbreite gegen CPU-Kosten. Cluster-Standard erbt die Cluster-Einstellung; wirkt nur mit der Legacy-Richtlinie.',
+  'fieldHelp.vm.migrationEncrypted':
+    'Verschlüsselt den Live-Migrationsverkehr dieser VM. Cluster-Standard erbt die Cluster-Einstellung.',
+  'fieldHelp.vm.parallelMigrations':
+    'Wie viele Verbindungen die Live-Migration dieser VM nutzen darf: Automatisch entscheidet die Engine, Automatisch parallel erlaubt mehrere Verbindungen, Benutzerdefiniert legt die Anzahl fest (2–255). Cluster-Standard erbt die Cluster-Einstellung.',
+  'fieldHelp.vm.resumeBehaviour':
+    'Was die VM nach einer Pause durch einen Speicher-E/A-Fehler tut: automatisch fortsetzen, sobald der Speicher wieder da ist, pausiert bleiben für manuelles Eingreifen oder beendet werden (damit HA sie anderswo neu startet).',
+  'fieldHelp.vm.virtioScsiMq':
+    'Gibt dem VirtIO-SCSI-Controller mehrere Anfrage-Queues und verbessert den Speicherdurchsatz von Multi-vCPU-VMs mit vielen Festplatten.',
+  'fieldHelp.vm.virtioScsiMqCount':
+    'Die genaue Anzahl der VirtIO-SCSI-Queues. Leer lassen (Automatisch), um sie aus vCPUs und Festplatten der VM abzuleiten.',
+  'fieldHelp.vm.multiQueues':
+    'Gibt jeder virtuellen NIC eine optimale Queue-Anzahl auf Basis der vCPUs und verbessert den Netzwerkdurchsatz von Multi-vCPU-VMs.',
 }

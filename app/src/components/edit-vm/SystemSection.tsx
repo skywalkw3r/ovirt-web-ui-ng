@@ -241,6 +241,47 @@ export function SystemSection({ draft, set, overcommitPercent }: SystemSectionPr
             />
           </FormGroup>
         )}
+
+        {/* Free-text overrides (webadmin offers cluster-sourced dropdowns; the
+            candidate lists are not REST-exposed, so the value is typed —
+            documented divergence). Empty = cluster default. */}
+        <FormGroup
+          label={t('vm.edit.system.customEmulatedMachine')}
+          fieldId="edit-vm-emulated-machine"
+          labelHelp={
+            <FieldHelp
+              field={t('vm.edit.system.customEmulatedMachine')}
+              content={t('fieldHelp.vm.customEmulatedMachine')}
+            />
+          }
+        >
+          <TextInput
+            id="edit-vm-emulated-machine"
+            aria-label={t('vm.edit.system.customEmulatedMachine')}
+            placeholder={t('vm.edit.system.clusterDefault.placeholder')}
+            value={draft.customEmulatedMachine}
+            onChange={(_event, value) => set('customEmulatedMachine', value)}
+          />
+        </FormGroup>
+
+        <FormGroup
+          label={t('vm.edit.system.customCpuModel')}
+          fieldId="edit-vm-cpu-model"
+          labelHelp={
+            <FieldHelp
+              field={t('vm.edit.system.customCpuModel')}
+              content={t('fieldHelp.vm.customCpuModel')}
+            />
+          }
+        >
+          <TextInput
+            id="edit-vm-cpu-model"
+            aria-label={t('vm.edit.system.customCpuModel')}
+            placeholder={t('vm.edit.system.clusterDefault.placeholder')}
+            value={draft.customCpuModel}
+            onChange={(_event, value) => set('customCpuModel', value)}
+          />
+        </FormGroup>
       </FormSection>
     </Form>
   )

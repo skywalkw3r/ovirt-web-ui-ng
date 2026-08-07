@@ -4316,4 +4316,151 @@ export const tr: LocaleCatalog = {
   'exportOva.host.placeholder': 'Bir ana makine seçin',
   'exportOva.item': 'OVA olarak dışa aktar',
   'exportOva.title': '{name} OVA olarak dışa aktar',
+  // ── Küme + VM düzenleme iletişim kutusu derinleştirmesi (webadmin paritesi) ─
+  'clusterForm.comment.ariaLabel': 'Küme yorumu',
+  'clusterForm.cpuArch': 'CPU mimarisi',
+  'clusterForm.arch.auto': 'Otomatik algıla',
+  'clusterForm.biosType': 'Yonga seti/bellenim türü',
+  'clusterForm.biosType.auto': 'Otomatik algıla',
+  'clusterForm.bios.i440fx': 'BIOS ile I440FX yonga seti',
+  'clusterForm.bios.q35SeaBios': 'BIOS ile Q35 yonga seti',
+  'clusterForm.bios.q35Ovmf': 'UEFI ile Q35 yonga seti',
+  'clusterForm.bios.q35SecureBoot': 'UEFI SecureBoot ile Q35 yonga seti',
+  'clusterForm.fipsMode': 'FIPS modu',
+  'clusterForm.fips.undefined': 'Otomatik algıla',
+  'clusterForm.fips.disabled': 'Devre dışı',
+  'clusterForm.fips.enabled': 'Etkin',
+  'clusterForm.virtService': 'Virt hizmetini etkinleştir',
+  'clusterForm.glusterService': 'Gluster hizmetini etkinleştir',
+  'clusterForm.logMaxThreshold': 'En yüksek bellek kullanımı günlük eşiği',
+  'clusterForm.logThresholdUnit': 'Günlük eşiği birimi',
+  'clusterForm.logThreshold.percentage': 'Yüzde',
+  'clusterForm.logThreshold.absolute': 'Mutlak değer (MB)',
+  'clusterForm.hwrng': '/dev/hwrng entropi kaynağını zorunlu kıl',
+  'clusterForm.threadsAsCores': 'İş parçacıklarını çekirdek say',
+  'clusterForm.ksm': "KSM'yi etkinleştir",
+  'clusterForm.ksmMerge': 'Sayfaları NUMA düğümleri arasında birleştir',
+  'clusterForm.haReservation': 'HA rezervasyonunu etkinleştir',
+  'clusterForm.resilience': 'Dayanıklılık ilkesi',
+  'clusterForm.resilience.migrate': 'Sanal makineleri taşı',
+  'clusterForm.resilience.migrateHa': 'Yalnızca yüksek erişilebilir sanal makineleri taşı',
+  'clusterForm.resilience.doNotMigrate': 'Sanal makineleri taşıma',
+  'clusterForm.migrationEncrypted': 'Taşıma şifrelemesi',
+  'clusterForm.inheritable.inherit': 'Motor varsayılanı',
+  'clusterForm.inheritable.true': 'Etkin',
+  'clusterForm.inheritable.false': 'Devre dışı',
+  'clusterForm.parallelMigrations': 'Paralel taşımalar',
+  'clusterForm.parallel.disabled': 'Devre dışı',
+  'clusterForm.parallel.auto': 'Otomatik',
+  'clusterForm.parallel.autoParallel': 'Otomatik paralel',
+  'clusterForm.parallel.custom': 'Özel',
+  'clusterForm.parallelConnections': 'Taşıma bağlantıları',
+  'clusterForm.skipGlusterBricks': "Gluster brick'leri çalışıyorsa çitlemeyi atla",
+  'clusterForm.skipGlusterQuorum': 'Gluster çekirdek sayısı (quorum) bozulacaksa çitlemeyi atla',
+  'clusterForm.vncEncryption': 'VNC şifrelemesini etkinleştir',
+  'fieldHelp.cluster.cpuArch':
+    'Küme ana makinelerinin CPU mimarisi (x86_64, ppc64, s390x, aarch64). Otomatik algıla, seçilen CPU türünden veya katılan ilk ana makineden türetir.',
+  'fieldHelp.cluster.biosType':
+    'Kümedeki yeni sanal makineler için varsayılan yonga seti ve bellenim: güncel konuklar için BIOS veya UEFI ile Q35, eski uyumluluk için I440FX. Otomatik algıla, motorun mimariye göre seçmesine izin verir; tek tek sanal makineler bunu geçersiz kılabilir.',
+  'fieldHelp.cluster.fipsMode':
+    'Küme ana makinelerinin FIPS 140-2 modunda çalışıp çalışmadığı. Otomatik algıla ilk ana makinenin modunu benimser; bir kümedeki tüm ana makineler eşleşmelidir.',
+  'fieldHelp.cluster.virtService':
+    'Bu kümedeki ana makineler sanal makine çalıştırır. Yalnızca saf Gluster depolama kümelerinde devre dışı bırakın.',
+  'fieldHelp.cluster.glusterService':
+    "Bu kümedeki ana makineler GlusterFS depolama brick'leri sunar. Birim görünümlerini ve gluster çitleme korumalarını etkinleştirir.",
+  'fieldHelp.cluster.logThreshold':
+    'Bir ana makinenin kullanılan belleği bu eşiği aştığında denetim günlüğüne uyarı yazar; RAM yüzdesi veya MB cinsinden mutlak değer olarak.',
+  'fieldHelp.cluster.hwrng':
+    'Her ana makinenin /dev/hwrng donanım entropi aygıtını sunmasını zorunlu kılar; sanal makineler bunu rastgele sayı üreteci kaynağı olarak kullanabilir. Yalnızca tüm ana makinelerde donanım varsa etkinleştirin.',
+  'fieldHelp.cluster.threadsAsCores':
+    'SMT iş parçacıklarını zamanlanabilir çekirdek olarak sunar: ana makine başına daha çok vCPU, çekirdek başına performans garantisi pahasına.',
+  'fieldHelp.cluster.ksm':
+    'Kernel Same-page Merging, bir ana makinedeki sanal makineler arasında özdeş bellek sayfalarını tekilleştirir ve yoğun kümelerde biraz CPU maliyetiyle RAM geri kazanır.',
+  'fieldHelp.cluster.ksmMerge':
+    "KSM'nin sayfaları NUMA düğümleri arasında birleştirmesine izin verir. Daha çok bellek tasarrufu sağlar; ancak uzak erişim NUMA'ya duyarlı yükleri yavaşlatabilir. Birleştirmeleri düğüm içinde tutmak için devre dışı bırakın.",
+  'fieldHelp.cluster.haReservation':
+    'Kümenin, tek bir ana makine arızasından sonra yüksek erişilebilir sanal makinelerini yeniden başlatacak boş kapasiteyi koruduğunu sürekli doğrular ve korumadığında uyarı verir.',
+  'fieldHelp.cluster.resilience':
+    'Arızalanan ana makinenin sanal makinelerine ne olacağı: hepsini taşı, yalnızca yüksek erişilebilir olanları taşı veya ana makine dönene kadar kapalı bırak.',
+  'fieldHelp.cluster.migrationEncrypted':
+    'Ana makineler arasındaki canlı taşıma trafiğini şifreler. Motor varsayılanı, motor genel ayarını izler; şifreleme yoğun taşıma ağlarında CPU yükü ekler.',
+  'fieldHelp.cluster.parallelMigrations':
+    'Tek bir canlı taşımanın kullanabileceği bağlantı sayısı: Otomatik kararı motora bırakır, Otomatik paralel uygun ağlarda birden çok bağlantıyı etkinleştirir, Özel sayıyı sabitler (2–255). Motor varsayılanı, motor genel ayarını izler.',
+  'fieldHelp.cluster.skipGlusterBricks':
+    "Gluster brick'leri hâlâ çalışıp veri sunarken ana makineyi çitlemeyin; birim erişimi kesintiye uğramasın.",
+  'fieldHelp.cluster.skipGlusterQuorum':
+    'Ana makineyi kapatmak gluster birim çekirdek sayısını bozacak ve birimleri salt okunur yapacaksa çitlemeyin.',
+  'fieldHelp.cluster.vncEncryption':
+    'Küme sanal makinelerinin VNC konsol trafiğini şifreler. Konsol istemcileri motorun CA imzalı sertifikalarını desteklemelidir.',
+  'vm.edit.general.biosType': 'Yonga seti/bellenim türü',
+  'vm.edit.general.bios.clusterDefault': 'Küme varsayılanı',
+  'vm.edit.general.startPaused': 'Duraklatılmış modda başlat',
+  'vm.edit.general.vmId': 'VM kimliği',
+  'vm.edit.system.customEmulatedMachine': 'Özel öykünülmüş makine',
+  'vm.edit.system.customCpuModel': 'Özel CPU modeli',
+  'vm.edit.system.clusterDefault.placeholder': 'Küme varsayılanı',
+  'vm.edit.console.sso.field': 'Tek oturum açma',
+  'vm.edit.console.sso': 'Konuk aracısıyla tek oturum açmayı kullan',
+  'vm.edit.console.fileTransfer.field': 'SPICE dosya aktarımı',
+  'vm.edit.console.fileTransfer': 'Sürükle-bırak dosya aktarımını etkinleştir',
+  'vm.edit.console.copyPaste.field': 'SPICE panosu',
+  'vm.edit.console.copyPaste': 'Panoyla kopyala-yapıştırı etkinleştir',
+  'vm.edit.host.migrationTuning': 'Taşıma ayarı',
+  'vm.edit.host.migrationPolicy': 'Taşıma ilkesi',
+  'vm.edit.host.inherit': 'Küme varsayılanı',
+  'vm.edit.host.customDowntime': 'Özel taşıma kesinti süresi kullan',
+  'vm.edit.host.downtimeMs': 'Taşıma kesinti süresi (ms)',
+  'vm.edit.host.autoConverge': 'Taşımalarda otomatik yakınsama',
+  'vm.edit.host.compressed': 'Taşıma sıkıştırmasını etkinleştir',
+  'vm.edit.host.encrypted': 'Taşıma şifrelemesi',
+  'vm.edit.host.inheritable.on': 'Etkin',
+  'vm.edit.host.inheritable.off': 'Devre dışı',
+  'vm.edit.host.parallelMigrations': 'Paralel taşımalar',
+  'vm.edit.host.parallel.disabled': 'Devre dışı',
+  'vm.edit.host.parallel.auto': 'Otomatik',
+  'vm.edit.host.parallel.autoParallel': 'Otomatik paralel',
+  'vm.edit.host.parallel.custom': 'Özel',
+  'vm.edit.host.parallelConnections': 'Taşıma bağlantıları',
+  'vm.edit.ha.resume': 'Sürdürme davranışı',
+  'vm.edit.ha.resume.autoResume': 'Otomatik sürdür',
+  'vm.edit.ha.resume.leavePaused': 'Duraklatılmış bırak',
+  'vm.edit.ha.resume.kill': 'Sonlandır (kill)',
+  'vm.edit.resources.virtioScsiMq': 'VirtIO-SCSI çoklu kuyruk',
+  'vm.edit.resources.virtioScsiMq.count': 'VirtIO-SCSI kuyruk sayısı',
+  'vm.edit.resources.virtioScsiMq.auto': 'Otomatik',
+  'vm.edit.resources.multiQueues': 'Ağ çoklu kuyrukları',
+  'fieldHelp.vm.biosType':
+    'Sanal makinenin yonga seti ve bellenimi. Küme varsayılanı kümeyi izler; güncel Windows konukları UEFI (veya SecureBoot) ile Q35 ister, I440FX yalnızca eski işletim sistemleri içindir. Bellenim türünü değiştirmek genellikle konuğun yeniden kurulmasını gerektirir.',
+  'fieldHelp.vm.startPaused':
+    'Sanal makineyi konuk önyüklemeye başlamadan önce duraklatılmış başlatır — önce konsol bağlayıp erken önyükleme çıktısını yakalamak için kullanışlıdır.',
+  'fieldHelp.vm.customEmulatedMachine':
+    "Bu VM için kümenin QEMU makine türünü geçersiz kılar (örn. pc-q35-rhel9.2.0). Küme varsayılanı için boş bırakın; buradaki bir yazım hatası VM'nin başlamasını engeller.",
+  'fieldHelp.vm.customCpuModel':
+    'Bu VM için kümenin CPU modelini geçersiz kılar (örn. Skylake-Server). Küme varsayılanı için boş bırakın; model, VM’nin çalışabileceği her ana makinede desteklenmelidir.',
+  'fieldHelp.vm.sso':
+    'Konsol kullanıcısını, portal oturumunun kimlik bilgileriyle konuk aracısı üzerinden konuğa otomatik oturum açtırır.',
+  'fieldHelp.vm.spiceFileTransfer':
+    'SPICE kanalı üzerinden istemciden konuğa dosya sürüklemeye izin verir. Yalnızca SPICE konsolları.',
+  'fieldHelp.vm.spiceCopyPaste':
+    'SPICE kanalı üzerinden istemci ile konuk arasında kopyala-yapıştıra izin verir. Yalnızca SPICE konsolları.',
+  'fieldHelp.vm.migrationPolicy':
+    'Bu VM için kümenin canlı taşıma yakınsama stratejisini geçersiz kılar. Küme varsayılanı, kümenin ilkesini devralır.',
+  'fieldHelp.vm.migrationDowntime':
+    'Bu VM’nin canlı taşımanın son aşamasında tolere edebileceği en uzun duraklama (milisaniye). Kapalıyken motor varsayılanı kullanılır.',
+  'fieldHelp.vm.autoConverge':
+    'Taşıma sırasında meşgul konuğun CPU’sunu kısarak bellek kopyalamanın yakınsamasını sağlar. Küme varsayılanı, kümenin ayarını devralır; yalnızca Legacy ilkesiyle geçerlidir.',
+  'fieldHelp.vm.migrationCompressed':
+    'Taşıma bellek akışlarını sıkıştırarak CPU maliyeti karşılığında bant genişliğinden tasarruf eder. Küme varsayılanı, kümenin ayarını devralır; yalnızca Legacy ilkesiyle geçerlidir.',
+  'fieldHelp.vm.migrationEncrypted':
+    'Bu VM’nin canlı taşıma trafiğini şifreler. Küme varsayılanı, kümenin ayarını devralır.',
+  'fieldHelp.vm.parallelMigrations':
+    'Bu VM’nin canlı taşımasının kullanabileceği bağlantı sayısı: Otomatik kararı motora bırakır, Otomatik paralel birden çok bağlantıyı etkinleştirir, Özel sayıyı sabitler (2–255). Küme varsayılanı, kümenin ayarını devralır.',
+  'fieldHelp.vm.resumeBehaviour':
+    'Depolama G/Ç hatasıyla duraklatılan VM’nin davranışı: depolama düzelince otomatik sürdürme, elle müdahale için duraklatılmış kalma veya sonlandırılma (HA’nın başka yerde yeniden başlatabilmesi için).',
+  'fieldHelp.vm.virtioScsiMq':
+    'VirtIO-SCSI denetleyicisine birden çok istek kuyruğu vererek çok vCPU’lu ve çok diskli VM’lerin depolama verimini artırır.',
+  'fieldHelp.vm.virtioScsiMqCount':
+    'Tam VirtIO-SCSI kuyruk sayısı. VM’nin vCPU ve disklerinden türetmek için boş bırakın (Otomatik).',
+  'fieldHelp.vm.multiQueues':
+    'VM’nin vCPU’larına göre her sanal ağ kartına en uygun kuyruk sayısını vererek çok vCPU’lu VM’lerin ağ verimini artırır.',
 }

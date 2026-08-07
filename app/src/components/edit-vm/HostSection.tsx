@@ -3,6 +3,7 @@ import {
   Checkbox,
   Form,
   FormGroup,
+  FormSection,
   FormSelect,
   FormSelectOption,
   HelperText,
@@ -12,12 +13,19 @@ import {
   Stack,
   StackItem,
   Switch,
+  TextInput,
 } from '@patternfly/react-core'
 import type { UseQueryResult } from '@tanstack/react-query'
+import { MIGRATION_POLICIES } from '../../api/resources/clusters'
 import type { Host } from '../../api/schemas/host'
 import { useT } from '../../i18n/useT'
 import { FieldHelp } from '../forms/FieldHelp'
-import { type EditVmDraft, MIGRATION_MODE_OPTIONS } from './editVmDraft'
+import {
+  type EditVmDraft,
+  INHERITABLE_BOOLEAN_OPTIONS,
+  MIGRATION_MODE_OPTIONS,
+  VM_PARALLEL_MIGRATION_OPTIONS,
+} from './editVmDraft'
 
 // Host section of the Edit Virtual Machine modal: where the VM is allowed to
 // start/run (placement_policy.hosts), its migration mode
@@ -152,6 +160,185 @@ export function HostSection({
           onChange={(_event, checked) => set('hostPassthroughCpu', checked)}
         />
       </FormGroup>
+
+      <FormSection title={t('vm.edit.host.migrationTuning')} titleElement="h3">
+        {/* Per-VM migration policy — the same engine built-ins the cluster form
+            lists (no REST collection); '' inherits the cluster's policy. */}
+        <FormGroup
+          label={t('vm.edit.host.migrationPolicy')}
+          fieldId="edit-vm-host-migration-policy"
+          labelHelp={
+            <FieldHelp
+              field={t('vm.edit.host.migrationPolicy')}
+              content={t('fieldHelp.vm.migrationPolicy')}
+            />
+          }
+        >
+          <FormSelect
+            id="edit-vm-host-migration-policy"
+            aria-label={t('vm.edit.host.migrationPolicy')}
+            value={draft.vmMigrationPolicyId}
+            onChange={(_event, value) => set('vmMigrationPolicyId', value)}
+          >
+            <FormSelectOption value="" label={t('vm.edit.host.inherit')} />
+            {MIGRATION_POLICIES.map((policy) => (
+              <FormSelectOption key={policy.id} value={policy.id} label={policy.name} />
+            ))}
+            {draft.vmMigrationPolicyId !== '' &&
+              !MIGRATION_POLICIES.some((policy) => policy.id === draft.vmMigrationPolicyId) && (
+                <FormSelectOption
+                  value={draft.vmMigrationPolicyId}
+                  label={t('clusterForm.migrationPolicy.custom', { id: draft.vmMigrationPolicyId })}
+                />
+              )}
+          </FormSelect>
+        </FormGroup>
+
+        <FormGroup
+          label={t('vm.edit.host.customDowntime')}
+          fieldId="edit-vm-host-downtime-enabled"
+          labelHelp={
+            <FieldHelp
+              field={t('vm.edit.host.customDowntime')}
+              content={t('fieldHelp.vm.migrationDowntime')}
+            />
+          }
+        >
+          <Switch
+            id="edit-vm-host-downtime-enabled"
+            aria-label={t('vm.edit.host.customDowntime')}
+            isChecked={draft.migrationDowntimeEnabled}
+            onChange={(_event, checked) => set('migrationDowntimeEnabled', checked)}
+          />
+        </FormGroup>
+
+        {draft.migrationDowntimeEnabled && (
+          <FormGroup
+            label={t('vm.edit.host.downtimeMs')}
+            isRequired
+            fieldId="edit-vm-host-downtime"
+          >
+            <TextInput
+              id="edit-vm-host-downtime"
+              type="number"
+              min={1}
+              aria-label={t('vm.edit.host.downtimeMs')}
+              value={draft.migrationDowntime === 0 ? '' : draft.migrationDowntime}
+              onChange={(_event, value) =>
+                set('migrationDowntime', value === '' ? 0 : Number(value))
+              }
+            />
+          </FormGroup>
+        )}
+
+        <FormGroup
+          label={t('vm.edit.host.autoConverge')}
+          fieldId="edit-vm-host-auto-converge"
+          labelHelp={
+            <FieldHelp
+              field={t('vm.edit.host.autoConverge')}
+              content={t('fieldHelp.vm.autoConverge')}
+            />
+          }
+        >
+          <FormSelect
+            id="edit-vm-host-auto-converge"
+            aria-label={t('vm.edit.host.autoConverge')}
+            value={draft.migrationAutoConverge}
+            onChange={(_event, value) => set('migrationAutoConverge', value)}
+          >
+            {INHERITABLE_BOOLEAN_OPTIONS.map((option) => (
+              <FormSelectOption key={option.value} value={option.value} label={t(option.labelId)} />
+            ))}
+          </FormSelect>
+        </FormGroup>
+
+        <FormGroup
+          label={t('vm.edit.host.compressed')}
+          fieldId="edit-vm-host-compressed"
+          labelHelp={
+            <FieldHelp
+              field={t('vm.edit.host.compressed')}
+              content={t('fieldHelp.vm.migrationCompressed')}
+            />
+          }
+        >
+          <FormSelect
+            id="edit-vm-host-compressed"
+            aria-label={t('vm.edit.host.compressed')}
+            value={draft.migrationCompressed}
+            onChange={(_event, value) => set('migrationCompressed', value)}
+          >
+            {INHERITABLE_BOOLEAN_OPTIONS.map((option) => (
+              <FormSelectOption key={option.value} value={option.value} label={t(option.labelId)} />
+            ))}
+          </FormSelect>
+        </FormGroup>
+
+        <FormGroup
+          label={t('vm.edit.host.encrypted')}
+          fieldId="edit-vm-host-encrypted"
+          labelHelp={
+            <FieldHelp
+              field={t('vm.edit.host.encrypted')}
+              content={t('fieldHelp.vm.migrationEncrypted')}
+            />
+          }
+        >
+          <FormSelect
+            id="edit-vm-host-encrypted"
+            aria-label={t('vm.edit.host.encrypted')}
+            value={draft.migrationEncrypted}
+            onChange={(_event, value) => set('migrationEncrypted', value)}
+          >
+            {INHERITABLE_BOOLEAN_OPTIONS.map((option) => (
+              <FormSelectOption key={option.value} value={option.value} label={t(option.labelId)} />
+            ))}
+          </FormSelect>
+        </FormGroup>
+
+        <FormGroup
+          label={t('vm.edit.host.parallelMigrations')}
+          fieldId="edit-vm-host-parallel"
+          labelHelp={
+            <FieldHelp
+              field={t('vm.edit.host.parallelMigrations')}
+              content={t('fieldHelp.vm.parallelMigrations')}
+            />
+          }
+        >
+          <FormSelect
+            id="edit-vm-host-parallel"
+            aria-label={t('vm.edit.host.parallelMigrations')}
+            value={draft.parallelMigrationsPolicy}
+            onChange={(_event, value) => set('parallelMigrationsPolicy', value)}
+          >
+            {VM_PARALLEL_MIGRATION_OPTIONS.map((option) => (
+              <FormSelectOption key={option.value} value={option.value} label={t(option.labelId)} />
+            ))}
+          </FormSelect>
+        </FormGroup>
+
+        {draft.parallelMigrationsPolicy === 'custom' && (
+          <FormGroup
+            label={t('vm.edit.host.parallelConnections')}
+            isRequired
+            fieldId="edit-vm-host-parallel-count"
+          >
+            <TextInput
+              id="edit-vm-host-parallel-count"
+              type="number"
+              min={2}
+              max={255}
+              aria-label={t('vm.edit.host.parallelConnections')}
+              value={draft.customParallelMigrations === 0 ? '' : draft.customParallelMigrations}
+              onChange={(_event, value) =>
+                set('customParallelMigrations', value === '' ? 0 : Number(value))
+              }
+            />
+          </FormGroup>
+        )}
+      </FormSection>
     </Form>
   )
 }

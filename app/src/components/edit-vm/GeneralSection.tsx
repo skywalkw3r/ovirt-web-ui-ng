@@ -11,22 +11,30 @@ import {
 } from '@patternfly/react-core'
 import { useT } from '../../i18n/useT'
 import { FieldHelp } from '../forms/FieldHelp'
-import { OPTIMIZED_FOR_OPTIONS, vmNameError, type EditVmDraft } from './editVmDraft'
+import {
+  OPTIMIZED_FOR_OPTIONS,
+  VM_BIOS_TYPE_OPTIONS,
+  vmNameError,
+  type EditVmDraft,
+} from './editVmDraft'
 
 // Presentational "General" section of the Edit Virtual Machine modal. It owns
 // no state and fetches nothing — the modal passes the shared draft plus the
 // already-loaded cluster and operating-system option lists, and every change
-// flows back up through set().
+// flows back up through set(). templateName is display-only (a VM's template
+// binding is fixed at creation; webadmin shows it disabled too).
 export function GeneralSection({
   draft,
   set,
   clusters,
   operatingSystems,
+  templateName,
 }: {
   draft: EditVmDraft
   set: <K extends keyof EditVmDraft>(key: K, value: EditVmDraft[K]) => void
   clusters: { id: string; name?: string }[]
   operatingSystems: { name: string; description?: string }[]
+  templateName?: string
 }) {
   const t = useT()
   // Inline field validation (webadmin parity) — the modal's Save gate uses the
@@ -112,6 +120,25 @@ export function GeneralSection({
       </FormGroup>
 
       <FormGroup
+        label={t('vm.edit.general.biosType')}
+        fieldId="edit-vm-bios-type"
+        labelHelp={
+          <FieldHelp field={t('vm.edit.general.biosType')} content={t('fieldHelp.vm.biosType')} />
+        }
+      >
+        <FormSelect
+          id="edit-vm-bios-type"
+          aria-label={t('vm.edit.general.biosType')}
+          value={draft.biosType}
+          onChange={(_event, value) => set('biosType', value)}
+        >
+          {VM_BIOS_TYPE_OPTIONS.map((option) => (
+            <FormSelectOption key={option.value} value={option.value} label={t(option.labelId)} />
+          ))}
+        </FormSelect>
+      </FormGroup>
+
+      <FormGroup
         label={t('templateForm.optimizedFor')}
         fieldId="edit-vm-optimized-for"
         labelHelp={
@@ -149,6 +176,24 @@ export function GeneralSection({
       </FormGroup>
 
       <FormGroup
+        label={t('vm.edit.general.startPaused')}
+        fieldId="edit-vm-start-paused"
+        labelHelp={
+          <FieldHelp
+            field={t('vm.edit.general.startPaused')}
+            content={t('fieldHelp.vm.startPaused')}
+          />
+        }
+      >
+        <Switch
+          id="edit-vm-start-paused"
+          aria-label={t('vm.edit.general.startPaused')}
+          isChecked={draft.startPaused}
+          onChange={(_event, checked) => set('startPaused', checked)}
+        />
+      </FormGroup>
+
+      <FormGroup
         label={t('templateForm.deleteProtection')}
         fieldId="edit-vm-delete-protected"
         labelHelp={
@@ -163,6 +208,26 @@ export function GeneralSection({
           aria-label={t('templateForm.aria.deleteProtection')}
           isChecked={draft.deleteProtected}
           onChange={(_event, checked) => set('deleteProtected', checked)}
+        />
+      </FormGroup>
+
+      {/* Read-only identity rows, mirroring webadmin: the template binding is
+          fixed at creation and the VM ID is immutable. */}
+      <FormGroup label={t('vmGeneral.term.template')} fieldId="edit-vm-template">
+        <TextInput
+          id="edit-vm-template"
+          aria-label={t('vmGeneral.term.template')}
+          value={templateName ?? '—'}
+          readOnlyVariant="default"
+        />
+      </FormGroup>
+
+      <FormGroup label={t('vm.edit.general.vmId')} fieldId="edit-vm-id">
+        <TextInput
+          id="edit-vm-id"
+          aria-label={t('vm.edit.general.vmId')}
+          value={draft.id}
+          readOnlyVariant="default"
         />
       </FormGroup>
     </Form>

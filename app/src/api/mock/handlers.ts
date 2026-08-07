@@ -119,6 +119,32 @@ interface MockVm {
     kernel?: { version?: { full_version?: string } }
   }
   guest_time_zone?: { name?: string; utc_offset?: string }
+  // Edit VM — General depth: Start-in-Pause-Mode toggle.
+  start_paused?: boolean | string
+  // Edit VM — System depth: per-VM emulated machine / CPU model overrides.
+  custom_emulated_machine?: string
+  custom_cpu_model?: string
+  // Edit VM — Console depth: guest single sign-on methods (guest_agent when on).
+  sso?: { methods?: { method?: { id?: string }[] } }
+  // Edit VM — HA depth: resume behavior after a storage I/O error pause.
+  storage_error_resume_behaviour?: string
+  // Edit VM — Host depth: per-VM migration tuning. The InheritableBoolean trio
+  // rides as its string enum; downtime is ms (-1 = engine default).
+  migration_downtime?: number | string
+  migration?: {
+    auto_converge?: string
+    compressed?: string
+    encrypted?: string
+    policy?: { id?: string }
+    parallel_migrations_policy?: string
+    custom_parallel_migrations?: number | string
+  }
+  // Edit VM — Resource Allocation depth: queue tuning. The VirtIO-SCSI queue
+  // fields only render while the controller itself (virtio_scsi) is enabled.
+  virtio_scsi?: { enabled?: boolean | string }
+  multi_queues_enabled?: boolean | string
+  virtio_scsi_multi_queues_enabled?: boolean | string
+  virtio_scsi_multi_queues?: number | string
 }
 
 interface MockVmApplication {
@@ -759,23 +785,43 @@ interface MockClusterDetail {
   }
   // Migration Policy tab — the migration policy {id} plus a bandwidth block
   // (assignment_method: 'auto' | 'hypervisor_default' | 'custom'; custom_value
-  // in Mbps when custom). Scalars coerce string↔native.
+  // in Mbps when custom). Scalars coerce string↔native. encrypted is the
+  // InheritableBoolean STRING enum; parallel_migrations_policy (4.7+) carries
+  // its custom connection count only when 'custom'.
   migration?: {
     policy?: { id?: string }
     bandwidth?: { assignment_method?: string; custom_value?: number | string }
+    encrypted?: string
+    auto_converge?: string
+    compressed?: string
+    parallel_migrations_policy?: string
+    custom_parallel_migrations?: number | string
   }
   // Fencing tab — the fencing policy toggles. Booleans ride mixed with their
-  // JSON-string forms; threshold is a percent (25|50|75|100).
+  // JSON-string forms; threshold is a percent (25|50|75|100). The two gluster
+  // guards only matter on gluster-service clusters.
   fencing_policy?: {
     enabled?: boolean | string
     skip_if_sd_active?: { enabled?: boolean | string }
     skip_if_connectivity_broken?: { enabled?: boolean | string; threshold?: number | string }
+    skip_if_gluster_bricks_up?: boolean | string
+    skip_if_gluster_quorum_not_met?: boolean | string
   }
-  // Console tab — the SPICE proxy override URL (empty string clears it).
+  // Console tab — the SPICE proxy override URL (empty string clears it) + the
+  // cluster-wide VNC encryption toggle.
   display?: { proxy?: string }
+  vnc_encryption?: boolean | string
   // MAC Pool tab — the assigned pool {id} (name inlined on the read).
   mac_pool?: { id?: string; name?: string }
   error_handling?: { on_error?: string }
+  // General tab depth — chipset/firmware default, FIPS mode, the audit-log
+  // memory threshold (+unit) and the required entropy sources.
+  bios_type?: string
+  fips_mode?: string
+  log_max_memory_used_threshold?: number | string
+  log_max_memory_used_threshold_type?: string
+  ksm?: { enabled?: boolean | string; merge_across_nodes?: boolean | string }
+  required_rng_sources?: { required_rng_source?: string[] }
 }
 
 // A CPU profile slice the cluster CPU Profiles tab renders.
@@ -1126,6 +1172,28 @@ const initialVms = (): MockVm[] => [
     console: { enabled: 'true' },
     // Edit VM — System: serial number policy
     serial_number: { policy: 'host' },
+    // Edit VM — System depth: emulated-machine override set, CPU model default
+    custom_emulated_machine: 'pc-q35-rhel9.2.0',
+    // Edit VM — General depth: string form exercises the stringbool path
+    start_paused: 'false',
+    // Edit VM — Console depth: guest-agent SSO on
+    sso: { methods: { method: [{ id: 'guest_agent' }] } },
+    // Edit VM — HA depth: resume behavior after a storage error pause
+    storage_error_resume_behaviour: 'auto_resume',
+    // Edit VM — Host depth: migration tuning; string downtime exercises coercion
+    migration_downtime: '250',
+    migration: {
+      auto_converge: 'inherit',
+      compressed: 'false',
+      encrypted: 'inherit',
+      parallel_migrations_policy: 'inherit',
+    },
+    // Edit VM — Resource Allocation depth: queue tuning, mixed scalar forms
+    // (the controller itself must be on for the queue fields to render)
+    virtio_scsi: { enabled: 'true' },
+    multi_queues_enabled: 'true',
+    virtio_scsi_multi_queues_enabled: true,
+    virtio_scsi_multi_queues: '4',
     // Edit VM — HA: VM lease on the data domain (also feeds sd-01 Leases tab)
     lease: { storage_domain: { id: 'sd-01' } },
     high_availability: { enabled: 'true', priority: '50' },
@@ -3376,6 +3444,19 @@ const clusterDetails: Record<string, MockClusterDetail> = {
     firewall_type: 'firewalld',
     scheduling_policy: { id: 'sp-01', name: 'evenly_distributed' },
     error_handling: { on_error: 'migrate' },
+    // General/Optimization/Migration/Console depth — mixed scalar forms so the
+    // extended ClusterSchema coercion paths run
+    bios_type: 'q35_sea_bios',
+    fips_mode: 'disabled',
+    vnc_encryption: 'false',
+    log_max_memory_used_threshold: '95',
+    log_max_memory_used_threshold_type: 'percentage',
+    ksm: { enabled: 'true', merge_across_nodes: false },
+    required_rng_sources: { required_rng_source: ['urandom'] },
+    migration: {
+      encrypted: 'inherit',
+      parallel_migrations_policy: 'inherit',
+    },
   },
   'cluster-02': {
     id: 'cluster-02',
@@ -3393,6 +3474,23 @@ const clusterDetails: Record<string, MockClusterDetail> = {
     switch_type: 'ovs',
     firewall_type: 'iptables',
     scheduling_policy: { id: 'sp-02', name: 'power_saving' },
+    // gluster cluster depth — native/string boolean mix; the gluster fencing
+    // guards are only rendered for gluster-service clusters
+    bios_type: 'q35_ovmf',
+    fips_mode: 'undefined',
+    vnc_encryption: true,
+    ksm: { enabled: false, merge_across_nodes: 'true' },
+    fencing_policy: {
+      enabled: 'true',
+      skip_if_sd_active: { enabled: true },
+      skip_if_gluster_bricks_up: 'true',
+      skip_if_gluster_quorum_not_met: true,
+    },
+    migration: {
+      encrypted: 'true',
+      parallel_migrations_policy: 'custom',
+      custom_parallel_migrations: '4',
+    },
   },
 }
 
@@ -10157,6 +10255,20 @@ function addCluster(body: unknown): unknown {
     fencing_policy: spec.fencing_policy,
     display: spec.display,
     mac_pool: spec.mac_pool,
+    // settings-parity pass — the General/Optimization/Migration/Console depth
+    // fields the widened create body now carries
+    virt_service: spec.virt_service,
+    gluster_service: spec.gluster_service,
+    threads_as_cores: spec.threads_as_cores,
+    ha_reservation: spec.ha_reservation,
+    ksm: spec.ksm,
+    error_handling: spec.error_handling,
+    vnc_encryption: spec.vnc_encryption,
+    fips_mode: spec.fips_mode,
+    bios_type: spec.bios_type,
+    log_max_memory_used_threshold: spec.log_max_memory_used_threshold,
+    log_max_memory_used_threshold_type: spec.log_max_memory_used_threshold_type,
+    required_rng_sources: spec.required_rng_sources,
   }
   clusters.push({
     id,

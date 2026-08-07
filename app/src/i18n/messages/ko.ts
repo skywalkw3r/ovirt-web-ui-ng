@@ -4272,4 +4272,151 @@ export const ko: LocaleCatalog = {
   'exportOva.host.placeholder': '호스트 선택',
   'exportOva.item': 'OVA로 내보내기',
   'exportOva.title': '{name}을(를) OVA로 내보내기',
+  // ── 클러스터 + VM 편집 대화 상자 확장 (webadmin 패리티) ─────────────────────
+  'clusterForm.comment.ariaLabel': '클러스터 코멘트',
+  'clusterForm.cpuArch': 'CPU 아키텍처',
+  'clusterForm.arch.auto': '자동 감지',
+  'clusterForm.biosType': '칩셋/펌웨어 유형',
+  'clusterForm.biosType.auto': '자동 감지',
+  'clusterForm.bios.i440fx': 'I440FX 칩셋 + BIOS',
+  'clusterForm.bios.q35SeaBios': 'Q35 칩셋 + BIOS',
+  'clusterForm.bios.q35Ovmf': 'Q35 칩셋 + UEFI',
+  'clusterForm.bios.q35SecureBoot': 'Q35 칩셋 + UEFI SecureBoot',
+  'clusterForm.fipsMode': 'FIPS 모드',
+  'clusterForm.fips.undefined': '자동 감지',
+  'clusterForm.fips.disabled': '비활성화됨',
+  'clusterForm.fips.enabled': '활성화됨',
+  'clusterForm.virtService': 'Virt 서비스 활성화',
+  'clusterForm.glusterService': 'Gluster 서비스 활성화',
+  'clusterForm.logMaxThreshold': '최대 메모리 사용량 로그 임계값',
+  'clusterForm.logThresholdUnit': '로그 임계값 단위',
+  'clusterForm.logThreshold.percentage': '백분율',
+  'clusterForm.logThreshold.absolute': '절대값(MB)',
+  'clusterForm.hwrng': '/dev/hwrng 엔트로피 소스 필수화',
+  'clusterForm.threadsAsCores': '스레드를 코어로 계산',
+  'clusterForm.ksm': 'KSM 활성화',
+  'clusterForm.ksmMerge': 'NUMA 노드 간 페이지 병합',
+  'clusterForm.haReservation': 'HA 예약 활성화',
+  'clusterForm.resilience': '복원력 정책',
+  'clusterForm.resilience.migrate': '가상 머신 마이그레이션',
+  'clusterForm.resilience.migrateHa': '고가용성 가상 머신만 마이그레이션',
+  'clusterForm.resilience.doNotMigrate': '가상 머신을 마이그레이션하지 않음',
+  'clusterForm.migrationEncrypted': '마이그레이션 암호화',
+  'clusterForm.inheritable.inherit': '엔진 기본값',
+  'clusterForm.inheritable.true': '활성화됨',
+  'clusterForm.inheritable.false': '비활성화됨',
+  'clusterForm.parallelMigrations': '병렬 마이그레이션',
+  'clusterForm.parallel.disabled': '비활성화됨',
+  'clusterForm.parallel.auto': '자동',
+  'clusterForm.parallel.autoParallel': '자동 병렬',
+  'clusterForm.parallel.custom': '사용자 지정',
+  'clusterForm.parallelConnections': '마이그레이션 연결 수',
+  'clusterForm.skipGlusterBricks': 'gluster 브릭이 가동 중이면 펜싱 건너뛰기',
+  'clusterForm.skipGlusterQuorum': 'gluster 쿼럼이 깨질 경우 펜싱 건너뛰기',
+  'clusterForm.vncEncryption': 'VNC 암호화 활성화',
+  'fieldHelp.cluster.cpuArch':
+    '클러스터 호스트의 CPU 아키텍처(x86_64, ppc64, s390x, aarch64)입니다. 자동 감지는 선택한 CPU 유형이나 처음 합류한 호스트에서 유추합니다.',
+  'fieldHelp.cluster.biosType':
+    '클러스터의 새 VM에 대한 기본 칩셋과 펌웨어입니다. 최신 게스트는 BIOS 또는 UEFI가 있는 Q35를, 레거시 호환에는 I440FX를 사용합니다. 자동 감지는 아키텍처별로 엔진이 선택하며 개별 VM에서 재정의할 수 있습니다.',
+  'fieldHelp.cluster.fipsMode':
+    '클러스터 호스트가 FIPS 140-2 모드로 동작하는지 여부입니다. 자동 감지는 첫 호스트의 모드를 채택하며, 한 클러스터의 모든 호스트는 일치해야 합니다.',
+  'fieldHelp.cluster.virtService':
+    '이 클러스터의 호스트는 가상 머신을 실행합니다. 순수 Gluster 스토리지 클러스터에서만 비활성화하세요.',
+  'fieldHelp.cluster.glusterService':
+    '이 클러스터의 호스트는 GlusterFS 스토리지 브릭을 제공합니다. 볼륨 보기와 gluster 펜싱 보호 규칙이 활성화됩니다.',
+  'fieldHelp.cluster.logThreshold':
+    '호스트의 사용 메모리가 이 임계값(RAM 대비 백분율 또는 MB 단위 절대값)을 넘으면 감사 로그에 경고를 기록합니다.',
+  'fieldHelp.cluster.hwrng':
+    '모든 호스트가 하드웨어 엔트로피 장치 /dev/hwrng를 제공하도록 요구하여 VM이 난수 생성기 소스로 사용할 수 있게 합니다. 모든 호스트에 해당 하드웨어가 있을 때만 활성화하세요.',
+  'fieldHelp.cluster.threadsAsCores':
+    'SMT 스레드를 스케줄링 가능한 코어로 노출합니다. 호스트당 vCPU는 늘지만 코어별 성능 보장은 사라집니다.',
+  'fieldHelp.cluster.ksm':
+    'Kernel Same-page Merging은 호스트의 VM 간 동일한 메모리 페이지를 중복 제거하여 밀집 클러스터에서 RAM을 회수하며, 약간의 CPU 비용이 듭니다.',
+  'fieldHelp.cluster.ksmMerge':
+    'KSM이 NUMA 노드 간에 페이지를 병합하도록 허용합니다. 메모리 절약은 커지지만 원격 접근이 NUMA에 민감한 워크로드를 늦출 수 있습니다. 비활성화하면 병합이 노드 내에 머뭅니다.',
+  'fieldHelp.cluster.haReservation':
+    '단일 호스트 장애 후 고가용성 VM을 재시작할 여유 용량을 클러스터가 유지하는지 지속적으로 확인하고, 부족하면 경고를 발생시킵니다.',
+  'fieldHelp.cluster.resilience':
+    '장애 호스트의 VM 처리 방식: 모두 마이그레이션, 고가용성 VM만 마이그레이션, 또는 호스트가 복귀할 때까지 중지 상태로 두기.',
+  'fieldHelp.cluster.migrationEncrypted':
+    '호스트 간 라이브 마이그레이션 트래픽을 암호화합니다. 엔진 기본값은 엔진 전역 설정을 따르며, 혼잡한 마이그레이션 네트워크에서는 암호화가 CPU 부하를 더합니다.',
+  'fieldHelp.cluster.parallelMigrations':
+    '단일 라이브 마이그레이션이 사용할 수 있는 연결 수: 자동은 엔진이 결정하고, 자동 병렬은 가능한 네트워크에서 다중 연결을 활성화하며, 사용자 지정은 수를 고정합니다(2–255). 엔진 기본값은 엔진 전역 설정을 따릅니다.',
+  'fieldHelp.cluster.skipGlusterBricks':
+    'gluster 브릭이 가동되어 데이터를 제공하는 동안에는 호스트를 펜싱하지 않아 볼륨 접근이 끊기지 않게 합니다.',
+  'fieldHelp.cluster.skipGlusterQuorum':
+    '호스트를 내리면 gluster 볼륨 쿼럼이 깨져 볼륨이 읽기 전용이 될 경우 펜싱하지 않습니다.',
+  'fieldHelp.cluster.vncEncryption':
+    '클러스터 VM의 VNC 콘솔 트래픽을 암호화합니다. 콘솔 클라이언트는 엔진 CA가 서명한 인증서를 지원해야 합니다.',
+  'vm.edit.general.biosType': '칩셋/펌웨어 유형',
+  'vm.edit.general.bios.clusterDefault': '클러스터 기본값',
+  'vm.edit.general.startPaused': '일시 중지 모드로 시작',
+  'vm.edit.general.vmId': 'VM ID',
+  'vm.edit.system.customEmulatedMachine': '사용자 지정 에뮬레이트 머신',
+  'vm.edit.system.customCpuModel': '사용자 지정 CPU 모델',
+  'vm.edit.system.clusterDefault.placeholder': '클러스터 기본값',
+  'vm.edit.console.sso.field': '통합 인증(SSO)',
+  'vm.edit.console.sso': '게스트 에이전트 통합 인증 사용',
+  'vm.edit.console.fileTransfer.field': 'SPICE 파일 전송',
+  'vm.edit.console.fileTransfer': '끌어서 놓기 파일 전송 활성화',
+  'vm.edit.console.copyPaste.field': 'SPICE 클립보드',
+  'vm.edit.console.copyPaste': '클립보드 복사/붙여넣기 활성화',
+  'vm.edit.host.migrationTuning': '마이그레이션 튜닝',
+  'vm.edit.host.migrationPolicy': '마이그레이션 정책',
+  'vm.edit.host.inherit': '클러스터 기본값',
+  'vm.edit.host.customDowntime': '사용자 지정 마이그레이션 다운타임 사용',
+  'vm.edit.host.downtimeMs': '마이그레이션 다운타임(ms)',
+  'vm.edit.host.autoConverge': '마이그레이션 자동 수렴',
+  'vm.edit.host.compressed': '마이그레이션 압축 활성화',
+  'vm.edit.host.encrypted': '마이그레이션 암호화',
+  'vm.edit.host.inheritable.on': '활성화됨',
+  'vm.edit.host.inheritable.off': '비활성화됨',
+  'vm.edit.host.parallelMigrations': '병렬 마이그레이션',
+  'vm.edit.host.parallel.disabled': '비활성화됨',
+  'vm.edit.host.parallel.auto': '자동',
+  'vm.edit.host.parallel.autoParallel': '자동 병렬',
+  'vm.edit.host.parallel.custom': '사용자 지정',
+  'vm.edit.host.parallelConnections': '마이그레이션 연결 수',
+  'vm.edit.ha.resume': '재개 동작',
+  'vm.edit.ha.resume.autoResume': '자동으로 재개',
+  'vm.edit.ha.resume.leavePaused': '일시 중지 유지',
+  'vm.edit.ha.resume.kill': '강제 종료(kill)',
+  'vm.edit.resources.virtioScsiMq': 'VirtIO-SCSI 다중 큐',
+  'vm.edit.resources.virtioScsiMq.count': 'VirtIO-SCSI 큐 수',
+  'vm.edit.resources.virtioScsiMq.auto': '자동',
+  'vm.edit.resources.multiQueues': '네트워크 다중 큐',
+  'fieldHelp.vm.biosType':
+    'VM의 칩셋과 펌웨어입니다. 클러스터 기본값은 클러스터를 따릅니다. 최신 Windows 게스트는 UEFI(또는 SecureBoot)가 있는 Q35가 필요하며, I440FX는 오래된 OS 전용입니다. 펌웨어 유형을 바꾸면 대개 게스트를 재설치해야 합니다.',
+  'fieldHelp.vm.startPaused':
+    '게스트가 부팅을 시작하기 전에 VM을 일시 중지 상태로 시작합니다. 먼저 콘솔을 연결해 초기 부팅 출력을 확인할 때 유용합니다.',
+  'fieldHelp.vm.customEmulatedMachine':
+    '이 VM에 대해 클러스터의 QEMU 머신 유형을 재정의합니다(예: pc-q35-rhel9.2.0). 비워 두면 클러스터 기본값을 사용하며, 오타가 있으면 VM이 시작되지 않습니다.',
+  'fieldHelp.vm.customCpuModel':
+    '이 VM에 대해 클러스터의 CPU 모델을 재정의합니다(예: Skylake-Server). 비워 두면 클러스터 기본값을 사용하며, VM이 실행될 수 있는 모든 호스트가 그 모델을 지원해야 합니다.',
+  'fieldHelp.vm.sso':
+    '포털 세션의 자격 증명으로 게스트 에이전트를 통해 콘솔 사용자를 게스트에 자동 로그인시킵니다.',
+  'fieldHelp.vm.spiceFileTransfer':
+    'SPICE 채널을 통해 클라이언트에서 게스트로 파일을 끌어다 놓을 수 있게 합니다. SPICE 콘솔 전용입니다.',
+  'fieldHelp.vm.spiceCopyPaste':
+    'SPICE 채널을 통해 클라이언트와 게스트 간 복사/붙여넣기를 허용합니다. SPICE 콘솔 전용입니다.',
+  'fieldHelp.vm.migrationPolicy':
+    '이 VM에 대해 클러스터의 라이브 마이그레이션 수렴 전략을 재정의합니다. 클러스터 기본값은 해당 정책을 상속합니다.',
+  'fieldHelp.vm.migrationDowntime':
+    '라이브 마이그레이션 마지막 단계에서 이 VM이 견딜 수 있는 최대 중단 시간(밀리초)입니다. 끄면 엔진 기본값을 사용합니다.',
+  'fieldHelp.vm.autoConverge':
+    '마이그레이션 중 바쁜 게스트의 CPU를 제한해 메모리 복사가 수렴하게 합니다. 클러스터 기본값은 해당 설정을 상속하며, Legacy 정책에서만 적용됩니다.',
+  'fieldHelp.vm.migrationCompressed':
+    '마이그레이션 메모리 스트림을 압축해 CPU 비용으로 대역폭을 절약합니다. 클러스터 기본값은 해당 설정을 상속하며, Legacy 정책에서만 적용됩니다.',
+  'fieldHelp.vm.migrationEncrypted':
+    '이 VM의 라이브 마이그레이션 트래픽을 암호화합니다. 클러스터 기본값은 해당 설정을 상속합니다.',
+  'fieldHelp.vm.parallelMigrations':
+    '이 VM의 라이브 마이그레이션이 사용할 수 있는 연결 수: 자동은 엔진이 결정하고, 자동 병렬은 다중 연결을 활성화하며, 사용자 지정은 수를 고정합니다(2–255). 클러스터 기본값은 해당 설정을 상속합니다.',
+  'fieldHelp.vm.resumeBehaviour':
+    '스토리지 I/O 오류로 일시 중지된 뒤 VM의 동작: 스토리지가 복구되면 자동으로 재개, 수동 조치를 위해 일시 중지 유지, 또는 강제 종료(고가용성이 다른 곳에서 재시작하도록).',
+  'fieldHelp.vm.virtioScsiMq':
+    'VirtIO-SCSI 컨트롤러에 여러 요청 큐를 부여해 vCPU와 디스크가 많은 VM의 스토리지 처리량을 높입니다.',
+  'fieldHelp.vm.virtioScsiMqCount':
+    '정확한 VirtIO-SCSI 큐 수입니다. 비워 두면(자동) VM의 vCPU와 디스크에서 유추합니다.',
+  'fieldHelp.vm.multiQueues':
+    'VM의 vCPU에 따라 각 가상 NIC에 최적의 큐 수를 부여해 다중 vCPU VM의 네트워크 처리량을 높입니다.',
 }

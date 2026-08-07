@@ -47,6 +47,31 @@ export const ClusterSchema = z.looseObject({
   switch_type: z.string().optional(),
   // Firewall implementation, e.g. 'firewalld' | 'iptables' | 'nftables'.
   firewall_type: z.string().optional(),
+  // Cluster default chipset/firmware (api-model types/BiosType): i440fx_sea_bios
+  // | q35_sea_bios | q35_ovmf | q35_secure_boot. Absent on pre-4.4 clusters.
+  bios_type: z.string().optional(),
+  // FIPS 140-2 mode (api-model types/FipsMode): 'undefined' (auto-detect from
+  // the first host) | 'disabled' | 'enabled'.
+  fips_mode: z.string().optional(),
+  // Console tab — encrypt VNC traffic for the cluster's VMs.
+  vnc_encryption: z.union([z.boolean(), z.stringbool()]).optional(),
+  // General tab — audit-log a host once its used memory crosses this threshold,
+  // expressed as a percentage or an absolute MB value per the _type field.
+  // Numeric scalars ride as JSON strings on the live engine.
+  log_max_memory_used_threshold: z.coerce.number().optional(),
+  log_max_memory_used_threshold_type: z.string().optional(),
+  // Optimization tab — Kernel Same-page Merging control.
+  ksm: z
+    .looseObject({
+      enabled: z.union([z.boolean(), z.stringbool()]).optional(),
+      merge_across_nodes: z.union([z.boolean(), z.stringbool()]).optional(),
+    })
+    .optional(),
+  // Entropy sources every cluster host must expose (api-model RngSource:
+  // random | urandom | hwrng). The engine omits the inner key when empty.
+  required_rng_sources: z
+    .looseObject({ required_rng_source: z.array(z.string()).optional() })
+    .optional(),
   // Scheduling policy the cluster runs under — a bare { id, href } link; the
   // General tab shows its name once followed. Custom properties ride under
   // scheduling_policy.properties.property[] as { name, value } pairs.
@@ -56,6 +81,10 @@ export const ClusterSchema = z.looseObject({
   // ?follow=-able link — the engine 500s on it, so its name is resolved
   // client-side). bandwidth.custom_value is Mbps, present only when the
   // assignment_method is 'custom'. Numeric scalars ride as JSON strings.
+  // encrypted/auto_converge/compressed are api-model InheritableBoolean —
+  // the string enum 'true' | 'false' | 'inherit', NOT a JSON boolean.
+  // parallel_migrations_policy (4.7+): inherit | auto | auto_parallel |
+  // disabled | custom, with custom_parallel_migrations (2..255) when custom.
   migration: z
     .looseObject({
       bandwidth: z
@@ -65,11 +94,18 @@ export const ClusterSchema = z.looseObject({
         })
         .optional(),
       policy: z.looseObject({ id: z.string().optional() }).optional(),
+      encrypted: z.string().optional(),
+      auto_converge: z.string().optional(),
+      compressed: z.string().optional(),
+      parallel_migrations_policy: z.string().optional(),
+      custom_parallel_migrations: z.coerce.number().optional(),
     })
     .optional(),
   // Fencing policy — the enable toggle plus the two skip-if guards. The live
   // engine serializes each `enabled` flag as a JSON string, and `threshold`
-  // (percent: 25|50|75|100) as a string, so coerce both.
+  // (percent: 25|50|75|100) as a string, so coerce both. The two gluster
+  // guards (skip fencing while bricks are up / while quorum would break) only
+  // matter on gluster-service clusters.
   fencing_policy: z
     .looseObject({
       enabled: z.union([z.boolean(), z.stringbool()]).optional(),
@@ -82,6 +118,8 @@ export const ClusterSchema = z.looseObject({
           threshold: z.coerce.number().optional(),
         })
         .optional(),
+      skip_if_gluster_bricks_up: z.union([z.boolean(), z.stringbool()]).optional(),
+      skip_if_gluster_quorum_not_met: z.union([z.boolean(), z.stringbool()]).optional(),
     })
     .optional(),
   // Console tab — SPICE proxy override URL. An empty string clears the override.

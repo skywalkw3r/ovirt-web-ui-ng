@@ -852,3 +852,228 @@ describe('Console / Boot / HA-lease / System — next-run matrix', () => {
     ).toBe(false)
   })
 })
+
+// ── Settings-parity pass: General/System/Console/Host/HA/Resources depth ─────
+describe('settings parity — vmToDraft parsing', () => {
+  it('seeds the new fields from a fully-populated VM', () => {
+    const seeded = vmToDraft({
+      id: 'vm-01',
+      name: 'web-01',
+      bios: { type: 'q35_ovmf' },
+      start_paused: true,
+      custom_emulated_machine: 'pc-q35-rhel9.2.0',
+      custom_cpu_model: 'Skylake-Server',
+      sso: { methods: { method: [{ id: 'guest_agent' }] } },
+      display: { type: 'spice', file_transfer_enabled: false, copy_paste_enabled: false },
+      storage_error_resume_behaviour: 'leave_paused',
+      migration_downtime: 250,
+      migration: {
+        auto_converge: 'true',
+        compressed: 'false',
+        encrypted: 'inherit',
+        policy: { id: '80554327-0569-496b-bdeb-fcbbf52b827b' },
+        parallel_migrations_policy: 'custom',
+        custom_parallel_migrations: 4,
+      },
+      multi_queues_enabled: false,
+      virtio_scsi_multi_queues_enabled: true,
+      virtio_scsi_multi_queues: 8,
+    } as Vm)
+
+    expect(seeded.biosType).toBe('q35_ovmf')
+    expect(seeded.startPaused).toBe(true)
+    expect(seeded.customEmulatedMachine).toBe('pc-q35-rhel9.2.0')
+    expect(seeded.customCpuModel).toBe('Skylake-Server')
+    expect(seeded.ssoEnabled).toBe(true)
+    expect(seeded.spiceFileTransfer).toBe(false)
+    expect(seeded.spiceCopyPaste).toBe(false)
+    expect(seeded.storageErrorResumeBehaviour).toBe('leave_paused')
+    expect(seeded.migrationDowntimeEnabled).toBe(true)
+    expect(seeded.migrationDowntime).toBe(250)
+    expect(seeded.migrationAutoConverge).toBe('true')
+    expect(seeded.migrationCompressed).toBe('false')
+    expect(seeded.migrationEncrypted).toBe('inherit')
+    expect(seeded.vmMigrationPolicyId).toBe('80554327-0569-496b-bdeb-fcbbf52b827b')
+    expect(seeded.parallelMigrationsPolicy).toBe('custom')
+    expect(seeded.customParallelMigrations).toBe(4)
+    expect(seeded.multiQueuesEnabled).toBe(false)
+    expect(seeded.virtioScsiMultiQueuesEnabled).toBe(true)
+    expect(seeded.virtioScsiMultiQueues).toBe(8)
+  })
+
+  it('collapses absent fields to the webadmin defaults', () => {
+    const bare = draft()
+    expect(bare.biosType).toBe('cluster_default')
+    expect(bare.startPaused).toBe(false)
+    expect(bare.customEmulatedMachine).toBe('')
+    expect(bare.customCpuModel).toBe('')
+    expect(bare.ssoEnabled).toBe(false)
+    // SPICE channels default ON — the engine default when the keys are absent
+    expect(bare.spiceFileTransfer).toBe(true)
+    expect(bare.spiceCopyPaste).toBe(true)
+    expect(bare.storageErrorResumeBehaviour).toBe('auto_resume')
+    expect(bare.migrationDowntimeEnabled).toBe(false)
+    expect(bare.vmMigrationPolicyId).toBe('')
+    expect(bare.migrationAutoConverge).toBe('inherit')
+    expect(bare.parallelMigrationsPolicy).toBe('inherit')
+    expect(bare.multiQueuesEnabled).toBe(true)
+    expect(bare.virtioScsiMultiQueuesEnabled).toBe(false)
+  })
+})
+
+describe('settings parity — draftToPayload omit-unchanged', () => {
+  const baseline = draft()
+
+  it('emits none of the new keys for an untouched draft', () => {
+    const payload = draftToPayload(baseline, baseline)
+    expect((payload.bios as Record<string, unknown>).type).toBeUndefined()
+    expect(payload.start_paused).toBeUndefined()
+    expect(payload.custom_emulated_machine).toBeUndefined()
+    expect(payload.custom_cpu_model).toBeUndefined()
+    expect(payload.sso).toBeUndefined()
+    expect((payload.display as Record<string, unknown>).file_transfer_enabled).toBeUndefined()
+    expect((payload.display as Record<string, unknown>).copy_paste_enabled).toBeUndefined()
+    expect(payload.storage_error_resume_behaviour).toBeUndefined()
+    expect(payload.migration).toBeUndefined()
+    expect(payload.migration_downtime).toBeUndefined()
+    expect(payload.multi_queues_enabled).toBeUndefined()
+    expect(payload.virtio_scsi_multi_queues_enabled).toBeUndefined()
+  })
+
+  it('rides bios.type on the existing bios block and start_paused top-level', () => {
+    const payload = draftToPayload(
+      { ...baseline, biosType: 'q35_secure_boot', startPaused: true },
+      baseline,
+    )
+    expect((payload.bios as Record<string, unknown>).type).toBe('q35_secure_boot')
+    // the boot-menu key the base body always carries is untouched beside it
+    expect((payload.bios as Record<string, unknown>).boot_menu).toEqual({
+      enabled: baseline.bootMenuEnabled,
+    })
+    expect(payload.start_paused).toBe(true)
+  })
+
+  it('sends the machine/CPU-model overrides on change, empty-string to clear', () => {
+    const set = draftToPayload({ ...baseline, customEmulatedMachine: 'pc-q35-9' }, baseline)
+    expect(set.custom_emulated_machine).toBe('pc-q35-9')
+    const cleared = draftToPayload(
+      { ...baseline, customCpuModel: '' },
+      { ...baseline, customCpuModel: 'Skylake-Server' },
+    )
+    expect(cleared.custom_cpu_model).toBe('')
+  })
+
+  it('toggles SSO with the guest_agent method / a present-but-empty list', () => {
+    const on = draftToPayload({ ...baseline, ssoEnabled: true }, baseline)
+    expect(on.sso).toEqual({ methods: { method: [{ id: 'guest_agent' }] } })
+    const off = draftToPayload(
+      { ...baseline, ssoEnabled: false },
+      { ...baseline, ssoEnabled: true },
+    )
+    expect(off.sso).toEqual({ methods: { method: [] } })
+  })
+
+  it('rides the SPICE channel toggles on the display block', () => {
+    const payload = draftToPayload(
+      { ...baseline, spiceFileTransfer: false, spiceCopyPaste: false },
+      baseline,
+    )
+    const display = payload.display as Record<string, unknown>
+    expect(display.file_transfer_enabled).toBe(false)
+    expect(display.copy_paste_enabled).toBe(false)
+  })
+
+  it('assembles a single migration object from only the touched keys', () => {
+    const payload = draftToPayload(
+      {
+        ...baseline,
+        migrationEncrypted: 'true',
+        parallelMigrationsPolicy: 'custom',
+        customParallelMigrations: 4,
+      },
+      baseline,
+    )
+    expect(payload.migration).toEqual({
+      encrypted: 'true',
+      parallel_migrations_policy: 'custom',
+      custom_parallel_migrations: 4,
+    })
+  })
+
+  it('sets and clears the per-VM migration policy (empty-object removal)', () => {
+    const set = draftToPayload(
+      { ...baseline, vmMigrationPolicyId: '80554327-0569-496b-bdeb-fcbbf52b827b' },
+      baseline,
+    )
+    expect((set.migration as Record<string, unknown>).policy).toEqual({
+      id: '80554327-0569-496b-bdeb-fcbbf52b827b',
+    })
+    const cleared = draftToPayload(
+      { ...baseline, vmMigrationPolicyId: '' },
+      { ...baseline, vmMigrationPolicyId: '80554327-0569-496b-bdeb-fcbbf52b827b' },
+    )
+    expect((cleared.migration as Record<string, unknown>).policy).toEqual({})
+  })
+
+  it('sends migration_downtime when overridden and -1 when the override is dropped', () => {
+    const on = draftToPayload(
+      { ...baseline, migrationDowntimeEnabled: true, migrationDowntime: 500 },
+      baseline,
+    )
+    expect(on.migration_downtime).toBe(500)
+    const off = draftToPayload(
+      { ...baseline, migrationDowntimeEnabled: false },
+      { ...baseline, migrationDowntimeEnabled: true, migrationDowntime: 500 },
+    )
+    expect(off.migration_downtime).toBe(-1)
+  })
+
+  it('sends the resume behavior and queue toggles only on change', () => {
+    const payload = draftToPayload(
+      {
+        ...baseline,
+        storageErrorResumeBehaviour: 'kill',
+        multiQueuesEnabled: false,
+        virtioScsiMultiQueuesEnabled: true,
+        virtioScsiMultiQueues: 8,
+      },
+      baseline,
+    )
+    expect(payload.storage_error_resume_behaviour).toBe('kill')
+    expect(payload.multi_queues_enabled).toBe(false)
+    expect(payload.virtio_scsi_multi_queues_enabled).toBe(true)
+    expect(payload.virtio_scsi_multi_queues).toBe(8)
+
+    // 0 queues = auto — the count key stays off the wire
+    const auto = draftToPayload(
+      { ...baseline, virtioScsiMultiQueuesEnabled: true, virtioScsiMultiQueues: 0 },
+      baseline,
+    )
+    expect(auto.virtio_scsi_multi_queues_enabled).toBe(true)
+    expect(auto.virtio_scsi_multi_queues).toBeUndefined()
+  })
+})
+
+describe('settings parity — next-run matrix', () => {
+  const baseline = draft()
+
+  it('marks the new boot-bound fields reboot-required', () => {
+    expect(editRequiresRestart({ ...baseline, biosType: 'q35_ovmf' }, baseline)).toBe(true)
+    expect(editRequiresRestart({ ...baseline, startPaused: true }, baseline)).toBe(true)
+    expect(editRequiresRestart({ ...baseline, customEmulatedMachine: 'x' }, baseline)).toBe(true)
+    expect(editRequiresRestart({ ...baseline, customCpuModel: 'x' }, baseline)).toBe(true)
+    expect(editRequiresRestart({ ...baseline, ssoEnabled: true }, baseline)).toBe(true)
+    expect(editRequiresRestart({ ...baseline, spiceFileTransfer: false }, baseline)).toBe(true)
+    expect(editRequiresRestart({ ...baseline, spiceCopyPaste: false }, baseline)).toBe(true)
+    expect(
+      editRequiresRestart({ ...baseline, storageErrorResumeBehaviour: 'kill' }, baseline),
+    ).toBe(true)
+    expect(editRequiresRestart({ ...baseline, migrationDowntimeEnabled: true }, baseline)).toBe(
+      true,
+    )
+    expect(editRequiresRestart({ ...baseline, multiQueuesEnabled: false }, baseline)).toBe(true)
+    expect(editRequiresRestart({ ...baseline, virtioScsiMultiQueuesEnabled: true }, baseline)).toBe(
+      true,
+    )
+  })
+})

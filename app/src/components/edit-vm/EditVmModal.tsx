@@ -166,6 +166,7 @@ export function EditVmModal({
                   set={set}
                   clusters={clusters.data ?? []}
                   operatingSystems={operatingSystems.data ?? []}
+                  templateName={vm.template?.name}
                 />
               ),
             },

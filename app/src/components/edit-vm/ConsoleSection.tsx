@@ -144,6 +144,64 @@ export function ConsoleSection({
         />
       </FormGroup>
 
+      <FormGroup
+        label={t('vm.edit.console.sso.field')}
+        fieldId="edit-vm-console-sso"
+        labelHelp={
+          <FieldHelp field={t('vm.edit.console.sso.field')} content={t('fieldHelp.vm.sso')} />
+        }
+      >
+        <Switch
+          id="edit-vm-console-sso"
+          label={t('vm.edit.console.sso')}
+          aria-label={t('vm.edit.console.sso')}
+          isChecked={draft.ssoEnabled}
+          onChange={(_event, checked) => set('ssoEnabled', checked)}
+        />
+      </FormGroup>
+
+      {/* SPICE-only guest channels, greyed out for VNC/headless like the
+          smartcard toggle below. */}
+      <FormGroup
+        label={t('vm.edit.console.fileTransfer.field')}
+        fieldId="edit-vm-console-file-transfer"
+        labelHelp={
+          <FieldHelp
+            field={t('vm.edit.console.fileTransfer.field')}
+            content={t('fieldHelp.vm.spiceFileTransfer')}
+          />
+        }
+      >
+        <Switch
+          id="edit-vm-console-file-transfer"
+          label={t('vm.edit.console.fileTransfer')}
+          aria-label={t('vm.edit.console.fileTransfer')}
+          isChecked={draft.spiceFileTransfer}
+          isDisabled={!isSpice}
+          onChange={(_event, checked) => set('spiceFileTransfer', checked)}
+        />
+      </FormGroup>
+
+      <FormGroup
+        label={t('vm.edit.console.copyPaste.field')}
+        fieldId="edit-vm-console-copy-paste"
+        labelHelp={
+          <FieldHelp
+            field={t('vm.edit.console.copyPaste.field')}
+            content={t('fieldHelp.vm.spiceCopyPaste')}
+          />
+        }
+      >
+        <Switch
+          id="edit-vm-console-copy-paste"
+          label={t('vm.edit.console.copyPaste')}
+          aria-label={t('vm.edit.console.copyPaste')}
+          isChecked={draft.spiceCopyPaste}
+          isDisabled={!isSpice}
+          onChange={(_event, checked) => set('spiceCopyPaste', checked)}
+        />
+      </FormGroup>
+
       <FormGroup label={t('vm.edit.console.soundcard.field')} fieldId="edit-vm-console-soundcard">
         <Switch
           id="edit-vm-console-soundcard"

@@ -13,7 +13,7 @@ import { useStorageDomains } from '../../hooks/useStorageDomains'
 import type { MessageId } from '../../i18n/messages/en'
 import { useT } from '../../i18n/useT'
 import { FieldHelp } from '../forms/FieldHelp'
-import type { EditVmDraft } from './editVmDraft'
+import { STORAGE_ERROR_RESUME_OPTIONS, type EditVmDraft } from './editVmDraft'
 
 // HA restart priority is a free-form integer on the wire, but webadmin exposes
 // only three buckets. Map the draft's numeric priority to Low/Medium/High and
@@ -127,6 +127,25 @@ export function HighAvailabilitySection({
             </HelperText>
           </FormHelperText>
         )}
+      </FormGroup>
+
+      <FormGroup
+        label={t('vm.edit.ha.resume')}
+        fieldId="edit-vm-ha-resume"
+        labelHelp={
+          <FieldHelp field={t('vm.edit.ha.resume')} content={t('fieldHelp.vm.resumeBehaviour')} />
+        }
+      >
+        <FormSelect
+          id="edit-vm-ha-resume"
+          aria-label={t('vm.edit.ha.resume')}
+          value={draft.storageErrorResumeBehaviour}
+          onChange={(_event, value) => set('storageErrorResumeBehaviour', value)}
+        >
+          {STORAGE_ERROR_RESUME_OPTIONS.map((option) => (
+            <FormSelectOption key={option.value} value={option.value} label={t(option.labelId)} />
+          ))}
+        </FormSelect>
       </FormGroup>
     </Form>
   )

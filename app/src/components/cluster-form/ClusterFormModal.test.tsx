@@ -159,7 +159,8 @@ const CLUSTER: Cluster = ClusterSchema.parse({
   id: 'cluster-1',
   name: 'prod',
   description: 'production cluster',
-  cpu: { type: 'Secure Intel Icelake Server Family' },
+  comment: 'primary',
+  cpu: { type: 'Secure Intel Icelake Server Family', architecture: 'x86_64' },
   version: { major: 4, minor: 8 },
   data_center: { id: 'dc-1', name: 'Default' },
   memory_policy: { over_commit: { percent: '150' } },
@@ -167,14 +168,33 @@ const CLUSTER: Cluster = ClusterSchema.parse({
   switch_type: 'ovs',
   firewall_type: 'nftables',
   scheduling_policy: { id: 'sp-42' },
-  migration: { bandwidth: { assignment_method: 'custom', custom_value: '512' } },
+  migration: {
+    bandwidth: { assignment_method: 'custom', custom_value: '512' },
+    encrypted: 'true',
+    parallel_migrations_policy: 'custom',
+    custom_parallel_migrations: '4',
+  },
   fencing_policy: {
     enabled: 'true',
     skip_if_sd_active: { enabled: 'false' },
     skip_if_connectivity_broken: { enabled: 'true', threshold: '75' },
+    skip_if_gluster_bricks_up: 'true',
   },
   display: { proxy: 'spice://proxy.lab.local:3128' },
   mac_pool: { id: 'macpool-7' },
+  // settings-parity depth — mixed scalar forms prove the extended coercion
+  bios_type: 'q35_ovmf',
+  fips_mode: 'enabled',
+  vnc_encryption: 'true',
+  log_max_memory_used_threshold: '95',
+  log_max_memory_used_threshold_type: 'percentage',
+  ksm: { enabled: 'true', merge_across_nodes: 'false' },
+  required_rng_sources: { required_rng_source: ['urandom'] },
+  virt_service: 'true',
+  gluster_service: 'true',
+  threads_as_cores: 'true',
+  ha_reservation: 'true',
+  error_handling: { on_error: 'migrate_highly_available' },
 })
 
 // ClusterFormModal reads every label through useT/useIntl, so the render needs
@@ -252,13 +272,61 @@ describe('ClusterFormModal — save payload wiring', () => {
     expect(payload.mac_pool).toEqual({ id: 'macpool-7' })
     expect(payload.migration).toEqual({
       bandwidth: { assignment_method: 'custom', custom_value: 512 },
+      encrypted: 'true',
+      parallel_migrations_policy: 'custom',
+      custom_parallel_migrations: 4,
     })
     expect(payload.fencing_policy).toEqual({
       enabled: true,
       skip_if_sd_active: { enabled: false },
       skip_if_connectivity_broken: { enabled: true, threshold: 75 },
+      skip_if_gluster_bricks_up: true,
+      skip_if_gluster_quorum_not_met: false,
     })
     expect(payload.display).toEqual({ proxy: 'spice://proxy.lab.local:3128' })
+
+    // settings-parity base fields — always-defined scalars seeded from the read
+    expect(payload.comment).toBe('primary')
+    expect(payload.cpu).toEqual({
+      architecture: 'x86_64',
+      type: 'Secure Intel Icelake Server Family',
+    })
+    expect(payload.virt_service).toBe(true)
+    expect(payload.gluster_service).toBe(true)
+    expect(payload.threads_as_cores).toBe(true)
+    expect(payload.ha_reservation).toBe(true)
+    expect(payload.ksm).toEqual({ enabled: true, merge_across_nodes: false })
+    expect(payload.vnc_encryption).toBe(true)
+    expect(payload.fips_mode).toBe('enabled')
+    expect(payload.error_handling).toEqual({ on_error: 'migrate_highly_available' })
+    // omit-unless-set extras seeded from the read
+    expect(payload.bios_type).toBe('q35_ovmf')
+    expect(payload.log_max_memory_used_threshold).toBe(95)
+    expect(payload.log_max_memory_used_threshold_type).toBe('percentage')
+    // hwrng untouched ⇒ the source list is NOT re-sent (preserve on the engine)
+    expect(payload.required_rng_sources).toBeUndefined()
+  })
+
+  it('re-sends the full entropy-source list only when hwrng membership changes', () => {
+    const draft = clusterToDraft(CLUSTER)
+    expect(
+      (buildSavePayload(draft, true) as Record<string, unknown>).required_rng_sources,
+    ).toBeUndefined()
+
+    const toggled = { ...draft, hwrngRequired: true }
+    expect(
+      (buildSavePayload(toggled, true) as Record<string, unknown>).required_rng_sources,
+    ).toEqual({ required_rng_source: ['urandom', 'hwrng'] })
+
+    // and un-toggling from a loaded hwrng list drops just that source
+    const loadedWithHwrng = {
+      ...draft,
+      loadedRngSources: ['urandom', 'hwrng'],
+      hwrngRequired: false,
+    }
+    expect(
+      (buildSavePayload(loadedWithHwrng, true) as Record<string, unknown>).required_rng_sources,
+    ).toEqual({ required_rng_source: ['urandom'] })
   })
 
   it('omits inherit scheduling policy / MAC pool and clears an unset SPICE proxy in create mode', () => {
@@ -274,15 +342,33 @@ describe('ClusterFormModal — save payload wiring', () => {
     // webadmin create defaults ride
     expect(create.switch_type).toBe('legacy')
     expect(create.firewall_type).toBe('firewalld')
-    expect(create.migration).toEqual({ bandwidth: { assignment_method: 'auto' } })
+    expect(create.migration).toEqual({
+      bandwidth: { assignment_method: 'auto' },
+      encrypted: 'inherit',
+      parallel_migrations_policy: 'inherit',
+    })
     // fencing default: enabled + skip-if-SD-active, skip-if-conn-broken off (so
-    // no threshold rides)
+    // no threshold rides); gluster guards default off
     expect(create.fencing_policy).toEqual({
       enabled: true,
       skip_if_sd_active: { enabled: true },
       skip_if_connectivity_broken: { enabled: false },
+      skip_if_gluster_bricks_up: false,
+      skip_if_gluster_quorum_not_met: false,
     })
     // SPICE override off ⇒ cleared with an empty-string proxy (clear-to-none)
     expect(create.display).toEqual({ proxy: '' })
+    // settings-parity defaults: unset chipset/log-threshold are OMITTED, the
+    // always-defined scalars carry the webadmin create defaults
+    expect(create.bios_type).toBeUndefined()
+    expect(create.log_max_memory_used_threshold).toBeUndefined()
+    expect(create.required_rng_sources).toBeUndefined()
+    expect(create.fips_mode).toBe('undefined')
+    expect(create.virt_service).toBe(true)
+    expect(create.gluster_service).toBe(false)
+    expect(create.ksm).toEqual({ enabled: false, merge_across_nodes: true })
+    expect(create.error_handling).toEqual({ on_error: 'migrate' })
+    // full auto-detect CPU (no type, undefined arch) omits the cpu block
+    expect(create.cpu).toBeUndefined()
   })
 })

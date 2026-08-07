@@ -10,6 +10,7 @@ import {
 } from '@patternfly/react-core'
 import { FormattedMessage } from 'react-intl'
 import { buildConsoleConnection, listGraphicsConsoles } from '../api/resources/consoles'
+import { getVm } from '../api/resources/vms'
 import type { GraphicsConsole } from '../api/schemas/console'
 import {
   clearSessionToken,
@@ -165,6 +166,22 @@ function FullWindowConsole({ vmId, onSessionEnded }: { vmId: string; onSessionEn
   const [vncConsole, setVncConsole] = useState<GraphicsConsole | null | undefined>(undefined)
   const [listError, setListError] = useState<string | null>(null)
   const [attempt, setAttempt] = useState(0)
+  // The VM's name for the control bar (this tab shows nothing else that
+  // identifies the machine). Best-effort: a failed read just leaves the bar
+  // name-less rather than blocking the console.
+  const [vmName, setVmName] = useState<string | undefined>(undefined)
+
+  useEffect(() => {
+    let cancelled = false
+    getVm(vmId)
+      .then((vm) => {
+        if (!cancelled) setVmName(vm.name)
+      })
+      .catch(() => undefined)
+    return () => {
+      cancelled = true
+    }
+  }, [vmId])
 
   useEffect(() => {
     let cancelled = false
@@ -238,7 +255,11 @@ function FullWindowConsole({ vmId, onSessionEnded }: { vmId: string; onSessionEn
   }
   return (
     <div style={{ height: '100vh' }}>
-      <NovncConsole resolveConnection={resolveConnection} onClose={() => window.close()} />
+      <NovncConsole
+        resolveConnection={resolveConnection}
+        onClose={() => window.close()}
+        vmName={vmName}
+      />
     </div>
   )
 }

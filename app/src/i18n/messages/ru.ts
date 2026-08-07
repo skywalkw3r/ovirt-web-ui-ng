@@ -4542,4 +4542,151 @@ export const ru: LocaleCatalog = {
   'exportOva.host.placeholder': 'Выберите хост',
   'exportOva.item': 'Экспортировать как OVA',
   'exportOva.title': 'Экспортировать {name} как OVA',
+  // ── Углубление диалогов кластера и ВМ (паритет с webadmin) ─────────────────
+  'clusterForm.comment.ariaLabel': 'Комментарий кластера',
+  'clusterForm.cpuArch': 'Архитектура ЦП',
+  'clusterForm.arch.auto': 'Автоопределение',
+  'clusterForm.biosType': 'Тип чипсета/прошивки',
+  'clusterForm.biosType.auto': 'Автоопределение',
+  'clusterForm.bios.i440fx': 'Чипсет I440FX с BIOS',
+  'clusterForm.bios.q35SeaBios': 'Чипсет Q35 с BIOS',
+  'clusterForm.bios.q35Ovmf': 'Чипсет Q35 с UEFI',
+  'clusterForm.bios.q35SecureBoot': 'Чипсет Q35 с UEFI SecureBoot',
+  'clusterForm.fipsMode': 'Режим FIPS',
+  'clusterForm.fips.undefined': 'Автоопределение',
+  'clusterForm.fips.disabled': 'Отключено',
+  'clusterForm.fips.enabled': 'Включено',
+  'clusterForm.virtService': 'Включить службу Virt',
+  'clusterForm.glusterService': 'Включить службу Gluster',
+  'clusterForm.logMaxThreshold': 'Порог журналирования максимального использования памяти',
+  'clusterForm.logThresholdUnit': 'Единица порога журналирования',
+  'clusterForm.logThreshold.percentage': 'Процент',
+  'clusterForm.logThreshold.absolute': 'Абсолютное значение (МБ)',
+  'clusterForm.hwrng': 'Требовать источник энтропии /dev/hwrng',
+  'clusterForm.threadsAsCores': 'Считать потоки ядрами',
+  'clusterForm.ksm': 'Включить KSM',
+  'clusterForm.ksmMerge': 'Объединять страницы между узлами NUMA',
+  'clusterForm.haReservation': 'Включить резервирование высокой доступности',
+  'clusterForm.resilience': 'Политика отказоустойчивости',
+  'clusterForm.resilience.migrate': 'Мигрировать виртуальные машины',
+  'clusterForm.resilience.migrateHa': 'Мигрировать только высокодоступные виртуальные машины',
+  'clusterForm.resilience.doNotMigrate': 'Не мигрировать виртуальные машины',
+  'clusterForm.migrationEncrypted': 'Шифрование миграции',
+  'clusterForm.inheritable.inherit': 'По умолчанию для движка',
+  'clusterForm.inheritable.true': 'Включено',
+  'clusterForm.inheritable.false': 'Отключено',
+  'clusterForm.parallelMigrations': 'Параллельные миграции',
+  'clusterForm.parallel.disabled': 'Отключено',
+  'clusterForm.parallel.auto': 'Автоматически',
+  'clusterForm.parallel.autoParallel': 'Автоматически параллельно',
+  'clusterForm.parallel.custom': 'Пользовательское',
+  'clusterForm.parallelConnections': 'Соединения миграции',
+  'clusterForm.skipGlusterBricks': 'Пропускать изоляцию, если брики gluster активны',
+  'clusterForm.skipGlusterQuorum': 'Пропускать изоляцию, если нарушится кворум gluster',
+  'clusterForm.vncEncryption': 'Включить шифрование VNC',
+  'fieldHelp.cluster.cpuArch':
+    'Архитектура ЦП хостов кластера (x86_64, ppc64, s390x, aarch64). Автоопределение выводит её из выбранного типа ЦП или первого присоединившегося хоста.',
+  'fieldHelp.cluster.biosType':
+    'Чипсет и прошивка по умолчанию для новых ВМ кластера: Q35 с BIOS или UEFI для современных гостевых систем, I440FX — для совместимости со старыми. Автоопределение позволяет движку выбрать по архитектуре; отдельные ВМ могут переопределить.',
+  'fieldHelp.cluster.fipsMode':
+    'Работают ли хосты кластера в режиме FIPS 140-2. Автоопределение принимает режим первого хоста; все хосты кластера должны совпадать.',
+  'fieldHelp.cluster.virtService':
+    'Хосты этого кластера выполняют виртуальные машины. Отключайте только для чисто хранилищных кластеров Gluster.',
+  'fieldHelp.cluster.glusterService':
+    'Хосты этого кластера обслуживают брики хранилища GlusterFS. Включает представления томов и защитные правила изоляции gluster.',
+  'fieldHelp.cluster.logThreshold':
+    'Записывает предупреждение в журнал аудита, когда используемая память хоста превышает этот порог — в процентах от его ОЗУ или как абсолютное значение в МБ.',
+  'fieldHelp.cluster.hwrng':
+    'Требует, чтобы каждый хост предоставлял аппаратное устройство энтропии /dev/hwrng, позволяя ВМ использовать его как источник генератора случайных чисел. Включайте, только если оборудование есть на всех хостах.',
+  'fieldHelp.cluster.threadsAsCores':
+    'Представляет потоки SMT как планируемые ядра: больше vCPU на хост ценой гарантий производительности на ядро.',
+  'fieldHelp.cluster.ksm':
+    'Kernel Same-page Merging дедуплицирует одинаковые страницы памяти между ВМ хоста, возвращая ОЗУ в плотных кластерах ценой некоторой нагрузки на ЦП.',
+  'fieldHelp.cluster.ksmMerge':
+    'Разрешает KSM объединять страницы между узлами NUMA. Больше экономии памяти, но удалённый доступ может замедлить чувствительные к NUMA нагрузки; отключите, чтобы объединения оставались в пределах узла.',
+  'fieldHelp.cluster.haReservation':
+    'Постоянно проверяет, что кластер сохраняет достаточно свободных мощностей для перезапуска высокодоступных ВМ после отказа одного хоста, и поднимает предупреждение, если это не так.',
+  'fieldHelp.cluster.resilience':
+    'Что происходит с ВМ отказавшего хоста: мигрировать все, мигрировать только высокодоступные или оставить выключенными до возвращения хоста.',
+  'fieldHelp.cluster.migrationEncrypted':
+    'Шифрует трафик живой миграции между хостами. «По умолчанию для движка» следует общесистемной настройке; шифрование добавляет нагрузку на ЦП в загруженных сетях миграции.',
+  'fieldHelp.cluster.parallelMigrations':
+    'Сколько соединений может использовать одна живая миграция: «Автоматически» — решает движок, «Автоматически параллельно» — несколько соединений в подходящих сетях, «Пользовательское» — фиксированное число (2–255). «По умолчанию для движка» следует общесистемной настройке.',
+  'fieldHelp.cluster.skipGlusterBricks':
+    'Не изолировать хост, пока его брики gluster активны и обслуживают данные, чтобы не прерывать доступ к томам.',
+  'fieldHelp.cluster.skipGlusterQuorum':
+    'Не изолировать хост, если его отключение нарушит кворум тома gluster и переведёт тома в режим только для чтения.',
+  'fieldHelp.cluster.vncEncryption':
+    'Шифрует трафик VNC-консолей ВМ кластера. Клиенты консоли должны поддерживать сертификаты, подписанные ЦС движка.',
+  'vm.edit.general.biosType': 'Тип чипсета/прошивки',
+  'vm.edit.general.bios.clusterDefault': 'По умолчанию для кластера',
+  'vm.edit.general.startPaused': 'Запускать в режиме паузы',
+  'vm.edit.general.vmId': 'ID ВМ',
+  'vm.edit.system.customEmulatedMachine': 'Пользовательская эмулируемая машина',
+  'vm.edit.system.customCpuModel': 'Пользовательская модель ЦП',
+  'vm.edit.system.clusterDefault.placeholder': 'По умолчанию для кластера',
+  'vm.edit.console.sso.field': 'Единый вход',
+  'vm.edit.console.sso': 'Использовать единый вход через гостевой агент',
+  'vm.edit.console.fileTransfer.field': 'Передача файлов SPICE',
+  'vm.edit.console.fileTransfer': 'Включить передачу файлов перетаскиванием',
+  'vm.edit.console.copyPaste.field': 'Буфер обмена SPICE',
+  'vm.edit.console.copyPaste': 'Включить копирование и вставку через буфер обмена',
+  'vm.edit.host.migrationTuning': 'Настройка миграции',
+  'vm.edit.host.migrationPolicy': 'Политика миграции',
+  'vm.edit.host.inherit': 'По умолчанию для кластера',
+  'vm.edit.host.customDowntime': 'Использовать пользовательское время простоя миграции',
+  'vm.edit.host.downtimeMs': 'Время простоя миграции (мс)',
+  'vm.edit.host.autoConverge': 'Автосхождение миграций',
+  'vm.edit.host.compressed': 'Включить сжатие миграции',
+  'vm.edit.host.encrypted': 'Шифрование миграции',
+  'vm.edit.host.inheritable.on': 'Включено',
+  'vm.edit.host.inheritable.off': 'Отключено',
+  'vm.edit.host.parallelMigrations': 'Параллельные миграции',
+  'vm.edit.host.parallel.disabled': 'Отключено',
+  'vm.edit.host.parallel.auto': 'Автоматически',
+  'vm.edit.host.parallel.autoParallel': 'Автоматически параллельно',
+  'vm.edit.host.parallel.custom': 'Пользовательское',
+  'vm.edit.host.parallelConnections': 'Соединения миграции',
+  'vm.edit.ha.resume': 'Поведение при возобновлении',
+  'vm.edit.ha.resume.autoResume': 'Возобновлять автоматически',
+  'vm.edit.ha.resume.leavePaused': 'Оставить на паузе',
+  'vm.edit.ha.resume.kill': 'Завершить (kill)',
+  'vm.edit.resources.virtioScsiMq': 'Мультиочереди VirtIO-SCSI',
+  'vm.edit.resources.virtioScsiMq.count': 'Число очередей VirtIO-SCSI',
+  'vm.edit.resources.virtioScsiMq.auto': 'Автоматически',
+  'vm.edit.resources.multiQueues': 'Сетевые мультиочереди',
+  'fieldHelp.vm.biosType':
+    'Чипсет и прошивка ВМ. «По умолчанию для кластера» следует кластеру; Q35 с UEFI (или SecureBoot) требуется современным Windows, I440FX — только для старых ОС. Смена типа прошивки обычно требует переустановки гостевой системы.',
+  'fieldHelp.vm.startPaused':
+    'Запускает ВМ на паузе, до начала загрузки гостевой системы — полезно, чтобы сначала подключить консоль и увидеть ранний вывод загрузки.',
+  'fieldHelp.vm.customEmulatedMachine':
+    'Переопределяет тип машины QEMU кластера для этой ВМ (например, pc-q35-rhel9.2.0). Оставьте пустым для значения кластера; опечатка здесь не даст ВМ запуститься.',
+  'fieldHelp.vm.customCpuModel':
+    'Переопределяет модель ЦП кластера для этой ВМ (например, Skylake-Server). Оставьте пустым для значения кластера; модель должна поддерживаться каждым хостом, где ВМ может работать.',
+  'fieldHelp.vm.sso':
+    'Автоматически выполняет вход пользователя консоли в гостевую систему через гостевой агент с учётными данными сеанса портала.',
+  'fieldHelp.vm.spiceFileTransfer':
+    'Разрешает перетаскивать файлы из клиента в гостевую систему по каналу SPICE. Только консоли SPICE.',
+  'fieldHelp.vm.spiceCopyPaste':
+    'Разрешает копирование и вставку между клиентом и гостевой системой по каналу SPICE. Только консоли SPICE.',
+  'fieldHelp.vm.migrationPolicy':
+    'Переопределяет для этой ВМ стратегию схождения живой миграции кластера. «По умолчанию для кластера» наследует его политику.',
+  'fieldHelp.vm.migrationDowntime':
+    'Максимальная пауза (в миллисекундах), допустимая для этой ВМ в финальной фазе живой миграции. Выключено — используется значение движка.',
+  'fieldHelp.vm.autoConverge':
+    'Ограничивает ЦП занятой гостевой системы во время миграции, чтобы копирование памяти сошлось. «По умолчанию для кластера» наследует его настройку; действует только с политикой Legacy.',
+  'fieldHelp.vm.migrationCompressed':
+    'Сжимает потоки памяти миграции, экономя полосу ценой ЦП. «По умолчанию для кластера» наследует его настройку; действует только с политикой Legacy.',
+  'fieldHelp.vm.migrationEncrypted':
+    'Шифрует трафик живой миграции этой ВМ. «По умолчанию для кластера» наследует его настройку.',
+  'fieldHelp.vm.parallelMigrations':
+    'Сколько соединений может использовать живая миграция этой ВМ: «Автоматически» — решает движок, «Автоматически параллельно» — несколько соединений, «Пользовательское» — фиксированное число (2–255). «По умолчанию для кластера» наследует его настройку.',
+  'fieldHelp.vm.resumeBehaviour':
+    'Что делает ВМ после паузы из-за ошибки ввода-вывода хранилища: автоматически возобновиться после восстановления хранилища, остаться на паузе для ручного вмешательства или завершиться (чтобы высокая доступность перезапустила её в другом месте).',
+  'fieldHelp.vm.virtioScsiMq':
+    'Даёт контроллеру VirtIO-SCSI несколько очередей запросов, повышая пропускную способность хранилища для ВМ с многими vCPU и дисками.',
+  'fieldHelp.vm.virtioScsiMqCount':
+    'Точное число очередей VirtIO-SCSI. Оставьте пустым («Автоматически»), чтобы вывести его из vCPU и дисков ВМ.',
+  'fieldHelp.vm.multiQueues':
+    'Даёт каждой виртуальной сетевой карте оптимальное число очередей исходя из vCPU ВМ, повышая пропускную способность сети для ВМ с многими vCPU.',
 }

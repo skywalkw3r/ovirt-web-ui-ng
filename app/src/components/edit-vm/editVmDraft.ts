@@ -37,6 +37,10 @@ export interface EditVmDraft {
   optimizedFor: string // 'desktop' | 'server' | 'high_performance'
   stateless: boolean
   deleteProtected: boolean
+  // General depth — chipset/firmware (bios.type; 'cluster_default' follows the
+  // cluster) and webadmin's Start-in-Pause-Mode toggle.
+  biosType: string
+  startPaused: boolean
   // System — memory (MiB) and CPU topology
   memoryMb: number
   maxMemoryMb: number
@@ -82,6 +86,33 @@ export interface EditVmDraft {
   hardwareClockTimezone: string
   serialNumberPolicy: string
   customSerialNumber: string
+  // System depth — per-VM overrides of the cluster's emulated machine type and
+  // CPU model ('' = cluster default for both).
+  customEmulatedMachine: string
+  customCpuModel: string
+  // Console depth — guest single sign-on (sso.methods carries guest_agent) and
+  // the two SPICE channel toggles (file transfer / clipboard copy-paste).
+  ssoEnabled: boolean
+  spiceFileTransfer: boolean
+  spiceCopyPaste: boolean
+  // Host depth — per-VM migration tuning. Policy '' = cluster default; the
+  // InheritableBoolean trio rides as its string enum ('inherit'|'true'|'false');
+  // downtime is ms with an enable toggle (disabled = engine default).
+  vmMigrationPolicyId: string
+  migrationDowntimeEnabled: boolean
+  migrationDowntime: number
+  migrationAutoConverge: string
+  migrationCompressed: string
+  migrationEncrypted: string
+  parallelMigrationsPolicy: string
+  customParallelMigrations: number
+  // High Availability depth — resume behavior after a storage I/O error pause.
+  storageErrorResumeBehaviour: string
+  // Resource Allocation depth — vNIC multi-queues + VirtIO-SCSI multi-queue
+  // (0 queues = auto-derive from vCPUs/disks).
+  multiQueuesEnabled: boolean
+  virtioScsiMultiQueuesEnabled: boolean
+  virtioScsiMultiQueues: number
   // Initial Run — cloud-init (Linux) / sysprep (Windows). The initialization
   // block is only PUT when initialRunEnabled and a field actually changed, so an
   // untouched Initial Run never clobbers the engine's write-only secrets.
@@ -221,6 +252,8 @@ export function vmToDraft(vm: Vm): EditVmDraft {
     optimizedFor: vm.type ?? 'server',
     stateless: vm.stateless ?? false,
     deleteProtected: vm.delete_protected ?? false,
+    biosType: vm.bios?.type ?? 'cluster_default',
+    startPaused: vm.start_paused ?? false,
     memoryMb,
     maxMemoryMb: bytesToMb(vm.memory_policy?.max),
     // A loaded guaranteed above memory is invalid (the engine requires
@@ -256,6 +289,27 @@ export function vmToDraft(vm: Vm): EditVmDraft {
     hardwareClockTimezone: vm.time_zone?.name ?? '',
     serialNumberPolicy: vm.serial_number?.policy ?? '',
     customSerialNumber: vm.serial_number?.value ?? '',
+    customEmulatedMachine: vm.custom_emulated_machine ?? '',
+    customCpuModel: vm.custom_cpu_model ?? '',
+    // SSO is on when the guest_agent method is present; the SPICE channels
+    // default ON (the engine's own default when the keys are absent).
+    ssoEnabled: (vm.sso?.methods?.method ?? []).some((method) => method.id === 'guest_agent'),
+    spiceFileTransfer: vm.display?.file_transfer_enabled ?? true,
+    spiceCopyPaste: vm.display?.copy_paste_enabled ?? true,
+    vmMigrationPolicyId: vm.migration?.policy?.id ?? '',
+    // A positive stored downtime is an explicit override; absent/non-positive
+    // means the engine default applies.
+    migrationDowntimeEnabled: (vm.migration_downtime ?? 0) > 0,
+    migrationDowntime: vm.migration_downtime !== undefined ? Math.max(vm.migration_downtime, 0) : 0,
+    migrationAutoConverge: vm.migration?.auto_converge ?? 'inherit',
+    migrationCompressed: vm.migration?.compressed ?? 'inherit',
+    migrationEncrypted: vm.migration?.encrypted ?? 'inherit',
+    parallelMigrationsPolicy: vm.migration?.parallel_migrations_policy ?? 'inherit',
+    customParallelMigrations: vm.migration?.custom_parallel_migrations ?? 0,
+    storageErrorResumeBehaviour: vm.storage_error_resume_behaviour ?? 'auto_resume',
+    multiQueuesEnabled: vm.multi_queues_enabled ?? true,
+    virtioScsiMultiQueuesEnabled: vm.virtio_scsi_multi_queues_enabled ?? false,
+    virtioScsiMultiQueues: vm.virtio_scsi_multi_queues ?? 0,
     // Initial Run: treat a VM that already carries an initialization block as
     // "enabled". root_password/authorized_ssh_keys are write-only on the wire,
     // so they seed to '' and are only PUT when the user types a new value.
@@ -486,11 +540,27 @@ function applyChangedSections(
   if (draft.smartcardEnabled !== baseline.smartcardEnabled) {
     display.smartcard_enabled = draft.smartcardEnabled
   }
+  if (draft.spiceFileTransfer !== baseline.spiceFileTransfer) {
+    display.file_transfer_enabled = draft.spiceFileTransfer
+  }
+  if (draft.spiceCopyPaste !== baseline.spiceCopyPaste) {
+    display.copy_paste_enabled = draft.spiceCopyPaste
+  }
   if (draft.soundcardEnabled !== baseline.soundcardEnabled) {
     payload.soundcard_enabled = draft.soundcardEnabled
   }
   if (draft.serialConsoleEnabled !== baseline.serialConsoleEnabled) {
     payload.console = { enabled: draft.serialConsoleEnabled }
+  }
+
+  // Console depth — guest single sign-on. Enabling sends the guest_agent
+  // method; disabling sends a PRESENT-but-empty method list (the clear-by-empty
+  // convention the model documents for `initialization`; the engine's SsoMapper
+  // maps a set-but-empty list to "no methods").
+  if (draft.ssoEnabled !== baseline.ssoEnabled) {
+    payload.sso = {
+      methods: { method: draft.ssoEnabled ? [{ id: 'guest_agent' }] : [] },
+    }
   }
 
   // Boot depth — custom direct-kernel boot rides the `os` block the base body
@@ -499,6 +569,87 @@ function applyChangedSections(
   if (draft.kernelPath !== baseline.kernelPath) os.kernel = draft.kernelPath
   if (draft.initrdPath !== baseline.initrdPath) os.initrd = draft.initrdPath
   if (draft.kernelParams !== baseline.kernelParams) os.cmdline = draft.kernelParams
+
+  // General depth — chipset/firmware rides the `bios` block the base body
+  // already emits (beside boot_menu). 'cluster_default' is a real BiosType
+  // value on a VM, so switching back to the cluster's default is expressible.
+  if (draft.biosType !== baseline.biosType) {
+    ;(payload.bios as Record<string, unknown>).type = draft.biosType
+  }
+  if (draft.startPaused !== baseline.startPaused) payload.start_paused = draft.startPaused
+
+  // System depth — per-VM emulated machine / CPU model overrides. '' clears the
+  // override back to the cluster default (the engine stores the empty value as
+  // "no override" — webadmin sends null, which a JSON body cannot express).
+  if (draft.customEmulatedMachine !== baseline.customEmulatedMachine) {
+    payload.custom_emulated_machine = draft.customEmulatedMachine
+  }
+  if (draft.customCpuModel !== baseline.customCpuModel) {
+    payload.custom_cpu_model = draft.customCpuModel
+  }
+
+  // High Availability depth — resume behavior after a storage I/O error pause.
+  if (draft.storageErrorResumeBehaviour !== baseline.storageErrorResumeBehaviour) {
+    payload.storage_error_resume_behaviour = draft.storageErrorResumeBehaviour
+  }
+
+  // Host depth — per-VM migration tuning. Only the touched keys ride inside a
+  // single migration object; an untouched section sends nothing. Clearing the
+  // per-VM policy back to "cluster default" sends policy: {} (the empty-object
+  // removal convention lease/rng use — UNVERIFIED against a live engine, same
+  // caveat as those).
+  const migration: Record<string, unknown> = {}
+  if (draft.vmMigrationPolicyId !== baseline.vmMigrationPolicyId) {
+    migration.policy = draft.vmMigrationPolicyId === '' ? {} : { id: draft.vmMigrationPolicyId }
+  }
+  if (draft.migrationAutoConverge !== baseline.migrationAutoConverge) {
+    migration.auto_converge = draft.migrationAutoConverge
+  }
+  if (draft.migrationCompressed !== baseline.migrationCompressed) {
+    migration.compressed = draft.migrationCompressed
+  }
+  if (draft.migrationEncrypted !== baseline.migrationEncrypted) {
+    migration.encrypted = draft.migrationEncrypted
+  }
+  if (
+    draft.parallelMigrationsPolicy !== baseline.parallelMigrationsPolicy ||
+    (draft.parallelMigrationsPolicy === 'custom' &&
+      draft.customParallelMigrations !== baseline.customParallelMigrations)
+  ) {
+    migration.parallel_migrations_policy = draft.parallelMigrationsPolicy
+    if (draft.parallelMigrationsPolicy === 'custom' && draft.customParallelMigrations > 0) {
+      migration.custom_parallel_migrations = draft.customParallelMigrations
+    }
+  }
+  if (Object.keys(migration).length > 0) payload.migration = migration
+
+  // Host depth — custom migration downtime (ms). Disabling the override sends
+  // -1, the engine's stored sentinel for "use the engine default"
+  // (DefaultMaximumMigrationDowntime); webadmin sends null, which a JSON body
+  // cannot express. UNVERIFIED against a live engine, same caveat as lease/rng.
+  if (
+    draft.migrationDowntimeEnabled !== baseline.migrationDowntimeEnabled ||
+    (draft.migrationDowntimeEnabled && draft.migrationDowntime !== baseline.migrationDowntime)
+  ) {
+    payload.migration_downtime = draft.migrationDowntimeEnabled ? draft.migrationDowntime : -1
+  }
+
+  // Resource Allocation depth — queue tuning. The VirtIO-SCSI queue COUNT only
+  // rides while the multi-queue toggle is on and a positive count is set (0 =
+  // auto-derive, the engine default when the key is absent).
+  if (draft.multiQueuesEnabled !== baseline.multiQueuesEnabled) {
+    payload.multi_queues_enabled = draft.multiQueuesEnabled
+  }
+  if (
+    draft.virtioScsiMultiQueuesEnabled !== baseline.virtioScsiMultiQueuesEnabled ||
+    (draft.virtioScsiMultiQueuesEnabled &&
+      draft.virtioScsiMultiQueues !== baseline.virtioScsiMultiQueues)
+  ) {
+    payload.virtio_scsi_multi_queues_enabled = draft.virtioScsiMultiQueuesEnabled
+    if (draft.virtioScsiMultiQueuesEnabled && draft.virtioScsiMultiQueues > 0) {
+      payload.virtio_scsi_multi_queues = draft.virtioScsiMultiQueues
+    }
+  }
 
   // High Availability depth — VM lease storage domain. Selecting a domain sets
   // the lease target; clearing it sends the empty-object removal convention
@@ -652,6 +803,31 @@ const NEXT_RUN_KEYS: (keyof EditVmDraft)[] = [
   'hardwareClockTimezone',
   'serialNumberPolicy',
   'customSerialNumber',
+  // General/System depth — chipset, pause-on-start and the machine/CPU-model
+  // overrides all bind at boot.
+  'biosType',
+  'startPaused',
+  'customEmulatedMachine',
+  'customCpuModel',
+  // Console depth — SSO + the SPICE channel toggles are device config.
+  'ssoEnabled',
+  'spiceFileTransfer',
+  'spiceCopyPaste',
+  // Host/HA depth — migration tuning + resume behavior; conservative next-run
+  // (the engine hot-applies some of these, but offering the dialog is safe).
+  'vmMigrationPolicyId',
+  'migrationDowntimeEnabled',
+  'migrationDowntime',
+  'migrationAutoConverge',
+  'migrationCompressed',
+  'migrationEncrypted',
+  'parallelMigrationsPolicy',
+  'customParallelMigrations',
+  'storageErrorResumeBehaviour',
+  // Resource Allocation depth — queue counts bind to devices at boot.
+  'multiQueuesEnabled',
+  'virtioScsiMultiQueuesEnabled',
+  'virtioScsiMultiQueues',
   'hostPassthroughCpu',
   'virtioScsiEnabled',
   'ioThreads',
@@ -709,6 +885,43 @@ export const MIGRATION_MODE_OPTIONS: { value: string; labelId: MessageId }[] = [
 export const RNG_SOURCE_OPTIONS: { value: string; labelId: MessageId }[] = [
   { value: 'urandom', labelId: 'vm.edit.rng.source.urandom' },
   { value: 'hwrng', labelId: 'vm.edit.rng.source.hwrng' },
+]
+
+// Chipset/firmware choices for a VM (api-model types/BiosType) — unlike the
+// cluster form, cluster_default is offered and is the usual value. Labels
+// resolve per-locale at the render site (GeneralSection) via the labelId.
+export const VM_BIOS_TYPE_OPTIONS: { value: string; labelId: MessageId }[] = [
+  { value: 'cluster_default', labelId: 'vm.edit.general.bios.clusterDefault' },
+  { value: 'i440fx_sea_bios', labelId: 'clusterForm.bios.i440fx' },
+  { value: 'q35_sea_bios', labelId: 'clusterForm.bios.q35SeaBios' },
+  { value: 'q35_ovmf', labelId: 'clusterForm.bios.q35Ovmf' },
+  { value: 'q35_secure_boot', labelId: 'clusterForm.bios.q35SecureBoot' },
+]
+
+// Resume behavior after a storage-error pause (api-model
+// types/VmStorageErrorResumeBehaviour). auto_resume is the engine default.
+export const STORAGE_ERROR_RESUME_OPTIONS: { value: string; labelId: MessageId }[] = [
+  { value: 'auto_resume', labelId: 'vm.edit.ha.resume.autoResume' },
+  { value: 'leave_paused', labelId: 'vm.edit.ha.resume.leavePaused' },
+  { value: 'kill', labelId: 'vm.edit.ha.resume.kill' },
+]
+
+// api-model types/InheritableBoolean for the per-VM migration toggles —
+// 'inherit' follows the cluster's setting.
+export const INHERITABLE_BOOLEAN_OPTIONS: { value: string; labelId: MessageId }[] = [
+  { value: 'inherit', labelId: 'vm.edit.host.inherit' },
+  { value: 'true', labelId: 'vm.edit.host.inheritable.on' },
+  { value: 'false', labelId: 'vm.edit.host.inheritable.off' },
+]
+
+// api-model types/ParallelMigrationsPolicy (4.7+) at the VM level — 'inherit'
+// follows the cluster; 'custom' reveals the connection-count input (2..255).
+export const VM_PARALLEL_MIGRATION_OPTIONS: { value: string; labelId: MessageId }[] = [
+  { value: 'inherit', labelId: 'vm.edit.host.inherit' },
+  { value: 'disabled', labelId: 'vm.edit.host.parallel.disabled' },
+  { value: 'auto', labelId: 'vm.edit.host.parallel.auto' },
+  { value: 'auto_parallel', labelId: 'vm.edit.host.parallel.autoParallel' },
+  { value: 'custom', labelId: 'vm.edit.host.parallel.custom' },
 ]
 
 // CPU shares presets (webadmin buckets); anything else is "Custom" and edited as

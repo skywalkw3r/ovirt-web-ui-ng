@@ -517,17 +517,39 @@ export interface ClusterExtrasDraft {
   migrationBandwidthMethod?: MigrationBandwidthMethod
   // Mbps; required + positive when the method is 'custom'
   migrationCustomBandwidth?: number
+  // InheritableBoolean string enum: 'inherit' | 'true' | 'false'
+  migrationEncrypted?: string
+  // ParallelMigrationsPolicy: 'inherit' | 'auto' | 'auto_parallel' | 'disabled'
+  // | 'custom' — with the connection count (2..255) riding when custom.
+  parallelMigrationsPolicy?: string
+  customParallelMigrations?: number
   fencingEnabled?: boolean
   skipIfSdActive?: boolean
   skipIfConnBroken?: boolean
   // percent: 25 | 50 | 75 | 100
   connBrokenThreshold?: number
+  // gluster-service clusters only — skip fencing while bricks are up / while
+  // fencing would break the volume quorum
+  skipIfGlusterBricksUp?: boolean
+  skipIfGlusterQuorumNotMet?: boolean
   // when false, the SPICE proxy override is cleared with an empty-string proxy
   spiceProxyEnabled?: boolean
   spiceProxy?: string
   macPoolId?: string
   switchType?: string
   firewallType?: string
+  // '' never rides — the form omits an unset chipset so the engine keeps its
+  // own (arch-derived) default
+  biosType?: string
+  // FipsMode: 'undefined' (auto-detect) | 'disabled' | 'enabled'
+  fipsMode?: string
+  // Audit-log threshold for host memory usage + its unit. Both ride together.
+  logMaxMemoryThreshold?: number
+  logMaxMemoryThresholdType?: string
+  // The FULL required-entropy-source list to store (the form toggles hwrng
+  // membership in the loaded list and only sets this when membership changed,
+  // so an untouched form never rewrites — or clears — the engine's list).
+  requiredRngSources?: string[]
 }
 
 // Translate the deepened-form draft into the body keys ClusterMapper honors
@@ -546,8 +568,16 @@ export function buildClusterExtrasPayload(draft: ClusterExtrasDraft): Record<str
 
   // Migration: send the policy and/or the bandwidth sub-object only when set.
   // For 'custom' the engine wants the Mbps in custom_value; the other methods
-  // carry only the assignment_method.
-  if (draft.migrationPolicyId !== undefined || draft.migrationBandwidthMethod !== undefined) {
+  // carry only the assignment_method. encrypted is the InheritableBoolean
+  // string enum verbatim; the parallel-migrations policy carries its custom
+  // connection count only when the policy is 'custom' (api-model
+  // MigrationOptions.customParallelMigrations).
+  if (
+    draft.migrationPolicyId !== undefined ||
+    draft.migrationBandwidthMethod !== undefined ||
+    draft.migrationEncrypted !== undefined ||
+    draft.parallelMigrationsPolicy !== undefined
+  ) {
     const migration: Record<string, unknown> = {}
     if (draft.migrationPolicyId !== undefined) {
       migration.policy = { id: draft.migrationPolicyId }
@@ -563,6 +593,16 @@ export function buildClusterExtrasPayload(draft: ClusterExtrasDraft): Record<str
         bandwidth.custom_value = draft.migrationCustomBandwidth
       }
       migration.bandwidth = bandwidth
+    }
+    if (draft.migrationEncrypted !== undefined) migration.encrypted = draft.migrationEncrypted
+    if (draft.parallelMigrationsPolicy !== undefined) {
+      migration.parallel_migrations_policy = draft.parallelMigrationsPolicy
+      if (
+        draft.parallelMigrationsPolicy === 'custom' &&
+        draft.customParallelMigrations !== undefined
+      ) {
+        migration.custom_parallel_migrations = draft.customParallelMigrations
+      }
     }
     body.migration = migration
   }
@@ -580,6 +620,12 @@ export function buildClusterExtrasPayload(draft: ClusterExtrasDraft): Record<str
       if (draft.connBrokenThreshold !== undefined) skip.threshold = draft.connBrokenThreshold
       fencing.skip_if_connectivity_broken = skip
     }
+    if (draft.skipIfGlusterBricksUp !== undefined) {
+      fencing.skip_if_gluster_bricks_up = draft.skipIfGlusterBricksUp
+    }
+    if (draft.skipIfGlusterQuorumNotMet !== undefined) {
+      fencing.skip_if_gluster_quorum_not_met = draft.skipIfGlusterQuorumNotMet
+    }
     body.fencing_policy = fencing
   }
 
@@ -592,6 +638,24 @@ export function buildClusterExtrasPayload(draft: ClusterExtrasDraft): Record<str
   if (draft.macPoolId !== undefined) body.mac_pool = { id: draft.macPoolId }
   if (draft.switchType !== undefined) body.switch_type = draft.switchType
   if (draft.firewallType !== undefined) body.firewall_type = draft.firewallType
+  if (draft.biosType !== undefined) body.bios_type = draft.biosType
+  if (draft.fipsMode !== undefined) body.fips_mode = draft.fipsMode
+
+  // The audit-log memory threshold rides with its unit — a bare number would
+  // silently re-interpret against whatever unit the engine already stores.
+  if (draft.logMaxMemoryThreshold !== undefined) {
+    body.log_max_memory_used_threshold = draft.logMaxMemoryThreshold
+    if (draft.logMaxMemoryThresholdType !== undefined) {
+      body.log_max_memory_used_threshold_type = draft.logMaxMemoryThresholdType
+    }
+  }
+
+  // Entropy sources: the FULL list replaces the stored one (list semantics on
+  // the engine), so the form only sets this when hwrng membership actually
+  // changed — an untouched form must omit it to preserve the engine's list.
+  if (draft.requiredRngSources !== undefined) {
+    body.required_rng_sources = { required_rng_source: draft.requiredRngSources }
+  }
 
   return body
 }

@@ -30,14 +30,21 @@ import { FieldHelp } from '../forms/FieldHelp'
 import { ModalVerticalTabs } from '../forms/ModalVerticalTabs'
 import {
   BANDWIDTH_METHODS,
+  BIOS_TYPES,
   blankDraft,
   buildSavePayload,
   clusterToDraft,
   COMPAT_VERSIONS,
   CONN_BROKEN_THRESHOLDS,
+  CPU_ARCHITECTURES,
   CPU_TYPES,
+  FIPS_MODES,
   FIREWALL_TYPES,
+  INHERITABLE_BOOLEAN,
+  LOG_THRESHOLD_TYPES,
   OVER_COMMIT_OPTIONS,
+  PARALLEL_MIGRATION_POLICIES,
+  RESILIENCE_POLICIES,
   SWITCH_TYPES,
   type ClusterDraft,
 } from './clusterDraft'
@@ -59,6 +66,39 @@ const BANDWIDTH_LABELS: Record<string, MessageId> = {
   auto: 'clusterForm.bandwidth.auto',
   hypervisor_default: 'clusterForm.bandwidth.hypervisorDefault',
   custom: 'clusterForm.bandwidth.custom',
+}
+const BIOS_TYPE_LABELS: Record<string, MessageId> = {
+  i440fx_sea_bios: 'clusterForm.bios.i440fx',
+  q35_sea_bios: 'clusterForm.bios.q35SeaBios',
+  q35_ovmf: 'clusterForm.bios.q35Ovmf',
+  q35_secure_boot: 'clusterForm.bios.q35SecureBoot',
+}
+const FIPS_MODE_LABELS: Record<string, MessageId> = {
+  undefined: 'clusterForm.fips.undefined',
+  disabled: 'clusterForm.fips.disabled',
+  enabled: 'clusterForm.fips.enabled',
+}
+const LOG_THRESHOLD_TYPE_LABELS: Record<string, MessageId> = {
+  percentage: 'clusterForm.logThreshold.percentage',
+  absolute_value_in_mb: 'clusterForm.logThreshold.absolute',
+}
+const RESILIENCE_LABELS: Record<string, MessageId> = {
+  migrate: 'clusterForm.resilience.migrate',
+  migrate_highly_available: 'clusterForm.resilience.migrateHa',
+  do_not_migrate: 'clusterForm.resilience.doNotMigrate',
+}
+// InheritableBoolean — inherit follows the engine-wide config value.
+const INHERITABLE_LABELS: Record<string, MessageId> = {
+  inherit: 'clusterForm.inheritable.inherit',
+  true: 'clusterForm.inheritable.true',
+  false: 'clusterForm.inheritable.false',
+}
+const PARALLEL_MIGRATION_LABELS: Record<string, MessageId> = {
+  inherit: 'clusterForm.inheritable.inherit',
+  disabled: 'clusterForm.parallel.disabled',
+  auto: 'clusterForm.parallel.auto',
+  auto_parallel: 'clusterForm.parallel.autoParallel',
+  custom: 'clusterForm.parallel.custom',
 }
 
 // The Create/Edit cluster modal. Owns a single flat draft — seeded from the
@@ -152,7 +192,13 @@ export function ClusterFormModal({
   // A custom migration bandwidth must be a positive Mbps before Save.
   const customBandwidthInvalid =
     draft.bandwidthMethod === 'custom' && !(Number(draft.customBandwidth) > 0)
-  const saveDisabled = pending || nameEmpty || dataCenterMissing || customBandwidthInvalid
+  // Custom parallel migrations need a connection count in the engine's 2..255.
+  const parallelConnections = Number(draft.customParallelMigrations)
+  const customParallelInvalid =
+    draft.parallelMigrationsPolicy === 'custom' &&
+    !(parallelConnections >= 2 && parallelConnections <= 255)
+  const saveDisabled =
+    pending || nameEmpty || dataCenterMissing || customBandwidthInvalid || customParallelInvalid
   const title = isEdit
     ? t('clusterForm.title.edit', { name: cluster.name ?? '' })
     : t('clusterForm.title.new')
@@ -193,6 +239,24 @@ export function ClusterFormModal({
         />
       </FormGroup>
 
+      <FormGroup label={t('common.field.comment')} fieldId="cluster-comment">
+        <TextInput
+          id="cluster-comment"
+          aria-label={t('clusterForm.comment.ariaLabel')}
+          value={draft.comment}
+          onChange={(_event, value) => set('comment', value)}
+        />
+      </FormGroup>
+
+      {/* DEFERRED — webadmin's General tab also carries Management Network and
+          Default Network Provider. Both are add-only over REST (api-model:
+          managementNetwork is documented on ClustersService.add only, and
+          externalNetworkProviders "can only be set during adding the cluster"),
+          so the edit dialog cannot change them; the create path defers them
+          until the cluster-networks usage flow lands. The "Change existing
+          VMs/Templates from I440FX to Q35" checkbox is a webadmin-internal mass
+          update with no REST field at all. */}
+
       <FormGroup
         label={t('clusterForm.dataCenter')}
         isRequired={!isEdit}
@@ -225,6 +289,34 @@ export function ClusterFormModal({
       </FormGroup>
 
       <FormGroup
+        label={t('clusterForm.cpuArch')}
+        fieldId="cluster-cpu-arch"
+        labelHelp={
+          <FieldHelp field={t('clusterForm.cpuArch')} content={t('fieldHelp.cluster.cpuArch')} />
+        }
+      >
+        <FormSelect
+          id="cluster-cpu-arch"
+          aria-label={t('clusterForm.cpuArch')}
+          value={draft.cpuArchitecture}
+          onChange={(_event, value) => set('cpuArchitecture', value)}
+        >
+          {/* arch tokens (x86_64, ppc64, …) render verbatim; only auto-detect
+              localizes. A loaded off-list arch stays selectable. */}
+          {(CPU_ARCHITECTURES.includes(draft.cpuArchitecture)
+            ? CPU_ARCHITECTURES
+            : [...CPU_ARCHITECTURES, draft.cpuArchitecture]
+          ).map((arch) => (
+            <FormSelectOption
+              key={arch}
+              value={arch}
+              label={arch === 'undefined' ? t('clusterForm.arch.auto') : arch}
+            />
+          ))}
+        </FormSelect>
+      </FormGroup>
+
+      <FormGroup
         label={t('clusterForm.cpuType')}
         fieldId="cluster-cpu-type"
         labelHelp={
@@ -240,6 +332,45 @@ export function ClusterFormModal({
           <FormSelectOption value="" label={t('clusterForm.cpuType.auto')} />
           {cpuTypes.map((cpuType) => (
             <FormSelectOption key={cpuType} value={cpuType} label={cpuType} />
+          ))}
+        </FormSelect>
+      </FormGroup>
+
+      <FormGroup
+        label={t('clusterForm.biosType')}
+        fieldId="cluster-bios-type"
+        labelHelp={
+          <FieldHelp field={t('clusterForm.biosType')} content={t('fieldHelp.cluster.biosType')} />
+        }
+      >
+        <FormSelect
+          id="cluster-bios-type"
+          aria-label={t('clusterForm.biosType')}
+          value={draft.biosType}
+          onChange={(_event, value) => set('biosType', value)}
+        >
+          <FormSelectOption value="" label={t('clusterForm.biosType.auto')} />
+          {BIOS_TYPES.map((bios) => (
+            <FormSelectOption key={bios} value={bios} label={t(BIOS_TYPE_LABELS[bios])} />
+          ))}
+        </FormSelect>
+      </FormGroup>
+
+      <FormGroup
+        label={t('clusterForm.fipsMode')}
+        fieldId="cluster-fips-mode"
+        labelHelp={
+          <FieldHelp field={t('clusterForm.fipsMode')} content={t('fieldHelp.cluster.fipsMode')} />
+        }
+      >
+        <FormSelect
+          id="cluster-fips-mode"
+          aria-label={t('clusterForm.fipsMode')}
+          value={draft.fipsMode}
+          onChange={(_event, value) => set('fipsMode', value)}
+        >
+          {FIPS_MODES.map((mode) => (
+            <FormSelectOption key={mode} value={mode} label={t(FIPS_MODE_LABELS[mode])} />
           ))}
         </FormSelect>
       </FormGroup>
@@ -313,6 +444,93 @@ export function ClusterFormModal({
           ))}
         </FormSelect>
       </FormGroup>
+
+      <FormGroup
+        label={t('clusterForm.virtService')}
+        fieldId="cluster-virt-service"
+        labelHelp={
+          <FieldHelp
+            field={t('clusterForm.virtService')}
+            content={t('fieldHelp.cluster.virtService')}
+          />
+        }
+      >
+        <Switch
+          id="cluster-virt-service"
+          aria-label={t('clusterForm.virtService')}
+          isChecked={draft.virtService}
+          onChange={(_event, checked) => set('virtService', checked)}
+        />
+      </FormGroup>
+
+      <FormGroup
+        label={t('clusterForm.glusterService')}
+        fieldId="cluster-gluster-service"
+        labelHelp={
+          <FieldHelp
+            field={t('clusterForm.glusterService')}
+            content={t('fieldHelp.cluster.glusterService')}
+          />
+        }
+      >
+        <Switch
+          id="cluster-gluster-service"
+          aria-label={t('clusterForm.glusterService')}
+          isChecked={draft.glusterService}
+          onChange={(_event, checked) => set('glusterService', checked)}
+        />
+      </FormGroup>
+
+      <FormGroup
+        label={t('clusterForm.logMaxThreshold')}
+        fieldId="cluster-log-threshold"
+        labelHelp={
+          <FieldHelp
+            field={t('clusterForm.logMaxThreshold')}
+            content={t('fieldHelp.cluster.logThreshold')}
+          />
+        }
+      >
+        <div style={{ display: 'flex', gap: 'var(--pf-t--global--spacer--sm)' }}>
+          <TextInput
+            id="cluster-log-threshold"
+            type="number"
+            min={1}
+            aria-label={t('clusterForm.logMaxThreshold')}
+            value={draft.logMaxThreshold}
+            onChange={(_event, value) => set('logMaxThreshold', value)}
+          />
+          <FormSelect
+            id="cluster-log-threshold-type"
+            aria-label={t('clusterForm.logThresholdUnit')}
+            value={draft.logMaxThresholdType}
+            onChange={(_event, value) => set('logMaxThresholdType', value)}
+          >
+            {LOG_THRESHOLD_TYPES.map((type) => (
+              <FormSelectOption
+                key={type}
+                value={type}
+                label={t(LOG_THRESHOLD_TYPE_LABELS[type])}
+              />
+            ))}
+          </FormSelect>
+        </div>
+      </FormGroup>
+
+      <FormGroup
+        label={t('clusterForm.hwrng')}
+        fieldId="cluster-hwrng"
+        labelHelp={
+          <FieldHelp field={t('clusterForm.hwrng')} content={t('fieldHelp.cluster.hwrng')} />
+        }
+      >
+        <Switch
+          id="cluster-hwrng"
+          aria-label={t('clusterForm.hwrng')}
+          isChecked={draft.hwrngRequired}
+          onChange={(_event, checked) => set('hwrngRequired', checked)}
+        />
+      </FormGroup>
     </Form>
   )
 
@@ -345,6 +563,24 @@ export function ClusterFormModal({
       </FormGroup>
 
       <FormGroup
+        label={t('clusterForm.threadsAsCores')}
+        fieldId="cluster-threads-as-cores"
+        labelHelp={
+          <FieldHelp
+            field={t('clusterForm.threadsAsCores')}
+            content={t('fieldHelp.cluster.threadsAsCores')}
+          />
+        }
+      >
+        <Switch
+          id="cluster-threads-as-cores"
+          aria-label={t('clusterForm.threadsAsCores')}
+          isChecked={draft.threadsAsCores}
+          onChange={(_event, checked) => set('threadsAsCores', checked)}
+        />
+      </FormGroup>
+
+      <FormGroup
         label={t('clusterForm.ballooning')}
         fieldId="cluster-ballooning"
         labelHelp={
@@ -359,6 +595,57 @@ export function ClusterFormModal({
           aria-label={t('clusterForm.ballooning')}
           isChecked={draft.ballooning}
           onChange={(_event, checked) => set('ballooning', checked)}
+        />
+      </FormGroup>
+
+      <FormGroup
+        label={t('clusterForm.ksm')}
+        fieldId="cluster-ksm"
+        labelHelp={<FieldHelp field={t('clusterForm.ksm')} content={t('fieldHelp.cluster.ksm')} />}
+      >
+        <Switch
+          id="cluster-ksm"
+          aria-label={t('clusterForm.ksm')}
+          isChecked={draft.ksmEnabled}
+          onChange={(_event, checked) => set('ksmEnabled', checked)}
+        />
+      </FormGroup>
+
+      {draft.ksmEnabled && (
+        <FormGroup
+          label={t('clusterForm.ksmMerge')}
+          fieldId="cluster-ksm-merge"
+          labelHelp={
+            <FieldHelp
+              field={t('clusterForm.ksmMerge')}
+              content={t('fieldHelp.cluster.ksmMerge')}
+            />
+          }
+        >
+          <Switch
+            id="cluster-ksm-merge"
+            aria-label={t('clusterForm.ksmMerge')}
+            isChecked={draft.ksmMergeAcrossNodes}
+            onChange={(_event, checked) => set('ksmMergeAcrossNodes', checked)}
+          />
+        </FormGroup>
+      )}
+
+      <FormGroup
+        label={t('clusterForm.haReservation')}
+        fieldId="cluster-ha-reservation"
+        labelHelp={
+          <FieldHelp
+            field={t('clusterForm.haReservation')}
+            content={t('fieldHelp.cluster.haReservation')}
+          />
+        }
+      >
+        <Switch
+          id="cluster-ha-reservation"
+          aria-label={t('clusterForm.haReservation')}
+          isChecked={draft.haReservation}
+          onChange={(_event, checked) => set('haReservation', checked)}
         />
       </FormGroup>
 
@@ -478,6 +765,95 @@ export function ClusterFormModal({
           />
         </FormGroup>
       )}
+
+      <FormGroup
+        label={t('clusterForm.resilience')}
+        fieldId="cluster-resilience"
+        labelHelp={
+          <FieldHelp
+            field={t('clusterForm.resilience')}
+            content={t('fieldHelp.cluster.resilience')}
+          />
+        }
+      >
+        <FormSelect
+          id="cluster-resilience"
+          aria-label={t('clusterForm.resilience')}
+          value={draft.resiliencePolicy}
+          onChange={(_event, value) => set('resiliencePolicy', value)}
+        >
+          {RESILIENCE_POLICIES.map((policy) => (
+            <FormSelectOption key={policy} value={policy} label={t(RESILIENCE_LABELS[policy])} />
+          ))}
+        </FormSelect>
+      </FormGroup>
+
+      <FormGroup
+        label={t('clusterForm.migrationEncrypted')}
+        fieldId="cluster-migration-encrypted"
+        labelHelp={
+          <FieldHelp
+            field={t('clusterForm.migrationEncrypted')}
+            content={t('fieldHelp.cluster.migrationEncrypted')}
+          />
+        }
+      >
+        <FormSelect
+          id="cluster-migration-encrypted"
+          aria-label={t('clusterForm.migrationEncrypted')}
+          value={draft.migrationEncrypted}
+          onChange={(_event, value) => set('migrationEncrypted', value)}
+        >
+          {INHERITABLE_BOOLEAN.map((option) => (
+            <FormSelectOption key={option} value={option} label={t(INHERITABLE_LABELS[option])} />
+          ))}
+        </FormSelect>
+      </FormGroup>
+
+      <FormGroup
+        label={t('clusterForm.parallelMigrations')}
+        fieldId="cluster-parallel-migrations"
+        labelHelp={
+          <FieldHelp
+            field={t('clusterForm.parallelMigrations')}
+            content={t('fieldHelp.cluster.parallelMigrations')}
+          />
+        }
+      >
+        <FormSelect
+          id="cluster-parallel-migrations"
+          aria-label={t('clusterForm.parallelMigrations')}
+          value={draft.parallelMigrationsPolicy}
+          onChange={(_event, value) => set('parallelMigrationsPolicy', value)}
+        >
+          {PARALLEL_MIGRATION_POLICIES.map((policy) => (
+            <FormSelectOption
+              key={policy}
+              value={policy}
+              label={t(PARALLEL_MIGRATION_LABELS[policy])}
+            />
+          ))}
+        </FormSelect>
+      </FormGroup>
+
+      {draft.parallelMigrationsPolicy === 'custom' && (
+        <FormGroup
+          label={t('clusterForm.parallelConnections')}
+          isRequired
+          fieldId="cluster-parallel-connections"
+        >
+          <TextInput
+            id="cluster-parallel-connections"
+            type="number"
+            min={2}
+            max={255}
+            aria-label={t('clusterForm.parallelConnections')}
+            validated={customParallelInvalid ? 'error' : 'default'}
+            value={draft.customParallelMigrations}
+            onChange={(_event, value) => set('customParallelMigrations', value)}
+          />
+        </FormGroup>
+      )}
     </Form>
   )
 
@@ -566,6 +942,48 @@ export function ClusterFormModal({
               </FormSelect>
             </FormGroup>
           )}
+
+          {/* Gluster guards — only meaningful (and only shown, mirroring
+              webadmin) when the cluster runs the Gluster service. */}
+          {draft.glusterService && (
+            <>
+              <FormGroup
+                label={t('clusterForm.skipGlusterBricks')}
+                fieldId="cluster-skip-gluster-bricks"
+                labelHelp={
+                  <FieldHelp
+                    field={t('clusterForm.skipGlusterBricks')}
+                    content={t('fieldHelp.cluster.skipGlusterBricks')}
+                  />
+                }
+              >
+                <Switch
+                  id="cluster-skip-gluster-bricks"
+                  aria-label={t('clusterForm.skipGlusterBricks')}
+                  isChecked={draft.skipIfGlusterBricksUp}
+                  onChange={(_event, checked) => set('skipIfGlusterBricksUp', checked)}
+                />
+              </FormGroup>
+
+              <FormGroup
+                label={t('clusterForm.skipGlusterQuorum')}
+                fieldId="cluster-skip-gluster-quorum"
+                labelHelp={
+                  <FieldHelp
+                    field={t('clusterForm.skipGlusterQuorum')}
+                    content={t('fieldHelp.cluster.skipGlusterQuorum')}
+                  />
+                }
+              >
+                <Switch
+                  id="cluster-skip-gluster-quorum"
+                  aria-label={t('clusterForm.skipGlusterQuorum')}
+                  isChecked={draft.skipIfGlusterQuorumNotMet}
+                  onChange={(_event, checked) => set('skipIfGlusterQuorumNotMet', checked)}
+                />
+              </FormGroup>
+            </>
+          )}
         </>
       )}
     </Form>
@@ -602,6 +1020,24 @@ export function ClusterFormModal({
           />
         </FormGroup>
       )}
+
+      <FormGroup
+        label={t('clusterForm.vncEncryption')}
+        fieldId="cluster-vnc-encryption"
+        labelHelp={
+          <FieldHelp
+            field={t('clusterForm.vncEncryption')}
+            content={t('fieldHelp.cluster.vncEncryption')}
+          />
+        }
+      >
+        <Switch
+          id="cluster-vnc-encryption"
+          aria-label={t('clusterForm.vncEncryption')}
+          isChecked={draft.vncEncryption}
+          onChange={(_event, checked) => set('vncEncryption', checked)}
+        />
+      </FormGroup>
     </Form>
   )
 

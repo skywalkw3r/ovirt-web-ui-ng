@@ -4325,4 +4325,151 @@ export const ja: LocaleCatalog = {
   'exportOva.host.placeholder': 'ホストを選択',
   'exportOva.item': 'OVAとしてエクスポート',
   'exportOva.title': '{name}をOVAとしてエクスポート',
+  // ── クラスター + VM 編集ダイアログの拡充（webadmin パリティ） ───────────────
+  'clusterForm.comment.ariaLabel': 'クラスターのコメント',
+  'clusterForm.cpuArch': 'CPUアーキテクチャー',
+  'clusterForm.arch.auto': '自動検出',
+  'clusterForm.biosType': 'チップセット/ファームウェアタイプ',
+  'clusterForm.biosType.auto': '自動検出',
+  'clusterForm.bios.i440fx': 'I440FXチップセット + BIOS',
+  'clusterForm.bios.q35SeaBios': 'Q35チップセット + BIOS',
+  'clusterForm.bios.q35Ovmf': 'Q35チップセット + UEFI',
+  'clusterForm.bios.q35SecureBoot': 'Q35チップセット + UEFI SecureBoot',
+  'clusterForm.fipsMode': 'FIPSモード',
+  'clusterForm.fips.undefined': '自動検出',
+  'clusterForm.fips.disabled': '無効',
+  'clusterForm.fips.enabled': '有効',
+  'clusterForm.virtService': 'Virtサービスを有効化',
+  'clusterForm.glusterService': 'Glusterサービスを有効化',
+  'clusterForm.logMaxThreshold': '最大メモリ使用量のログしきい値',
+  'clusterForm.logThresholdUnit': 'ログしきい値の単位',
+  'clusterForm.logThreshold.percentage': 'パーセント',
+  'clusterForm.logThreshold.absolute': '絶対値（MB）',
+  'clusterForm.hwrng': '/dev/hwrngエントロピーソースを必須にする',
+  'clusterForm.threadsAsCores': 'スレッドをコアとして数える',
+  'clusterForm.ksm': 'KSMを有効化',
+  'clusterForm.ksmMerge': 'NUMAノードをまたいでページをマージ',
+  'clusterForm.haReservation': 'HAリザベーションを有効化',
+  'clusterForm.resilience': 'レジリエンスポリシー',
+  'clusterForm.resilience.migrate': '仮想マシンを移行する',
+  'clusterForm.resilience.migrateHa': '高可用性の仮想マシンのみ移行する',
+  'clusterForm.resilience.doNotMigrate': '仮想マシンを移行しない',
+  'clusterForm.migrationEncrypted': '移行の暗号化',
+  'clusterForm.inheritable.inherit': 'エンジンのデフォルト',
+  'clusterForm.inheritable.true': '有効',
+  'clusterForm.inheritable.false': '無効',
+  'clusterForm.parallelMigrations': '並列移行',
+  'clusterForm.parallel.disabled': '無効',
+  'clusterForm.parallel.auto': '自動',
+  'clusterForm.parallel.autoParallel': '自動並列',
+  'clusterForm.parallel.custom': 'カスタム',
+  'clusterForm.parallelConnections': '移行の接続数',
+  'clusterForm.skipGlusterBricks': 'glusterブリックが稼働中はフェンシングをスキップ',
+  'clusterForm.skipGlusterQuorum': 'glusterクォーラムが崩れる場合はフェンシングをスキップ',
+  'clusterForm.vncEncryption': 'VNC暗号化を有効化',
+  'fieldHelp.cluster.cpuArch':
+    'クラスターのホストのCPUアーキテクチャー（x86_64、ppc64、s390x、aarch64）。自動検出は選択したCPUタイプ、または最初に参加したホストから導出します。',
+  'fieldHelp.cluster.biosType':
+    'クラスターの新規VMのデフォルトのチップセットとファームウェア。最近のゲストにはBIOSまたはUEFI付きQ35を、レガシー互換にはI440FXを使います。自動検出ではエンジンがアーキテクチャーごとに選択し、各VMで上書きできます。',
+  'fieldHelp.cluster.fipsMode':
+    'クラスターのホストがFIPS 140-2モードで動作するかどうか。自動検出は最初のホストのモードを採用します。クラスター内の全ホストは一致している必要があります。',
+  'fieldHelp.cluster.virtService':
+    'このクラスターのホストは仮想マシンを実行します。純粋なGlusterストレージクラスターの場合のみ無効化してください。',
+  'fieldHelp.cluster.glusterService':
+    'このクラスターのホストはGlusterFSストレージブリックを提供します。ボリュームビューとglusterフェンシングガードが有効になります。',
+  'fieldHelp.cluster.logThreshold':
+    'ホストの使用メモリがこのしきい値（RAMに対するパーセント、またはMB単位の絶対値）を超えたとき、監査ログに警告を書き込みます。',
+  'fieldHelp.cluster.hwrng':
+    'すべてのホストにハードウェアエントロピーデバイス/dev/hwrngの提供を要求し、VMが乱数生成器のソースとして使えるようにします。全ホストにハードウェアがある場合のみ有効化してください。',
+  'fieldHelp.cluster.threadsAsCores':
+    'SMTスレッドをスケジュール可能なコアとして公開します。ホストあたりのvCPUは増えますが、コア単位の性能保証は失われます。',
+  'fieldHelp.cluster.ksm':
+    'Kernel Same-page Mergingは、ホスト上のVM間で同一のメモリページを重複排除し、高密度クラスターでRAMを回収します。CPUコストが少しかかります。',
+  'fieldHelp.cluster.ksmMerge':
+    'KSMにNUMAノードをまたぐページのマージを許可します。メモリ節約は増えますが、リモートアクセスがNUMAに敏感なワークロードを遅くすることがあります。無効にするとマージはノード内に留まります。',
+  'fieldHelp.cluster.haReservation':
+    'ホスト1台の障害後に高可用性VMを再起動できるだけの空き容量をクラスターが維持しているかを継続的に検証し、不足時に警告します。',
+  'fieldHelp.cluster.resilience':
+    '障害ホストのVMの扱い：すべて移行する、高可用性のもののみ移行する、またはホストが復帰するまで停止のままにする。',
+  'fieldHelp.cluster.migrationEncrypted':
+    'ホスト間のライブ移行トラフィックを暗号化します。「エンジンのデフォルト」はエンジン全体の設定に従います。暗号化は混雑した移行ネットワークでCPU負荷を増やします。',
+  'fieldHelp.cluster.parallelMigrations':
+    '1つのライブ移行が使える接続数。「自動」はエンジンが決定し、「自動並列」は対応ネットワークで複数接続を有効にし、「カスタム」は数を固定します（2〜255）。「エンジンのデフォルト」はエンジン全体の設定に従います。',
+  'fieldHelp.cluster.skipGlusterBricks':
+    'glusterブリックが稼働してデータを提供している間はホストをフェンシングせず、ボリュームアクセスの中断を防ぎます。',
+  'fieldHelp.cluster.skipGlusterQuorum':
+    'ホストの停止によりglusterボリュームのクォーラムが崩れ、ボリュームが読み取り専用になる場合はフェンシングしません。',
+  'fieldHelp.cluster.vncEncryption':
+    'クラスターのVMのVNCコンソールトラフィックを暗号化します。コンソールクライアントはエンジンのCA署名証明書に対応している必要があります。',
+  'vm.edit.general.biosType': 'チップセット/ファームウェアタイプ',
+  'vm.edit.general.bios.clusterDefault': 'クラスターのデフォルト',
+  'vm.edit.general.startPaused': '一時停止モードで起動',
+  'vm.edit.general.vmId': 'VM ID',
+  'vm.edit.system.customEmulatedMachine': 'カスタムエミュレートマシン',
+  'vm.edit.system.customCpuModel': 'カスタムCPUモデル',
+  'vm.edit.system.clusterDefault.placeholder': 'クラスターのデフォルト',
+  'vm.edit.console.sso.field': 'シングルサインオン',
+  'vm.edit.console.sso': 'ゲストエージェントのシングルサインオンを使用',
+  'vm.edit.console.fileTransfer.field': 'SPICEファイル転送',
+  'vm.edit.console.fileTransfer': 'ドラッグ＆ドロップのファイル転送を有効化',
+  'vm.edit.console.copyPaste.field': 'SPICEクリップボード',
+  'vm.edit.console.copyPaste': 'クリップボードのコピー＆ペーストを有効化',
+  'vm.edit.host.migrationTuning': '移行チューニング',
+  'vm.edit.host.migrationPolicy': '移行ポリシー',
+  'vm.edit.host.inherit': 'クラスターのデフォルト',
+  'vm.edit.host.customDowntime': 'カスタム移行ダウンタイムを使用',
+  'vm.edit.host.downtimeMs': '移行ダウンタイム（ミリ秒）',
+  'vm.edit.host.autoConverge': '移行の自動収束',
+  'vm.edit.host.compressed': '移行の圧縮を有効化',
+  'vm.edit.host.encrypted': '移行の暗号化',
+  'vm.edit.host.inheritable.on': '有効',
+  'vm.edit.host.inheritable.off': '無効',
+  'vm.edit.host.parallelMigrations': '並列移行',
+  'vm.edit.host.parallel.disabled': '無効',
+  'vm.edit.host.parallel.auto': '自動',
+  'vm.edit.host.parallel.autoParallel': '自動並列',
+  'vm.edit.host.parallel.custom': 'カスタム',
+  'vm.edit.host.parallelConnections': '移行の接続数',
+  'vm.edit.ha.resume': '再開時の動作',
+  'vm.edit.ha.resume.autoResume': '自動的に再開',
+  'vm.edit.ha.resume.leavePaused': '一時停止のままにする',
+  'vm.edit.ha.resume.kill': '強制終了（kill）',
+  'vm.edit.resources.virtioScsiMq': 'VirtIO-SCSIマルチキュー',
+  'vm.edit.resources.virtioScsiMq.count': 'VirtIO-SCSIキュー数',
+  'vm.edit.resources.virtioScsiMq.auto': '自動',
+  'vm.edit.resources.multiQueues': 'ネットワークマルチキュー',
+  'fieldHelp.vm.biosType':
+    'VMのチップセットとファームウェア。「クラスターのデフォルト」はクラスターに従います。最近のWindowsゲストはUEFI（またはSecureBoot）付きQ35が必要で、I440FXは古いOS専用です。ファームウェアタイプの変更には通常ゲストの再インストールが必要です。',
+  'fieldHelp.vm.startPaused':
+    'ゲストがブートを始める前に、一時停止状態でVMを起動します。先にコンソールを接続して早期のブート出力を確認するのに便利です。',
+  'fieldHelp.vm.customEmulatedMachine':
+    'このVMだけクラスターのQEMUマシンタイプを上書きします（例：pc-q35-rhel9.2.0）。空欄ならクラスターのデフォルト。誤字があるとVMは起動できません。',
+  'fieldHelp.vm.customCpuModel':
+    'このVMだけクラスターのCPUモデルを上書きします（例：Skylake-Server）。空欄ならクラスターのデフォルト。VMが動作しうるすべてのホストがそのモデルに対応している必要があります。',
+  'fieldHelp.vm.sso':
+    'ポータルセッションの認証情報を使い、ゲストエージェント経由でコンソールユーザーをゲストに自動ログインさせます。',
+  'fieldHelp.vm.spiceFileTransfer':
+    'SPICEチャネル経由でクライアントからゲストへのファイルのドラッグを許可します。SPICEコンソールのみ。',
+  'fieldHelp.vm.spiceCopyPaste':
+    'SPICEチャネル経由でクライアントとゲスト間のコピー＆ペーストを許可します。SPICEコンソールのみ。',
+  'fieldHelp.vm.migrationPolicy':
+    'このVMだけクラスターのライブ移行収束戦略を上書きします。「クラスターのデフォルト」はそのポリシーを継承します。',
+  'fieldHelp.vm.migrationDowntime':
+    'ライブ移行の最終フェーズでこのVMが許容できる最長の停止時間（ミリ秒）。オフの場合はエンジンのデフォルトを使用します。',
+  'fieldHelp.vm.autoConverge':
+    '移行中に忙しいゲストのCPUを絞り、メモリコピーを収束させます。「クラスターのデフォルト」はその設定を継承します。Legacyポリシーでのみ有効です。',
+  'fieldHelp.vm.migrationCompressed':
+    '移行のメモリストリームを圧縮し、CPUコストと引き換えに帯域を節約します。「クラスターのデフォルト」はその設定を継承します。Legacyポリシーでのみ有効です。',
+  'fieldHelp.vm.migrationEncrypted':
+    'このVMのライブ移行トラフィックを暗号化します。「クラスターのデフォルト」はその設定を継承します。',
+  'fieldHelp.vm.parallelMigrations':
+    'このVMのライブ移行が使える接続数。「自動」はエンジンが決定し、「自動並列」は複数接続を有効にし、「カスタム」は数を固定します（2〜255）。「クラスターのデフォルト」はその設定を継承します。',
+  'fieldHelp.vm.resumeBehaviour':
+    'ストレージI/Oエラーで一時停止した後のVMの動作：ストレージ回復後に自動再開する、手動対応まで一時停止のままにする、または強制終了する（HAが別の場所で再起動できるように）。',
+  'fieldHelp.vm.virtioScsiMq':
+    'VirtIO-SCSIコントローラーに複数のリクエストキューを与え、多vCPU・多ディスクVMのストレージスループットを改善します。',
+  'fieldHelp.vm.virtioScsiMqCount':
+    'VirtIO-SCSIキューの正確な数。空欄（自動）ならVMのvCPUとディスクから導出します。',
+  'fieldHelp.vm.multiQueues':
+    'VMのvCPUに基づき各仮想NICに最適なキュー数を与え、多vCPU VMのネットワークスループットを改善します。',
 }

@@ -4861,6 +4861,163 @@ export const en = {
   'volumes.options.title': 'Volume options — {name}',
   'volumes.options.valueAria': 'Option value',
   'volumes.options.valuePlaceholder': 'value',
+  // ── Cluster + VM edit dialog depth (webadmin-parity settings pass) ─────────
+  // clusterForm.* — General
+  'clusterForm.comment.ariaLabel': 'Cluster comment',
+  'clusterForm.cpuArch': 'CPU architecture',
+  'clusterForm.arch.auto': 'Auto detect',
+  'clusterForm.biosType': 'Chipset/Firmware type',
+  'clusterForm.biosType.auto': 'Auto detect',
+  'clusterForm.bios.i440fx': 'I440FX chipset with BIOS',
+  'clusterForm.bios.q35SeaBios': 'Q35 chipset with BIOS',
+  'clusterForm.bios.q35Ovmf': 'Q35 chipset with UEFI',
+  'clusterForm.bios.q35SecureBoot': 'Q35 chipset with UEFI SecureBoot',
+  'clusterForm.fipsMode': 'FIPS mode',
+  'clusterForm.fips.undefined': 'Auto detect',
+  'clusterForm.fips.disabled': 'Disabled',
+  'clusterForm.fips.enabled': 'Enabled',
+  'clusterForm.virtService': 'Enable Virt service',
+  'clusterForm.glusterService': 'Enable Gluster service',
+  'clusterForm.logMaxThreshold': 'Maximum memory usage log threshold',
+  'clusterForm.logThresholdUnit': 'Log threshold unit',
+  'clusterForm.logThreshold.percentage': 'Percentage',
+  'clusterForm.logThreshold.absolute': 'Absolute value (MB)',
+  'clusterForm.hwrng': 'Require /dev/hwrng entropy source',
+  // clusterForm.* — Optimization
+  'clusterForm.threadsAsCores': 'Count threads as cores',
+  'clusterForm.ksm': 'Enable KSM',
+  'clusterForm.ksmMerge': 'Merge pages across NUMA nodes',
+  'clusterForm.haReservation': 'Enable HA reservation',
+  // clusterForm.* — Migration
+  'clusterForm.resilience': 'Resilience policy',
+  'clusterForm.resilience.migrate': 'Migrate virtual machines',
+  'clusterForm.resilience.migrateHa': 'Migrate only highly available virtual machines',
+  'clusterForm.resilience.doNotMigrate': 'Do not migrate virtual machines',
+  'clusterForm.migrationEncrypted': 'Migration encryption',
+  'clusterForm.inheritable.inherit': 'Engine default',
+  'clusterForm.inheritable.true': 'Enabled',
+  'clusterForm.inheritable.false': 'Disabled',
+  'clusterForm.parallelMigrations': 'Parallel migrations',
+  'clusterForm.parallel.disabled': 'Disabled',
+  'clusterForm.parallel.auto': 'Auto',
+  'clusterForm.parallel.autoParallel': 'Auto parallel',
+  'clusterForm.parallel.custom': 'Custom',
+  'clusterForm.parallelConnections': 'Migration connections',
+  // clusterForm.* — Fencing + Console
+  'clusterForm.skipGlusterBricks': 'Skip fencing if gluster bricks are up',
+  'clusterForm.skipGlusterQuorum': 'Skip fencing if gluster quorum would break',
+  'clusterForm.vncEncryption': 'Enable VNC encryption',
+  // fieldHelp.cluster.* — the new General/Optimization/Migration/Fencing knobs
+  'fieldHelp.cluster.cpuArch':
+    'The CPU architecture of the cluster’s hosts (x86_64, ppc64, s390x, aarch64). Auto detect derives it from the chosen CPU type or the first host that joins.',
+  'fieldHelp.cluster.biosType':
+    'The default chipset and firmware for new VMs in the cluster: Q35 with BIOS or UEFI for current guests, I440FX for legacy compatibility. Auto detect lets the engine pick per architecture; individual VMs can override it.',
+  'fieldHelp.cluster.fipsMode':
+    'Whether the cluster’s hosts run in FIPS 140-2 mode. Auto detect adopts the mode of the first host; all hosts in a cluster must match it.',
+  'fieldHelp.cluster.virtService':
+    'Hosts in this cluster run virtual machines. Disable only for pure Gluster storage clusters.',
+  'fieldHelp.cluster.glusterService':
+    'Hosts in this cluster serve GlusterFS storage bricks. Enables the Volumes views and the gluster fencing guards.',
+  'fieldHelp.cluster.logThreshold':
+    'Write an audit-log warning when a host’s used memory crosses this threshold, as a percentage of its RAM or an absolute value in MB.',
+  'fieldHelp.cluster.hwrng':
+    'Require every host to expose the /dev/hwrng hardware entropy device, letting VMs use it as a Random Number Generator source. Only enable when all hosts have the hardware.',
+  'fieldHelp.cluster.threadsAsCores':
+    'Expose SMT threads as schedulable cores, allowing more vCPUs per host at the cost of per-core performance guarantees.',
+  'fieldHelp.cluster.ksm':
+    'Kernel Same-page Merging deduplicates identical memory pages across VMs on a host, reclaiming RAM on dense clusters at some CPU cost.',
+  'fieldHelp.cluster.ksmMerge':
+    'Allow KSM to merge pages across NUMA nodes. More memory savings, but remote-node access can slow NUMA-sensitive workloads; disable to keep merges node-local.',
+  'fieldHelp.cluster.haReservation':
+    'Continuously verify the cluster keeps enough spare capacity to restart its highly available VMs after a single host failure, and raise an alert when it does not.',
+  'fieldHelp.cluster.resilience':
+    'What happens to a failed host’s VMs: migrate them all, migrate only the highly available ones, or leave them down until the host returns.',
+  'fieldHelp.cluster.migrationEncrypted':
+    'Encrypt live-migration traffic between hosts. Engine default follows the engine-wide setting; encryption adds CPU overhead on busy migration networks.',
+  'fieldHelp.cluster.parallelMigrations':
+    'How many connections a single live migration may use: Auto lets the engine decide, Auto parallel enables multiple connections on capable networks, Custom fixes the count (2–255). Engine default follows the engine-wide setting.',
+  'fieldHelp.cluster.skipGlusterBricks':
+    'Do not fence a host while its gluster bricks are still up and serving data, to avoid interrupting volume access.',
+  'fieldHelp.cluster.skipGlusterQuorum':
+    'Do not fence a host when taking it down would break the gluster volume quorum and force volumes read-only.',
+  'fieldHelp.cluster.vncEncryption':
+    'Encrypt VNC console traffic for the cluster’s VMs. Console clients must support the engine’s CA-signed certificates.',
+  // vm.edit.* — General/System depth
+  'vm.edit.general.biosType': 'Chipset/Firmware type',
+  'vm.edit.general.bios.clusterDefault': 'Cluster default',
+  'vm.edit.general.startPaused': 'Start in pause mode',
+  'vm.edit.general.vmId': 'VM ID',
+  'vm.edit.system.customEmulatedMachine': 'Custom emulated machine',
+  'vm.edit.system.customCpuModel': 'Custom CPU model',
+  'vm.edit.system.clusterDefault.placeholder': 'Cluster default',
+  // vm.edit.* — Console depth
+  'vm.edit.console.sso.field': 'Single sign-on',
+  'vm.edit.console.sso': 'Use guest-agent single sign-on',
+  'vm.edit.console.fileTransfer.field': 'SPICE file transfer',
+  'vm.edit.console.fileTransfer': 'Enable drag-and-drop file transfer',
+  'vm.edit.console.copyPaste.field': 'SPICE clipboard',
+  'vm.edit.console.copyPaste': 'Enable clipboard copy and paste',
+  // vm.edit.* — Host migration tuning
+  'vm.edit.host.migrationTuning': 'Migration tuning',
+  'vm.edit.host.migrationPolicy': 'Migration policy',
+  'vm.edit.host.inherit': 'Cluster default',
+  'vm.edit.host.customDowntime': 'Use custom migration downtime',
+  'vm.edit.host.downtimeMs': 'Migration downtime (ms)',
+  'vm.edit.host.autoConverge': 'Auto converge migrations',
+  'vm.edit.host.compressed': 'Enable migration compression',
+  'vm.edit.host.encrypted': 'Migration encryption',
+  'vm.edit.host.inheritable.on': 'Enabled',
+  'vm.edit.host.inheritable.off': 'Disabled',
+  'vm.edit.host.parallelMigrations': 'Parallel migrations',
+  'vm.edit.host.parallel.disabled': 'Disabled',
+  'vm.edit.host.parallel.auto': 'Auto',
+  'vm.edit.host.parallel.autoParallel': 'Auto parallel',
+  'vm.edit.host.parallel.custom': 'Custom',
+  'vm.edit.host.parallelConnections': 'Migration connections',
+  // vm.edit.* — High Availability + Resource Allocation depth
+  'vm.edit.ha.resume': 'Resume behavior',
+  'vm.edit.ha.resume.autoResume': 'Automatically resume',
+  'vm.edit.ha.resume.leavePaused': 'Leave paused',
+  'vm.edit.ha.resume.kill': 'Kill',
+  'vm.edit.resources.virtioScsiMq': 'VirtIO-SCSI multi-queues',
+  'vm.edit.resources.virtioScsiMq.count': 'Number of VirtIO-SCSI queues',
+  'vm.edit.resources.virtioScsiMq.auto': 'Auto',
+  'vm.edit.resources.multiQueues': 'Network multi-queues',
+  // fieldHelp.vm.* — the new VM dialog knobs
+  'fieldHelp.vm.biosType':
+    'The VM’s chipset and firmware. Cluster default follows the cluster; Q35 with UEFI (or SecureBoot) is required by current Windows guests, I440FX only for legacy OSes. Changing firmware type usually requires reinstalling the guest.',
+  'fieldHelp.vm.startPaused':
+    'Start the VM paused, before the guest begins booting — useful to attach a console first and catch early boot output.',
+  'fieldHelp.vm.customEmulatedMachine':
+    'Override the cluster’s QEMU machine type for this VM (e.g. pc-q35-rhel9.2.0). Leave empty for the cluster default; a typo here prevents the VM from starting.',
+  'fieldHelp.vm.customCpuModel':
+    'Override the cluster’s CPU model for this VM (e.g. Skylake-Server). Leave empty for the cluster default; the model must be supported by every host the VM can run on.',
+  'fieldHelp.vm.sso':
+    'Log the console user into the guest automatically through the guest agent, using the credentials of the portal session.',
+  'fieldHelp.vm.spiceFileTransfer':
+    'Allow dragging files from the client into the guest over the SPICE channel. SPICE consoles only.',
+  'fieldHelp.vm.spiceCopyPaste':
+    'Allow clipboard copy and paste between the client and the guest over the SPICE channel. SPICE consoles only.',
+  'fieldHelp.vm.migrationPolicy':
+    'Override the cluster’s live-migration convergence strategy for this VM. Cluster default inherits the cluster’s policy.',
+  'fieldHelp.vm.migrationDowntime':
+    'The longest pause (in milliseconds) this VM may tolerate during the final phase of a live migration. Off uses the engine default.',
+  'fieldHelp.vm.autoConverge':
+    'Throttle a busy guest’s CPU during migration so memory copying can converge. Cluster default inherits the cluster’s setting; only applies with the Legacy policy.',
+  'fieldHelp.vm.migrationCompressed':
+    'Compress migration memory streams to reduce bandwidth at some CPU cost. Cluster default inherits the cluster’s setting; only applies with the Legacy policy.',
+  'fieldHelp.vm.migrationEncrypted':
+    'Encrypt this VM’s live-migration traffic. Cluster default inherits the cluster’s setting.',
+  'fieldHelp.vm.parallelMigrations':
+    'How many connections this VM’s live migration may use: Auto lets the engine decide, Auto parallel enables multiple connections, Custom fixes the count (2–255). Cluster default inherits the cluster’s setting.',
+  'fieldHelp.vm.resumeBehaviour':
+    'What the VM does after being paused by a storage I/O error: resume automatically once storage recovers, stay paused for manual action, or be killed (so HA can restart it elsewhere).',
+  'fieldHelp.vm.virtioScsiMq':
+    'Give the VirtIO-SCSI controller multiple request queues, improving storage throughput for multi-vCPU VMs with many disks.',
+  'fieldHelp.vm.virtioScsiMqCount':
+    'The exact number of VirtIO-SCSI queues. Leave empty (Auto) to derive it from the VM’s vCPUs and disks.',
+  'fieldHelp.vm.multiQueues':
+    'Give each virtual NIC an optimal number of queues based on the VM’s vCPUs, improving network throughput for multi-vCPU VMs.',
 } as const
 
 // The id union — source of truth for every typed i18n surface (useT, the
