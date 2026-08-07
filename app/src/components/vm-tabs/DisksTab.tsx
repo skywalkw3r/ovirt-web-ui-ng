@@ -33,6 +33,7 @@ import {
 import { CheckIcon, EllipsisVIcon } from '@patternfly/react-icons'
 import type { IAction } from '@patternfly/react-table'
 import { ActionsColumn, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table'
+import { Link } from '@tanstack/react-router'
 import { StatusBadge } from '../StatusBadge'
 import type { NewVmDirectLunDiskSpec } from '../../api/resources/disks'
 import { diskSizeBytes, type Disk, type DiskAttachment } from '../../api/schemas/disk'
@@ -305,7 +306,15 @@ export function DisksTab({ vmId }: { vmId: string }) {
       case 'name':
         return (
           <>
-            {attachment.disk?.name ?? '—'}
+            {/* Cross-link to the disk's own detail page; a stub row without an
+                id keeps plain text. The LUN badge stays outside the link. */}
+            {attachment.disk?.id !== undefined ? (
+              <Link to="/disks/$diskId" params={{ diskId: attachment.disk.id }}>
+                {attachment.disk.name ?? attachment.disk.id}
+              </Link>
+            ) : (
+              (attachment.disk?.name ?? '—')
+            )}
             {attachment.disk?.storage_type === 'lun' && (
               <Label isCompact color="purple" style={{ marginInlineStart: '0.5rem' }}>
                 {t('disk.lun.badge')}
@@ -332,12 +341,26 @@ export function DisksTab({ vmId }: { vmId: string }) {
         // Direct-LUN disks live on SAN backing, not a domain. The inline
         // storage_domains entries are id-only stubs on the collection read,
         // so names join from the cached inventory (useStorageDomainLookup).
+        // Each ref cross-links to its domain detail page (id-less stubs keep
+        // plain text); a shareable disk on several domains lists them all.
         if (attachment.disk?.storage_type === 'lun') return '—'
         const domainRefs = attachment.disk?.storage_domains?.storage_domain ?? []
-        const names = domainRefs.map(
-          (ref) => ref.name ?? storageDomainOf(ref.id)?.name ?? ref.id ?? '—',
-        )
-        return names.length > 0 ? names.join(', ') : '—'
+        if (domainRefs.length === 0) return '—'
+        return domainRefs.map((ref, index) => {
+          const name = ref.name ?? storageDomainOf(ref.id)?.name ?? ref.id ?? '—'
+          return (
+            <span key={ref.id ?? index}>
+              {index > 0 && ', '}
+              {ref.id !== undefined ? (
+                <Link to="/storage/$storageDomainId" params={{ storageDomainId: ref.id }}>
+                  {name}
+                </Link>
+              ) : (
+                name
+              )}
+            </span>
+          )
+        })
       }
       case 'readOnly':
         // read_only rides on the attachment, not the disk

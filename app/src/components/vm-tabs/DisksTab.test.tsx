@@ -15,6 +15,14 @@ import { enMessages } from '../../i18n/messages/en'
 // Add-Disk profile field sits behind a button click (not reachable under
 // renderToStaticMarkup) and reuses DiskFormModal's profile field, covered by
 // DiskFormModal.test.tsx.
+
+// The name/storage-domain cells cross-link via the router; static render has
+// no RouterProvider, so Link reduces to a bare anchor (ClusterNetworksTab
+// pattern).
+vi.mock('@tanstack/react-router', () => ({
+  Link: ({ children }: { children?: ReactNode }) => <a>{children}</a>,
+}))
+
 vi.mock('@patternfly/react-core', () => {
   const passthrough =
     (tag: string) =>
