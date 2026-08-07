@@ -20,6 +20,8 @@ import { ExportIcon } from '@patternfly/react-icons'
 import type { Vm } from '../api/schemas/vm'
 import { useExportOva } from '../hooks/useExportOva'
 import { useHosts } from '../hooks/useHosts'
+import type { MessageId } from '../i18n/messages/en'
+import { useT } from '../i18n/useT'
 import { statusText } from '../lib/format'
 
 // Marker class the click shield below uses to recognize its own modal.
@@ -48,11 +50,12 @@ function useMenuClickShield() {
 const EXPORT_DENIED_STATUSES = new Set(['image_locked', 'not_responding', 'unknown', 'unassigned'])
 
 // An absolute POSIX path on the host — the OVA lands here. Mirrors the
-// export-path check but for a plain directory (no host:/ prefix).
-function directoryError(value: string): string | undefined {
+// export-path check but for a plain directory (no host:/ prefix). Returns a
+// message id resolved via t() at the render site (the newHostDraft idiom).
+function directoryError(value: string): MessageId | undefined {
   const trimmed = value.trim()
-  if (trimmed === '') return 'A target directory is required'
-  if (!trimmed.startsWith('/')) return 'Enter an absolute path (starting with /)'
+  if (trimmed === '') return 'exportOva.directory.required'
+  if (!trimmed.startsWith('/')) return 'exportOva.directory.absolute'
   return undefined
 }
 
@@ -61,6 +64,7 @@ function directoryError(value: string): string | undefined {
 // VM's disks into an OVA on the chosen host. Disk-locked statuses keep the
 // item hoverable but disabled with the reason in a tooltip.
 export function ExportOvaModalItem({ vm }: { vm: Vm }) {
+  const t = useT()
   const [isOpen, setIsOpen] = useState(false)
 
   if (vm.status !== undefined && EXPORT_DENIED_STATUSES.has(vm.status)) {
@@ -69,10 +73,10 @@ export function ExportOvaModalItem({ vm }: { vm: Vm }) {
         icon={<ExportIcon />}
         isAriaDisabled
         tooltipProps={{
-          content: `The virtual machine cannot be exported while it is ${statusText(vm.status)}`,
+          content: t('exportOva.deniedReason', { status: statusText(vm.status) }),
         }}
       >
-        Export as OVA
+        {t('exportOva.item')}
       </DropdownItem>
     )
   }
@@ -80,7 +84,7 @@ export function ExportOvaModalItem({ vm }: { vm: Vm }) {
   return (
     <>
       <DropdownItem icon={<ExportIcon />} onClick={() => setIsOpen(true)}>
-        Export as OVA
+        {t('exportOva.item')}
       </DropdownItem>
       {isOpen && <ExportOvaModal vm={vm} onClose={() => setIsOpen(false)} />}
     </>
@@ -93,6 +97,7 @@ export function ExportOvaModalItem({ vm }: { vm: Vm }) {
 // "Exporting" and the Tasks drawer tracks it. Modal unmounts on close so state
 // resets for free.
 function ExportOvaModal({ vm, onClose }: { vm: Vm; onClose: () => void }) {
+  const t = useT()
   const [hostId, setHostId] = useState('')
   const [directory, setDirectory] = useState('')
   const [filename, setFilename] = useState(`${vm.name}.ova`)
@@ -130,7 +135,10 @@ function ExportOvaModal({ vm, onClose }: { vm: Vm; onClose: () => void }) {
       aria-labelledby="export-ova-title"
       aria-describedby="export-ova-body"
     >
-      <ModalHeader title={`Export ${vm.name} as OVA`} labelId="export-ova-title" />
+      <ModalHeader
+        title={t('exportOva.title', { name: vm.name ?? '' })}
+        labelId="export-ova-title"
+      />
       <ModalBody id="export-ova-body">
         <Form
           id="export-ova-form"
@@ -139,25 +147,25 @@ function ExportOvaModal({ vm, onClose }: { vm: Vm; onClose: () => void }) {
             if (canSubmit) save()
           }}
         >
-          <FormGroup label="Host" isRequired fieldId="export-ova-host">
+          <FormGroup label={t('exportOva.host.label')} isRequired fieldId="export-ova-host">
             {hosts.isPending ? (
-              <Skeleton height="2.25rem" screenreaderText="Loading hosts" />
+              <Skeleton height="2.25rem" screenreaderText={t('exportOva.host.loading')} />
             ) : hosts.isError ? (
               <FormHelperText>
                 <HelperText>
                   <HelperTextItem variant="error">
-                    Could not load hosts: {hosts.error.message}
+                    {t('exportOva.host.error', { message: hosts.error.message })}
                   </HelperTextItem>
                 </HelperText>
               </FormHelperText>
             ) : (
               <FormSelect
                 id="export-ova-host"
-                aria-label="Host"
+                aria-label={t('exportOva.host.label')}
                 value={hostId}
                 onChange={(_event, value) => setHostId(value)}
               >
-                <FormSelectOption value="" label="Select a host" isDisabled />
+                <FormSelectOption value="" label={t('exportOva.host.placeholder')} isDisabled />
                 {eligibleHosts.map((host) => (
                   <FormSelectOption key={host.id} value={host.id} label={host.name ?? host.id} />
                 ))}
@@ -165,12 +173,16 @@ function ExportOvaModal({ vm, onClose }: { vm: Vm; onClose: () => void }) {
             )}
           </FormGroup>
 
-          <FormGroup label="Directory" isRequired fieldId="export-ova-directory">
+          <FormGroup
+            label={t('exportOva.directory.label')}
+            isRequired
+            fieldId="export-ova-directory"
+          >
             <TextInput
               id="export-ova-directory"
               isRequired
-              aria-label="Directory"
-              placeholder="/var/tmp/ova"
+              aria-label={t('exportOva.directory.label')}
+              placeholder={t('exportOva.directory.placeholder')}
               validated={directory !== '' && dirError !== undefined ? 'error' : 'default'}
               value={directory}
               onChange={(_event, value) => setDirectory(value)}
@@ -181,17 +193,17 @@ function ExportOvaModal({ vm, onClose }: { vm: Vm; onClose: () => void }) {
                   variant={directory !== '' && dirError !== undefined ? 'error' : 'default'}
                 >
                   {directory !== '' && dirError !== undefined
-                    ? dirError
-                    : 'An absolute path on the selected host where the OVA file is written.'}
+                    ? t(dirError)
+                    : t('exportOva.directory.help')}
                 </HelperTextItem>
               </HelperText>
             </FormHelperText>
           </FormGroup>
 
-          <FormGroup label="File name" fieldId="export-ova-filename">
+          <FormGroup label={t('exportOva.filename')} fieldId="export-ova-filename">
             <TextInput
               id="export-ova-filename"
-              aria-label="File name"
+              aria-label={t('exportOva.filename')}
               value={filename}
               onChange={(_event, value) => setFilename(value)}
             />
@@ -206,10 +218,10 @@ function ExportOvaModal({ vm, onClose }: { vm: Vm; onClose: () => void }) {
           isLoading={pending}
           isDisabled={!canSubmit}
         >
-          Export
+          {t('exportOva.action')}
         </Button>
         <Button variant="secondary" onClick={onClose} isDisabled={pending}>
-          Cancel
+          {t('common.action.cancel')}
         </Button>
       </ModalFooter>
     </Modal>

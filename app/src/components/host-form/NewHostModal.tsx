@@ -20,6 +20,7 @@ import type { UseQueryResult } from '@tanstack/react-query'
 import type { Cluster } from '../../api/schemas/cluster'
 import { useClusters } from '../../hooks/useCatalog'
 import { useAddHost } from '../../hooks/useHostMutations'
+import { useT } from '../../i18n/useT'
 import { FieldHelp } from '../forms/FieldHelp'
 import { ModalVerticalTabs } from '../forms/ModalVerticalTabs'
 import { ConsoleGpuSection } from './ConsoleGpuSection'
@@ -55,6 +56,7 @@ function GeneralSection({
   clusters: UseQueryResult<Cluster[]>
   clusterId: string
 }) {
+  const t = useT()
   const nameError = newHostNameError(draft.name)
   const addressError = newHostAddressError(draft.address)
   const sshPortError = newHostSshPortError(draft.sshPort)
@@ -66,19 +68,16 @@ function GeneralSection({
           select (error with an inline retry), an empty inventory reads as
           such, and all of them keep Save gated through clusterId === ''. */}
       <FormGroup
-        label="Cluster"
+        label={t('common.field.cluster')}
         isRequired
         fieldId="new-host-cluster"
         labelHelp={
-          <FieldHelp
-            field="Cluster"
-            content="The cluster the host joins. Its CPU must be compatible with the cluster’s CPU type; the host then runs that cluster’s VMs and sees its networks and storage."
-          />
+          <FieldHelp field={t('common.field.cluster')} content={t('hostForm.cluster.help')} />
         }
       >
         <FormSelect
           id="new-host-cluster"
-          aria-label="Cluster"
+          aria-label={t('common.field.cluster')}
           value={clusterId}
           isDisabled={clusters.isPending || clusters.isError}
           onChange={(_event, value) => set('clusterId', value)}
@@ -86,7 +85,9 @@ function GeneralSection({
           {clusterOptions.length === 0 && (
             <FormSelectOption
               value=""
-              label={clusters.isPending ? 'Loading clusters…' : 'No clusters available'}
+              label={
+                clusters.isPending ? t('hostForm.clusters.loading') : t('hostForm.clusters.none')
+              }
               isDisabled
             />
           )}
@@ -98,9 +99,9 @@ function GeneralSection({
           <FormHelperText>
             <HelperText>
               <HelperTextItem variant="error">
-                Could not load clusters.{' '}
+                {t('hostForm.clusters.error')}{' '}
                 <Button variant="link" isInline onClick={() => void clusters.refetch()}>
-                  Retry
+                  {t('common.action.retry')}
                 </Button>
               </HelperTextItem>
             </HelperText>
@@ -108,11 +109,11 @@ function GeneralSection({
         )}
       </FormGroup>
 
-      <FormGroup label="Name" isRequired fieldId="new-host-name">
+      <FormGroup label={t('common.field.name')} isRequired fieldId="new-host-name">
         <TextInput
           id="new-host-name"
           isRequired
-          aria-label="Host name"
+          aria-label={t('hostForm.field.hostName')}
           validated={nameError !== undefined ? 'error' : 'default'}
           value={draft.name}
           onChange={(_event, value) => set('name', value)}
@@ -120,26 +121,26 @@ function GeneralSection({
         {nameError !== undefined && (
           <FormHelperText>
             <HelperText>
-              <HelperTextItem variant="error">{nameError}</HelperTextItem>
+              <HelperTextItem variant="error">{t(nameError)}</HelperTextItem>
             </HelperText>
           </FormHelperText>
         )}
       </FormGroup>
 
-      <FormGroup label="Comment" fieldId="new-host-comment">
+      <FormGroup label={t('common.field.comment')} fieldId="new-host-comment">
         <TextInput
           id="new-host-comment"
-          aria-label="Host comment"
+          aria-label={t('hostForm.field.hostComment')}
           value={draft.comment}
           onChange={(_event, value) => set('comment', value)}
         />
       </FormGroup>
 
-      <FormGroup label="Hostname / IP" isRequired fieldId="new-host-address">
+      <FormGroup label={t('hostForm.field.address')} isRequired fieldId="new-host-address">
         <TextInput
           id="new-host-address"
           isRequired
-          aria-label="Hostname or IP address"
+          aria-label={t('hostForm.field.addressAria')}
           validated={addressError !== undefined ? 'error' : 'default'}
           value={draft.address}
           onChange={(_event, value) => set('address', value)}
@@ -147,18 +148,18 @@ function GeneralSection({
         <FormHelperText>
           <HelperText>
             <HelperTextItem variant={addressError !== undefined ? 'error' : 'default'}>
-              {addressError ?? 'The address the engine connects to over SSH to install the host'}
+              {addressError !== undefined ? t(addressError) : t('hostForm.address.help')}
             </HelperTextItem>
           </HelperText>
         </FormHelperText>
       </FormGroup>
 
-      <FormGroup label="SSH port" isRequired fieldId="new-host-ssh-port">
+      <FormGroup label={t('hostForm.field.sshPort')} isRequired fieldId="new-host-ssh-port">
         <TextInput
           id="new-host-ssh-port"
           type="number"
           isRequired
-          aria-label="SSH port"
+          aria-label={t('hostForm.field.sshPort')}
           validated={sshPortError !== undefined ? 'error' : 'default'}
           value={draft.sshPort}
           onChange={(_event, value) => set('sshPort', value)}
@@ -166,24 +167,29 @@ function GeneralSection({
         {sshPortError !== undefined && (
           <FormHelperText>
             <HelperText>
-              <HelperTextItem variant="error">{sshPortError}</HelperTextItem>
+              <HelperTextItem variant="error">{t(sshPortError)}</HelperTextItem>
             </HelperText>
           </FormHelperText>
         )}
       </FormGroup>
 
-      <FormGroup label="Authentication" role="radiogroup" isStack fieldId="new-host-auth">
+      <FormGroup
+        label={t('hostForm.field.authentication')}
+        role="radiogroup"
+        isStack
+        fieldId="new-host-auth"
+      >
         <Radio
           id="new-host-auth-password"
           name="new-host-auth"
-          label="Password"
+          label={t('common.field.password')}
           isChecked={draft.authMethod === 'password'}
           onChange={() => set('authMethod', 'password')}
         />
         <Radio
           id="new-host-auth-publickey"
           name="new-host-auth"
-          label="SSH public key"
+          label={t('hostForm.auth.publicKey')}
           isChecked={draft.authMethod === 'publickey'}
           onChange={() => set('authMethod', 'publickey')}
         />
@@ -191,17 +197,22 @@ function GeneralSection({
 
       {/* Installs always run as root — webadmin renders the same fixed,
           unchangeable user name (HostModel setIsChangeable(false)). */}
-      <FormGroup label="SSH user" fieldId="new-host-ssh-user">
-        <TextInput id="new-host-ssh-user" aria-label="SSH user" value="root" isDisabled />
+      <FormGroup label={t('hostForm.field.sshUser')} fieldId="new-host-ssh-user">
+        <TextInput
+          id="new-host-ssh-user"
+          aria-label={t('hostForm.field.sshUser')}
+          value="root"
+          isDisabled
+        />
       </FormGroup>
 
       {draft.authMethod === 'password' ? (
-        <FormGroup label="Password" fieldId="new-host-root-password">
+        <FormGroup label={t('common.field.password')} fieldId="new-host-root-password">
           <TextInput
             id="new-host-root-password"
             type="password"
             autoComplete="new-password"
-            aria-label="Root password"
+            aria-label={t('hostForm.field.rootPassword')}
             value={draft.rootPassword}
             onChange={(_event, value) => set('rootPassword', value)}
           />
@@ -210,9 +221,7 @@ function GeneralSection({
               modal open with the fault. */}
           <FormHelperText>
             <HelperText>
-              <HelperTextItem>
-                Used once over SSH to install the host — the engine does not store it.
-              </HelperTextItem>
+              <HelperTextItem>{t('hostForm.rootPassword.help')}</HelperTextItem>
             </HelperText>
           </FormHelperText>
         </FormGroup>
@@ -221,46 +230,42 @@ function GeneralSection({
         // don't model that endpoint yet, so a static pointer stands in.
         <FormGroup fieldId="new-host-publickey-hint">
           <HelperText>
-            <HelperTextItem>
-              Before adding, append the engine&apos;s SSH public key to /root/.ssh/authorized_keys
-              on the host. The key is served by the engine at
-              /ovirt-engine/services/pki-resource?resource=engine-certificate&amp;format=OPENSSH-PUBKEY.
-            </HelperTextItem>
+            <HelperTextItem>{t('hostForm.publicKey.hint')}</HelperTextItem>
           </HelperText>
         </FormGroup>
       )}
 
       <FormGroup
-        label="Activate host after install"
+        label={t('hostForm.field.activateAfterInstall')}
         fieldId="new-host-activate"
         labelHelp={
           <FieldHelp
-            field="Activate host after install"
-            content="Move the host straight to Up (ready to run VMs) when installation finishes, instead of leaving it in Maintenance for you to activate manually."
+            field={t('hostForm.field.activateAfterInstall')}
+            content={t('hostForm.activateAfterInstall.help')}
           />
         }
       >
         <Checkbox
           id="new-host-activate"
-          aria-label="Activate host after install"
+          aria-label={t('hostForm.field.activateAfterInstall')}
           isChecked={draft.activateAfterInstall}
           onChange={(_event, checked) => set('activateAfterInstall', checked)}
         />
       </FormGroup>
 
       <FormGroup
-        label="Reboot host after install"
+        label={t('hostForm.field.rebootAfterInstall')}
         fieldId="new-host-reboot"
         labelHelp={
           <FieldHelp
-            field="Reboot host after install"
-            content="Reboot the host once installation completes, so kernel or firmware changes take effect before it starts running VMs."
+            field={t('hostForm.field.rebootAfterInstall')}
+            content={t('hostForm.rebootAfterInstall.help')}
           />
         }
       >
         <Checkbox
           id="new-host-reboot"
-          aria-label="Reboot host after install"
+          aria-label={t('hostForm.field.rebootAfterInstall')}
           isChecked={draft.rebootAfterInstall}
           onChange={(_event, checked) => set('rebootAfterInstall', checked)}
         />
@@ -293,6 +298,7 @@ export function NewHostModal({
   // the select stays free, and picking another cluster wins (see clusterId).
   initialClusterId?: string
 }) {
+  const t = useT()
   const [draft, setDraft] = useState<NewHostDraft>(blankNewHostDraft)
 
   // Stable updater so sections don't re-render on every keystroke elsewhere.
@@ -339,34 +345,42 @@ export function NewHostModal({
       aria-labelledby="new-host-title"
       aria-describedby="new-host-body"
     >
-      <ModalHeader title="New host" labelId="new-host-title" />
+      <ModalHeader title={t('hosts.new')} labelId="new-host-title" />
       <ModalBody id="new-host-body">
         <ModalVerticalTabs
           idPrefix="new-host"
-          ariaLabel="New host sections"
+          ariaLabel={t('hostForm.new.sectionsAria')}
           sections={[
             {
               key: 'general',
-              title: 'General',
+              title: t('hostForm.section.general'),
               content: (
                 <GeneralSection draft={draft} set={set} clusters={clusters} clusterId={clusterId} />
               ),
             },
             {
               key: 'power-management',
-              title: 'Power Management',
+              title: t('hostForm.section.powerManagement'),
               content: <PowerManagementSection draft={draft} set={set} mode="create" />,
             },
-            { key: 'spm', title: 'SPM', content: <SpmSection draft={draft} set={set} /> },
+            {
+              key: 'spm',
+              title: t('hostForm.section.spm'),
+              content: <SpmSection draft={draft} set={set} />,
+            },
             {
               key: 'console-gpu',
-              title: 'Console and GPU',
+              title: t('hostForm.section.consoleGpu'),
               content: <ConsoleGpuSection draft={draft} set={set} />,
             },
-            { key: 'kernel', title: 'Kernel', content: <KernelSection draft={draft} set={set} /> },
+            {
+              key: 'kernel',
+              title: t('hostForm.section.kernel'),
+              content: <KernelSection draft={draft} set={set} />,
+            },
             {
               key: 'hosted-engine',
-              title: 'Hosted Engine',
+              title: t('hostForm.section.hostedEngine'),
               content: <HostedEngineSection draft={draft} set={set} />,
             },
           ]}
@@ -379,10 +393,10 @@ export function NewHostModal({
           isLoading={pending}
           isDisabled={pending || nameInvalid || addressInvalid || sshPortInvalid || clusterMissing}
         >
-          Save
+          {t('common.action.save')}
         </Button>
         <Button variant="secondary" onClick={onClose} isDisabled={pending}>
-          Cancel
+          {t('common.action.cancel')}
         </Button>
       </ModalFooter>
     </Modal>

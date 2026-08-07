@@ -3,7 +3,9 @@ import {
   Button,
   Checkbox,
   EmptyState,
+  EmptyStateActions,
   EmptyStateBody,
+  EmptyStateFooter,
   Form,
   FormGroup,
   FormHelperText,
@@ -21,6 +23,7 @@ import {
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table'
 import { iscsiDiscover, type IscsiTarget } from '../../api/resources/hosts'
 import type { Host } from '../../api/schemas/host'
+import { useT } from '../../i18n/useT'
 
 // The host-level "Discover iSCSI" dialog: a diagnostic that runs the engine's
 // iSCSI target discovery from a chosen host (reuses iscsiDiscover from
@@ -35,6 +38,7 @@ import type { Host } from '../../api/schemas/host'
 // persisted, never logged, never echoed back. autoComplete is new-password so
 // browsers never offer to store it.
 export function DiscoverIscsiModal({ host, onClose }: { host: Host; onClose: () => void }) {
+  const t = useT()
   const [address, setAddress] = useState('')
   const [port, setPort] = useState('')
   const [useChap, setUseChap] = useState(false)
@@ -64,7 +68,7 @@ export function DiscoverIscsiModal({ host, onClose }: { host: Host; onClose: () 
       })
       setTargets(result)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error')
+      setError(err instanceof Error ? err.message : t('common.error.unknown'))
     } finally {
       setDiscovering(false)
     }
@@ -79,7 +83,7 @@ export function DiscoverIscsiModal({ host, onClose }: { host: Host; onClose: () 
       aria-describedby="discover-iscsi-body"
     >
       <ModalHeader
-        title={`Discover iSCSI targets from ${host.name}`}
+        title={t('discoverIscsi.title', { name: host.name ?? '' })}
         labelId="discover-iscsi-title"
       />
       <ModalBody id="discover-iscsi-body">
@@ -93,56 +97,63 @@ export function DiscoverIscsiModal({ host, onClose }: { host: Host; onClose: () 
                 void discover()
               }}
             >
-              <FormGroup label="Target address" isRequired fieldId="discover-iscsi-address">
+              <FormGroup
+                label={t('discoverIscsi.address')}
+                isRequired
+                fieldId="discover-iscsi-address"
+              >
                 <TextInput
                   id="discover-iscsi-address"
                   isRequired
-                  aria-label="iSCSI target address"
+                  aria-label={t('discoverIscsi.address.aria')}
                   placeholder="10.35.1.10"
                   value={address}
                   onChange={(_event, value) => setAddress(value)}
                 />
               </FormGroup>
-              <FormGroup label="Port" fieldId="discover-iscsi-port">
+              <FormGroup label={t('discoverIscsi.port')} fieldId="discover-iscsi-port">
                 <TextInput
                   id="discover-iscsi-port"
                   type="number"
-                  aria-label="iSCSI target port"
+                  aria-label={t('discoverIscsi.port.aria')}
                   placeholder="3260"
                   value={port}
                   onChange={(_event, value) => setPort(value)}
                 />
                 <FormHelperText>
                   <HelperText>
-                    <HelperTextItem>Leave blank to use the default iSCSI port 3260.</HelperTextItem>
+                    <HelperTextItem>{t('discoverIscsi.port.help')}</HelperTextItem>
                   </HelperText>
                 </FormHelperText>
               </FormGroup>
               <FormGroup fieldId="discover-iscsi-use-chap">
                 <Checkbox
                   id="discover-iscsi-use-chap"
-                  label="Use CHAP authentication"
-                  aria-label="Use CHAP authentication"
+                  label={t('discoverIscsi.useChap')}
+                  aria-label={t('discoverIscsi.useChap')}
                   isChecked={useChap}
                   onChange={(_event, checked) => setUseChap(checked)}
                 />
               </FormGroup>
               {useChap && (
                 <>
-                  <FormGroup label="CHAP user name" fieldId="discover-iscsi-chap-user">
+                  <FormGroup label={t('discoverIscsi.chapUser')} fieldId="discover-iscsi-chap-user">
                     <TextInput
                       id="discover-iscsi-chap-user"
-                      aria-label="CHAP user name"
+                      aria-label={t('discoverIscsi.chapUser')}
                       autoComplete="username"
                       value={chapUser}
                       onChange={(_event, value) => setChapUser(value)}
                     />
                   </FormGroup>
-                  <FormGroup label="CHAP password" fieldId="discover-iscsi-chap-password">
+                  <FormGroup
+                    label={t('discoverIscsi.chapPassword')}
+                    fieldId="discover-iscsi-chap-password"
+                  >
                     <TextInput
                       id="discover-iscsi-chap-password"
                       type="password"
-                      aria-label="CHAP password"
+                      aria-label={t('discoverIscsi.chapPassword')}
                       autoComplete="new-password"
                       value={chapPassword}
                       onChange={(_event, value) => setChapPassword(value)}
@@ -156,46 +167,47 @@ export function DiscoverIscsiModal({ host, onClose }: { host: Host; onClose: () 
           {discovering && (
             <StackItem>
               <Skeleton height="2.5rem" style={{ marginBottom: '0.5rem' }} />
-              <Skeleton height="2.5rem" screenreaderText="Discovering iSCSI targets" />
+              <Skeleton height="2.5rem" screenreaderText={t('discoverIscsi.loading')} />
             </StackItem>
           )}
 
           {!discovering && error !== undefined && (
             <StackItem>
-              <EmptyState titleText="Could not discover targets" status="danger">
+              <EmptyState titleText={t('discoverIscsi.error.title')} status="danger">
                 <EmptyStateBody>{error}</EmptyStateBody>
-                <Button variant="primary" onClick={() => void discover()}>
-                  Retry
-                </Button>
+                <EmptyStateFooter>
+                  <EmptyStateActions>
+                    <Button variant="primary" onClick={() => void discover()}>
+                      {t('common.action.retry')}
+                    </Button>
+                  </EmptyStateActions>
+                </EmptyStateFooter>
               </EmptyState>
             </StackItem>
           )}
 
           {!discovering && error === undefined && targets !== undefined && targets.length === 0 && (
             <StackItem>
-              <EmptyState titleText="No targets discovered" headingLevel="h4">
-                <EmptyStateBody>
-                  The host found no iSCSI targets at that address. Check the address and CHAP
-                  credentials, then discover again.
-                </EmptyStateBody>
+              <EmptyState titleText={t('discoverIscsi.empty.title')} headingLevel="h4">
+                <EmptyStateBody>{t('discoverIscsi.empty.body')}</EmptyStateBody>
               </EmptyState>
             </StackItem>
           )}
 
           {!discovering && error === undefined && targets !== undefined && targets.length > 0 && (
             <StackItem>
-              <Table aria-label="Discovered iSCSI targets" variant="compact">
+              <Table aria-label={t('discoverIscsi.table.ariaLabel')} variant="compact">
                 <Thead>
                   <Tr>
-                    <Th>Target (IQN)</Th>
-                    <Th>Portal</Th>
+                    <Th>{t('discoverIscsi.column.target')}</Th>
+                    <Th>{t('discoverIscsi.column.portal')}</Th>
                   </Tr>
                 </Thead>
                 <Tbody>
                   {targets.map((target, index) => (
                     <Tr key={target.target ?? index}>
-                      <Td dataLabel="Target (IQN)">{target.target ?? '—'}</Td>
-                      <Td dataLabel="Portal">
+                      <Td dataLabel={t('discoverIscsi.column.target')}>{target.target ?? '—'}</Td>
+                      <Td dataLabel={t('discoverIscsi.column.portal')}>
                         {target.portal ??
                           (target.address ? `${target.address}:${target.port ?? 3260}` : '—')}
                       </Td>
@@ -214,10 +226,10 @@ export function DiscoverIscsiModal({ host, onClose }: { host: Host; onClose: () 
           isLoading={discovering}
           isDisabled={discovering || addressEmpty}
         >
-          Discover
+          {t('discoverIscsi.discover')}
         </Button>
         <Button variant="link" onClick={onClose} isDisabled={discovering}>
-          Close
+          {t('common.action.close')}
         </Button>
       </ModalFooter>
     </Modal>

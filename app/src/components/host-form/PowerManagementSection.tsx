@@ -174,6 +174,7 @@ export interface PowerManagementDraft {
 // Preserves the four data states (docs/COMPONENTS.md): loading Skeleton, error
 // with retry, empty "No fence agents" + Add CTA, and the populated table.
 function FenceAgentsEditor({ hostId, pmEnabled }: { hostId: string; pmEnabled: boolean }) {
+  const t = useT()
   const agents = useHostFenceAgents(hostId, true)
   const remove = useDeleteFenceAgent()
 
@@ -196,10 +197,7 @@ function FenceAgentsEditor({ hostId, pmEnabled }: { hostId: string; pmEnabled: b
       {pmEnabled && agents.isSuccess && agentCount === 0 && (
         <FormHelperText>
           <HelperText>
-            <HelperTextItem variant="warning">
-              Power management is enabled but no fence agent is configured — the engine will reject
-              the save until you add at least one agent below.
-            </HelperTextItem>
+            <HelperTextItem variant="warning">{t('hostForm.pm.noAgentWarning')}</HelperTextItem>
           </HelperText>
         </FormHelperText>
       )}
@@ -213,7 +211,7 @@ function FenceAgentsEditor({ hostId, pmEnabled }: { hostId: string; pmEnabled: b
           }}
         >
           <Button variant="secondary" onClick={() => setCreating(true)}>
-            Add fence agent
+            {t('fenceAgent.add')}
           </Button>
         </div>
       )}
@@ -221,30 +219,32 @@ function FenceAgentsEditor({ hostId, pmEnabled }: { hostId: string; pmEnabled: b
       {agents.isPending && (
         <>
           <Skeleton height="2rem" style={{ marginBottom: '0.5rem' }} />
-          <Skeleton height="2rem" screenreaderText="Loading fence agents" />
+          <Skeleton height="2rem" screenreaderText={t('fenceAgent.loading')} />
         </>
       )}
 
       {agents.isError && (
-        <EmptyState titleText="Could not load fence agents" status="danger">
+        <EmptyState titleText={t('fenceAgent.error.title')} status="danger">
           <EmptyStateBody>
-            {agents.error instanceof Error ? agents.error.message : 'Unknown error'}
+            {agents.error instanceof Error ? agents.error.message : t('common.error.unknown')}
           </EmptyStateBody>
-          <Button variant="primary" onClick={() => void agents.refetch()}>
-            Retry
-          </Button>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="primary" onClick={() => void agents.refetch()}>
+                {t('common.action.retry')}
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 
       {agents.isSuccess && agentCount === 0 && (
-        <EmptyState titleText="No fence agents" headingLevel="h4">
-          <EmptyStateBody>
-            No fence agents are configured on this host. Add one so the engine can power-fence it.
-          </EmptyStateBody>
+        <EmptyState titleText={t('fenceAgent.empty.title')} headingLevel="h4">
+          <EmptyStateBody>{t('fenceAgent.empty.body')}</EmptyStateBody>
           <EmptyStateFooter>
             <EmptyStateActions>
               <Button variant="primary" onClick={() => setCreating(true)}>
-                Add fence agent
+                {t('fenceAgent.add')}
               </Button>
             </EmptyStateActions>
           </EmptyStateFooter>
@@ -252,30 +252,30 @@ function FenceAgentsEditor({ hostId, pmEnabled }: { hostId: string; pmEnabled: b
       )}
 
       {agents.isSuccess && agentCount > 0 && (
-        <Table aria-label="Fence agents" variant="compact">
+        <Table aria-label={t('fenceAgent.table.ariaLabel')} variant="compact">
           <Thead>
             <Tr>
-              <Th>Type</Th>
-              <Th>Address</Th>
-              <Th>Username</Th>
-              <Th>Order</Th>
-              <Th screenReaderText="Actions" />
+              <Th>{t('common.field.type')}</Th>
+              <Th>{t('fenceAgent.field.address')}</Th>
+              <Th>{t('fenceAgent.field.username')}</Th>
+              <Th>{t('fenceAgent.field.order')}</Th>
+              <Th screenReaderText={t('common.field.actions')} />
             </Tr>
           </Thead>
           <Tbody>
             {agents.data.map((agent) => (
               <Tr key={agent.id}>
-                <Td dataLabel="Type">{agent.type ?? '—'}</Td>
-                <Td dataLabel="Address">{agent.address ?? '—'}</Td>
-                <Td dataLabel="Username">{agent.username ?? '—'}</Td>
-                <Td dataLabel="Order">{agent.order ?? '—'}</Td>
-                <Td dataLabel="Actions" isActionCell>
+                <Td dataLabel={t('common.field.type')}>{agent.type ?? '—'}</Td>
+                <Td dataLabel={t('fenceAgent.field.address')}>{agent.address ?? '—'}</Td>
+                <Td dataLabel={t('fenceAgent.field.username')}>{agent.username ?? '—'}</Td>
+                <Td dataLabel={t('fenceAgent.field.order')}>{agent.order ?? '—'}</Td>
+                <Td dataLabel={t('common.field.actions')} isActionCell>
                   <ActionsColumn
                     isDisabled={remove.isPending}
                     items={[
-                      { title: 'Edit', onClick: () => setEditing(agent) },
+                      { title: t('common.action.edit'), onClick: () => setEditing(agent) },
                       {
-                        title: 'Remove',
+                        title: t('common.action.remove'),
                         isDanger: true,
                         onClick: () => setRemoving(agent),
                       },
@@ -295,9 +295,9 @@ function FenceAgentsEditor({ hostId, pmEnabled }: { hostId: string; pmEnabled: b
       {removing && (
         <ConfirmModal
           isOpen
-          title={`Remove fence agent '${removing.type ?? removing.id}'?`}
-          body="The fence agent is permanently removed from this host. If it was the only agent while power management is enabled, the engine can no longer fence the host. This cannot be undone."
-          confirmLabel="Remove"
+          title={t('fenceAgent.remove.title', { name: removing.type ?? removing.id ?? '' })}
+          body={t('fenceAgent.remove.body')}
+          confirmLabel={t('common.action.remove')}
           isConfirmDisabled={remove.isPending}
           onConfirm={() => {
             const target = removing
@@ -343,21 +343,19 @@ export function PowerManagementSection({
   pmProxies?: PmProxyType[]
   setProxies?: (proxies: PmProxyType[]) => void
 }) {
+  const t = useT()
   return (
     <Form onSubmit={(event) => event.preventDefault()}>
       <FormGroup
-        label="Enable power management"
+        label={t('hostForm.pm.enable')}
         fieldId="edit-host-pm-enabled"
         labelHelp={
-          <FieldHelp
-            field="Enable power management"
-            content="Let the engine control the host’s power through a fence agent — to reset an unresponsive host (fencing) and to power hosts on/off for maintenance and balancing. Requires at least one fence agent to work."
-          />
+          <FieldHelp field={t('hostForm.pm.enable')} content={t('hostForm.pm.enable.help')} />
         }
       >
         <Switch
           id="edit-host-pm-enabled"
-          aria-label="Enable power management"
+          aria-label={t('hostForm.pm.enable')}
           isChecked={draft.pmEnabled}
           onChange={(_event, checked) => set('pmEnabled', checked)}
         />
@@ -367,29 +365,22 @@ export function PowerManagementSection({
         {mode === 'create' && (
           <FormHelperText>
             <HelperText>
-              <HelperTextItem variant="warning">
-                Fence agents cannot be included when adding a host, so it would be created with
-                power management enabled but non-functional until a fence agent is added afterwards.
-                Add fence agents by editing the host once it exists.
-              </HelperTextItem>
+              <HelperTextItem variant="warning">{t('hostForm.pm.createWarning')}</HelperTextItem>
             </HelperText>
           </FormHelperText>
         )}
       </FormGroup>
 
       <FormGroup
-        label="Kdump integration"
+        label={t('hostForm.pm.kdump')}
         fieldId="edit-host-pm-kdump"
         labelHelp={
-          <FieldHelp
-            field="Kdump integration"
-            content="Before fencing, wait for the host to finish writing a kernel crash dump (kdump) so the crash evidence isn’t lost. Requires kdump configured on the host."
-          />
+          <FieldHelp field={t('hostForm.pm.kdump')} content={t('hostForm.pm.kdump.help')} />
         }
       >
         <Switch
           id="edit-host-pm-kdump"
-          aria-label="Kdump integration"
+          aria-label={t('hostForm.pm.kdump')}
           isChecked={draft.kdumpDetection}
           isDisabled={!draft.pmEnabled}
           onChange={(_event, checked) => set('kdumpDetection', checked)}
@@ -397,18 +388,15 @@ export function PowerManagementSection({
       </FormGroup>
 
       <FormGroup
-        label="Automatic power management"
+        label={t('hostForm.pm.automatic')}
         fieldId="edit-host-pm-automatic"
         labelHelp={
-          <FieldHelp
-            field="Automatic power management"
-            content="Let the cluster’s scheduling policy power this host down when idle and back on when capacity is needed, to save energy."
-          />
+          <FieldHelp field={t('hostForm.pm.automatic')} content={t('hostForm.pm.automatic.help')} />
         }
       >
         <Switch
           id="edit-host-pm-automatic"
-          aria-label="Automatic power management"
+          aria-label={t('hostForm.pm.automatic')}
           isChecked={draft.automaticPm}
           isDisabled={!draft.pmEnabled}
           onChange={(_event, checked) => set('automaticPm', checked)}

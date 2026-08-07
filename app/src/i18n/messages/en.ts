@@ -3197,6 +3197,15 @@ export const en = {
   'addUser.selectToAdd': 'Select one or more {noun}s to add.',
   'addUser.title': 'Add user or group',
   'addUser.type.ariaLabel': 'Directory principal type',
+  // about.* -------------------------------------------------------
+  'about.components': 'Components',
+  'about.consoleVersion': 'Console version',
+  'about.engineProduct': 'Engine product',
+  'about.engineVersion': 'Engine version',
+  'about.loading': 'Loading…',
+  'about.managedWith': 'Managed with oVirt — https://www.ovirt.org',
+  'about.unavailable': 'Unavailable',
+  'about.unknown': 'Unknown',
   // affinity.* ----------------------------------------------------
   'affinity.entity.filter': 'Filter {label}',
   'affinity.entity.hosts': 'Hosts',
@@ -3406,19 +3415,28 @@ export const en = {
   'dcForm.editTitle': 'Edit data center — {name}',
   'dcForm.macPool.default': 'Default MAC pool',
   'dcForm.macPool.error': 'Could not load MAC pools.',
+  'dcForm.macPool.label': 'MAC address pool',
   'dcForm.macPool.loading': 'Loading MAC pools…',
   'dcForm.name.aria': 'Data center name',
   'dcForm.quotaMode.audit': 'Audit',
   'dcForm.quotaMode.label': 'Quota mode',
+  'dcForm.storage.local': 'Local',
+  'dcForm.storage.shared': 'Shared',
   'dcForm.storageLocal.aria': 'Local storage',
   'dcForm.storageShared.aria': 'Shared storage',
   'dcForm.storageType.label': 'Storage type',
   // dcNetworks.* --------------------------------------------------
+  'dcNetworks.column.vlan': 'VLAN',
   'dcNetworks.empty.body': 'No logical networks are defined in this data center.',
+  'dcNetworks.empty.title': 'No logical networks',
+  'dcNetworks.error.title': 'Could not load logical networks',
+  'dcNetworks.loading': 'Loading logical networks',
   'dcNetworks.remove.confirm.body':
     'The logical network is permanently removed from this data center. Any host NICs or vNIC profiles that used it lose the attachment. This cannot be undone.',
   'dcNetworks.remove.confirm.title': 'Remove {name}?',
   'dcNetworks.remove.managementTooltip': 'The management network cannot be removed.',
+  'dcNetworks.table.ariaLabel': 'Logical networks',
+  'dcNetworks.vlan.default': 'Default',
   // dcQuotas.* ----------------------------------------------------
   'dcQuotas.empty.body': 'No quotas are defined on this data center.',
   // dcReinit.* ----------------------------------------------------
@@ -3581,8 +3599,21 @@ export const en = {
   'eventSub.remove.confirm.title': "Remove notification for '{removing}'?",
   'eventSub.table.ariaLabel': 'Event subscriptions',
   // exportOva.* ---------------------------------------------------
+  'exportOva.action': 'Export',
   'exportOva.deniedReason': 'The virtual machine cannot be exported while it is {status}',
+  'exportOva.directory.absolute': 'Enter an absolute path (starting with /)',
+  'exportOva.directory.help':
+    'An absolute path on the selected host where the OVA file is written.',
+  'exportOva.directory.label': 'Directory',
   'exportOva.directory.placeholder': '/var/tmp/ova',
+  'exportOva.directory.required': 'A target directory is required',
+  'exportOva.filename': 'File name',
+  'exportOva.host.error': 'Could not load hosts: {message}',
+  'exportOva.host.label': 'Host',
+  'exportOva.host.loading': 'Loading hosts',
+  'exportOva.host.placeholder': 'Select a host',
+  'exportOva.item': 'Export as OVA',
+  'exportOva.title': 'Export {name} as OVA',
   // extendStorage.* -----------------------------------------------
   'extendStorage.action': 'Extend',
   'extendStorage.title': 'Extend {name} with new LUNs',
@@ -4090,6 +4121,8 @@ export const en = {
   'providerForm.url': 'Provider URL',
   'providerForm.url.required': 'The provider URL is required.',
   'providerForm.userDomain.hint': 'The domain the username belongs to.',
+  // quickLook.* ---------------------------------------------------
+  'quickLook.close.ariaLabel': 'Close quick look for {name}',
   // quotaDetail.* -------------------------------------------------
   'quotaDetail.notFound.body':
     'No quota with ID {id} is visible to you — it may have been removed.',
@@ -4321,8 +4354,6 @@ export const en = {
     'Enter a subnet mask (e.g. 255.255.255.0) or prefix length (0–32)',
   'setupNetworks.validation.prefixV6': 'Enter an IPv6 prefix length (0–128)',
   'setupNetworks.validation.qosValue': 'Enter a non-negative whole number',
-  // SKIP.* --------------------------------------------------------
-  SKIP: '80',
   // storage.* -----------------------------------------------------
   'storage.action.activate': 'Activate',
   'storage.action.attachToDc': 'Attach to data center',

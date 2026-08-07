@@ -25,6 +25,7 @@ import { listVmDisks } from '../api/resources/disks'
 import { listVms } from '../api/resources/vms'
 import type { Vm } from '../api/schemas/vm'
 import { useCloneVm } from '../hooks/useCloneVm'
+import { useT } from '../i18n/useT'
 import { statusText } from '../lib/format'
 import { vmNameError } from './edit-vm/editVmDraft'
 
@@ -66,6 +67,7 @@ const CLONE_DENIED_STATUSES = new Set([
 // Statuses in webadmin's deny-matrix keep the item hoverable but disabled
 // with the reason in a tooltip.
 export function CloneVmModalItem({ vm }: { vm: Vm }) {
+  const t = useT()
   const [isOpen, setIsOpen] = useState(false)
 
   if (vm.status !== undefined && CLONE_DENIED_STATUSES.has(vm.status)) {
@@ -74,10 +76,10 @@ export function CloneVmModalItem({ vm }: { vm: Vm }) {
         icon={<CopyIcon />}
         isAriaDisabled
         tooltipProps={{
-          content: `The virtual machine cannot be cloned while it is ${statusText(vm.status)}`,
+          content: t('cloneVm.deniedReason', { status: statusText(vm.status) }),
         }}
       >
-        Clone VM
+        {t('cloneVm.item')}
       </DropdownItem>
     )
   }
@@ -85,7 +87,7 @@ export function CloneVmModalItem({ vm }: { vm: Vm }) {
   return (
     <>
       <DropdownItem icon={<CopyIcon />} onClick={() => setIsOpen(true)}>
-        Clone VM
+        {t('cloneVm.item')}
       </DropdownItem>
       {isOpen && <CloneVmModal vm={vm} onClose={() => setIsOpen(false)} />}
     </>
@@ -102,6 +104,7 @@ export function CloneVmModalItem({ vm }: { vm: Vm }) {
 // discard the edits. The modal unmounts on close, so the state resets for
 // free. useCloneVm toasts success/failure and invalidates the VM list.
 function CloneVmModal({ vm, onClose }: { vm: Vm; onClose: () => void }) {
+  const t = useT()
   const [name, setName] = useState(`${vm.name}-clone`)
   const [storageDomainId, setStorageDomainId] = useState('')
   const [collapseSnapshots, setCollapseSnapshots] = useState(true)
@@ -147,9 +150,7 @@ function CloneVmModal({ vm, onClose }: { vm: Vm; onClose: () => void }) {
   )
 
   const pending = clone.isPending
-  const nameError =
-    vmNameError(name) ??
-    (nameTaken ? 'Name is already used in the environment — choose a unique name' : undefined)
+  const nameError = vmNameError(name) ?? (nameTaken ? t('cloneVm.nameTaken') : undefined)
 
   const save = () => {
     clone.mutate(
@@ -176,14 +177,14 @@ function CloneVmModal({ vm, onClose }: { vm: Vm; onClose: () => void }) {
       aria-labelledby="clone-vm-title"
       aria-describedby="clone-vm-body"
     >
-      <ModalHeader title={`Clone virtual machine — ${vm.name}`} labelId="clone-vm-title" />
+      <ModalHeader title={t('cloneVm.title', { name: vm.name ?? '' })} labelId="clone-vm-title" />
       <ModalBody id="clone-vm-body">
         {hasLunDisk && (
           <Alert
             variant="warning"
             isInline
             isPlain
-            title="The VM's direct LUN disk(s) will not be cloned."
+            title={t('cloneVm.lunWarning')}
             style={{ marginBottom: 'var(--pf-t--global--spacer--md)' }}
           />
         )}
@@ -194,11 +195,11 @@ function CloneVmModal({ vm, onClose }: { vm: Vm; onClose: () => void }) {
             if (nameError === undefined && !pending) save()
           }}
         >
-          <FormGroup label="Clone name" isRequired fieldId="clone-vm-name">
+          <FormGroup label={t('cloneVm.name.label')} isRequired fieldId="clone-vm-name">
             <TextInput
               id="clone-vm-name"
               isRequired
-              aria-label="Clone name"
+              aria-label={t('cloneVm.name.label')}
               validated={nameError !== undefined ? 'error' : 'default'}
               value={name}
               onChange={(_event, value) => setName(value)}
@@ -212,14 +213,14 @@ function CloneVmModal({ vm, onClose }: { vm: Vm; onClose: () => void }) {
             )}
           </FormGroup>
 
-          <FormGroup label="Target storage domain" fieldId="clone-vm-storage-domain">
+          <FormGroup label={t('cloneVm.storageDomain.label')} fieldId="clone-vm-storage-domain">
             <FormSelect
               id="clone-vm-storage-domain"
-              aria-label="Target storage domain"
+              aria-label={t('cloneVm.storageDomain.label')}
               value={storageDomainId}
               onChange={(_event, value) => setStorageDomainId(value)}
             >
-              <FormSelectOption value="" label="Source storage domains (engine default)" />
+              <FormSelectOption value="" label={t('cloneVm.storageDomain.default')} />
               {targetDomains.map((domain) => (
                 <FormSelectOption key={domain.id} value={domain.id} label={domain.name} />
               ))}
@@ -228,8 +229,7 @@ function CloneVmModal({ vm, onClose }: { vm: Vm; onClose: () => void }) {
               <FormHelperText>
                 <HelperText>
                   <HelperTextItem variant="warning">
-                    Could not load the storage domains of this VM&apos;s data center — the clone
-                    will keep the source disks&apos; placement.
+                    {t('cloneVm.storageDomain.loadError')}
                   </HelperTextItem>
                 </HelperText>
               </FormHelperText>
@@ -239,17 +239,14 @@ function CloneVmModal({ vm, onClose }: { vm: Vm; onClose: () => void }) {
           <FormGroup fieldId="clone-vm-collapse-snapshots">
             <Switch
               id="clone-vm-collapse-snapshots"
-              label="Collapse snapshots"
-              aria-label="Collapse snapshots"
+              label={t('cloneVm.collapseSnapshots.label')}
+              aria-label={t('cloneVm.collapseSnapshots.label')}
               isChecked={collapseSnapshots}
               onChange={(_event, checked) => setCollapseSnapshots(checked)}
             />
             <FormHelperText>
               <HelperText>
-                <HelperTextItem>
-                  The clone&apos;s disks are flattened into a single volume; turn off to keep the
-                  source VM&apos;s snapshot chain on the clone.
-                </HelperTextItem>
+                <HelperTextItem>{t('cloneVm.collapseSnapshots.help')}</HelperTextItem>
               </HelperText>
             </FormHelperText>
           </FormGroup>
@@ -263,10 +260,10 @@ function CloneVmModal({ vm, onClose }: { vm: Vm; onClose: () => void }) {
           isLoading={pending}
           isDisabled={pending || nameError !== undefined}
         >
-          Clone
+          {t('cloneVm.submit')}
         </Button>
         <Button variant="secondary" onClick={onClose} isDisabled={pending}>
-          Cancel
+          {t('common.action.cancel')}
         </Button>
       </ModalFooter>
     </Modal>
