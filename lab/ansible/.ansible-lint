@@ -1,0 +1,6 @@
+---
+# args[module] is an experimental rule that cannot resolve credentials
+# supplied via the play-level `module_defaults: group/community.proxmox.proxmox:`
+# block, so it false-positives on every proxmox task in 01-provision.
+skip_list:
+  - args[module]

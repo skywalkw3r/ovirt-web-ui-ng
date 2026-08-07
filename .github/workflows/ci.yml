@@ -1,0 +1,118 @@
+name: ci
+on:
+  push:
+    branches: [main, development]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  app:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      # Production build: vite.config.ts defaults the base to the engine
+      # sub-path /ovirt-engine/web-ui-ng/, so this dist is the deployable one.
+      - run: npm run build
+      - run: npm audit --audit-level=high
+      # Hand the built dist to the rpm packaging job (pre-bundled model,
+      # see packaging/README.md section 2a).
+      - uses: actions/upload-artifact@v4
+        with:
+          name: app-dist
+          path: app/dist/
+          retention-days: 7
+
+  e2e:
+    # Heavy job — runs only at the merge/release gate (main pushes + PRs), not on
+    # every development push. Unit tests (the `app` job) still run on all pushes,
+    # so routine work keeps fast feedback while Actions minutes stay low.
+    if: github.ref == 'refs/heads/main' || github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    needs: app
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npx playwright test
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: app/playwright-report/
+          retention-days: 7
+
+  # Validates packaging/Containerfile end to end: stage 1 runs npm ci + the
+  # sub-path build inside node:22-alpine, stage 2 assembles the nginx image.
+  # The image is built, not pushed — this job only proves the recipe works.
+  container:
+    # Heavy job — gated to main pushes + PRs (see e2e).
+    if: github.ref == 'refs/heads/main' || github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    needs: app
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -f packaging/Containerfile -t ovirt-web-ui-ng:ci .
+
+  # Validates packaging/ovirt-web-ui-ng.spec with a real rpmbuild on an
+  # EL9-alike, following the pre-bundled recipe in packaging/README.md: the
+  # tarball ships the app/dist built by the `app` job, so no node toolchain
+  # is needed here. The RPM is a throwaway (version 0.0.<run>) — release
+  # tooling owns real @PACKAGE_RPM_*@ substitution.
+  rpm:
+    # Heavy job — gated to main pushes + PRs (see e2e).
+    if: github.ref == 'refs/heads/main' || github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    needs: app
+    container: almalinux:9
+    steps:
+      # Before checkout: the bare almalinux image lacks git/tar, which
+      # actions/checkout needs inside a container.
+      - run: dnf install -y --setopt=install_weak_deps=False git-core rpm-build tar gzip
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: app-dist
+          path: app/dist
+      - name: rpmbuild -ta (pre-bundled dist)
+        run: |
+          VERSION="0.0.${{ github.run_number }}"
+          # CI stand-in for the release tooling that substitutes the
+          # legacy-style @PACKAGE_RPM_*@ tokens (see packaging/README.md).
+          sed -i \
+            -e "s/@PACKAGE_RPM_VERSION@/${VERSION}/" \
+            -e "s/@PACKAGE_RPM_RELEASE@/1/" \
+            -e "s/@PACKAGE_RPM_SUFFIX@//" \
+            packaging/ovirt-web-ui-ng.spec
+          tar czf "ovirt-web-ui-ng-${VERSION}.tar.gz" \
+            --transform "s,^,ovirt-web-ui-ng-${VERSION}/," \
+            app/dist app/README.md packaging LICENSE
+          rpmbuild -ta "ovirt-web-ui-ng-${VERSION}.tar.gz" \
+            --define "_topdir ${PWD}/rpmbuild"
+          # Surface the payload in the job log for eyeball review.
+          rpm -qlp rpmbuild/RPMS/noarch/ovirt-web-ui-ng-*.noarch.rpm

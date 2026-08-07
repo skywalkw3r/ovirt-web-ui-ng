@@ -1,0 +1,27 @@
+---
+# oVirt single-node lab on Proxmox — full pipeline.
+#
+#   Everything:   ansible-playbook -i inventory.ini site.yml -e @vars.yml
+#   One phase:    ansible-playbook -i inventory.ini site.yml -e @vars.yml --tags engine
+#
+# Tags on import_playbook are inherited by every play/task inside the
+# imported file, so each numbered playbook stays runnable standalone AND
+# selectable here. Order matters: each phase assumes the previous one ran
+# at least once (the plays themselves are idempotent, so re-running the
+# whole pipeline is always safe).
+
+- name: Phase 1 — provision the nested-virt lab VM on Proxmox
+  ansible.builtin.import_playbook: 01-provision-proxmox-vm.yml
+  tags: [provision]
+
+- name: Phase 2 — bootstrap the oVirt node (hostname, repos, packages, NFS)
+  ansible.builtin.import_playbook: 02-bootstrap-node.yml
+  tags: [bootstrap]
+
+- name: Phase 3 — deploy the self-hosted engine (the long one, ~40-70 min nested)
+  ansible.builtin.import_playbook: 03-deploy-hosted-engine.yml
+  tags: [engine]
+
+- name: Phase 4 — post-deploy (data storage domain, sanity checks)
+  ansible.builtin.import_playbook: 04-post-deploy.yml
+  tags: [post]

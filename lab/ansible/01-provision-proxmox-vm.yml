@@ -1,0 +1,344 @@
+---
+# 01-provision-proxmox-vm.yml
+#
+# Replaces Phase 0 of docs/LAB-SETUP.md: creates the CentOS Stream 9 "node"
+# VM on a Proxmox VE host with nested virtualisation, static networking and
+# cloud-init, grows its boot disk, boots it, and waits until it is reachable
+# over SSH. 02-bootstrap-node.yml takes over from there.
+#
+# Runs from the workstation (hosts: localhost) and uses two kinds of access:
+#   * the Proxmox API with token auth for everything a token is allowed to
+#     do (VM create, disk resize, start), and
+#   * a few tasks delegated over SSH to the [pve] inventory host, because
+#     the API rejects absolute-path disk imports for API tokens
+#     (403 "Only root can pass arbitrary filesystem paths") — while
+#     "qm set --import-from" on the CLI has no such restriction.
+#
+# Workstation prerequisites:
+#   ansible-galaxy collection install 'community.proxmox:>=2.0.0'
+#   pip install 'proxmoxer>=2.3.0' requests
+#   cp vars.example.yml vars.yml            # then edit
+#   cp inventory.example.ini inventory.ini  # then edit
+#   export PROXMOX_TOKEN_SECRET='...'
+#
+# Idempotent: safe to re-run when the VM already exists. Creation, disk
+# import and disk resize are all guarded, and the cloud image is cached on
+# the PVE host.
+
+- name: Provision the oVirt lab node VM on Proxmox
+  hosts: localhost
+  # No 'connection: local' play keyword here: implicit localhost already
+  # carries ansible_connection=local as a host var, while a play-level
+  # keyword would leak into every delegate_to task and make the PVE/node
+  # tasks below run on the workstation instead of over SSH.
+  gather_facts: false
+
+  vars_files:
+    - vars.yml
+
+  vars:
+    # Internal helpers — not part of the shared variable contract.
+    pve_host: "{{ groups['pve'] | first }}"
+    # Cache the cloud image next to PVE's other templates so re-runs skip
+    # the ~1 GB download.
+    lab_cloud_image_path: "/var/lib/vz/template/{{ lab_cloud_image_url | basename }}"
+    # The cloud-init user-data snippet must live on a *directory* storage
+    # with the 'snippets' content type — 'local' on a stock install.
+    # (lab_vm_storage is typically LVM-thin, which cannot hold snippets.)
+    lab_snippet_name: "{{ lab_vm_name }}-user-data.yml"
+    lab_snippet_path: "/var/lib/vz/snippets/{{ lab_snippet_name }}"
+
+  module_defaults:
+    # Action group: applies to every community.proxmox module in this play.
+    group/community.proxmox.proxmox:
+      api_host: "{{ proxmox_api_host }}"
+      api_user: "{{ proxmox_api_user }}"
+      api_token_id: "{{ proxmox_api_token_id }}"
+      api_token_secret: "{{ proxmox_api_token_secret }}"
+      # community.proxmox 2.0.0 flipped this default to true; lab PVE boxes
+      # almost always still run the self-signed cert from installation.
+      validate_certs: false
+
+  tasks:
+    - name: Fail early when the Proxmox API token secret is missing
+      ansible.builtin.assert:
+        that:
+          - proxmox_api_token_secret | default('') | length > 0
+        fail_msg: >-
+          proxmox_api_token_secret is empty — export PROXMOX_TOKEN_SECRET
+          before running (see vars.example.yml). Secrets are only ever read
+          from the environment, never from files.
+
+    # ------------------------------------------------------------------
+    # PVE host preparation (delegated over SSH; become covers setups where
+    # the PVE login is a non-root sudo user)
+    # ------------------------------------------------------------------
+    - name: Read the nested-virtualisation setting on the PVE host
+      # The lab node must itself run a VM (the HostedEngine), so the PVE
+      # host has to expose vmx/svm to its guests.
+      ansible.builtin.shell: >-
+        cat /sys/module/kvm_intel/parameters/nested 2>/dev/null
+        || cat /sys/module/kvm_amd/parameters/nested 2>/dev/null
+      register: pve_nested
+      changed_when: false
+      failed_when: false
+      delegate_to: "{{ pve_host }}"
+      become: true
+
+    - name: Assert nested virtualisation is enabled
+      # Only assert, never fix: enabling nested virt means reloading the
+      # kvm_intel/kvm_amd module, which requires EVERY VM on the host to be
+      # powered off — not something to do behind the operator's back on a
+      # possibly shared PVE box.
+      ansible.builtin.assert:
+        that:
+          - pve_nested.stdout | trim in ['Y', '1']
+        fail_msg: >-
+          Nested virtualisation is disabled on {{ pve_host }}. Enable it with
+          "echo 'options kvm-intel nested=Y' > /etc/modprobe.d/kvm-intel.conf"
+          (AMD: "options kvm-amd nested=1" in kvm-amd.conf), power off all
+          VMs, then "modprobe -r kvm_intel && modprobe kvm_intel" or reboot.
+        success_msg: "Nested virtualisation is on ({{ pve_nested.stdout | trim }})."
+
+    - name: Download / cache the CentOS Stream 9 GenericCloud image on the PVE host
+      # get_url skips the download when the file already exists (or, when
+      # lab_cloud_image_checksum is pinned in vars.yml, when the checksum
+      # still matches — that is how a moved 'latest' symlink is picked up).
+      ansible.builtin.get_url:
+        url: "{{ lab_cloud_image_url }}"
+        dest: "{{ lab_cloud_image_path }}"
+        checksum: "{{ lab_cloud_image_checksum | default(omit) }}"
+        mode: "0644"
+      delegate_to: "{{ pve_host }}"
+      become: true
+
+    - name: Ensure the snippets directory exists on the PVE host
+      ansible.builtin.file:
+        path: /var/lib/vz/snippets
+        state: directory
+        mode: "0755"
+      delegate_to: "{{ pve_host }}"
+      become: true
+
+    - name: Allow 'snippets' content on the 'local' storage
+      # A stock PVE install does not list 'snippets' among local's content
+      # types, and cicustom below references local:snippets/... . Appends to
+      # the current content list instead of overwriting it so existing
+      # content types survive re-runs and hand-tuned configs.
+      ansible.builtin.shell: |
+        set -o pipefail
+        current="$(pvesh get /storage/local --output-format json \
+          | python3 -c 'import json,sys; print(json.load(sys.stdin).get("content",""))')"
+        case ",${current}," in
+          *,snippets,*) echo SNIPPETS_PRESENT ;;
+          *) pvesm set local --content "${current},snippets" && echo SNIPPETS_ADDED ;;
+        esac
+      args:
+        executable: /bin/bash
+      register: pve_snippets
+      changed_when: "'SNIPPETS_ADDED' in pve_snippets.stdout"
+      delegate_to: "{{ pve_host }}"
+      become: true
+
+    - name: Render the cloud-init user-data snippet
+      # PVE's auto-generated user-data can neither install packages nor set
+      # an arbitrary FQDN, so it is replaced wholesale via cicustom "user=".
+      # The network config (ipconfig0 / nameserver / searchdomain) is
+      # generated separately by PVE and is NOT affected by this override.
+      # Note: edits here reach the guest only on the next cloud-init
+      # regeneration + boot, not a running VM.
+      ansible.builtin.copy:
+        dest: "{{ lab_snippet_path }}"
+        mode: "0644"
+        content: |
+          #cloud-config
+          # Rendered by lab/ansible/01-provision-proxmox-vm.yml — do not edit here.
+          hostname: {{ node_fqdn.split('.') | first }}
+          fqdn: {{ node_fqdn }}
+          prefer_fqdn_over_hostname: true
+          preserve_hostname: false
+          # /etc/hosts is owned by 02-bootstrap-node.yml (it adds the node
+          # and engine entries); manage_etc_hosts would rewrite the file on
+          # every boot and silently drop them again.
+          manage_etc_hosts: false
+          # The hosted-engine installer must run as root and the GenericCloud
+          # image locks root by default — put the lab key on root directly.
+          disable_root: false
+          ssh_pwauth: false
+          users:
+            - name: root
+              ssh_authorized_keys:
+                - {{ lab_ssh_public_key }}
+          # Not shipped in the GenericCloud image (deliberately left out of
+          # its kickstart); without it Proxmox cannot read the guest IP and
+          # graceful shutdown hangs.
+          packages:
+            - qemu-guest-agent
+          runcmd:
+            # 'packages' installs but does not enable/start services.
+            - systemctl enable --now qemu-guest-agent
+      delegate_to: "{{ pve_host }}"
+      become: true
+
+    # ------------------------------------------------------------------
+    # VM creation (Proxmox API)
+    # ------------------------------------------------------------------
+    - name: Create the lab node VM
+      # state=present is a no-op when the vmid already exists. The module
+      # does not reconcile config without update=true, which is deliberately
+      # avoided here: updating net/disk keys is refused as unsafe and could
+      # recreate disks on a VM that already carries lab state.
+      community.proxmox.proxmox_kvm:
+        node: "{{ proxmox_node }}"
+        vmid: "{{ lab_vm_id }}"
+        name: "{{ lab_vm_name }}"
+        state: present
+        onboot: true
+        cores: "{{ lab_vm_cores }}"
+        sockets: 1
+        memory: "{{ lab_vm_memory_mb }}"
+        # 'host' passes vmx/svm through to the guest — mandatory for nested
+        # virt; the default kvm64 hides them and hosted-engine refuses to
+        # deploy ("hardware virtualization not available").
+        cpu: host
+        # Modern machine type + UEFI. CS9 GenericCloud images are hybrid
+        # BIOS/UEFI bootable; pre_enrolled_keys=false skips Secure Boot so
+        # the lab never fights shim/kernel signing.
+        machine: q35
+        bios: ovmf
+        efidisk0:
+          storage: "{{ lab_vm_storage }}"
+          format: raw
+          efitype: 4m
+          pre_enrolled_keys: false
+        scsihw: virtio-scsi-pci
+        # A string, not a bool, since community.proxmox 2.x. This only wires
+        # up the virtio channel; the guest package is installed by the
+        # cloud-init snippet above.
+        agent: "enabled=1"
+        net:
+          # Optional VLAN tag — omitted from the net string when unset.
+          net0: "virtio,bridge={{ lab_vm_bridge }}{% if lab_vm_vlan is defined and lab_vm_vlan %},tag={{ lab_vm_vlan }}{% endif %}"
+        ide:
+          # The cloud-init config drive (the boot disk is imported below).
+          ide2: "{{ lab_vm_storage }}:cloudinit"
+        # Display stays PVE's Default (no vga override) — with OVMF the
+        # standard console shows boot output fine. The serial device is kept
+        # as a fallback ('qm terminal <vmid>' on the PVE host).
+        serial:
+          serial0: socket
+        cicustom: "user=local:snippets/{{ lab_snippet_name }}"
+        ipconfig:
+          ipconfig0: "ip={{ node_ip }}/{{ lab_ip_prefix }},gw={{ lab_gateway }}"
+        nameservers: "{{ [lab_dns] | flatten }}"
+        # e.g. 'lab.local' derived from 'node.lab.local'
+        searchdomains: "{{ [node_fqdn.split('.', 1) | last] }}"
+        timeout: 120
+      register: lab_vm_created
+
+    # ------------------------------------------------------------------
+    # Boot disk: import the cloud image, then grow it
+    # ------------------------------------------------------------------
+    - name: Read the VM config (idempotency guard for the disk import)
+      ansible.builtin.command: qm config {{ lab_vm_id }}
+      register: lab_vm_config
+      changed_when: false
+      delegate_to: "{{ pve_host }}"
+      become: true
+
+    - name: Import the cloud image as the boot disk (scsi0)
+      # Over SSH because the API rejects absolute-path import-from for API
+      # tokens; "qm set --import-from" (PVE >= 7.2) has no such restriction.
+      # The ':0' means "allocate a new volume on lab_vm_storage".
+      ansible.builtin.command: >-
+        qm set {{ lab_vm_id }}
+        --scsi0 {{ lab_vm_storage }}:0,import-from={{ lab_cloud_image_path }}
+        --boot order=scsi0
+      when: "'scsi0:' not in lab_vm_config.stdout"
+      # The 'when' above is the idempotency guard — whenever this task runs
+      # it really does import a disk.
+      changed_when: true
+      delegate_to: "{{ pve_host }}"
+      become: true
+
+    - name: Re-read the VM config to learn the boot disk size
+      ansible.builtin.command: qm config {{ lab_vm_id }}
+      register: lab_vm_config_after
+      changed_when: false
+      delegate_to: "{{ pve_host }}"
+      become: true
+
+    - name: Work out the current boot disk size in GiB
+      # Deliberately no regex capture groups: the escaping rules for
+      # '\1'-style backreferences changed between ansible-core releases, so
+      # this chain of group-free searches is the portable way to pull the
+      # number out of "scsi0: local-lvm:vm-950-disk-0,size=10G".
+      ansible.builtin.set_fact:
+        lab_current_disk_gb: >-
+          {{ lab_vm_config_after.stdout_lines
+             | select('match', 'scsi0:')
+             | join(' ')
+             | regex_search('size=[0-9]+G')
+             | default('size=0G', true)
+             | regex_search('[0-9]+') }}
+
+    - name: Grow the boot disk to the target size
+      # The GenericCloud image is only ~10 GiB virtual. Growing it before
+      # first boot lets the image's built-in growpart/resize_rootfs expand
+      # the XFS root automatically — no partitioning inside the guest.
+      # Guarded because resizing to the current size is a PVE API error, not
+      # a no-op (and shrinking is impossible).
+      community.proxmox.proxmox_disk:
+        vmid: "{{ lab_vm_id }}"
+        disk: scsi0
+        size: "{{ lab_vm_disk_gb }}G"
+        state: resized
+      when: (lab_current_disk_gb | int) < (lab_vm_disk_gb | int)
+
+    # ------------------------------------------------------------------
+    # Boot and reachability
+    # ------------------------------------------------------------------
+    - name: Start the VM
+      community.proxmox.proxmox_kvm:
+        node: "{{ proxmox_node }}"
+        vmid: "{{ lab_vm_id }}"
+        state: started
+        timeout: 120
+
+    - name: Drop stale SSH host keys for a freshly created node # noqa: no-handler
+      # A re-provisioned VM generates new host keys; a stale known_hosts
+      # entry would make every subsequent playbook fail with a
+      # host-key-mismatch error. Only touches known_hosts when this run
+      # actually created the VM. Not a handler (hence the noqa): handlers
+      # fire at the end of the play, but this must run BEFORE the
+      # 'Wait for SSH on the node' task below.
+      ansible.builtin.known_hosts:
+        name: "{{ item }}"
+        state: absent
+      loop:
+        - "{{ node_ip }}"
+        - "{{ node_fqdn }}"
+      when: lab_vm_created is changed
+
+    - name: Wait for SSH on the node
+      # search_regex makes sure sshd is actually answering, not merely that
+      # the TCP port is open. First boot takes a while — cloud-init grows the
+      # root filesystem and installs qemu-guest-agent before we get here.
+      ansible.builtin.wait_for:
+        host: "{{ node_ip }}"
+        port: 22
+        search_regex: OpenSSH
+        delay: 10
+        sleep: 5
+        timeout: 900
+
+    - name: Wait for cloud-init to finish first boot
+      # cloud-init holds the dnf lock while installing qemu-guest-agent;
+      # letting 02-bootstrap-node.yml start its own dnf transactions in
+      # parallel causes spurious "another process holds the lock" failures.
+      # rc=2 means "done, with recoverable warnings" — fine for a lab.
+      ansible.builtin.command: cloud-init status --wait
+      register: node_cloud_init
+      changed_when: false
+      failed_when: node_cloud_init.rc not in [0, 2]
+      delegate_to: "{{ groups['ovirt_node'] | first }}"

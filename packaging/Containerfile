@@ -1,0 +1,111 @@
+# Containerfile -- Red Hat UBI: Node builds the SPA, nginx serves the dist/.
+#
+# This is the *container* deploy path (dev demos, OpenShift/pod alongside the
+# engine, air-gapped previews). The RPM (ovirt-web-ui-ng.spec) is the path for
+# an integrated engine host; this image runs the SPA as its own pod with a
+# same-origin reverse proxy to the engine(s).
+#
+# Base images are Red Hat UBI (registry.access.redhat.com) — freely pullable
+# with no registry credentials and no Docker Hub rate limits, and the supported
+# choice on OpenShift.
+#
+# Two runtime shapes, one image:
+#   - single engine (podman demos, one hosted engine): the baked
+#     nginx-sample.conf is rendered at start with ${ENGINE_ORIGIN}.
+#   - multi engine (OpenShift proxy): a deployer MOUNTS its own
+#     /etc/nginx/conf.d/default.conf (one `location /e/<slug>/` proxy block per
+#     engine, all same-origin so NO CORS); the entrypoint then leaves it as-is.
+#     See packaging/openshift/.
+
+# ---- Stage 1: build --------------------------------------------------------
+FROM registry.access.redhat.com/ubi9/nodejs-24:latest AS build
+
+# Build as root to avoid file-ownership friction on COPY into /opt/app-root
+# (only the resulting dist/ is carried into the serve stage).
+USER 0
+WORKDIR /opt/app-root/src
+
+# Served sub-path; MUST match the app's vite.config.ts base and the nginx
+# `location` blocks. Override with --build-arg VITE_BASE=/...
+ARG VITE_BASE=/ovirt-engine/web-ui-ng/
+ENV VITE_BASE=${VITE_BASE}
+
+# Copy manifests first for layer caching, then install from the lockfile.
+COPY app/package.json app/package-lock.json ./app/
+WORKDIR /opt/app-root/src/app
+RUN npm ci
+
+# Copy the rest of the app and build. dist/ lands in app/dist.
+WORKDIR /opt/app-root/src
+COPY app ./app
+WORKDIR /opt/app-root/src/app
+
+# Multi-engine is compiled in for this container (proxy/external) build: the
+# config.js `servers` list is honored and the login-page picker renders. The
+# integrated RPM uses the default build where the capability does not exist.
+ENV VITE_MULTI_ENGINE=1
+
+# index.html's <meta> CSP connect-src carries this value. Two shapes:
+#   - single engine (default): the __CSP_CONNECT_EXTRA__ placeholder, which
+#     nginx sub_filter swaps at serve time for ${CSP_CONNECT_EXTRA}.
+#   - same-origin multi-engine proxy: pass an EMPTY value at build
+#     (--build-arg VITE_CSP_CONNECT_EXTRA=) so the meta CSP is clean and strict
+#     (connect-src 'self' wss:) with no placeholder and no serve-time rewrite —
+#     everything is same-origin, so there is nothing extra to allow.
+ARG VITE_CSP_CONNECT_EXTRA=__CSP_CONNECT_EXTRA__
+ENV VITE_CSP_CONNECT_EXTRA=${VITE_CSP_CONNECT_EXTRA}
+RUN npm run build
+
+# ---- Stage 2: serve --------------------------------------------------------
+# ubi9-minimal + nginx from the UBI AppStream (ships the built-in sub_filter
+# module) + gettext for envsubst. No `user` directive and pid/temp under /tmp,
+# so nginx runs under OpenShift's restricted-SCC random UID (member of group 0).
+FROM registry.access.redhat.com/ubi9/ubi-minimal:latest AS serve
+
+RUN microdnf install -y nginx gettext \
+ && microdnf clean all \
+ && rm -rf /var/cache/dnf
+
+# Main config as an envsubst template: the entrypoint substitutes ${RESOLVER}
+# (the pod's DNS, for the multi-engine proxy's dynamic upstreams) and writes
+# /etc/nginx/nginx.conf. Relocates pid/temp to /tmp and drops `user`.
+COPY packaging/nginx.conf.template /etc/nginx/nginx.conf.template
+
+# Generic single-engine server block, rendered at start with ${ENGINE_ORIGIN} /
+# ${CSP_CONNECT_EXTRA} UNLESS a deployer mounts its own default.conf over it
+# (multi-engine). Kept as a *.template so the entrypoint controls when it runs.
+COPY packaging/nginx-sample.conf /etc/nginx/templates/default.conf.template
+
+# envsubst the templates, then exec nginx.
+COPY packaging/nginx-entrypoint.sh /usr/local/bin/nginx-entrypoint.sh
+
+# Static build, served from /usr/share/nginx/html at the configured sub-path.
+COPY --from=build /opt/app-root/src/app/dist /usr/share/nginx/html/ovirt-engine/web-ui-ng
+
+# Drop the stock server the nginx RPM ships (a `listen 80` welcome page): our
+# main config includes /etc/nginx/conf.d/*.conf, and a second server — on a
+# privileged port no less — would break startup under the non-root UID.
+#
+# OpenShift's restricted SCC runs the container as a random non-root UID that
+# is a member of group 0. Group-0-own and group-write the paths nginx reads
+# and the entrypoint writes (rendered configs), so that UID can operate.
+RUN rm -f /etc/nginx/conf.d/default.conf \
+ && mkdir -p /etc/nginx/conf.d /var/log/nginx /usr/share/nginx/html \
+ && chmod +x /usr/local/bin/nginx-entrypoint.sh \
+ && chgrp -R 0 /etc/nginx /usr/share/nginx /var/log/nginx \
+ && chmod -R g=u /etc/nginx /usr/share/nginx /var/log/nginx
+
+# Single-engine default target (dormant when a multi-engine default.conf is
+# mounted). Provide a REAL, resolvable origin at run time for the single-engine
+# shape:  podman run -e ENGINE_ORIGIN=https://engine.lab.example.com ...
+ENV ENGINE_ORIGIN=https://engine.local
+
+# Single-engine multi-CSP extra (space-separated direct-connect origins).
+# Empty keeps the strict same-origin policy; the OpenShift proxy leaves it empty.
+ENV CSP_CONNECT_EXTRA=''
+
+EXPOSE 8080
+# Sane default for non-OpenShift (podman) runs; OpenShift overrides with its
+# assigned random UID. Either way nginx runs unprivileged on 8080.
+USER 1001
+ENTRYPOINT ["/usr/local/bin/nginx-entrypoint.sh"]

@@ -1,0 +1,11 @@
+---
+# ansible-galaxy collection install -r requirements.yml
+# Installs to ~/.ansible/collections, which both ansible-playbook and
+# ansible-lint search by default (homebrew's bundled collections are not
+# visible to a separately installed ansible-lint).
+collections:
+  - name: community.proxmox
+    version: '>=2.0.0'
+  - name: ovirt.ovirt
+    version: '>=3.0.0'
+  - name: ansible.posix

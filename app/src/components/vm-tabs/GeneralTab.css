@@ -1,0 +1,15 @@
+/*
+ * About card only: the left column carries the long copyable identity
+ * strings (FQDN and VM ID mono pills) while the right column's values stay
+ * short (Template, Origin, Tags chips) — split 3fr/2fr instead of PF's
+ * equal halves so long hostnames get the room. Scoped to the md-and-up
+ * two-column state (PF's md breakpoint, 48rem): below it the list is
+ * single-column and PF's own rule keeps applying. PF builds the grid with
+ * repeat(count, width), which cannot express asymmetric tracks, hence a
+ * direct grid-template-columns override rather than a token.
+ */
+@media (min-width: 48rem) {
+  .vm-general-about-list.pf-v6-c-description-list.pf-m-2-col-on-md {
+    grid-template-columns: 3fr 2fr;
+  }
+}

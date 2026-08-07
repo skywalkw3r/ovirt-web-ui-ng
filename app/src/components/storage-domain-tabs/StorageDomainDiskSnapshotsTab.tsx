@@ -1,0 +1,156 @@
+import { useQuery } from '@tanstack/react-query'
+import {
+  Button,
+  EmptyState,
+  EmptyStateActions,
+  EmptyStateBody,
+  EmptyStateFooter,
+  Skeleton,
+} from '@patternfly/react-core'
+import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table'
+import { Link } from '@tanstack/react-router'
+import { listStorageDomainDiskSnapshots } from '../../api/resources/diskSnapshots'
+import { sortRows, useColumnSort } from '../../hooks/useColumnSort'
+import { STORAGE_DOMAIN_DETAIL_POLL_INTERVAL_MS } from '../../hooks/useStorageDomainDetail'
+import { useT } from '../../i18n/useT'
+import { formatBytes, statusText } from '../../lib/format'
+import { useSettings } from '../../settings/SettingsProvider'
+import { StatusBadge } from '../StatusBadge'
+
+const DASH = '—'
+
+// The disksnapshots subcollection isn't part of the shared
+// useStorageDomainDetail module (owned elsewhere), so its query rides here
+// inline — same posture as StorageDomainImagesTab. Same ['storagedomain', id,
+// …] key prefix and 60s floor as the sibling subcollections.
+function useStorageDomainDiskSnapshots(id: string) {
+  const { refreshIntervalMs } = useSettings()
+  return useQuery({
+    queryKey: ['storagedomain', id, 'disksnapshots'],
+    queryFn: () => listStorageDomainDiskSnapshots(id),
+    refetchInterval: Math.max(refreshIntervalMs, STORAGE_DOMAIN_DETAIL_POLL_INTERVAL_MS),
+  })
+}
+
+// oVirt disk-image states are ok/locked/illegal — same coloring policy as
+// DiskDetailPage's DiskStatusLabel.
+const SNAPSHOT_STATUS_COLOR: Record<string, 'green' | 'blue' | 'red'> = {
+  ok: 'green',
+  locked: 'blue',
+  illegal: 'red',
+}
+
+function SnapshotStatusLabel({ status }: { status?: string }) {
+  if (!status) return <>{DASH}</>
+  return (
+    <StatusBadge color={SNAPSHOT_STATUS_COLOR[status.toLowerCase()] ?? 'grey'}>
+      {statusText(status)}
+    </StatusBadge>
+  )
+}
+
+// Every column in visual order so each Th's index matches its position; Status
+// stays unsortable — it is a state chip, not a scannable value.
+const SD_DISK_SNAPSHOT_KEYS = ['disk', 'description', 'status', 'provisionedSize'] as const
+
+// The storage domain's Disk Snapshots subtab (webadmin's read-only grid of the
+// snapshot images living on the domain). The alias is the parent disk's alias
+// (DiskSnapshot extends Disk), so it doubles as the disk link's label — the
+// bare disk link itself carries only the id.
+export function StorageDomainDiskSnapshotsTab({ storageDomainId }: { storageDomainId: string }) {
+  const t = useT()
+  const snapshots = useStorageDomainDiskSnapshots(storageDomainId)
+  // client-side header sort; no default — the engine list order stands until a
+  // header is clicked (see hooks/useColumnSort). Before the early returns so
+  // hook order stays stable.
+  const { sort, thSort } = useColumnSort()
+
+  if (snapshots.isPending) {
+    return (
+      <>
+        <Skeleton height="2.5rem" style={{ marginBottom: '0.5rem' }} />
+        <Skeleton height="2.5rem" screenreaderText={t('storage.diskSnapshots.loading')} />
+      </>
+    )
+  }
+
+  if (snapshots.isError) {
+    return (
+      <EmptyState titleText={t('storage.diskSnapshots.error.title')} status="danger">
+        <EmptyStateBody>
+          {snapshots.error instanceof Error ? snapshots.error.message : t('common.error.unknown')}
+        </EmptyStateBody>
+        <EmptyStateFooter>
+          <EmptyStateActions>
+            <Button variant="primary" onClick={() => void snapshots.refetch()}>
+              {t('common.action.retry')}
+            </Button>
+          </EmptyStateActions>
+        </EmptyStateFooter>
+      </EmptyState>
+    )
+  }
+
+  if (snapshots.data.length === 0) {
+    return (
+      <EmptyState titleText={t('storage.diskSnapshots.empty.title')}>
+        <EmptyStateBody>{t('storage.diskSnapshots.empty.body')}</EmptyStateBody>
+      </EmptyState>
+    )
+  }
+
+  // Disk sorts on the label the cell renders (alias, else the bare link's id);
+  // the size on the raw byte count handed to formatBytes, so 900 GiB lands
+  // under 1 TiB instead of collating by the rendered string.
+  const sortedSnapshots = sortRows(snapshots.data, sort, (snapshot, key) =>
+    key === 'disk'
+      ? (snapshot.alias ?? snapshot.disk?.id)
+      : key === 'description'
+        ? snapshot.description || undefined
+        : key === 'provisionedSize'
+          ? snapshot.provisioned_size
+          : undefined,
+  )
+
+  return (
+    <Table aria-label={t('storage.diskSnapshots.table.ariaLabel')} variant="compact">
+      <Thead>
+        <Tr>
+          <Th sort={thSort(SD_DISK_SNAPSHOT_KEYS, 0)}>{t('storage.diskSnapshots.column.disk')}</Th>
+          <Th sort={thSort(SD_DISK_SNAPSHOT_KEYS, 1)}>{t('common.field.description')}</Th>
+          <Th>{t('common.field.status')}</Th>
+          <Th sort={thSort(SD_DISK_SNAPSHOT_KEYS, 3)}>
+            {t('storage.diskSnapshots.column.provisionedSize')}
+          </Th>
+          {/* actual_size is intentionally left out: 4 data columns keeps the
+              tab under the ColumnPicker threshold and webadmin leads with the
+              virtual size here too */}
+        </Tr>
+      </Thead>
+      <Tbody>
+        {sortedSnapshots.map((snapshot) => (
+          <Tr key={snapshot.id}>
+            <Td dataLabel={t('storage.diskSnapshots.column.disk')}>
+              {snapshot.disk?.id ? (
+                <Link to="/disks/$diskId" params={{ diskId: snapshot.disk.id }}>
+                  {snapshot.alias ?? snapshot.disk.id}
+                </Link>
+              ) : (
+                (snapshot.alias ?? DASH)
+              )}
+            </Td>
+            <Td dataLabel={t('common.field.description')} modifier="truncate">
+              <span title={snapshot.description}>{snapshot.description ?? DASH}</span>
+            </Td>
+            <Td dataLabel={t('common.field.status')}>
+              <SnapshotStatusLabel status={snapshot.status} />
+            </Td>
+            <Td dataLabel={t('storage.diskSnapshots.column.provisionedSize')}>
+              {formatBytes(snapshot.provisioned_size)}
+            </Td>
+          </Tr>
+        ))}
+      </Tbody>
+    </Table>
+  )
+}

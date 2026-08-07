@@ -1,0 +1,13 @@
+# Build context excludes for packaging/Containerfile (OpenShift + podman builds).
+# The image does its own `npm ci` + `npm run build`, so host artifacts must not
+# leak in: they would be wrong-arch, stale, or huge.
+**/node_modules
+**/dist
+**/coverage
+**/playwright-report
+**/test-results
+**/.vite
+.git
+lab
+docs
+*.log
