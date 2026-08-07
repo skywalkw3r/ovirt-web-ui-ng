@@ -1,0 +1,138 @@
+---
+# 04-post-deploy.yml
+#
+# Post-deployment engine configuration: waits for the engine API, attaches
+# the 'data' NFS storage domain to datacenter Default, health-checks the API
+# root, and always revokes the SSO token when done.
+#
+# Runs against the node (not localhost) on purpose: the ovirt.ovirt modules
+# need python3-ovirt-engine-sdk4 on the machine where they execute, and 02
+# installed it on the node -- the controller (e.g. a macOS laptop) most
+# likely does not have it. No root needed: everything here talks to the
+# engine REST API, so the play deliberately has no 'become'.
+#
+# Run:
+#   export HE_ADMIN_PASSWORD=...
+#   ansible-playbook -i inventory.ini 04-post-deploy.yml -e @vars.yml
+#
+# Controller requirements:
+#   ansible-galaxy collection install ovirt.ovirt
+#
+# Variables consumed (see vars.example.yml): engine_fqdn, node_fqdn,
+# he_admin_password
+
+- name: Post-deploy engine configuration (storage domain + health check)
+  hosts: ovirt_node
+  gather_facts: false # nothing here needs facts; saves a round-trip
+
+  vars:
+    engine_api_url: "https://{{ engine_fqdn }}/ovirt-engine/api"
+    # oVirt 4.5 ships with Keycloak enabled by default, where the admin
+    # principal is admin@ovirt@internalsso. If the engine was deployed with
+    # he_enable_keycloak: false, override this with the legacy admin@internal.
+    engine_admin_username: admin@ovirt@internalsso
+
+  tasks:
+    - name: Assert the admin password environment variable is set on the controller
+      # lookup('env', ...) evaluates on the controller and returns '' when
+      # unset, which would just produce a confusing 401 below.
+      ansible.builtin.assert:
+        that:
+          - lookup('env', 'HE_ADMIN_PASSWORD') | length > 0
+        fail_msg: >-
+          HE_ADMIN_PASSWORD is not set in the controller environment. Export
+          it before running this playbook; secrets are never stored in files.
+
+    - name: Wait for the engine API to answer
+      # Right after 03 the engine may still be starting its services; 401 is
+      # as good as 200 here -- it proves HTTPS + the API endpoint are up.
+      ansible.builtin.uri:
+        url: "{{ engine_api_url }}"
+        validate_certs: false # lab engine uses its own internal CA
+        status_code: [200, 401]
+      register: api_up
+      until: api_up.status | default(0) in [200, 401]
+      retries: 30
+      delay: 10
+
+    - name: Configure the engine
+      block:
+        - name: Obtain an SSO token from the engine
+          # Sets the 'ovirt_auth' fact consumed by every module below.
+          ovirt.ovirt.ovirt_auth:
+            url: "{{ engine_api_url }}"
+            username: "{{ engine_admin_username }}"
+            password: "{{ he_admin_password }}"
+            insecure: true # lab: engine certificate is self-signed/internal CA
+
+        - name: Look up the hypervisor host as registered in the engine
+          # The storage-domain module needs the host *name the engine knows*,
+          # which hosted-engine setup derives itself -- query it instead of
+          # guessing that it equals node_fqdn.
+          ovirt.ovirt.ovirt_host_info:
+            auth: "{{ ovirt_auth }}"
+          register: engine_hosts
+
+        - name: Assert the engine knows at least one host
+          ansible.builtin.assert:
+            that:
+              - engine_hosts.ovirt_hosts | length > 0
+            fail_msg: >-
+              The engine has no registered hosts -- the hosted-engine
+              deployment (03) did not complete successfully.
+
+        - name: Ensure the 'data' NFS storage domain exists in datacenter Default
+          # Retried because right after deploy the Default datacenter can
+          # take a few minutes to reach status Up (SPM election, hosted_storage
+          # import); attaching a domain before that fails transiently.
+          ovirt.ovirt.ovirt_storage_domain:
+            auth: "{{ ovirt_auth }}"
+            name: data
+            data_center: Default
+            domain_function: data
+            host: "{{ engine_hosts.ovirt_hosts[0].name }}"
+            nfs:
+              address: "{{ node_fqdn }}"
+              path: /exports/data
+            state: present
+            wait: true
+          register: data_sd
+          until: data_sd is succeeded
+          retries: 12
+          delay: 30
+
+        - name: Health check - query the API root
+          ansible.builtin.uri:
+            url: "{{ engine_api_url }}"
+            headers:
+              Authorization: "Bearer {{ ovirt_auth.token }}"
+              Accept: application/json
+            validate_certs: false
+            return_content: true
+          register: api_root
+
+        - name: Assert the engine reports itself healthy
+          ansible.builtin.assert:
+            that:
+              - api_root.json.product_info.name is defined
+              - api_root.json.product_info.name == 'oVirt Engine'
+            fail_msg: >-
+              Unexpected API root payload from {{ engine_api_url }} --
+              the engine answered but does not identify as oVirt Engine.
+
+        - name: Report lab status
+          ansible.builtin.debug:
+            msg: >-
+              Lab is up: {{ api_root.json.product_info.name }}
+              {{ api_root.json.product_info.version.full_version | default('') }}
+              at {{ engine_api_url }} -- 'data' storage domain attached to
+              datacenter Default.
+
+      always:
+        - name: Revoke the SSO token
+          # Tokens outlive the play on the engine side; always revoke, even
+          # when a task above failed, so reruns do not pile up sessions.
+          ovirt.ovirt.ovirt_auth:
+            state: absent
+            ovirt_auth: "{{ ovirt_auth }}"
+          when: ovirt_auth is defined

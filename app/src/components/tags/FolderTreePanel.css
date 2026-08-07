@@ -1,0 +1,27 @@
+/*
+ * Drop-target styling for VM drag-and-drop onto the folder tree. The node
+ * name spans are the drop zones; block display stretches them across the
+ * node's text area so the target is bigger than the label glyphs alone.
+ * PF design tokens only (docs/COMPONENTS.md ground rule 1), so both themes
+ * come for free.
+ */
+
+.folder-tree__drop-zone {
+  display: block;
+}
+
+/*
+ * Smaller subtext in the 'No folders yet' empty state. Overrides PF's own
+ * body font-size custom property (the intended extension point) with the
+ * smallest body token, so both themes stay in sync.
+ */
+.folder-tree__empty-body {
+  --pf-v6-c-empty-state--body--FontSize: var(--pf-t--global--font--size--body--sm);
+}
+
+.folder-tree__drop-zone--active {
+  background: var(--pf-t--global--background--color--highlight--default);
+  border-radius: var(--pf-t--global--border--radius--small);
+  box-shadow: inset 0 0 0 var(--pf-t--global--border--width--regular)
+    var(--pf-t--global--border--color--brand--default);
+}

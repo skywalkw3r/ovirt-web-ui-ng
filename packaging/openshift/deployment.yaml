@@ -1,0 +1,84 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ovirt-web-ui-ng
+  labels:
+    app: ovirt-web-ui-ng
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ovirt-web-ui-ng
+  template:
+    metadata:
+      labels:
+        app: ovirt-web-ui-ng
+    spec:
+      containers:
+        - name: web-ui-ng
+          # Built from packaging/Containerfile (nginx-unprivileged base — runs
+          # under the restricted SCC's random UID). Set the real registry/tag
+          # via the kustomization `images:` transformer.
+          image: ovirt-web-ui-ng:latest
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            # The engine this pod reverse-proxies same-origin (/ovirt-engine/*
+            # REST, SSO, websocket-proxy) — the console's "default" engine.
+            - name: ENGINE_ORIGIN
+              value: https://engine1.example.com
+            # Multi-engine: space-separated origins of the ADDITIONAL engines
+            # listed in config.js — appended to the CSP connect-src (header
+            # and <meta>) at container start. Empty = strict single-engine.
+            #   value: "https://engine2.example.com https://engine3.example.com"
+            - name: CSP_CONNECT_EXTRA
+              value: ""
+          volumeMounts:
+            # Deploy-time runtime config (multi-engine server list etc.) over
+            # the baked copy; subPath so only this one file is replaced.
+            - name: runtime-config
+              mountPath: /usr/share/nginx/html/ovirt-engine/web-ui-ng/config.js
+              subPath: config.js
+            # Engine CA for the nginx→engine TLS hop: nginx-sample.conf ships
+            # proxy_ssl_verify on and reads the bundle from this exact path —
+            # the pod will not serve without it. Create the ConfigMap once:
+            #   oc create configmap engine-ca --from-file=ca.pem=/path/to/engine-ca.pem
+            - name: engine-ca
+              mountPath: /etc/pki/ovirt-engine/ca.pem
+              subPath: ca.pem
+          readinessProbe:
+            httpGet:
+              path: /ovirt-engine/web-ui-ng/
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /ovirt-engine/web-ui-ng/
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault
+      volumes:
+        - name: runtime-config
+          configMap:
+            # kustomize's configMapGenerator rewrites this to the hashed name
+            name: web-ui-ng-config
+        - name: engine-ca
+          configMap:
+            name: engine-ca
