@@ -32,6 +32,7 @@ import {
   canDetach,
   canMaintenance,
 } from '../storage-domain-form/lifecycle'
+import { useT } from '../../i18n/useT'
 import { formatBytes, statusText } from '../../lib/format'
 import { capacityVariant } from '../../lib/utilization'
 import { storageTypeText, storageUsedPercent } from '../../lib/storageDomain'
@@ -40,22 +41,30 @@ import { AttachDataCenterStorageDomainModal } from './AttachDataCenterStorageDom
 const DASH = '—'
 
 // The domain's role (Data / ISO / Export / Image), with the master data domain
-// called out inline — mirrors StorageDomainsPage's Domain Type cell. Hardcoded
-// English to match this tab's other headers (the admin tabs aren't i18n'd yet).
-function domainTypeText(domain: StorageDomain): string {
+// called out inline — mirrors StorageDomainsPage's Domain Type cell. The type
+// labels themselves come from statusText's raw-enum prettifier; only the
+// '(Master)' decoration resolves through the catalog.
+function domainTypeText(domain: StorageDomain, t: ReturnType<typeof useT>): string {
   if (domain.type === undefined) return DASH
   if (domain.type === 'iso') return 'ISO'
   const label = statusText(domain.type)
-  return domain.type === 'data' && domain.master === true ? `${label} (Master)` : label
+  return domain.type === 'data' && domain.master === true
+    ? t('dcStorage.domainType.master', { type: label })
+    : label
 }
 
 // Used/total fill bar — the same slim capacity meter the flat storage list
 // uses (bar only; exact figures ride in the hover title and the SR value text).
 function CapacityBar({ domain }: { domain: StorageDomain }) {
+  const t = useT()
   const percent = storageUsedPercent(domain)
   if (percent === undefined) return <>{DASH}</>
   const total = (domain.used ?? 0) + (domain.available ?? 0)
-  const measure = `${formatBytes(domain.used)} of ${formatBytes(total)} used (${Math.round(percent)}%)`
+  const measure = t('dcStorage.capacity.measure', {
+    used: formatBytes(domain.used),
+    total: formatBytes(total),
+    percent: Math.round(percent),
+  })
   return (
     <span title={measure} style={{ display: 'inline-block', minWidth: '7rem' }}>
       <Progress
@@ -64,7 +73,7 @@ function CapacityBar({ domain }: { domain: StorageDomain }) {
         size="sm"
         measureLocation="none"
         valueText={measure}
-        aria-label={`${domain.name} utilization`}
+        aria-label={t('dcStorage.capacity.aria', { name: domain.name ?? domain.id })}
       />
     </span>
   )
@@ -112,6 +121,7 @@ const DC_STORAGE_KEYS = ['name', 'domainType', 'storageType', 'status', 'utiliza
 // behind loaded && isAdmin in DataCenterDetailPage, so this tab does not re-gate
 // (mirrors the sibling tabs).
 export function DataCenterStorageActionsTab({ dataCenterId }: { dataCenterId: string }) {
+  const t = useT()
   const domains = useDataCenterStorageDomains(dataCenterId)
   const activate = useActivateStorageDomain()
   const deactivate = useDeactivateStorageDomain()
@@ -154,20 +164,20 @@ export function DataCenterStorageActionsTab({ dataCenterId }: { dataCenterId: st
     const detachEnabled = canDetach(domain)
     return [
       {
-        title: 'Activate',
+        title: t('dcStorage.action.activate'),
         isAriaDisabled: !activateEnabled,
         tooltipProps: activateEnabled ? undefined : { content: DISABLED_REASONS.activate },
         onClick: () =>
           activate.mutate({ dataCenterId, storageDomainId: domain.id, name: domain.name }),
       },
       {
-        title: 'Maintenance',
+        title: t('dcStorage.action.maintenance'),
         isAriaDisabled: !maintenanceEnabled,
         tooltipProps: maintenanceEnabled ? undefined : { content: DISABLED_REASONS.maintenance },
         onClick: () => setConfirm({ kind: 'maintenance', domain }),
       },
       {
-        title: 'Detach',
+        title: t('common.action.detach'),
         isDanger: detachEnabled,
         isAriaDisabled: !detachEnabled,
         tooltipProps: detachEnabled ? undefined : { content: DISABLED_REASONS.detach },
@@ -184,7 +194,7 @@ export function DataCenterStorageActionsTab({ dataCenterId }: { dataCenterId: st
             <ToolbarGroup align={{ default: 'alignEnd' }}>
               <ToolbarItem>
                 <Button variant="secondary" onClick={() => setAttaching(true)}>
-                  Attach storage domain
+                  {t('dcStorage.attach.title')}
                 </Button>
               </ToolbarItem>
             </ToolbarGroup>
@@ -195,28 +205,32 @@ export function DataCenterStorageActionsTab({ dataCenterId }: { dataCenterId: st
       {domains.isPending && (
         <>
           <Skeleton height="2.5rem" style={{ marginBottom: '0.5rem' }} />
-          <Skeleton height="2.5rem" screenreaderText="Loading storage domains" />
+          <Skeleton height="2.5rem" screenreaderText={t('storage.loading')} />
         </>
       )}
 
       {domains.isError && (
-        <EmptyState titleText="Could not load storage domains" status="danger">
+        <EmptyState titleText={t('storage.error.title')} status="danger">
           <EmptyStateBody>
-            {domains.error instanceof Error ? domains.error.message : 'Unknown error'}
+            {domains.error instanceof Error ? domains.error.message : t('common.error.unknown')}
           </EmptyStateBody>
-          <Button variant="primary" onClick={() => void domains.refetch()}>
-            Retry
-          </Button>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="primary" onClick={() => void domains.refetch()}>
+                {t('common.action.retry')}
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 
       {domains.isSuccess && domains.data.length === 0 && (
-        <EmptyState titleText="No storage domains">
-          <EmptyStateBody>No storage domains are attached to this data center.</EmptyStateBody>
+        <EmptyState titleText={t('storage.empty.title')}>
+          <EmptyStateBody>{t('dcStorage.empty.body')}</EmptyStateBody>
           <EmptyStateFooter>
             <EmptyStateActions>
               <Button variant="primary" onClick={() => setAttaching(true)}>
-                Attach storage domain
+                {t('dcStorage.attach.title')}
               </Button>
             </EmptyStateActions>
           </EmptyStateFooter>
@@ -224,34 +238,34 @@ export function DataCenterStorageActionsTab({ dataCenterId }: { dataCenterId: st
       )}
 
       {domains.isSuccess && domains.data.length > 0 && (
-        <Table aria-label="Storage domains" variant="compact">
+        <Table aria-label={t('dcStorage.table.ariaLabel')} variant="compact">
           <Thead>
             <Tr>
-              <Th sort={thSort(DC_STORAGE_KEYS, 0)}>Name</Th>
-              <Th sort={thSort(DC_STORAGE_KEYS, 1)}>Domain type</Th>
-              <Th sort={thSort(DC_STORAGE_KEYS, 2)}>Storage Type</Th>
-              <Th>Status</Th>
-              <Th sort={thSort(DC_STORAGE_KEYS, 4)}>Utilization</Th>
-              <Th screenReaderText="Actions" />
+              <Th sort={thSort(DC_STORAGE_KEYS, 0)}>{t('common.field.name')}</Th>
+              <Th sort={thSort(DC_STORAGE_KEYS, 1)}>{t('dcStorage.column.domainType')}</Th>
+              <Th sort={thSort(DC_STORAGE_KEYS, 2)}>{t('storage.column.storageType')}</Th>
+              <Th>{t('common.field.status')}</Th>
+              <Th sort={thSort(DC_STORAGE_KEYS, 4)}>{t('dcStorage.column.utilization')}</Th>
+              <Th screenReaderText={t('common.field.actions')} />
             </Tr>
           </Thead>
           <Tbody>
             {sortedDomains.map((domain) => (
               <Tr key={domain.id}>
-                <Td dataLabel="Name">
+                <Td dataLabel={t('common.field.name')}>
                   <Link to="/storage/$storageDomainId" params={{ storageDomainId: domain.id }}>
                     {domain.name}
                   </Link>
                 </Td>
-                <Td dataLabel="Domain type">{domainTypeText(domain)}</Td>
-                <Td dataLabel="Storage Type">{storageTypeText(domain)}</Td>
-                <Td dataLabel="Status">
+                <Td dataLabel={t('dcStorage.column.domainType')}>{domainTypeText(domain, t)}</Td>
+                <Td dataLabel={t('storage.column.storageType')}>{storageTypeText(domain)}</Td>
+                <Td dataLabel={t('common.field.status')}>
                   <StatusCell domain={domain} />
                 </Td>
-                <Td dataLabel="Utilization">
+                <Td dataLabel={t('dcStorage.column.utilization')}>
                   <CapacityBar domain={domain} />
                 </Td>
-                <Td dataLabel="Actions" isActionCell>
+                <Td dataLabel={t('common.field.actions')} isActionCell>
                   <ActionsColumn isDisabled={busy} items={rowActions(domain)} />
                 </Td>
               </Tr>
@@ -271,14 +285,11 @@ export function DataCenterStorageActionsTab({ dataCenterId }: { dataCenterId: st
       {confirm?.kind === 'maintenance' && (
         <ConfirmModal
           isOpen
-          title={`Move ${confirm.domain.name} to maintenance?`}
-          confirmLabel="Move to maintenance"
+          title={t('dcStorage.maintenance.confirm.title', { name: confirm.domain.name ?? '' })}
+          confirmLabel={t('dcStorage.maintenance.confirm.label')}
           body={
             <Stack hasGutter>
-              <StackItem>
-                Virtual machines with disks on this domain lose access to that storage while it is
-                in maintenance. Make sure nothing critical is running against it first.
-              </StackItem>
+              <StackItem>{t('dcStorage.maintenance.confirm.body')}</StackItem>
             </Stack>
           }
           onConfirm={() => {
@@ -293,13 +304,11 @@ export function DataCenterStorageActionsTab({ dataCenterId }: { dataCenterId: st
       {confirm?.kind === 'detach' && (
         <ConfirmModal
           isOpen
-          title={`Detach ${confirm.domain.name}?`}
-          confirmLabel="Detach"
+          title={t('dcStorage.detach.confirm.title', { name: confirm.domain.name ?? '' })}
+          confirmLabel={t('common.action.detach')}
           body={
             <Stack hasGutter>
-              <StackItem>
-                The domain leaves this data center but its data is kept — you can reattach it later.
-              </StackItem>
+              <StackItem>{t('dcStorage.detach.confirm.body')}</StackItem>
             </Stack>
           }
           onConfirm={() => {

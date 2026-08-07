@@ -18,6 +18,8 @@ import {
 import type { DataCenter } from '../../api/schemas/datacenter'
 import { useCreateDataCenter, useUpdateDataCenter } from '../../hooks/useDataCenterMutations'
 import { useMacPools } from '../../hooks/useMacPools'
+import type { MessageId } from '../../i18n/messages/en'
+import { useT } from '../../i18n/useT'
 import {
   QUOTA_MODE_OPTIONS,
   VERSION_OPTIONS,
@@ -27,6 +29,15 @@ import {
   versionKey,
   type DataCenterDraft,
 } from './datacenterDraft'
+
+// The engine quota_mode values → their catalog labels. The draft module keeps
+// the engine values and English fallbacks; labels resolve per-locale here at
+// the render site.
+const QUOTA_MODE_LABEL_IDS: Partial<Record<string, MessageId>> = {
+  disabled: 'common.disabled',
+  audit: 'dcForm.quotaMode.audit',
+  enabled: 'common.enabled',
+}
 
 // The Create/Edit Data Center modal. Owns a single flat draft — seeded from the
 // data center's read model in edit mode, blank defaults in create mode. Save
@@ -41,6 +52,7 @@ export function DataCenterFormModal({
   isOpen: boolean
   onClose: () => void
 }) {
+  const t = useT()
   const isEdit = dataCenter !== undefined
   const [draft, setDraft] = useState<DataCenterDraft>(() =>
     dataCenter ? dataCenterToDraft(dataCenter) : blankDraft(),
@@ -73,7 +85,9 @@ export function DataCenterFormModal({
   }
 
   const nameEmpty = draft.name.trim() === ''
-  const title = isEdit ? `Edit data center — ${dataCenter.name}` : 'New data center'
+  const title = isEdit
+    ? t('dcForm.editTitle', { name: dataCenter.name ?? '' })
+    : t('datacenters.new')
 
   return (
     <Modal
@@ -86,48 +100,53 @@ export function DataCenterFormModal({
       <ModalHeader title={title} labelId="datacenter-form-title" />
       <ModalBody id="datacenter-form-body">
         <Form onSubmit={(event) => event.preventDefault()}>
-          <FormGroup label="Name" isRequired fieldId="datacenter-name">
+          <FormGroup label={t('common.field.name')} isRequired fieldId="datacenter-name">
             <TextInput
               id="datacenter-name"
               isRequired
-              aria-label="Data center name"
+              aria-label={t('dcForm.name.aria')}
               value={draft.name}
               onChange={(_event, value) => set('name', value)}
             />
           </FormGroup>
 
-          <FormGroup label="Description" fieldId="datacenter-description">
+          <FormGroup label={t('common.field.description')} fieldId="datacenter-description">
             <TextInput
               id="datacenter-description"
-              aria-label="Data center description"
+              aria-label={t('dcForm.description.aria')}
               value={draft.description}
               onChange={(_event, value) => set('description', value)}
             />
           </FormGroup>
 
-          <FormGroup label="Storage type" role="radiogroup" isStack fieldId="datacenter-storage">
+          <FormGroup
+            label={t('dcForm.storageType.label')}
+            role="radiogroup"
+            isStack
+            fieldId="datacenter-storage"
+          >
             <Radio
               id="datacenter-storage-shared"
               name="datacenter-storage"
-              label="Shared"
-              aria-label="Shared storage"
+              label={t('dcForm.storage.shared')}
+              aria-label={t('dcForm.storageShared.aria')}
               isChecked={!draft.local}
               onChange={() => set('local', false)}
             />
             <Radio
               id="datacenter-storage-local"
               name="datacenter-storage"
-              label="Local"
-              aria-label="Local storage"
+              label={t('dcForm.storage.local')}
+              aria-label={t('dcForm.storageLocal.aria')}
               isChecked={draft.local}
               onChange={() => set('local', true)}
             />
           </FormGroup>
 
-          <FormGroup label="Compatibility version" fieldId="datacenter-version">
+          <FormGroup label={t('dcForm.compatVersion.label')} fieldId="datacenter-version">
             <FormSelect
               id="datacenter-version"
-              aria-label="Compatibility version"
+              aria-label={t('dcForm.compatVersion.label')}
               value={versionKey(draft.major, draft.minor)}
               onChange={(_event, value) => {
                 const selected = VERSION_OPTIONS.find(
@@ -146,16 +165,23 @@ export function DataCenterFormModal({
             </FormSelect>
           </FormGroup>
 
-          <FormGroup label="Quota mode" fieldId="datacenter-quota-mode">
+          <FormGroup label={t('dcForm.quotaMode.label')} fieldId="datacenter-quota-mode">
             <FormSelect
               id="datacenter-quota-mode"
-              aria-label="Quota mode"
+              aria-label={t('dcForm.quotaMode.label')}
               value={draft.quotaMode}
               onChange={(_event, value) => set('quotaMode', value)}
             >
-              {QUOTA_MODE_OPTIONS.map((option) => (
-                <FormSelectOption key={option.value} value={option.value} label={option.label} />
-              ))}
+              {QUOTA_MODE_OPTIONS.map((option) => {
+                const labelId = QUOTA_MODE_LABEL_IDS[option.value]
+                return (
+                  <FormSelectOption
+                    key={option.value}
+                    value={option.value}
+                    label={labelId ? t(labelId) : option.label}
+                  />
+                )
+              })}
             </FormSelect>
           </FormGroup>
 
@@ -164,17 +190,19 @@ export function DataCenterFormModal({
               it to the engine default (create) / unchanged (edit); a pick writes
               mac_pool.id. Four states on the source list so a failed fetch shows
               an inline retry rather than an empty, unexplained select. */}
-          <FormGroup label="MAC address pool" fieldId="datacenter-mac-pool">
+          <FormGroup label={t('dcForm.macPool.label')} fieldId="datacenter-mac-pool">
             <FormSelect
               id="datacenter-mac-pool"
-              aria-label="MAC address pool"
+              aria-label={t('dcForm.macPool.label')}
               value={draft.macPoolId}
               isDisabled={macPools.isPending || macPools.isError}
               onChange={(_event, value) => set('macPoolId', value)}
             >
               <FormSelectOption
                 value=""
-                label={macPools.isPending ? 'Loading MAC pools…' : 'Default MAC pool'}
+                label={
+                  macPools.isPending ? t('dcForm.macPool.loading') : t('dcForm.macPool.default')
+                }
               />
               {(macPools.data ?? []).map((pool) => (
                 <FormSelectOption key={pool.id} value={pool.id} label={pool.name ?? pool.id} />
@@ -184,9 +212,9 @@ export function DataCenterFormModal({
               <FormHelperText>
                 <HelperText>
                   <HelperTextItem variant="error">
-                    Could not load MAC pools.{' '}
+                    {t('dcForm.macPool.error')}{' '}
                     <Button variant="link" isInline onClick={() => void macPools.refetch()}>
-                      Retry
+                      {t('common.action.retry')}
                     </Button>
                   </HelperTextItem>
                 </HelperText>
@@ -202,10 +230,10 @@ export function DataCenterFormModal({
           isLoading={pending}
           isDisabled={pending || nameEmpty}
         >
-          Save
+          {t('common.action.save')}
         </Button>
         <Button variant="secondary" onClick={onClose} isDisabled={pending}>
-          Cancel
+          {t('common.action.cancel')}
         </Button>
       </ModalFooter>
     </Modal>

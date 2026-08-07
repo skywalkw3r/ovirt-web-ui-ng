@@ -17,6 +17,7 @@ import {
 } from '@patternfly/react-core'
 import { useStorageDomains } from '../../hooks/useStorageDomains'
 import { useAttachStorageDomain } from '../../hooks/useStorageDomainMutations'
+import { useT } from '../../i18n/useT'
 import { isAttached } from '../storage-domain-form/lifecycle'
 
 // The Re-Initialize Data Center dialog — webadmin's recovery action for a data
@@ -45,6 +46,7 @@ export function ReinitializeDataCenterModal({
   isOpen: boolean
   onClose: () => void
 }) {
+  const t = useT()
   const [storageDomainId, setStorageDomainId] = useState('')
   const domains = useStorageDomains()
   const attach = useAttachStorageDomain()
@@ -75,22 +77,18 @@ export function ReinitializeDataCenterModal({
       aria-labelledby="reinitialize-dc-title"
       aria-describedby="reinitialize-dc-body"
     >
-      <ModalHeader title="Re-Initialize Data Center" labelId="reinitialize-dc-title" />
+      <ModalHeader title={t('dcReinit.title')} labelId="reinitialize-dc-title" />
       <ModalBody id="reinitialize-dc-body">
         <Stack hasGutter>
-          <StackItem>
-            {dataCenterName}&apos;s master storage domain is unreachable. Choose an unattached data
-            storage domain to re-form the pool — it becomes the new master and brings the data
-            center back up.
-          </StackItem>
+          <StackItem>{t('dcReinit.intro', { name: dataCenterName })}</StackItem>
           <StackItem>
             <Form onSubmit={(event) => event.preventDefault()}>
               {/* Four states on the source list: a failed fetch would otherwise
                   leave the primary action disabled with no explanation or retry. */}
-              <FormGroup label="Data storage domain" isRequired fieldId="reinitialize-dc-select">
+              <FormGroup label={t('dcReinit.field')} isRequired fieldId="reinitialize-dc-select">
                 <FormSelect
                   id="reinitialize-dc-select"
-                  aria-label="Data storage domain"
+                  aria-label={t('dcReinit.field')}
                   value={storageDomainId}
                   isDisabled={domains.isPending || domains.isError || noCandidates}
                   onChange={(_event, value) => setStorageDomainId(value)}
@@ -100,10 +98,10 @@ export function ReinitializeDataCenterModal({
                     isDisabled
                     label={
                       domains.isPending
-                        ? 'Loading storage domains…'
+                        ? t('dcStorage.attach.optionLoading')
                         : noCandidates
-                          ? 'No unattached data storage domains'
-                          : 'Select a data storage domain'
+                          ? t('dcReinit.noCandidates')
+                          : t('dcReinit.placeholder')
                     }
                   />
                   {candidates.map((domain) => (
@@ -118,9 +116,9 @@ export function ReinitializeDataCenterModal({
                   <FormHelperText>
                     <HelperText>
                       <HelperTextItem variant="error">
-                        Could not load storage domains.{' '}
+                        {t('dcStorage.attach.loadError')}{' '}
                         <Button variant="link" isInline onClick={() => void domains.refetch()}>
-                          Retry
+                          {t('common.action.retry')}
                         </Button>
                       </HelperTextItem>
                     </HelperText>
@@ -138,10 +136,10 @@ export function ReinitializeDataCenterModal({
           isLoading={pending}
           isDisabled={pending || storageDomainId === ''}
         >
-          Re-Initialize
+          {t('dcReinit.confirm')}
         </Button>
         <Button variant="link" onClick={onClose} isDisabled={pending}>
-          Cancel
+          {t('common.action.cancel')}
         </Button>
       </ModalFooter>
     </Modal>

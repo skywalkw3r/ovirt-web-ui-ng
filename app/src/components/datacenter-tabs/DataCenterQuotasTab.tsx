@@ -1,7 +1,15 @@
-import { Button, EmptyState, EmptyStateBody, Skeleton } from '@patternfly/react-core'
+import {
+  Button,
+  EmptyState,
+  EmptyStateActions,
+  EmptyStateBody,
+  EmptyStateFooter,
+  Skeleton,
+} from '@patternfly/react-core'
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table'
 import { sortRows, useColumnSort } from '../../hooks/useColumnSort'
 import { useDataCenterQuotas } from '../../hooks/useDataCenterDetail'
+import { useT } from '../../i18n/useT'
 
 // Every column in visual order so each Th's index matches its position.
 const DC_QUOTA_KEYS = ['name', 'description'] as const
@@ -10,6 +18,7 @@ const DC_QUOTA_KEYS = ['name', 'description'] as const
 // 404-tolerant /quotas subcollection — engines without quota enforcement 404
 // and the resource maps that to an empty list, which renders the empty state.
 export function DataCenterQuotasTab({ dataCenterId }: { dataCenterId: string }) {
+  const t = useT()
   const quotas = useDataCenterQuotas(dataCenterId)
   // client-side header sort; no default — the engine list order stands until a
   // header is clicked (see hooks/useColumnSort)
@@ -24,40 +33,44 @@ export function DataCenterQuotasTab({ dataCenterId }: { dataCenterId: string }) 
       {quotas.isPending && (
         <>
           <Skeleton height="2.5rem" style={{ marginBottom: '0.5rem' }} />
-          <Skeleton height="2.5rem" screenreaderText="Loading quotas" />
+          <Skeleton height="2.5rem" screenreaderText={t('quotas.loading')} />
         </>
       )}
 
       {quotas.isError && (
-        <EmptyState titleText="Could not load quotas" status="danger">
+        <EmptyState titleText={t('quotas.error.title')} status="danger">
           <EmptyStateBody>
-            {quotas.error instanceof Error ? quotas.error.message : 'Unknown error'}
+            {quotas.error instanceof Error ? quotas.error.message : t('common.error.unknown')}
           </EmptyStateBody>
-          <Button variant="primary" onClick={() => void quotas.refetch()}>
-            Retry
-          </Button>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="primary" onClick={() => void quotas.refetch()}>
+                {t('common.action.retry')}
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 
       {quotas.isSuccess && quotas.data.length === 0 && (
-        <EmptyState titleText="No quotas">
-          <EmptyStateBody>No quotas are defined on this data center.</EmptyStateBody>
+        <EmptyState titleText={t('quotas.empty.title')}>
+          <EmptyStateBody>{t('dcQuotas.empty.body')}</EmptyStateBody>
         </EmptyState>
       )}
 
       {quotas.isSuccess && quotas.data.length > 0 && (
-        <Table aria-label="Quotas" variant="compact">
+        <Table aria-label={t('quotas.table.ariaLabel')} variant="compact">
           <Thead>
             <Tr>
-              <Th sort={thSort(DC_QUOTA_KEYS, 0)}>Name</Th>
-              <Th sort={thSort(DC_QUOTA_KEYS, 1)}>Description</Th>
+              <Th sort={thSort(DC_QUOTA_KEYS, 0)}>{t('common.field.name')}</Th>
+              <Th sort={thSort(DC_QUOTA_KEYS, 1)}>{t('common.field.description')}</Th>
             </Tr>
           </Thead>
           <Tbody>
             {sortedQuotas.map((quota, index) => (
               <Tr key={quota.id ?? index}>
-                <Td dataLabel="Name">{quota.name}</Td>
-                <Td dataLabel="Description">{quota.description ?? '—'}</Td>
+                <Td dataLabel={t('common.field.name')}>{quota.name}</Td>
+                <Td dataLabel={t('common.field.description')}>{quota.description ?? '—'}</Td>
               </Tr>
             ))}
           </Tbody>

@@ -19,6 +19,7 @@ import type { Network } from '../../api/schemas/network'
 import { sortRows, useColumnSort } from '../../hooks/useColumnSort'
 import { useDataCenterNetworks } from '../../hooks/useDataCenterDetail'
 import { useDeleteNetwork } from '../../hooks/useNetworkMutations'
+import { useT } from '../../i18n/useT'
 import { ConfirmModal } from '../ConfirmModal'
 import { NetworkFormModal } from '../network-form/NetworkFormModal'
 
@@ -37,6 +38,7 @@ const DC_NETWORK_KEYS = ['name', 'description', 'vlan'] as const
 // remove we invalidate it here so the table reflects the change without waiting
 // for the poll.
 export function DataCenterNetworksTab({ dataCenterId }: { dataCenterId: string }) {
+  const t = useT()
   const networks = useDataCenterNetworks(dataCenterId)
   const queryClient = useQueryClient()
   const remove = useDeleteNetwork()
@@ -80,15 +82,15 @@ export function DataCenterNetworksTab({ dataCenterId }: { dataCenterId: string }
     const isManagement = (network.usages?.usage ?? []).includes('management')
     return [
       {
-        title: 'Edit',
+        title: t('common.action.edit'),
         onClick: () => setEditing(network),
       },
       {
-        title: 'Remove',
+        title: t('common.action.remove'),
         isDanger: !isManagement,
         isAriaDisabled: isManagement,
         tooltipProps: isManagement
-          ? { content: 'The management network cannot be removed.' }
+          ? { content: t('dcNetworks.remove.managementTooltip') }
           : undefined,
         onClick: () => setRemoving(network),
       },
@@ -103,7 +105,7 @@ export function DataCenterNetworksTab({ dataCenterId }: { dataCenterId: string }
             <ToolbarGroup align={{ default: 'alignEnd' }}>
               <ToolbarItem>
                 <Button variant="secondary" onClick={() => setCreating(true)}>
-                  New network
+                  {t('networks.new')}
                 </Button>
               </ToolbarItem>
             </ToolbarGroup>
@@ -114,28 +116,32 @@ export function DataCenterNetworksTab({ dataCenterId }: { dataCenterId: string }
       {networks.isPending && (
         <>
           <Skeleton height="2.5rem" style={{ marginBottom: '0.5rem' }} />
-          <Skeleton height="2.5rem" screenreaderText="Loading logical networks" />
+          <Skeleton height="2.5rem" screenreaderText={t('dcNetworks.loading')} />
         </>
       )}
 
       {networks.isError && (
-        <EmptyState titleText="Could not load logical networks" status="danger">
+        <EmptyState titleText={t('dcNetworks.error.title')} status="danger">
           <EmptyStateBody>
-            {networks.error instanceof Error ? networks.error.message : 'Unknown error'}
+            {networks.error instanceof Error ? networks.error.message : t('common.error.unknown')}
           </EmptyStateBody>
-          <Button variant="primary" onClick={() => void networks.refetch()}>
-            Retry
-          </Button>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="primary" onClick={() => void networks.refetch()}>
+                {t('common.action.retry')}
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
         </EmptyState>
       )}
 
       {networks.isSuccess && networks.data.length === 0 && (
-        <EmptyState titleText="No logical networks">
-          <EmptyStateBody>No logical networks are defined in this data center.</EmptyStateBody>
+        <EmptyState titleText={t('dcNetworks.empty.title')}>
+          <EmptyStateBody>{t('dcNetworks.empty.body')}</EmptyStateBody>
           <EmptyStateFooter>
             <EmptyStateActions>
               <Button variant="primary" onClick={() => setCreating(true)}>
-                New network
+                {t('networks.new')}
               </Button>
             </EmptyStateActions>
           </EmptyStateFooter>
@@ -143,19 +149,19 @@ export function DataCenterNetworksTab({ dataCenterId }: { dataCenterId: string }
       )}
 
       {populated && (
-        <Table aria-label="Logical networks" variant="compact">
+        <Table aria-label={t('dcNetworks.table.ariaLabel')} variant="compact">
           <Thead>
             <Tr>
-              <Th sort={thSort(DC_NETWORK_KEYS, 0)}>Name</Th>
-              <Th sort={thSort(DC_NETWORK_KEYS, 1)}>Description</Th>
-              <Th sort={thSort(DC_NETWORK_KEYS, 2)}>VLAN</Th>
-              <Th screenReaderText="Actions" />
+              <Th sort={thSort(DC_NETWORK_KEYS, 0)}>{t('common.field.name')}</Th>
+              <Th sort={thSort(DC_NETWORK_KEYS, 1)}>{t('common.field.description')}</Th>
+              <Th sort={thSort(DC_NETWORK_KEYS, 2)}>{t('dcNetworks.column.vlan')}</Th>
+              <Th screenReaderText={t('common.field.actions')} />
             </Tr>
           </Thead>
           <Tbody>
             {sortedNetworks.map((network) => (
               <Tr key={network.id}>
-                <Td dataLabel="Name">
+                <Td dataLabel={t('common.field.name')}>
                   {network.id ? (
                     <Link to="/networks/$networkId" params={{ networkId: network.id }}>
                       {network.name}
@@ -164,17 +170,17 @@ export function DataCenterNetworksTab({ dataCenterId }: { dataCenterId: string }
                     network.name
                   )}
                 </Td>
-                <Td dataLabel="Description">{network.description || DASH}</Td>
-                <Td dataLabel="VLAN">
+                <Td dataLabel={t('common.field.description')}>{network.description || DASH}</Td>
+                <Td dataLabel={t('dcNetworks.column.vlan')}>
                   {network.vlan?.id != null ? (
                     <Label isCompact color="blue">
-                      VLAN {network.vlan.id}
+                      {t('networks.vlan', { id: network.vlan.id })}
                     </Label>
                   ) : (
-                    'Default'
+                    t('dcNetworks.vlan.default')
                   )}
                 </Td>
-                <Td dataLabel="Actions" isActionCell>
+                <Td dataLabel={t('common.field.actions')} isActionCell>
                   <ActionsColumn isDisabled={remove.isPending} items={rowActions(network)} />
                 </Td>
               </Tr>
@@ -191,9 +197,9 @@ export function DataCenterNetworksTab({ dataCenterId }: { dataCenterId: string }
       {removing && (
         <ConfirmModal
           isOpen
-          title={`Remove ${removing.name}?`}
-          body="The logical network is permanently removed from this data center. Any host NICs or vNIC profiles that used it lose the attachment. This cannot be undone."
-          confirmLabel="Remove"
+          title={t('dcNetworks.remove.confirm.title', { name: removing.name ?? '' })}
+          body={t('dcNetworks.remove.confirm.body')}
+          confirmLabel={t('common.action.remove')}
           isConfirmDisabled={remove.isPending}
           onConfirm={() => {
             const target = removing

@@ -91,23 +91,20 @@ export function HighAvailabilitySection({
       </FormGroup>
 
       <FormGroup
-        label="Target storage domain for VM lease"
+        label={t('vm.edit.ha.leaseSd')}
         fieldId="edit-vm-ha-lease-sd"
         labelHelp={
-          <FieldHelp
-            field="Target storage domain for VM lease"
-            content={t('fieldHelp.vm.leaseSd')}
-          />
+          <FieldHelp field={t('vm.edit.ha.leaseSd')} content={t('fieldHelp.vm.leaseSd')} />
         }
       >
         <FormSelect
           id="edit-vm-ha-lease-sd"
-          aria-label="Target storage domain for VM lease"
+          aria-label={t('vm.edit.ha.leaseSd')}
           value={draft.leaseStorageDomainId}
           isDisabled={domains.isPending || domains.isError}
           onChange={(_event, value) => set('leaseStorageDomainId', value)}
         >
-          <FormSelectOption value="" label="No VM lease" />
+          <FormSelectOption value="" label={t('vm.edit.ha.leaseSd.none')} />
           {missingLease && (
             <FormSelectOption
               value={draft.leaseStorageDomainId}

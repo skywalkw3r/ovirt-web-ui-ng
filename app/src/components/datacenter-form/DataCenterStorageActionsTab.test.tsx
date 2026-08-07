@@ -1,8 +1,10 @@
 import { describe, expect, it, vi } from 'vitest'
 import { renderToStaticMarkup } from 'react-dom/server'
 import type { ReactNode } from 'react'
+import { IntlProvider } from 'react-intl'
 import type { UseQueryResult } from '@tanstack/react-query'
 import type { StorageDomain } from '../../api/schemas/storage-domain'
+import { enMessages } from '../../i18n/messages/en'
 
 // Node test env + PF CSS imports → stub PF with semantic passthroughs (the
 // DataCenterQosTab.test.tsx pattern). Assertions target the tab's composition:
@@ -128,8 +130,14 @@ const DOMAINS: StorageDomain[] = [
   },
 ]
 
+// The tab reads its strings through useT, so renders need an IntlProvider; the
+// real en catalog keeps the English assertions meaningful.
 function render() {
-  return renderToStaticMarkup(<DataCenterStorageActionsTab dataCenterId="dc-01" />)
+  return renderToStaticMarkup(
+    <IntlProvider locale="en" messages={enMessages}>
+      <DataCenterStorageActionsTab dataCenterId="dc-01" />
+    </IntlProvider>,
+  )
 }
 
 describe('DataCenterStorageActionsTab', () => {

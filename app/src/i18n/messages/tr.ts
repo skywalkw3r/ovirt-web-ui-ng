@@ -2906,7 +2906,7 @@ export const tr: LocaleCatalog = {
   'dc.iscsiMultipath.modal.editTitle': 'iSCSI bağını düzenle — {name}',
   'dc.iscsiMultipath.remove.confirm.body':
     'iSCSI bağı bu veri merkezinden kalıcı olarak kaldırılır. Birden çok yoluna dayanan depolama, yeni bir bağ oluşturulana kadar tek yola geri döner. Bu işlem geri alınamaz.',
-  'dc.iscsiMultipath.remove.confirm.title': "'{name}' iSCSI bağı kaldırılsın mı?",
+  'dc.iscsiMultipath.remove.confirm.title': "''{name}'' iSCSI bağı kaldırılsın mı?",
   'dc.iscsiMultipath.table.ariaLabel': 'iSCSI bağları',
   'dcClusters.column.compatVersion': 'Uyumluluk sürümü',
   'dcClusters.column.cpuType': 'CPU türü',

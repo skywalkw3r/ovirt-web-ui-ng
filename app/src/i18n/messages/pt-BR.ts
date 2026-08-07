@@ -2936,7 +2936,7 @@ export const ptBR: LocaleCatalog = {
   'dc.iscsiMultipath.modal.editTitle': 'Editar bond iSCSI — {name}',
   'dc.iscsiMultipath.remove.confirm.body':
     'O bond iSCSI é removido permanentemente deste data center. O armazenamento que dependia de seus múltiplos caminhos volta a usar um único caminho até que um novo bond seja criado. Isso não pode ser desfeito.',
-  'dc.iscsiMultipath.remove.confirm.title': "Remover bond iSCSI '{name}'?",
+  'dc.iscsiMultipath.remove.confirm.title': "Remover bond iSCSI ''{name}''?",
   'dc.iscsiMultipath.table.ariaLabel': 'Bonds iSCSI',
   'dcClusters.column.compatVersion': 'Versão de compatibilidade',
   'dcClusters.column.cpuType': 'Tipo de CPU',

@@ -15,6 +15,7 @@ import {
 } from '@patternfly/react-core'
 import { useStorageDomains } from '../../hooks/useStorageDomains'
 import { useAttachStorageDomain } from '../../hooks/useStorageDomainMutations'
+import { useT } from '../../i18n/useT'
 import { isAttached } from '../storage-domain-form/lifecycle'
 
 // The Attach-domain modal, the data-center side of the attach flow (the inverse
@@ -34,6 +35,7 @@ export function AttachDataCenterStorageDomainModal({
   isOpen: boolean
   onClose: () => void
 }) {
+  const t = useT()
   const [storageDomainId, setStorageDomainId] = useState('')
   const domains = useStorageDomains()
   const attach = useAttachStorageDomain()
@@ -61,15 +63,19 @@ export function AttachDataCenterStorageDomainModal({
       aria-labelledby="attach-dc-storage-domain-title"
       aria-describedby="attach-dc-storage-domain-body"
     >
-      <ModalHeader title="Attach storage domain" labelId="attach-dc-storage-domain-title" />
+      <ModalHeader title={t('dcStorage.attach.title')} labelId="attach-dc-storage-domain-title" />
       <ModalBody id="attach-dc-storage-domain-body">
         <Form onSubmit={(event) => event.preventDefault()}>
           {/* Four states on the source list: a failed fetch would otherwise
               leave Attach permanently disabled with no explanation or retry. */}
-          <FormGroup label="Storage domain" isRequired fieldId="attach-dc-storage-domain-select">
+          <FormGroup
+            label={t('dcStorage.attach.field')}
+            isRequired
+            fieldId="attach-dc-storage-domain-select"
+          >
             <FormSelect
               id="attach-dc-storage-domain-select"
-              aria-label="Storage domain"
+              aria-label={t('dcStorage.attach.field')}
               value={storageDomainId}
               isDisabled={domains.isPending || domains.isError || noCandidates}
               onChange={(_event, value) => setStorageDomainId(value)}
@@ -79,10 +85,10 @@ export function AttachDataCenterStorageDomainModal({
                 isDisabled
                 label={
                   domains.isPending
-                    ? 'Loading storage domains…'
+                    ? t('dcStorage.attach.optionLoading')
                     : noCandidates
-                      ? 'No unattached storage domains'
-                      : 'Select a storage domain'
+                      ? t('dcStorage.attach.noCandidates')
+                      : t('dcStorage.attach.placeholder')
                 }
               />
               {candidates.map((domain) => (
@@ -97,9 +103,9 @@ export function AttachDataCenterStorageDomainModal({
               <FormHelperText>
                 <HelperText>
                   <HelperTextItem variant="error">
-                    Could not load storage domains.{' '}
+                    {t('dcStorage.attach.loadError')}{' '}
                     <Button variant="link" isInline onClick={() => void domains.refetch()}>
-                      Retry
+                      {t('common.action.retry')}
                     </Button>
                   </HelperTextItem>
                 </HelperText>
@@ -115,10 +121,10 @@ export function AttachDataCenterStorageDomainModal({
           isLoading={pending}
           isDisabled={pending || storageDomainId === ''}
         >
-          Attach
+          {t('common.action.attach')}
         </Button>
         <Button variant="secondary" onClick={onClose} isDisabled={pending}>
-          Cancel
+          {t('common.action.cancel')}
         </Button>
       </ModalFooter>
     </Modal>

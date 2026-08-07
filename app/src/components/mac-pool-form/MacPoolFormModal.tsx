@@ -24,6 +24,7 @@ import {
   type MacPoolDraft,
 } from '../../api/resources/macPools'
 import { useCreateMacPool, useUpdateMacPool } from '../../hooks/useMacPools'
+import { useT } from '../../i18n/useT'
 import { blankDraft, blankRange, poolToDraft, type MacPoolFormDraft } from './macPoolDraft'
 
 // The Create/Edit MAC-pool modal. Owns a single flat draft — seeded from the
@@ -44,6 +45,7 @@ export function MacPoolFormModal({
   isOpen: boolean
   onClose: () => void
 }) {
+  const t = useT()
   const isEdit = pool !== undefined
   const [draft, setDraft] = useState<MacPoolFormDraft>(() =>
     pool ? poolToDraft(pool) : blankDraft(),
@@ -111,7 +113,9 @@ export function MacPoolFormModal({
   )
   const saveDisabled = pending || nameEmpty || noRanges || rangesInvalid
 
-  const title = isEdit ? `Edit MAC pool — ${pool.name ?? pool.id}` : 'New MAC pool'
+  const title = isEdit
+    ? t('macPool.title.edit', { name: pool.name ?? pool.id })
+    : t('macPool.title.new')
 
   return (
     <Modal
@@ -124,11 +128,11 @@ export function MacPoolFormModal({
       <ModalHeader title={title} labelId="mac-pool-form-title" />
       <ModalBody id="mac-pool-form-body">
         <Form onSubmit={(event) => event.preventDefault()}>
-          <FormGroup label="Name" isRequired fieldId="mac-pool-name">
+          <FormGroup label={t('common.field.name')} isRequired fieldId="mac-pool-name">
             <TextInput
               id="mac-pool-name"
               isRequired
-              aria-label="MAC pool name"
+              aria-label={t('macPool.name.aria')}
               value={draft.name}
               validated={nameEmpty ? 'error' : 'default'}
               onChange={(_event, value) => set('name', value)}
@@ -136,16 +140,16 @@ export function MacPoolFormModal({
             {nameEmpty && (
               <FormHelperText>
                 <HelperText>
-                  <HelperTextItem variant="error">The pool name is required.</HelperTextItem>
+                  <HelperTextItem variant="error">{t('macPool.name.required')}</HelperTextItem>
                 </HelperText>
               </FormHelperText>
             )}
           </FormGroup>
 
-          <FormGroup label="Description" fieldId="mac-pool-description">
+          <FormGroup label={t('common.field.description')} fieldId="mac-pool-description">
             <TextInput
               id="mac-pool-description"
-              aria-label="MAC pool description"
+              aria-label={t('macPool.description.aria')}
               value={draft.description}
               onChange={(_event, value) => set('description', value)}
             />
@@ -154,21 +158,19 @@ export function MacPoolFormModal({
           <FormGroup fieldId="mac-pool-allow-duplicates">
             <Switch
               id="mac-pool-allow-duplicates"
-              label="Allow duplicates"
-              aria-label="Allow duplicates"
+              label={t('macPool.allowDuplicates')}
+              aria-label={t('macPool.allowDuplicates')}
               isChecked={draft.allowDuplicates}
               onChange={(_event, checked) => set('allowDuplicates', checked)}
             />
             <FormHelperText>
               <HelperText>
-                <HelperTextItem>
-                  When enabled, the same MAC address may be assigned to more than one vNIC.
-                </HelperTextItem>
+                <HelperTextItem>{t('macPool.allowDuplicates.help')}</HelperTextItem>
               </HelperText>
             </FormHelperText>
           </FormGroup>
 
-          <FormGroup label="MAC address ranges" isRequired fieldId="mac-pool-ranges">
+          <FormGroup label={t('macPool.ranges.label')} isRequired fieldId="mac-pool-ranges">
             {draft.ranges.map((range) => {
               const fromInvalid = range.from.trim() !== '' && !isValidMac(range.from)
               const toInvalid = range.to.trim() !== '' && !isValidMac(range.to)
@@ -181,7 +183,7 @@ export function MacPoolFormModal({
                 >
                   <FlexItem grow={{ default: 'grow' }}>
                     <TextInput
-                      aria-label="Range from"
+                      aria-label={t('macPool.range.fromAria')}
                       placeholder="00:1a:4a:00:00:00"
                       value={range.from}
                       validated={fromInvalid ? 'error' : 'default'}
@@ -190,7 +192,7 @@ export function MacPoolFormModal({
                   </FlexItem>
                   <FlexItem grow={{ default: 'grow' }}>
                     <TextInput
-                      aria-label="Range to"
+                      aria-label={t('macPool.range.toAria')}
                       placeholder="00:1a:4a:00:00:ff"
                       value={range.to}
                       validated={toInvalid ? 'error' : 'default'}
@@ -200,7 +202,7 @@ export function MacPoolFormModal({
                   <FlexItem>
                     <Button
                       variant="plain"
-                      aria-label="Remove range"
+                      aria-label={t('macPool.range.removeAria')}
                       icon={<MinusCircleIcon />}
                       isDisabled={draft.ranges.length === 1}
                       onClick={() => removeRange(range.id)}
@@ -212,25 +214,19 @@ export function MacPoolFormModal({
             <Button
               variant="link"
               icon={<PlusCircleIcon />}
-              aria-label="Add range"
+              aria-label={t('macPool.ranges.add')}
               onClick={addRange}
             >
-              Add range
+              {t('macPool.ranges.add')}
             </Button>
             <FormHelperText>
               <HelperText>
                 {noRanges ? (
-                  <HelperTextItem variant="error">
-                    At least one MAC address range is required.
-                  </HelperTextItem>
+                  <HelperTextItem variant="error">{t('macPool.ranges.required')}</HelperTextItem>
                 ) : rangesInvalid ? (
-                  <HelperTextItem variant="error">
-                    Each range needs a valid start and end MAC address (xx:xx:xx:xx:xx:xx).
-                  </HelperTextItem>
+                  <HelperTextItem variant="error">{t('macPool.ranges.invalid')}</HelperTextItem>
                 ) : (
-                  <HelperTextItem>
-                    Each range is an inclusive start–end pair of MAC addresses.
-                  </HelperTextItem>
+                  <HelperTextItem>{t('macPool.ranges.hint')}</HelperTextItem>
                 )}
               </HelperText>
             </FormHelperText>
@@ -239,10 +235,10 @@ export function MacPoolFormModal({
       </ModalBody>
       <ModalFooter>
         <Button variant="primary" onClick={save} isLoading={pending} isDisabled={saveDisabled}>
-          Save
+          {t('common.action.save')}
         </Button>
         <Button variant="secondary" onClick={onClose} isDisabled={pending}>
-          Cancel
+          {t('common.action.cancel')}
         </Button>
       </ModalFooter>
     </Modal>

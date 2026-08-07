@@ -3386,7 +3386,7 @@ export const en = {
   'dc.iscsiMultipath.modal.editTitle': 'Edit iSCSI bond — {name}',
   'dc.iscsiMultipath.remove.confirm.body':
     'The iSCSI bond is permanently removed from this data center. Storage that relied on its multiple paths falls back to a single path until a new bond is created. This cannot be undone.',
-  'dc.iscsiMultipath.remove.confirm.title': "Remove iSCSI bond '{name}'?",
+  'dc.iscsiMultipath.remove.confirm.title': "Remove iSCSI bond ''{name}''?",
   'dc.iscsiMultipath.table.ariaLabel': 'iSCSI bonds',
   // dcClusters.* --------------------------------------------------
   'dcClusters.column.compatVersion': 'Compatibility version',

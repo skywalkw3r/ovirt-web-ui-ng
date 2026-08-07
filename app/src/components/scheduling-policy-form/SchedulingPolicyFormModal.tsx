@@ -3,7 +3,9 @@ import {
   Button,
   Checkbox,
   EmptyState,
+  EmptyStateActions,
   EmptyStateBody,
+  EmptyStateFooter,
   Flex,
   FlexItem,
   Form,
@@ -28,6 +30,8 @@ import {
   type SchedulingPolicy,
   type SchedulingPolicyUnit,
 } from '../../api/resources/schedulingPolicies'
+import type { MessageId } from '../../i18n/messages/en'
+import { useT } from '../../i18n/useT'
 import { FieldHelp } from '../forms/FieldHelp'
 import {
   blankDraft,
@@ -46,10 +50,11 @@ import {
 
 export type SchedulingPolicyEditorMode = 'create' | 'edit' | 'clone'
 
-const POSITION_OPTIONS: { value: FilterPosition; label: string }[] = [
-  { value: 'none', label: 'No position' },
-  { value: 'first', label: 'First' },
-  { value: 'last', label: 'Last' },
+// Labels resolve per-locale at the render site via the labelId.
+const POSITION_OPTIONS: { value: FilterPosition; labelId: MessageId }[] = [
+  { value: 'none', labelId: 'schedulingPolicy.position.none' },
+  { value: 'first', labelId: 'schedulingPolicy.position.first' },
+  { value: 'last', labelId: 'schedulingPolicy.position.last' },
 ]
 
 // The scheduling-policy editor: name/description, the policy properties
@@ -59,8 +64,7 @@ const POSITION_OPTIONS: { value: FilterPosition; label: string }[] = [
 // GET /schedulingpolicyunits catalog grouped by unit type. On save: create /
 // clone POST the policy then its unit assignments; edit PUTs the metadata and
 // applies the assignment diff. Mirrors RoleFormModal's draft-seeding shape and
-// MacPoolFormModal's add/remove row idiom; strings are hardcoded English
-// pending the dedicated i18n pass.
+// MacPoolFormModal's add/remove row idiom.
 export function SchedulingPolicyFormModal({
   mode,
   policy,
@@ -72,6 +76,7 @@ export function SchedulingPolicyFormModal({
   isOpen: boolean
   onClose: () => void
 }) {
+  const t = useT()
   const needsSource = mode !== 'create'
 
   const catalog = usePolicyUnitCatalog(isOpen)
@@ -95,11 +100,15 @@ export function SchedulingPolicyFormModal({
     if (policy && assignments.isSuccess) {
       setDraft(
         mode === 'clone'
-          ? cloneDraft(policy, assignments.data, `Copy of ${policy.name ?? ''}`)
+          ? cloneDraft(
+              policy,
+              assignments.data,
+              t('schedulingPolicy.cloneName', { name: policy.name ?? '' }),
+            )
           : policyToDraft(policy, assignments.data),
       )
     }
-  }, [draft, mode, policy, assignments.isSuccess, assignments.data])
+  }, [draft, mode, policy, assignments.isSuccess, assignments.data, t])
 
   const units = useMemo(() => groupPolicyUnits(catalog.data ?? []), [catalog.data])
   const catalogEmpty =
@@ -197,10 +206,10 @@ export function SchedulingPolicyFormModal({
 
   const title =
     mode === 'create'
-      ? 'New scheduling policy'
+      ? t('schedulingPolicy.title.new')
       : mode === 'clone'
-        ? `Clone scheduling policy — ${policy?.name ?? ''}`
-        : `Edit scheduling policy — ${policy?.name ?? ''}`
+        ? t('schedulingPolicy.title.clone', { name: policy?.name ?? '' })
+        : t('schedulingPolicy.title.edit', { name: policy?.name ?? '' })
 
   const unitRow = (unit: SchedulingPolicyUnit, control: ReactNode) => (
     <Flex
@@ -228,27 +237,31 @@ export function SchedulingPolicyFormModal({
             assignments — a failed fetch must surface as error + retry, not
             skeletons forever (four-states). */}
         {draft === null && needsSource && assignments.isError ? (
-          <EmptyState titleText="Could not load the policy's unit assignments" status="danger">
+          <EmptyState titleText={t('schedulingPolicy.assignments.error.title')} status="danger">
             <EmptyStateBody>
               {assignments.error instanceof Error ? assignments.error.message : ''}
             </EmptyStateBody>
-            <Button variant="primary" onClick={() => void assignments.refetch()}>
-              Retry
-            </Button>
+            <EmptyStateFooter>
+              <EmptyStateActions>
+                <Button variant="primary" onClick={() => void assignments.refetch()}>
+                  {t('common.action.retry')}
+                </Button>
+              </EmptyStateActions>
+            </EmptyStateFooter>
           </EmptyState>
         ) : draft === null ? (
           <>
             <Skeleton height="2.5rem" style={{ marginBottom: '0.5rem' }} />
             <Skeleton height="2.5rem" style={{ marginBottom: '0.5rem' }} />
-            <Skeleton height="12rem" screenreaderText="Loading scheduling policy" />
+            <Skeleton height="12rem" screenreaderText={t('schedulingPolicy.loading')} />
           </>
         ) : (
           <Form onSubmit={(event) => event.preventDefault()}>
-            <FormGroup label="Name" isRequired fieldId="scheduling-policy-name">
+            <FormGroup label={t('common.field.name')} isRequired fieldId="scheduling-policy-name">
               <TextInput
                 id="scheduling-policy-name"
                 isRequired
-                aria-label="Scheduling policy name"
+                aria-label={t('schedulingPolicy.name.aria')}
                 value={draft.name}
                 validated={nameEmpty ? 'error' : 'default'}
                 onChange={(_event, value) => set('name', value)}
@@ -256,16 +269,21 @@ export function SchedulingPolicyFormModal({
               {nameEmpty && (
                 <FormHelperText>
                   <HelperText>
-                    <HelperTextItem variant="error">The policy name is required.</HelperTextItem>
+                    <HelperTextItem variant="error">
+                      {t('schedulingPolicy.name.required')}
+                    </HelperTextItem>
                   </HelperText>
                 </FormHelperText>
               )}
             </FormGroup>
 
-            <FormGroup label="Description" fieldId="scheduling-policy-description">
+            <FormGroup
+              label={t('common.field.description')}
+              fieldId="scheduling-policy-description"
+            >
               <TextInput
                 id="scheduling-policy-description"
-                aria-label="Scheduling policy description"
+                aria-label={t('schedulingPolicy.description.aria')}
                 value={draft.description}
                 onChange={(_event, value) => set('description', value)}
               />
@@ -276,35 +294,36 @@ export function SchedulingPolicyFormModal({
                 carries its own loading / error / empty states while the
                 catalog resolves. */}
             {catalog.isPending && (
-              <Skeleton height="10rem" screenreaderText="Loading policy units" />
+              <Skeleton height="10rem" screenreaderText={t('schedulingPolicy.units.loading')} />
             )}
             {catalog.isError && (
-              <EmptyState titleText="Could not load the policy-unit catalog" status="danger">
+              <EmptyState titleText={t('schedulingPolicy.units.error.title')} status="danger">
                 <EmptyStateBody>
                   {catalog.error instanceof Error ? catalog.error.message : ''}
                 </EmptyStateBody>
-                <Button variant="primary" onClick={() => void catalog.refetch()}>
-                  Retry
-                </Button>
+                <EmptyStateFooter>
+                  <EmptyStateActions>
+                    <Button variant="primary" onClick={() => void catalog.refetch()}>
+                      {t('common.action.retry')}
+                    </Button>
+                  </EmptyStateActions>
+                </EmptyStateFooter>
               </EmptyState>
             )}
             {catalog.isSuccess && catalogEmpty && (
-              <EmptyState titleText="No policy units available">
-                <EmptyStateBody>
-                  The engine returned no scheduling policy units, so filters, weights, and load
-                  balancing cannot be configured here.
-                </EmptyStateBody>
+              <EmptyState titleText={t('schedulingPolicy.units.empty.title')}>
+                <EmptyStateBody>{t('schedulingPolicy.units.empty.body')}</EmptyStateBody>
               </EmptyState>
             )}
 
             {catalog.isSuccess && units.filters.length > 0 && (
               <FormGroup
-                label="Filter modules"
+                label={t('schedulingPolicy.filters.label')}
                 fieldId="scheduling-policy-filters"
                 labelHelp={
                   <FieldHelp
-                    field="Filter modules"
-                    content="Filters are hard constraints: a host must pass every enabled filter to be considered for a VM. A filter marked First runs at the head of the chain and one marked Last at the tail; unpositioned filters run in between. At most one filter can hold each position."
+                    field={t('schedulingPolicy.filters.label')}
+                    content={t('fieldHelp.schedulingPolicy.filterModules')}
                   />
                 }
               >
@@ -325,7 +344,9 @@ export function SchedulingPolicyFormModal({
                         <FlexItem>
                           <FormSelect
                             id={`policy-filter-position-${unit.id}`}
-                            aria-label={`${unit.name ?? unit.id} position`}
+                            aria-label={t('schedulingPolicy.filter.positionAria', {
+                              name: unit.name ?? unit.id,
+                            })}
                             value={assignment.position}
                             style={{ width: '10rem' }}
                             onChange={(_event, value) =>
@@ -336,7 +357,7 @@ export function SchedulingPolicyFormModal({
                               <FormSelectOption
                                 key={option.value}
                                 value={option.value}
-                                label={option.label}
+                                label={t(option.labelId)}
                               />
                             ))}
                           </FormSelect>
@@ -350,12 +371,12 @@ export function SchedulingPolicyFormModal({
 
             {catalog.isSuccess && units.weights.length > 0 && (
               <FormGroup
-                label="Weight modules"
+                label={t('schedulingPolicy.weights.label')}
                 fieldId="scheduling-policy-weights"
                 labelHelp={
                   <FieldHelp
-                    field="Weight modules"
-                    content="Weights are soft preferences: each enabled module scores the candidate hosts and the scores are combined, each multiplied by its factor. A higher factor gives that module more influence on host selection."
+                    field={t('schedulingPolicy.weights.label')}
+                    content={t('fieldHelp.schedulingPolicy.weightModules')}
                   />
                 }
               >
@@ -379,7 +400,9 @@ export function SchedulingPolicyFormModal({
                             value={assignment.factor}
                             min={1}
                             widthChars={4}
-                            inputAriaLabel={`${unit.name ?? unit.id} factor`}
+                            inputAriaLabel={t('schedulingPolicy.weight.factorAria', {
+                              name: unit.name ?? unit.id,
+                            })}
                             onMinus={() =>
                               setWeightFactor(unit.id, Math.max(1, assignment.factor - 1))
                             }
@@ -400,7 +423,7 @@ export function SchedulingPolicyFormModal({
                   <FormHelperText>
                     <HelperText>
                       <HelperTextItem variant="error">
-                        Each factor must be a whole number of at least 1.
+                        {t('schedulingPolicy.weights.factorError')}
                       </HelperTextItem>
                     </HelperText>
                   </FormHelperText>
@@ -410,22 +433,22 @@ export function SchedulingPolicyFormModal({
 
             {catalog.isSuccess && units.balancers.length > 0 && (
               <FormGroup
-                label="Load balancer"
+                label={t('schedulingPolicy.balancer.label')}
                 fieldId="scheduling-policy-balancer"
                 labelHelp={
                   <FieldHelp
-                    field="Load balancer"
-                    content="The single load-balancing module that periodically picks over- or under-utilized hosts and migrates VMs off them. Its thresholds are tuned through the policy properties below (for example HighUtilization or CpuOverCommitDurationMinutes)."
+                    field={t('schedulingPolicy.balancer.label')}
+                    content={t('fieldHelp.schedulingPolicy.loadBalancer')}
                   />
                 }
               >
                 <FormSelect
                   id="scheduling-policy-balancer"
-                  aria-label="Load balancer"
+                  aria-label={t('schedulingPolicy.balancer.label')}
                   value={draft.balancerUnitId ?? ''}
                   onChange={(_event, value) => set('balancerUnitId', value === '' ? null : value)}
                 >
-                  <FormSelectOption value="" label="None" />
+                  <FormSelectOption value="" label={t('schedulingPolicy.balancer.none')} />
                   {units.balancers.map((unit) => (
                     <FormSelectOption key={unit.id} value={unit.id} label={unit.name ?? unit.id} />
                   ))}
@@ -434,12 +457,12 @@ export function SchedulingPolicyFormModal({
             )}
 
             <FormGroup
-              label="Properties"
+              label={t('schedulingPolicy.properties.label')}
               fieldId="scheduling-policy-properties"
               labelHelp={
                 <FieldHelp
-                  field="Properties"
-                  content="Free-form name/value pairs consumed by the selected policy units — for example HighUtilization=80, LowUtilization=20, or CpuOverCommitDurationMinutes=2 for the utilization-based balancers. The engine validates names and values against the selected units."
+                  field={t('schedulingPolicy.properties.label')}
+                  content={t('fieldHelp.schedulingPolicy.properties')}
                 />
               }
             >
@@ -452,15 +475,15 @@ export function SchedulingPolicyFormModal({
                 >
                   <FlexItem grow={{ default: 'grow' }}>
                     <TextInput
-                      aria-label="Property name"
-                      placeholder="HighUtilization"
+                      aria-label={t('schedulingPolicy.property.nameAria')}
+                      placeholder={t('schedulingPolicy.property.namePlaceholder')}
                       value={row.key}
                       onChange={(_event, value) => setProperty(row.id, 'key', value)}
                     />
                   </FlexItem>
                   <FlexItem grow={{ default: 'grow' }}>
                     <TextInput
-                      aria-label="Property value"
+                      aria-label={t('schedulingPolicy.property.valueAria')}
                       placeholder="80"
                       value={row.value}
                       onChange={(_event, value) => setProperty(row.id, 'value', value)}
@@ -469,7 +492,7 @@ export function SchedulingPolicyFormModal({
                   <FlexItem>
                     <Button
                       variant="plain"
-                      aria-label="Remove property"
+                      aria-label={t('schedulingPolicy.property.removeAria')}
                       icon={<MinusCircleIcon />}
                       onClick={() => removeProperty(row.id)}
                     />
@@ -479,10 +502,10 @@ export function SchedulingPolicyFormModal({
               <Button
                 variant="link"
                 icon={<PlusCircleIcon />}
-                aria-label="Add property"
+                aria-label={t('schedulingPolicy.property.add')}
                 onClick={addProperty}
               >
-                Add property
+                {t('schedulingPolicy.property.add')}
               </Button>
             </FormGroup>
           </Form>
@@ -490,10 +513,10 @@ export function SchedulingPolicyFormModal({
       </ModalBody>
       <ModalFooter>
         <Button variant="primary" onClick={save} isLoading={pending} isDisabled={saveDisabled}>
-          Save
+          {t('common.action.save')}
         </Button>
         <Button variant="secondary" onClick={onClose} isDisabled={pending}>
-          Cancel
+          {t('common.action.cancel')}
         </Button>
       </ModalFooter>
     </Modal>
