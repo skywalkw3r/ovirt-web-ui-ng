@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { ApiError, request } from '../transport'
+import { isDegradableFollowError } from '../followDegrade'
 import {
   DiskAttachmentListSchema,
   DiskListSchema,
@@ -52,17 +53,36 @@ export async function getDisk(id: string, signal?: AbortSignal): Promise<Disk> {
   }
 }
 
-// The VMs this disk is attached to. oVirt's DiskService exposes NO /vms
-// subcollection locator, so GET /disks/{id}/vms 404s on the live engine (it only
-// ever resolved against the mock) — the tab came up empty even for an ATTACHED
-// disk. The real relationship is the Disk entity's `vms` link: ?follow=vms
-// inlines the attached VMs (vms.vm[] — one for an unshared disk, several for a
-// shareable one), reusing the flat VmListSchema. Degrade to [] on a 404 (disk
-// gone) or a 5xx (the live-engine quirk where an absent followed link NPEs) so
-// the empty state stands in rather than an error.
+// The VMs this disk is attached to — a two-rung reverse lookup, because the
+// api-model Disk type carries NO `vms` link (verified against types/Disk.java:
+// its links are storage_domain(s)/quota/disk_profile/snapshot/permissions/
+// disk_snapshots/statistics) and DiskService has no /vms locator either. The
+// previous single-rung GET /disks/{id}?follow=vms leaned on an UNMODELED term:
+// some engine builds inline it, but a live HE was observed answering 200
+// WITHOUT the key — and an attached disk rendered as "not attached".
+//   1. Modeled rung: GET /vms?follow=disk_attachments (Vm DOES link
+//      diskAttachments) and client-filter the list on this disk's id — one
+//      request, no per-VM fan-out. A zero-match result is ambiguous (genuinely
+//      unattached vs. an engine that ignored the follow term), so it falls
+//      through rather than concluding "unattached".
+//   2. Legacy rung: the old disk-side ?follow=vms, for builds (and the mock)
+//      that do inline it. Degrades to [] on a 404 (disk gone) or 5xx (absent
+//      followed link NPEs) so the empty state stands in rather than an error.
+// A degradable failure on rung 1 (5xx / timeout / plain 400 — the same
+// predicate the getVm ladder uses) also falls through to rung 2.
 const DiskWithVmsSchema = z.looseObject({ vms: VmListSchema.optional() })
 
 export async function listDiskVms(id: string): Promise<Vm[]> {
+  try {
+    const data = VmListSchema.parse(await request('/vms?follow=disk_attachments'))
+    const attached = (data.vm ?? []).filter((vm) =>
+      (vm.disk_attachments?.disk_attachment ?? []).some((attachment) => attachment.disk?.id === id),
+    )
+    if (attached.length > 0) return attached
+  } catch (error) {
+    if (!isDegradableFollowError(error)) throw error
+  }
+
   try {
     const disk = DiskWithVmsSchema.parse(
       await request(`/disks/${encodeURIComponent(id)}?follow=vms`),

@@ -145,6 +145,10 @@ interface MockVm {
   multi_queues_enabled?: boolean | string
   virtio_scsi_multi_queues_enabled?: boolean | string
   virtio_scsi_multi_queues?: number | string
+  // Inlined by GET /vms?follow=disk_attachments (listDiskVms' modeled reverse
+  // lookup) — never stored on the fixtures themselves; the list handler builds
+  // it from the per-VM attachment store on the way out.
+  disk_attachments?: { disk_attachment?: MockDiskAttachment[] }
 }
 
 interface MockVmApplication {
@@ -11493,9 +11497,23 @@ const routes: MockRoute[] = [
     method: 'GET',
     pattern: /^\/vms$/,
     handle: (_params, _body, query) => {
-      const list = searchVms(query.get('search'))
-      const followsTags = (query.get('follow') ?? '').split(',').includes('tags')
-      return { vm: followsTags ? list.map((vm) => withFollowedTags(vm, tagAssignments)) : list }
+      const follows = (query.get('follow') ?? '').split(',')
+      let vms: MockVm[] = searchVms(query.get('search'))
+      // follow=disk_attachments inlines each VM's attachment rows (bare disk
+      // { id } links suffice) — listDiskVms' modeled reverse-lookup rung reads
+      // this; the engine omits the key for VMs with no disks. Decorated on the
+      // typed list BEFORE tags, whose decorator widens to unknown.
+      if (follows.includes('disk_attachments')) {
+        vms = vms.map((vm) => {
+          const attachments = disks.get(vm.id)
+          return attachments && attachments.length > 0
+            ? { ...vm, disk_attachments: { disk_attachment: attachments } }
+            : vm
+        })
+      }
+      return {
+        vm: follows.includes('tags') ? vms.map((vm) => withFollowedTags(vm, tagAssignments)) : vms,
+      }
     },
   },
   { method: 'GET', pattern: /^\/vms\/([^/]+)$/, handle: ([id]) => requireVm(id) },

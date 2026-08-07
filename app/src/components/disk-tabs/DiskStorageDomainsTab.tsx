@@ -1,5 +1,6 @@
 import { EmptyState, EmptyStateBody } from '@patternfly/react-core'
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table'
+import { Link } from '@tanstack/react-router'
 import { StatusBadge } from '../StatusBadge'
 import type { Disk } from '../../api/schemas/disk'
 import { sortRows, useColumnSort } from '../../hooks/useColumnSort'
@@ -100,7 +101,18 @@ export function DiskStorageDomainsTab({ disk }: { disk: Disk }) {
       <Tbody>
         {sortedDomains.map((domain, index) => (
           <Tr key={domain.id ?? index}>
-            <Td dataLabel={t('common.field.name')}>{displayName(domain)}</Td>
+            <Td dataLabel={t('common.field.name')}>
+              {/* Cross-link to the domain's detail page (same pattern as
+                  StorageDomainsPage); a row the follow left id-less keeps
+                  plain text — there is nothing to route to. */}
+              {domain.id !== undefined ? (
+                <Link to="/storage/$storageDomainId" params={{ storageDomainId: domain.id }}>
+                  {displayName(domain)}
+                </Link>
+              ) : (
+                displayName(domain)
+              )}
+            </Td>
             <Td dataLabel={t('common.field.type')}>{domain.type ?? DASH}</Td>
             <Td dataLabel={t('common.field.status')}>
               <StatusCell domain={domain} />

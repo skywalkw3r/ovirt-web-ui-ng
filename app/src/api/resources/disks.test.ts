@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { attachVmDisk, createVmDisk, exportDisk } from './disks'
+import { attachVmDisk, createVmDisk, exportDisk, listDiskVms } from './disks'
+import { ApiError } from '../transport'
 import { clearSessionToken, setSessionToken } from '../session'
 
 // Transport-level fetch stub (copied from api/resources/nics.test.ts) so these
@@ -24,10 +25,95 @@ function callOf(fetchMock: ReturnType<typeof mockFetch>): {
   return { url, init, body: JSON.parse(String(init.body)) as Record<string, unknown> }
 }
 
+// Per-call responses, for the two-rung listDiskVms ladder (rung 1 answer, then
+// the rung 2 fallback) — same shape as clusters.test.ts mockFetchSequence.
+function mockFetchSequence(...responses: { status: number; payload?: unknown }[]) {
+  const fn = vi.fn()
+  for (const { status, payload } of responses) {
+    fn.mockResolvedValueOnce({
+      ok: status >= 200 && status < 300,
+      status,
+      json: () =>
+        payload === undefined ? Promise.reject(new Error('no body')) : Promise.resolve(payload),
+    })
+  }
+  vi.stubGlobal('fetch', fn)
+  return fn
+}
+
 beforeEach(() => setSessionToken('tok-123'))
 afterEach(() => {
   clearSessionToken()
   vi.unstubAllGlobals()
+})
+
+describe('listDiskVms — two-rung reverse lookup', () => {
+  it('resolves from the modeled rung: /vms?follow=disk_attachments filtered on the disk id', async () => {
+    const fetchMock = mockFetch(200, {
+      vm: [
+        {
+          id: 'vm-1',
+          name: 'attached',
+          disk_attachments: { disk_attachment: [{ disk: { id: 'disk-9' } }] },
+        },
+        {
+          id: 'vm-2',
+          name: 'other',
+          disk_attachments: { disk_attachment: [{ disk: { id: 'disk-x' } }] },
+        },
+        { id: 'vm-3', name: 'diskless' },
+      ],
+    })
+
+    const vms = await listDiskVms('disk-9')
+
+    expect(vms.map((vm) => vm.id)).toEqual(['vm-1'])
+    // one request — the legacy rung is never probed on a match
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect((fetchMock.mock.calls[0] as [string])[0]).toBe(
+      '/ovirt-engine/api/vms?follow=disk_attachments',
+    )
+  })
+
+  it('treats zero matches as ambiguous and disambiguates via the legacy disk-side follow', async () => {
+    // rung 1: 200 but NO vm carries attachments (an engine that ignored the
+    // follow term looks identical to a fleet of diskless VMs)
+    const fetchMock = mockFetchSequence(
+      { status: 200, payload: { vm: [{ id: 'vm-1', name: 'bare' }] } },
+      {
+        status: 200,
+        payload: { vms: { vm: [{ id: 'vm-1', name: 'bare' }] } },
+      },
+    )
+
+    const vms = await listDiskVms('disk-9')
+
+    expect(vms.map((vm) => vm.id)).toEqual(['vm-1'])
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    expect((fetchMock.mock.calls[1] as [string])[0]).toBe(
+      '/ovirt-engine/api/disks/disk-9?follow=vms',
+    )
+  })
+
+  it('falls through a degradable rung-1 failure (plain 400) and returns [] on a rung-2 404', async () => {
+    const fetchMock = mockFetchSequence(
+      { status: 400, payload: { fault: { reason: 'Operation Failed', detail: 'bad follow' } } },
+      { status: 404 },
+    )
+
+    await expect(listDiskVms('disk-9')).resolves.toEqual([])
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('propagates a non-degradable rung-1 error (403) without probing the legacy rung', async () => {
+    const fetchMock = mockFetch(403, { fault: { reason: 'Forbidden', detail: 'nope' } })
+
+    const error = await listDiskVms('disk-9').catch((e: unknown) => e)
+
+    expect(error).toBeInstanceOf(ApiError)
+    expect(error).toMatchObject({ status: 403 })
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
 })
 
 describe('createVmDisk', () => {

@@ -66,6 +66,20 @@ export const VmSchema = z.looseObject({
       statistic: z.array(VmStatSchema).optional(),
     })
     .optional(),
+  // Present when the read used ?follow=disk_attachments (listDiskVms' reverse
+  // lookup does): each attachment carries the bare disk { id } link this VM
+  // holds. The engine omits the inner key when a VM has no disks.
+  disk_attachments: z
+    .looseObject({
+      disk_attachment: z
+        .array(
+          z.looseObject({
+            disk: z.looseObject({ id: z.string().optional() }).optional(),
+          }),
+        )
+        .optional(),
+    })
+    .optional(),
   run_once: z.union([z.boolean(), z.stringbool()]).optional(),
   origin: z.string().optional(),
   stateless: z.union([z.boolean(), z.stringbool()]).optional(),
