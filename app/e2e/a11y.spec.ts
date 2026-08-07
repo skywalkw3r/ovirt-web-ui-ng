@@ -7,6 +7,11 @@ import { login } from './helpers'
 // waits for page-specific content first so axe sees the real page, not the
 // loading skeletons.
 async function expectNoSeriousViolations(page: Page): Promise<void> {
+  // Park the pointer and let any hover/focus tooltip close before scanning —
+  // an open .pf-v6-c-tooltip intermittently failed color-contrast on CI (the
+  // events page), and the transient tooltip is not the page under test.
+  await page.mouse.move(0, 0)
+  await expect(page.locator('.pf-v6-c-tooltip')).toHaveCount(0)
   const results = await new AxeBuilder({ page }).analyze()
   const gating = results.violations.filter(
     (violation) => violation.impact === 'critical' || violation.impact === 'serious',

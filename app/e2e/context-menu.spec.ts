@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Locator, type Page } from '@playwright/test'
-import { login } from './helpers'
+import { login, revealInfraNode } from './helpers'
 
 // vCenter-style right-click context menus (components/context-menu): folder
 // tree nodes, VM table rows, and Hosts & Clusters tree nodes open their
@@ -152,9 +152,8 @@ test('closes on Escape and outside click; a second right-click swaps menus', asy
 
 test('host node context menu opens details and mirrors the kebab', async ({ page }) => {
   await login(page, { path: '/hosts-clusters' })
-  const tree = page.getByLabel('Infrastructure tree')
-  const node = tree.getByText('node-01', { exact: true })
-  await expect(node).toBeVisible()
+  // host nodes sit collapsed under DC → cluster; the filter reveals them
+  const node = await revealInfraNode(page, 'node-01')
 
   const menu = await openContextMenu(page, node, 'Actions for node-01')
   // Kebab-parity spot check: Assign tags applies in every host state, so it

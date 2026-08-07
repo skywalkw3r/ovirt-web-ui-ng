@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { login } from './helpers'
+import { login, revealInfraNode } from './helpers'
 
 // The structural infrastructure pane: DC → cluster → host from entity links.
 // The content pane switches by node kind — the root/DC and hosts scope the VM
@@ -7,16 +7,16 @@ import { login } from './helpers'
 
 test('the infrastructure tree scopes the content pane by host and cluster', async ({ page }) => {
   await login(page, { path: '/hosts-clusters' })
-  const tree = page.getByLabel('Infrastructure tree')
   const rows = page.locator('table[aria-label="Virtual machines in the selected scope"] tbody tr')
-  // Root scope defaults to the Clusters tab (outer-first order); the VMs tab
-  // holds every fixture VM (9 workload VMs + the HostedEngine VM).
+  // Root scope defaults to the Data centers tab (outer-first order); the VMs
+  // tab holds every fixture VM (9 workload VMs + the HostedEngine VM).
   await page.getByRole('tab', { name: 'Virtual machines' }).click()
   await expect(rows).toHaveCount(10)
 
   // Host scope: exactly the three VMs running on node-01 (web-01, db-01 and
-  // the HostedEngine VM), with its header.
-  await tree.getByText('node-01', { exact: true }).click()
+  // the HostedEngine VM), with its header. Hosts sit under collapsed DC/
+  // cluster nodes, so the tree filter reveals them first.
+  await (await revealInfraNode(page, 'node-01')).click()
   await expect(rows).toHaveCount(3)
   await expect(page.getByRole('heading', { name: 'node-01' })).toBeVisible()
   await expect(page.getByRole('link', { name: 'Open details' })).toHaveAttribute(
@@ -29,7 +29,7 @@ test('the infrastructure tree scopes the content pane by host and cluster', asyn
   // browse tabs. Hosts is the default tab and holds all three fixture hosts.
   // Both the DC and its cluster are named 'Default'; the DC parent renders
   // first, so the cluster node is the second match.
-  await tree.getByText('Default', { exact: true }).nth(1).click()
+  await (await revealInfraNode(page, 'Default')).nth(1).click()
   await expect(page.getByRole('heading', { name: 'Default' })).toBeVisible()
   await expect(page.getByRole('link', { name: 'Open details' })).toHaveAttribute(
     'href',
@@ -38,8 +38,9 @@ test('the infrastructure tree scopes the content pane by host and cluster', asyn
   // no cluster action bar — Edit/Upgrade/Remove are detail-page only
   await expect(page.getByRole('button', { name: 'Upgrade' })).toHaveCount(0)
   // the VMs tab was chosen earlier and persists into the cluster's set, so
-  // switch to Hosts explicitly to see the cluster's three hosts
-  await page.getByRole('tab', { name: 'Hosts', exact: true }).click()
+  // switch to Hosts explicitly to see the cluster's three hosts (tab labels
+  // carry live counts, so match on the prefix)
+  await page.getByRole('tab', { name: /^Hosts/ }).click()
   await expect(page.locator('table[aria-label="Hosts"] tbody tr')).toHaveCount(3)
   // Legacy-grid parity defaults: utilization bars + SPM ride along (the mock
   // 10G NIC feeds the Network gauge for up hosts).
@@ -50,7 +51,7 @@ test('the infrastructure tree scopes the content pane by host and cluster', asyn
 
   // lab-nested hosts the three gluster brick nodes — reached the same way (its
   // Hosts tab is the default).
-  await tree.getByText('lab-nested', { exact: true }).click()
+  await (await revealInfraNode(page, 'lab-nested')).click()
   await expect(page.locator('table[aria-label="Hosts"] tbody tr')).toHaveCount(3)
   await expect(page.getByRole('link', { name: 'gnode-01', exact: true })).toBeVisible()
 })
@@ -74,8 +75,10 @@ test('the scoped-VM table has a working column picker', async ({ page }) => {
 
 test('the cluster hosts table has a working column picker', async ({ page }) => {
   await login(page, { path: '/hosts-clusters' })
-  await page.getByLabel('Infrastructure tree').getByText('Default', { exact: true }).nth(1).click()
-  await page.getByRole('tab', { name: 'Hosts', exact: true }).click()
+  // the cluster node sits collapsed under its DC (and shares its name — the
+  // DC renders first), so reveal via the tree filter and take the second match
+  await (await revealInfraNode(page, 'Default')).nth(1).click()
+  await page.getByRole('tab', { name: /^Hosts/ }).click()
   const table = page.locator('table[aria-label="Hosts"]')
   // the locating joins ship default-off in cluster scope — the tree selection
   // already states them, and webadmin itself defaults Hostname/IP off
@@ -98,8 +101,8 @@ test('Hosts & Clusters is admin-only', async ({ page }) => {
 // row — not just the text — opens the menu).
 test('right-clicking a host row opens the host menu', async ({ page }) => {
   await login(page, { path: '/hosts-clusters' })
-  const tree = page.getByLabel('Infrastructure tree')
-  const hostRow = tree.getByText('node-01', { exact: true })
+  // host nodes sit collapsed under DC → cluster; the filter reveals them
+  const hostRow = await revealInfraNode(page, 'node-01')
   const menu = page.getByRole('menu', { name: 'Actions for node-01' })
   await expect(async () => {
     await hostRow.click({ button: 'right' })
@@ -114,9 +117,10 @@ test('right-clicking a host row opens the host menu', async ({ page }) => {
 test('a data center offers a Clusters tab and a row click drills in', async ({ page }) => {
   await login(page, { path: '/hosts-clusters' })
   const tree = page.getByLabel('Infrastructure tree')
-  // the DC node renders before its same-named cluster child
+  // the DC node is visible at root (only deeper levels ship collapsed)
   await tree.getByText('Default', { exact: true }).nth(0).click()
-  await page.getByRole('tab', { name: 'Clusters', exact: true }).click()
+  // tab labels carry live counts, so match on the prefix
+  await page.getByRole('tab', { name: /^Clusters/ }).click()
 
   const clustersTable = page.locator('table[aria-label="Clusters in the selected data center"]')
   await expect(clustersTable.getByRole('columnheader', { name: 'Host Count' })).toBeVisible()
@@ -133,23 +137,26 @@ test('a data center offers a Clusters tab and a row click drills in', async ({ p
   await expect(page.locator('table[aria-label="Hosts"] tbody tr')).toHaveCount(3)
 })
 
-// Root scope: browse tabs in outer-first order — Clusters (default) / Hosts /
-// Virtual machines.
+// Root scope: browse tabs in outer-first order — Data centers (default) /
+// Clusters / Hosts / Virtual machines, each label carrying its live count.
 test('the root pane offers Clusters / Hosts / Virtual machines tabs', async ({ page }) => {
   await login(page, { path: '/hosts-clusters' })
 
-  // Clusters is the leftmost tab and the default; both fixture clusters show
-  await expect(page.getByRole('tab', { name: 'Clusters', exact: true })).toHaveAttribute(
+  // Data centers is the leftmost tab and the default
+  await expect(page.getByRole('tab', { name: /^Data centers/ })).toHaveAttribute(
     'aria-selected',
     'true',
   )
+
+  // Clusters tab: both fixture clusters show
+  await page.getByRole('tab', { name: /^Clusters/ }).click()
   const clusterRows = page.locator(
     'table[aria-label="Clusters in the selected data center"] tbody tr',
   )
   await expect(clusterRows).toHaveCount(2)
 
   // Hosts tab: every fixture host in one grid (3 Default + 3 gluster nodes)
-  await page.getByRole('tab', { name: 'Hosts', exact: true }).click()
+  await page.getByRole('tab', { name: /^Hosts/ }).click()
   await expect(page.locator('table[aria-label="Hosts"] tbody tr')).toHaveCount(6)
 
   // Virtual machines tab: every fixture VM
@@ -160,9 +167,9 @@ test('the root pane offers Clusters / Hosts / Virtual machines tabs', async ({ p
   // A host is a leaf: its pane narrows to the single Virtual machines tab. The
   // strip itself still renders (it did not, before — it vanished, and the grid
   // under it jumped), so the outer-scope tabs are the only thing that goes.
-  const tree = page.getByLabel('Infrastructure tree')
-  await tree.getByText('node-01', { exact: true }).click()
-  await expect(page.getByRole('tab', { name: 'Clusters', exact: true })).toHaveCount(0)
-  await expect(page.getByRole('tab', { name: 'Hosts', exact: true })).toHaveCount(0)
+  await (await revealInfraNode(page, 'node-01')).click()
+  await expect(page.getByRole('tab', { name: /^Data centers/ })).toHaveCount(0)
+  await expect(page.getByRole('tab', { name: /^Clusters/ })).toHaveCount(0)
+  await expect(page.getByRole('tab', { name: /^Hosts/ })).toHaveCount(0)
   await expect(page.getByRole('tab', { name: 'Virtual machines' })).toBeVisible()
 })

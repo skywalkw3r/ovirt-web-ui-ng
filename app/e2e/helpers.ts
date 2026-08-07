@@ -18,6 +18,19 @@ export async function login(
   await expect(page.getByRole('button', { name: 'User menu' })).toBeVisible()
 }
 
+// Reveals a collapsed infrastructure-tree node by name. DC and cluster nodes
+// ship COLLAPSED by default (large host estates — see HostsClustersPage's
+// defaultExpanded), so a deep node like a host is not in the DOM until its
+// ancestors open; typing into the tree filter auto-expands every surviving
+// branch. Returns the (possibly multi-match — DC and cluster can share a
+// name) node text locator, with at least one match visible.
+export async function revealInfraNode(page: Page, name: string) {
+  await page.getByLabel('Filter infrastructure by name').fill(name)
+  const node = page.getByLabel('Infrastructure tree').getByText(name, { exact: true })
+  await expect(node.last()).toBeVisible()
+  return node
+}
+
 // Opens a UserMenu entry ('Settings' or 'About') from the masthead dropdown
 // and returns the modal it spawned.
 export async function openUserMenuItem(page: Page, item: string) {
