@@ -14,6 +14,7 @@ import { useQuery } from '@tanstack/react-query'
 import { fetchApiInfo } from '../api/resources/system'
 import { brandAssets } from '../branding/logos'
 import { useProductBrand } from '../hooks/useProductBrand'
+import { useT } from '../i18n/useT'
 import { APP_VERSION, COMPONENT_VERSIONS } from '../lib/version'
 
 // Engine facts share the dashboard's cache entry: same key/fn pair as
@@ -28,15 +29,17 @@ function useApiInfo() {
 // failed or pending engine query — the app-version row always renders, and the
 // engine rows degrade to their own placeholder text.
 function engineValue(
+  t: ReturnType<typeof useT>,
   apiInfo: ReturnType<typeof useApiInfo>,
   pick: (root: NonNullable<ReturnType<typeof useApiInfo>['data']>) => string | undefined,
 ): string {
-  if (apiInfo.isPending) return 'Loading…'
-  if (apiInfo.isError || !apiInfo.data) return 'Unavailable'
-  return pick(apiInfo.data) ?? 'Unknown'
+  if (apiInfo.isPending) return t('about.loading')
+  if (apiInfo.isError || !apiInfo.data) return t('about.unavailable')
+  return pick(apiInfo.data) ?? t('about.unknown')
 }
 
 export function AboutDialog({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+  const t = useT()
   // Only fetch while the dialog is mounted-open; a closed dialog stays at zero
   // engine cost and shares the cache when it does open.
   const apiInfo = useApiInfo()
@@ -47,8 +50,8 @@ export function AboutDialog({ isOpen, onClose }: { isOpen: boolean; onClose: () 
   // engine's raw product_info string.
   const brandName = brandAssets(useProductBrand()).productName
 
-  const productName = engineValue(apiInfo, (root) => root.product_info.name)
-  const engineVersion = engineValue(apiInfo, (root) => root.product_info.version?.full_version)
+  const productName = engineValue(t, apiInfo, (root) => root.product_info.name)
+  const engineVersion = engineValue(t, apiInfo, (root) => root.product_info.version?.full_version)
 
   // Build-time-injected (vite.config.ts); empty outside a Vite build, in which
   // case the Components section simply doesn't render.
@@ -71,11 +74,17 @@ export function AboutDialog({ isOpen, onClose }: { isOpen: boolean; onClose: () 
                 crushed the term track. This owns its layout: max-content
                 terms, one value column. */}
             <dl className="about-facts">
-              <dt>Console version</dt>
+              <dt>
+                <FormattedMessage id="about.consoleVersion" />
+              </dt>
               <dd>{APP_VERSION}</dd>
-              <dt>Engine product</dt>
+              <dt>
+                <FormattedMessage id="about.engineProduct" />
+              </dt>
               <dd>{productName}</dd>
-              <dt>Engine version</dt>
+              <dt>
+                <FormattedMessage id="about.engineVersion" />
+              </dt>
               <dd>{engineVersion}</dd>
             </dl>
           </GridItem>
@@ -87,7 +96,7 @@ export function AboutDialog({ isOpen, onClose }: { isOpen: boolean; onClose: () 
                 size="md"
                 style={{ marginBlockEnd: 'var(--pf-t--global--spacer--sm)' }}
               >
-                Components
+                <FormattedMessage id="about.components" />
               </Title>
               <dl className="about-facts">
                 {componentVersions.map(([name, version]) => (
@@ -125,7 +134,7 @@ export function AboutDialog({ isOpen, onClose }: { isOpen: boolean; onClose: () 
             fontSize: 'var(--pf-t--global--font--size--sm)',
           }}
         >
-          Managed with oVirt — https://www.ovirt.org
+          <FormattedMessage id="about.managedWith" />
         </div>
       </ModalBody>
     </Modal>
@@ -141,8 +150,9 @@ export function AboutButton({ variant = 'link' }: { variant?: 'link' | 'plain' |
 
   return (
     <>
+      {/* reuses the user-menu item's id — same label, one translation */}
       <Button variant={variant} onClick={() => setIsOpen(true)}>
-        About
+        <FormattedMessage id="settings.menu.about" />
       </Button>
       <AboutDialog isOpen={isOpen} onClose={() => setIsOpen(false)} />
     </>

@@ -2771,6 +2771,14 @@ export const de: LocaleCatalog = {
   'settings.menu.support': 'Support erhalten',
 
   // === Backfill: newly-added ids (German translations, 2026) ===
+  'about.components': 'Komponenten',
+  'about.consoleVersion': 'Konsolenversion',
+  'about.engineProduct': 'Engine-Produkt',
+  'about.engineVersion': 'Engine-Version',
+  'about.loading': 'Wird geladen…',
+  'about.managedWith': 'Verwaltet mit oVirt — https://www.ovirt.org',
+  'about.unavailable': 'Nicht verfügbar',
+  'about.unknown': 'Unbekannt',
   'addUser.description':
     'Durchsuchen Sie ein Verzeichnis nach Prinzipalen und fügen Sie sie zur Engine hinzu.',
   'addUser.domains.error': 'Domänen konnten nicht geladen werden: {message}',
@@ -3647,6 +3655,10 @@ export const de: LocaleCatalog = {
   'providerForm.url': 'Anbieter-URL',
   'providerForm.url.required': 'Die Anbieter-URL ist erforderlich.',
   'providerForm.userDomain.hint': 'Die Domäne, zu der der Benutzername gehört.',
+  'quickLook.close.ariaLabel': 'Schnellansicht für {name} schließen',
+  'quickLook.term.fqdn': 'FQDN',
+  'quickLook.term.memory': 'Speicher',
+  'quickLook.term.os': 'Betriebssystem',
   'quotaDetail.notFound.body':
     'Kein Kontingent mit der ID {id} ist für Sie sichtbar — es wurde möglicherweise entfernt.',
   'quotaDetail.notFound.title': 'Kontingent nicht gefunden',
@@ -4369,14 +4381,6 @@ export const de: LocaleCatalog = {
   'volumes.options.title': 'Volume-Optionen — {name}',
   'volumes.options.valueAria': 'Optionswert',
   'volumes.options.valuePlaceholder': 'wert',
-  'about.components': 'Komponenten',
-  'about.consoleVersion': 'Konsolenversion',
-  'about.engineProduct': 'Engine-Produkt',
-  'about.engineVersion': 'Engine-Version',
-  'about.loading': 'Wird geladen…',
-  'about.managedWith': 'Verwaltet mit oVirt — https://www.ovirt.org',
-  'about.unavailable': 'Nicht verfügbar',
-  'about.unknown': 'Unbekannt',
   'dcForm.macPool.label': 'MAC-Adresspool',
   'dcForm.storage.local': 'Lokal',
   'dcForm.storage.shared': 'Gemeinsam genutzt',
@@ -4399,5 +4403,4 @@ export const de: LocaleCatalog = {
   'exportOva.host.placeholder': 'Host auswählen',
   'exportOva.item': 'Als OVA exportieren',
   'exportOva.title': '{name} als OVA exportieren',
-  'quickLook.close.ariaLabel': 'Schnellansicht für {name} schließen',
 }

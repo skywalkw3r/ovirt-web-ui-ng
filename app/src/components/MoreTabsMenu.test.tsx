@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
 import { renderToStaticMarkup } from 'react-dom/server'
 import type { ReactNode, RefObject } from 'react'
+import { IntlProvider } from 'react-intl'
+import { enMessages } from '../i18n/messages/en'
 
 // The vitest env is 'node' (no jsdom), and PF react-core's node (CJS) entry
 // requires raw .css files node can't parse, so — like GeneralTab.test.tsx —
@@ -38,11 +40,19 @@ const TABS = [
   { eventKey: 'errata', title: 'Errata' },
 ] as const
 
+// The menu reads its More/aria labels through useT, so renders need an
+// IntlProvider; the real en catalog keeps the English assertions meaningful.
+function render(ui: ReactNode) {
+  return renderToStaticMarkup(
+    <IntlProvider locale="en" messages={enMessages}>
+      {ui}
+    </IntlProvider>,
+  )
+}
+
 describe('MoreTabsMenu', () => {
   it('renders a More toggle without current styling when a primary tab is active', () => {
-    const html = renderToStaticMarkup(
-      <MoreTabsMenu tabs={TABS} activeKey="general" onSelect={() => {}} />,
-    )
+    const html = render(<MoreTabsMenu tabs={TABS} activeKey="general" onSelect={() => {}} />)
 
     expect(html).toMatch(/<button[^>]*aria-label="More tabs"[^>]*>[^]*?More[^]*?<\/button>/)
     expect(html).not.toContain('pf-m-current')
@@ -53,9 +63,7 @@ describe('MoreTabsMenu', () => {
   })
 
   it('shows the active tab name and current styling when one of its tabs is active', () => {
-    const html = renderToStaticMarkup(
-      <MoreTabsMenu tabs={TABS} activeKey="errata" onSelect={() => {}} />,
-    )
+    const html = render(<MoreTabsMenu tabs={TABS} activeKey="errata" onSelect={() => {}} />)
 
     expect(html).toMatch(/<button[^>]*aria-label="More tabs"[^>]*>[^]*?Errata[^]*?<\/button>/)
     expect(html).not.toContain('More<')
@@ -64,18 +72,14 @@ describe('MoreTabsMenu', () => {
   })
 
   it('marks only the active entry as selected in the menu', () => {
-    const html = renderToStaticMarkup(
-      <MoreTabsMenu tabs={TABS} activeKey="errata" onSelect={() => {}} />,
-    )
+    const html = render(<MoreTabsMenu tabs={TABS} activeKey="errata" onSelect={() => {}} />)
 
     expect(html).toContain('<li data-selected="false">Applications</li>')
     expect(html).toContain('<li data-selected="true">Errata</li>')
   })
 
   it('keeps the strip markup shape PF tabs expect (li > button.pf-v6-c-tabs__link)', () => {
-    const html = renderToStaticMarkup(
-      <MoreTabsMenu tabs={TABS} activeKey="general" onSelect={() => {}} />,
-    )
+    const html = render(<MoreTabsMenu tabs={TABS} activeKey="general" onSelect={() => {}} />)
 
     expect(html).toMatch(/<li[^>]*class="pf-v6-c-tabs__item"[^>]*role="presentation"/)
     expect(html).toMatch(/<button[^>]*class="pf-v6-c-tabs__link"/)

@@ -2,7 +2,9 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import {
   Button,
   EmptyState,
+  EmptyStateActions,
   EmptyStateBody,
+  EmptyStateFooter,
   Label,
   NotificationBadge,
   NotificationDrawer,
@@ -22,6 +24,8 @@ import {
 import { Link } from '@tanstack/react-router'
 import { FormattedMessage } from 'react-intl'
 import { runningJobsCount, useJobs } from '../hooks/useJobs'
+import type { MessageId } from '../i18n/messages/en'
+import { useT } from '../i18n/useT'
 import { useNow } from '../hooks/useNow'
 import { ANCHORED_PANEL_STYLE, CLAMP_3_LINES } from '../notifications/anchoredPanelStyle'
 
@@ -42,26 +46,27 @@ const BADGE_CAP = 20
 // Job status → compact Label; 'unknown' (and anything the engine invents)
 // falls through to a grey label showing the raw status.
 const STATUS_META: Partial<
-  Record<string, { color: 'blue' | 'green' | 'red'; icon: ReactNode; text: string }>
+  Record<string, { color: 'blue' | 'green' | 'red'; icon: ReactNode; textId: MessageId }>
 > = {
-  started: { color: 'blue', icon: <InProgressIcon />, text: 'Running' },
-  finished: { color: 'green', icon: <CheckCircleIcon />, text: 'Finished' },
-  failed: { color: 'red', icon: <ExclamationCircleIcon />, text: 'Failed' },
-  aborted: { color: 'red', icon: <ExclamationCircleIcon />, text: 'Aborted' },
+  started: { color: 'blue', icon: <InProgressIcon />, textId: 'tasks.status.running' },
+  finished: { color: 'green', icon: <CheckCircleIcon />, textId: 'tasks.status.finished' },
+  failed: { color: 'red', icon: <ExclamationCircleIcon />, textId: 'tasks.status.failed' },
+  aborted: { color: 'red', icon: <ExclamationCircleIcon />, textId: 'tasks.status.aborted' },
 }
 
 function JobStatusLabel({ status }: { status: string }) {
+  const t = useT()
   const meta = STATUS_META[status.toLowerCase()]
   if (!meta) {
     return (
       <Label isCompact>
-        {status ? status.charAt(0).toUpperCase() + status.slice(1) : 'Unknown'}
+        {status ? status.charAt(0).toUpperCase() + status.slice(1) : t('tasks.status.unknown')}
       </Label>
     )
   }
   return (
     <Label isCompact color={meta.color} icon={meta.icon}>
-      {meta.text}
+      {t(meta.textId)}
     </Label>
   )
 }
@@ -94,6 +99,7 @@ function relativeTime(epochMs: number, now: number): string {
 // state. The badge count is the number of running jobs, not an unread
 // count, so there is no watermark here.
 export function TasksButton() {
+  const t = useT()
   const jobs = useJobs()
   const [isOpen, setIsOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
@@ -125,7 +131,9 @@ export function TasksButton() {
           count is typed number but PF only interpolates it into the badge
           text, so the '20+' overflow string rides through a deliberate cast. */}
       <NotificationBadge
-        aria-label={running > BADGE_CAP ? `Tasks — more than ${BADGE_CAP} running` : 'Tasks'}
+        aria-label={
+          running > BADGE_CAP ? t('tasks.badge.overCap', { BADGE_CAP }) : t('tasks.title')
+        }
         icon={<TaskIcon />}
         variant={running > 0 ? 'unread' : 'read'}
         count={running > BADGE_CAP ? (`${BADGE_CAP}+` as unknown as number) : running}
@@ -139,6 +147,7 @@ export function TasksButton() {
 }
 
 function TasksPanel({ jobs, onClose }: { jobs: ReturnType<typeof useJobs>; onClose: () => void }) {
+  const t = useT()
   const now = useNow(30_000)
   const running = runningJobsCount(jobs.data)
   const visible = (jobs.data ?? []).slice(0, DRAWER_JOB_LIMIT)
@@ -154,7 +163,10 @@ function TasksPanel({ jobs, onClose }: { jobs: ReturnType<typeof useJobs>; onClo
             "View all tasks" link jumps to the full /tasks page (steps
             drill-down, End job) and closes the panel, mirroring the
             notification drawer's header link. */}
-        <NotificationDrawerHeader title="Tasks" count={running > 0 ? running : undefined}>
+        <NotificationDrawerHeader
+          title={t('tasks.title')}
+          count={running > 0 ? running : undefined}
+        >
           <Link to="/tasks" onClick={onClose}>
             <FormattedMessage id="tasks.drawer.viewAll" />
           </Link>
@@ -166,31 +178,37 @@ function TasksPanel({ jobs, onClose }: { jobs: ReturnType<typeof useJobs>; onClo
             >
               <Skeleton height="2.5rem" style={{ marginBottom: '0.5rem' }} />
               <Skeleton height="2.5rem" style={{ marginBottom: '0.5rem' }} />
-              <Skeleton height="2.5rem" screenreaderText="Loading tasks" />
+              <Skeleton height="2.5rem" screenreaderText={t('tasks.drawer.loading')} />
             </div>
           )}
 
           {jobs.isError && (
-            <EmptyState variant="sm" titleText="Could not load tasks" status="danger">
+            <EmptyState variant="sm" titleText={t('tasks.drawer.error.title')} status="danger">
               <EmptyStateBody>
-                {jobs.error instanceof Error ? jobs.error.message : 'Unknown error'}
+                {jobs.error instanceof Error ? jobs.error.message : t('common.error.unknown')}
               </EmptyStateBody>
-              <Button variant="link" onClick={() => void jobs.refetch()}>
-                Retry
-              </Button>
+              <EmptyStateFooter>
+                <EmptyStateActions>
+                  <Button variant="link" onClick={() => void jobs.refetch()}>
+                    <FormattedMessage id="common.action.retry" />
+                  </Button>
+                </EmptyStateActions>
+              </EmptyStateFooter>
             </EmptyState>
           )}
 
           {jobs.isSuccess && visible.length === 0 && (
-            <EmptyState variant="sm" titleText="No tasks">
-              <EmptyStateBody>Engine tasks will appear here as actions run.</EmptyStateBody>
+            <EmptyState variant="sm" titleText={t('tasks.drawer.empty.title')}>
+              <EmptyStateBody>
+                <FormattedMessage id="tasks.drawer.empty.body" />
+              </EmptyStateBody>
             </EmptyState>
           )}
 
           {jobs.isSuccess && visible.length > 0 && (
             // listJobs sorts newest first
             <NotificationDrawerList
-              aria-label="Recent tasks"
+              aria-label={t('tasks.drawer.list.ariaLabel')}
               style={{ fontSize: 'var(--pf-t--global--font--size--xs)' }}
             >
               {visible.map((job) => {

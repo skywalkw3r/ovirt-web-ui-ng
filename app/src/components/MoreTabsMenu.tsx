@@ -1,6 +1,7 @@
 import { Dropdown, DropdownItem, DropdownList, TabTitleText } from '@patternfly/react-core'
 import { CaretDownIcon } from '@patternfly/react-icons'
 import { useState } from 'react'
+import { useT } from '../i18n/useT'
 
 export interface MoreTabEntry {
   eventKey: string
@@ -26,6 +27,7 @@ export function MoreTabsMenu({
   activeKey: string | number
   onSelect: (eventKey: string) => void
 }) {
+  const t = useT()
   const [isOpen, setIsOpen] = useState(false)
   const activeTab = tabs.find((tab) => tab.eventKey === activeKey)
 
@@ -43,13 +45,13 @@ export function MoreTabsMenu({
             type="button"
             role="tab"
             className={`pf-v6-c-tabs__link${isOpen ? ' pf-m-expanded' : ''}`}
-            aria-label="More tabs"
+            aria-label={t('moreTabs.ariaLabel')}
             aria-haspopup="menu"
             aria-expanded={isOpen}
             aria-selected={Boolean(activeTab)}
             onClick={() => setIsOpen(!isOpen)}
           >
-            <TabTitleText>{activeTab?.title ?? 'More'}</TabTitleText>
+            <TabTitleText>{activeTab?.title ?? t('moreTabs.label')}</TabTitleText>
             <span className="pf-v6-c-tabs__link-toggle-icon">
               <CaretDownIcon />
             </span>

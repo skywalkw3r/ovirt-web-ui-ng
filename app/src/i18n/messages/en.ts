@@ -3180,6 +3180,15 @@ export const en = {
   // hardcoded user-facing string across pages/ and components/ (nine areas,
   // single catalog owner per the i18n workflow). Grouped by namespace.
   // ==========================================================================
+  // about.* -------------------------------------------------------
+  'about.components': 'Components',
+  'about.consoleVersion': 'Console version',
+  'about.engineProduct': 'Engine product',
+  'about.engineVersion': 'Engine version',
+  'about.loading': 'Loading…',
+  'about.managedWith': 'Managed with oVirt — https://www.ovirt.org',
+  'about.unavailable': 'Unavailable',
+  'about.unknown': 'Unknown',
   // addUser.* -----------------------------------------------------
   'addUser.description': 'Search a directory for principals and add them to the engine.',
   'addUser.domains.error': 'Could not load domains: {message}',
@@ -3198,14 +3207,6 @@ export const en = {
   'addUser.title': 'Add user or group',
   'addUser.type.ariaLabel': 'Directory principal type',
   // about.* -------------------------------------------------------
-  'about.components': 'Components',
-  'about.consoleVersion': 'Console version',
-  'about.engineProduct': 'Engine product',
-  'about.engineVersion': 'Engine version',
-  'about.loading': 'Loading…',
-  'about.managedWith': 'Managed with oVirt — https://www.ovirt.org',
-  'about.unavailable': 'Unavailable',
-  'about.unknown': 'Unknown',
   // affinity.* ----------------------------------------------------
   'affinity.entity.filter': 'Filter {label}',
   'affinity.entity.hosts': 'Hosts',
@@ -4123,6 +4124,9 @@ export const en = {
   'providerForm.userDomain.hint': 'The domain the username belongs to.',
   // quickLook.* ---------------------------------------------------
   'quickLook.close.ariaLabel': 'Close quick look for {name}',
+  'quickLook.term.fqdn': 'FQDN',
+  'quickLook.term.memory': 'Memory',
+  'quickLook.term.os': 'Operating system',
   // quotaDetail.* -------------------------------------------------
   'quotaDetail.notFound.body':
     'No quota with ID {id} is visible to you — it may have been removed.',
