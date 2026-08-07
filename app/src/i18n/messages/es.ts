@@ -2762,6 +2762,14 @@ export const es: LocaleCatalog = {
 
   // Backfill: newly-added message ids (see i18n manifest)
   SKIP: '80',
+  'about.components': 'Componentes',
+  'about.consoleVersion': 'Versión de la consola',
+  'about.engineProduct': 'Producto del motor',
+  'about.engineVersion': 'Versión del motor',
+  'about.loading': 'Cargando…',
+  'about.managedWith': 'Gestionado con oVirt — https://www.ovirt.org',
+  'about.unavailable': 'No disponible',
+  'about.unknown': 'Desconocido',
   'addUser.description': 'Busque principales en un directorio y añádalos al motor.',
   'addUser.domains.error': 'No se pudieron cargar los dominios: {message}',
   'addUser.domains.loading': 'Cargando dominios',
@@ -3632,6 +3640,10 @@ export const es: LocaleCatalog = {
   'providerForm.url': 'URL del proveedor',
   'providerForm.url.required': 'La URL del proveedor es obligatoria.',
   'providerForm.userDomain.hint': 'El dominio al que pertenece el nombre de usuario.',
+  'quickLook.close.ariaLabel': 'Cerrar la vista rápida de {name}',
+  'quickLook.term.fqdn': 'FQDN',
+  'quickLook.term.memory': 'Memoria',
+  'quickLook.term.os': 'Sistema operativo',
   'quotaDetail.notFound.body':
     'No hay ninguna cuota con ID {id} visible para usted — es posible que se haya eliminado.',
   'quotaDetail.notFound.title': 'Cuota no encontrada',

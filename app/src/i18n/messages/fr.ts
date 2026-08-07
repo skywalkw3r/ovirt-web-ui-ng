@@ -2761,6 +2761,14 @@ export const fr: LocaleCatalog = {
   'settings.menu.support': 'Obtenir de l’assistance',
 
   // ===== Backfill: newly-added ids (fr) =====
+  'about.components': 'Composants',
+  'about.consoleVersion': 'Version de la console',
+  'about.engineProduct': 'Produit du moteur',
+  'about.engineVersion': 'Version du moteur',
+  'about.loading': 'Chargement…',
+  'about.managedWith': 'Géré avec oVirt — https://www.ovirt.org',
+  'about.unavailable': 'Indisponible',
+  'about.unknown': 'Inconnu',
   'addUser.description': 'Rechercher des principaux dans un annuaire et les ajouter au moteur.',
   'addUser.domains.error': 'Impossible de charger les domaines : {message}',
   'addUser.domains.loading': 'Chargement des domaines',
@@ -3632,6 +3640,10 @@ export const fr: LocaleCatalog = {
   'providerForm.url': 'URL du fournisseur',
   'providerForm.url.required': "L'URL du fournisseur est requise.",
   'providerForm.userDomain.hint': "Le domaine auquel appartient le nom d'utilisateur.",
+  'quickLook.close.ariaLabel': "Fermer l'aperçu rapide de {name}",
+  'quickLook.term.fqdn': 'FQDN',
+  'quickLook.term.memory': 'Mémoire',
+  'quickLook.term.os': "Système d'exploitation",
   'quotaDetail.notFound.body':
     "Aucun quota avec l'ID {id} ne vous est visible — il a peut-être été supprimé.",
   'quotaDetail.notFound.title': 'Quota introuvable',

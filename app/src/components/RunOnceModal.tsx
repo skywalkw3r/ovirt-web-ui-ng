@@ -219,14 +219,14 @@ function RunOnceModal({ vm, onClose }: { vm: Vm; onClose: () => void }) {
             </FormSelect>
           </FormGroup>
 
-          <FormGroup label="Second boot device" fieldId="run-once-boot-2">
+          <FormGroup label={t('runOnce.secondBootDevice')} fieldId="run-once-boot-2">
             <FormSelect
               id="run-once-boot-2"
-              aria-label="Second boot device"
+              aria-label={t('runOnce.secondBootDevice')}
               value={secondBootDevice}
               onChange={(_event, value) => setSecondBootDevice(value as '' | BootDevice)}
             >
-              <FormSelectOption value="" label="None" />
+              <FormSelectOption value="" label={t('runOnce.boot.none')} />
               <FormSelectOption value="hd" label={t('runOnce.boot.hd')} />
               <FormSelectOption value="cdrom" label={t('runOnce.boot.cdrom')} />
               <FormSelectOption value="network" label={t('runOnce.boot.network')} />
@@ -458,9 +458,9 @@ function RunOnceModal({ vm, onClose }: { vm: Vm; onClose: () => void }) {
           )}
 
           <FormSection
-            title="Custom kernel (advanced)"
+            title={t('runOnce.kernel.title')}
             titleElement="h3"
-            aria-label="Custom kernel"
+            aria-label={t('runOnce.kernel.ariaLabel')}
           >
             <FormGroup label="Kernel path" fieldId="run-once-kernel-path">
               <TextInput
@@ -490,9 +490,9 @@ function RunOnceModal({ vm, onClose }: { vm: Vm; onClose: () => void }) {
           </FormSection>
 
           <FormSection
-            title="Custom properties"
+            title={t('runOnce.customProps.title')}
             titleElement="h3"
-            aria-label="Run once custom properties"
+            aria-label={t('runOnce.customProps.ariaLabel')}
           >
             {customProps.length === 0 && <p>No custom properties for this run.</p>}
             {customProps.map((row, index) => (

@@ -2718,6 +2718,14 @@ export const tr: LocaleCatalog = {
   'settings.menu.support': 'Destek alın',
 
   // ===== Turkish backfill — newly added ids =====
+  'about.components': 'Bileşenler',
+  'about.consoleVersion': 'Konsol sürümü',
+  'about.engineProduct': 'Motor ürünü',
+  'about.engineVersion': 'Motor sürümü',
+  'about.loading': 'Yükleniyor…',
+  'about.managedWith': 'oVirt ile yönetilir — https://www.ovirt.org',
+  'about.unavailable': 'Mevcut değil',
+  'about.unknown': 'Bilinmiyor',
   'addUser.description': 'Bir dizinde kullanıcı ve grup arayın ve bunları motora ekleyin.',
   'addUser.domains.error': 'Etki alanları yüklenemedi: {message}',
   'addUser.domains.loading': 'Etki alanları yükleniyor',
@@ -3576,6 +3584,10 @@ export const tr: LocaleCatalog = {
   'providerForm.url': 'Sağlayıcı URL’si',
   'providerForm.url.required': 'Sağlayıcı URL’si gereklidir.',
   'providerForm.userDomain.hint': 'Kullanıcı adının ait olduğu etki alanı.',
+  'quickLook.close.ariaLabel': '{name} hızlı görünümünü kapat',
+  'quickLook.term.fqdn': 'FQDN',
+  'quickLook.term.memory': 'Bellek',
+  'quickLook.term.os': 'İşletim sistemi',
   'quotaDetail.notFound.body':
     '{id} kimliğine sahip ve size görünür bir kota yok — kaldırılmış olabilir.',
   'quotaDetail.notFound.title': 'Kota bulunamadı',

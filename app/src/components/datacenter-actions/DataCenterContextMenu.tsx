@@ -132,28 +132,26 @@ export function DataCenterContextMenu({
         />
       )}
 
-      {/* Copy matches DataCenterDetailPage's Remove confirm verbatim (that
-          surface hardcodes English; minting new i18n ids is out of scope for
-          this menu). Only the field/input DOM ids differ, so the two confirms
+      {/* Same datacenters.remove.confirm.* ids as DataCenterDetailPage's
+          Remove confirm, so the two surfaces stay in lockstep in every
+          locale. Only the field/input DOM ids differ, so the two confirms
           can never collide. */}
       {removing && (
         <ConfirmModal
           isOpen
-          title={`Remove ${dataCenter.name}?`}
+          title={t('datacenters.remove.confirm.title', { name: dataCenter.name })}
           body={
             <Stack hasGutter>
-              <StackItem>
-                The data center will be permanently removed. This cannot be undone.
-              </StackItem>
+              <StackItem>{t('datacenters.remove.confirm.body')}</StackItem>
               <StackItem>
                 <FormGroup
-                  label={`Type "${dataCenter.name}" to confirm`}
+                  label={t('datacenters.remove.confirm.typeLabel', { name: dataCenter.name })}
                   isRequired
                   fieldId="datacenter-context-remove-confirm-name"
                 >
                   <TextInput
                     id="datacenter-context-remove-confirm-name"
-                    aria-label="Type the data center name to confirm removal"
+                    aria-label={t('datacenters.remove.confirm.inputAria')}
                     value={removing.nameInput}
                     onChange={(_event, value) => setRemoving({ nameInput: value })}
                   />
@@ -161,7 +159,7 @@ export function DataCenterContextMenu({
               </StackItem>
             </Stack>
           }
-          confirmLabel="Remove"
+          confirmLabel={t('common.action.remove')}
           isConfirmDisabled={removing.nameInput !== dataCenter.name}
           onConfirm={() => {
             setRemoving(null)

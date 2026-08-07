@@ -2750,6 +2750,14 @@ export const ru: LocaleCatalog = {
 
   // ===== Backfill: newly-added ids translated to Russian =====
   // addUser
+  'about.components': 'Компоненты',
+  'about.consoleVersion': 'Версия консоли',
+  'about.engineProduct': 'Продукт движка',
+  'about.engineVersion': 'Версия движка',
+  'about.loading': 'Загрузка…',
+  'about.managedWith': 'Управляется с помощью oVirt — https://www.ovirt.org',
+  'about.unavailable': 'Недоступно',
+  'about.unknown': 'Неизвестно',
   'addUser.description': 'Найдите субъекты в каталоге и добавьте их в движок.',
   'addUser.domains.error': 'Не удалось загрузить домены: {message}',
   'addUser.domains.loading': 'Загрузка доменов',
@@ -3732,6 +3740,10 @@ export const ru: LocaleCatalog = {
   'providerForm.userDomain.hint': 'Домен, к которому принадлежит имя пользователя.',
 
   // quotaDetail
+  'quickLook.close.ariaLabel': 'Закрыть быстрый просмотр {name}',
+  'quickLook.term.fqdn': 'FQDN',
+  'quickLook.term.memory': 'Память',
+  'quickLook.term.os': 'Операционная система',
   'quotaDetail.notFound.body':
     'Квота с идентификатором {id} вам не видна — возможно, она была удалена.',
   'quotaDetail.notFound.title': 'Квота не найдена',

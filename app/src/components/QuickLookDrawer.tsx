@@ -13,7 +13,9 @@ import {
   Title,
 } from '@patternfly/react-core'
 import { Link } from '@tanstack/react-router'
+import { FormattedMessage } from 'react-intl'
 import type { Vm } from '../api/schemas/vm'
+import { useT } from '../i18n/useT'
 import { formatBytes } from '../lib/format'
 import { VmLabels } from './tags/VmLabels'
 import { VmActionsMenu } from './VmActionsMenu'
@@ -25,6 +27,7 @@ import { VmStatusLabel } from './VmStatusLabel'
 // close. It fetches nothing of its own — VmLabels reuses the cached
 // ['vm', id, 'tags'] entry the table's label cells already populated.
 export function QuickLookPanel({ vm, onClose }: { vm: Vm; onClose: () => void }) {
+  const t = useT()
   return (
     // a third of the page is enough for a summary — details live on the VM page
     <DrawerPanelContent widths={{ default: 'width_33' }}>
@@ -33,7 +36,10 @@ export function QuickLookPanel({ vm, onClose }: { vm: Vm; onClose: () => void })
           {vm.name}
         </Title>
         <DrawerActions>
-          <DrawerCloseButton aria-label={`Close quick look for ${vm.name}`} onClick={onClose} />
+          <DrawerCloseButton
+            aria-label={t('quickLook.close.ariaLabel', { name: vm.name })}
+            onClick={onClose}
+          />
         </DrawerActions>
       </DrawerHead>
       <DrawerPanelBody>
@@ -54,16 +60,22 @@ export function QuickLookPanel({ vm, onClose }: { vm: Vm; onClose: () => void })
             so the panel keeps its shape as the user flips between VMs */}
         <DescriptionList isCompact>
           <DescriptionListGroup>
-            <DescriptionListTerm>FQDN</DescriptionListTerm>
+            <DescriptionListTerm>
+              <FormattedMessage id="quickLook.term.fqdn" />
+            </DescriptionListTerm>
             <DescriptionListDescription>{vm.fqdn ?? '—'}</DescriptionListDescription>
           </DescriptionListGroup>
           <DescriptionListGroup>
-            <DescriptionListTerm>Memory</DescriptionListTerm>
+            <DescriptionListTerm>
+              <FormattedMessage id="quickLook.term.memory" />
+            </DescriptionListTerm>
             {/* formatBytes renders the em dash itself when memory is absent */}
             <DescriptionListDescription>{formatBytes(vm.memory)}</DescriptionListDescription>
           </DescriptionListGroup>
           <DescriptionListGroup>
-            <DescriptionListTerm>Operating system</DescriptionListTerm>
+            <DescriptionListTerm>
+              <FormattedMessage id="quickLook.term.os" />
+            </DescriptionListTerm>
             <DescriptionListDescription>{vm.os?.type ?? '—'}</DescriptionListDescription>
           </DescriptionListGroup>
         </DescriptionList>
@@ -78,7 +90,7 @@ export function QuickLookPanel({ vm, onClose }: { vm: Vm; onClose: () => void })
           </FlexItem>
           <FlexItem>
             <Link to="/vms/$vmId" params={{ vmId: vm.id }}>
-              Open details
+              <FormattedMessage id="infra.openDetails" />
             </Link>
           </FlexItem>
         </Flex>
