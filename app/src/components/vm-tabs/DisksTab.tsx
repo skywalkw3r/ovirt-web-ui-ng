@@ -125,6 +125,11 @@ const COLUMNS: {
     sortValue: (attachment) => attachment.disk?.name,
   },
   {
+    key: 'description',
+    labelId: 'common.field.description',
+    sortValue: (attachment) => attachment.disk?.description || undefined,
+  },
+  {
     key: 'bootable',
     labelId: 'vmDisks.column.bootable',
     sortValue: (attachment) =>
@@ -322,6 +327,8 @@ export function DisksTab({ vmId }: { vmId: string }) {
             )}
           </>
         )
+      case 'description':
+        return attachment.disk?.description || '—'
       case 'bootable':
         return attachment.bootable ? (
           <Label isCompact color="blue">

@@ -196,6 +196,7 @@ interface MockDiskAttachment {
   disk?: {
     id?: string
     name?: string
+    description?: string
     provisioned_size?: number | string
     actual_size?: number | string
     status?: string
@@ -1453,6 +1454,9 @@ const attachment = (
   provisionedSize: number | string,
   actualSize: number | string,
   overrides: Partial<MockDiskAttachment> = {},
+  // merged OVER the built disk (unlike overrides.disk, which replaces it
+  // wholesale) — for single-field tweaks like a description
+  diskOverrides: Partial<NonNullable<MockDiskAttachment['disk']>> = {},
 ): MockDiskAttachment => ({
   id: `${vmId}-da-${n}`,
   bootable: n === 1,
@@ -1468,6 +1472,7 @@ const attachment = (
     // like ?follow=disk on a live engine: a bare link to the disk's domain
     // (sd-01 is the primary data domain all fixture disks live on)
     storage_domains: { storage_domain: [{ id: 'sd-01' }] },
+    ...diskOverrides,
   },
   ...overrides,
 })
@@ -1475,16 +1480,38 @@ const attachment = (
 const initialDisks = (): Map<string, MockDiskAttachment[]> =>
   new Map([
     // actual_size as a string exercises z.coerce.number()
-    ['vm-01', [attachment('vm-01', 1, 'web-01_root', 50 * GiB, `${23 * GiB}`)]],
+    // vm-01 carries a description (feeds the VM Disks tab + flat Disks list
+    // Description columns); most others omit it → the '—' fallback stays covered
+    [
+      'vm-01',
+      [
+        attachment(
+          'vm-01',
+          1,
+          'web-01_root',
+          50 * GiB,
+          `${23 * GiB}`,
+          {},
+          {
+            description: 'Root filesystem',
+          },
+        ),
+      ],
+    ],
     ['vm-02', [attachment('vm-02', 1, 'web-02_root', 50 * GiB, 21 * GiB)]],
     [
       'vm-03',
       [
         attachment('vm-03', 1, 'db-01_root', 50 * GiB, 32 * GiB),
-        attachment('vm-03', 2, 'db-01_pgdata', `${500 * GiB}`, `${318 * GiB}`, {
-          bootable: 'false',
-          active: 'true',
-        }),
+        attachment(
+          'vm-03',
+          2,
+          'db-01_pgdata',
+          `${500 * GiB}`,
+          `${318 * GiB}`,
+          { bootable: 'false', active: 'true' },
+          { description: 'PostgreSQL data volume' },
+        ),
       ],
     ],
     [
