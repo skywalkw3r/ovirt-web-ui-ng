@@ -164,6 +164,22 @@ inventory prerequisites in `lab/ansible/README.md`).
   persisted per area alongside visibility; Reset clears both), the `<Table>`
   spreads `resizableTableProps(prefs)` and sits in a `.app-table-viewport`
   wrapper so an over-wide grid scrolls in place.
+- **Attribute filtering is faceted, never per-column.** A list narrows by
+  facet dropdowns in its `PaneToolbar` (`filters` slot — they target one
+  table, so they ride tier 2 under the pane's identity banner, not the page
+  toolbar): declare a `FacetDef` catalog next to the column catalog
+  (`vmListFacets.ts`), drive it with `lib/facets.ts` + `useFacetFilters`
+  (state lives in the `filters` URL param, so a filtered view is a shareable
+  link) and render `FacetFilters` into that slot. Facet values are stable
+  keys (entity ids, engine enums), never display names;
+  OR within a facet, AND across facets; option lists come from the rows in
+  scope, counts from the rows matching every OTHER facet, and a zero-count
+  option is disabled rather than dropped so the toolbar never reshuffles
+  mid-click. A checkbox `Select` needs `role="menu"` (PF's default
+  `listbox` + `hasCheckbox` rows is an invalid ARIA pairing). Only facet on
+  attributes EVERY row can answer — a facet most rows hold no value for
+  (Host: running VMs only) silently empties the table and belongs on the
+  owning entity's detail tab instead.
 - **Empty-state CTAs** are wrapped in `EmptyStateFooter > EmptyStateActions`
   (a bare Button child renders flush against the body text; a global CSS
   shim covers legacy instances but new code uses the wrapper).

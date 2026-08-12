@@ -95,6 +95,9 @@ export const ru: LocaleCatalog = {
   'action.retry': 'Повторить попытку',
   'action.exportCsv': 'Экспорт в CSV',
   'common.filter.all': 'Все',
+  'common.filter.clearAll': 'Очистить все фильтры',
+  'common.filter.appliedCount':
+    '{count, plural, one {# фильтр применён} few {# фильтра применено} many {# фильтров применено} other {# фильтра применено}}',
   'folders.tree.ariaLabel': 'Папки виртуальных машин',
   'folders.tree.allVms': 'Все виртуальные машины',
   'folders.tree.loading': 'Загрузка папок',
@@ -211,6 +214,8 @@ export const ru: LocaleCatalog = {
   'inventory.empty.title': 'Нет виртуальных машин или шаблонов',
   'inventory.empty.body':
     'Здесь появятся виртуальные машины и шаблоны, на просмотр которых у вас есть разрешение.',
+  'inventory.filterEmpty.title': 'Нет подходящих виртуальных машин или шаблонов',
+  'inventory.filterEmpty.body': 'Нет совпадений с применёнными фильтрами.',
   'inventory.emptyFolder.title': 'Нет подходящих виртуальных машин или шаблонов',
   'inventory.emptyFolder.body': 'Ничего не помечено в выбранной папке.',
   'inventory.searchEmpty.title': 'Нет совпадений текстовому фильтру',

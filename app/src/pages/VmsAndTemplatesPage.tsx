@@ -41,9 +41,14 @@ import {
   type VmListCtx,
   type VmListRow,
 } from '../components/vmListColumns'
+import { VM_LIST_FACETS, type VmListFacetCtx } from '../components/vmListFacets'
+import { FacetFilters } from '../components/list-toolbar/FacetFilters'
 import { useColumnPrefs } from '../hooks/useColumnPrefs'
 import { sortRows, useColumnSort } from '../hooks/useColumnSort'
+import { useFacetFilters } from '../hooks/useFacetFilters'
 import { useFolderParam, usePruneGhostFolder } from '../hooks/useFolderParam'
+import { useTreeOpen } from '../hooks/useTreeOpen'
+import { activeFacetCount, buildFacetViews, encodeFacets, matchesFacets } from '../lib/facets'
 import { getActiveBase } from '../servers/registry'
 import { useTemplatesList } from '../hooks/useCatalogPages'
 import { folderPathOf, folderSubtreeIds, followedTagsOf, useTags } from '../hooks/useTags'
@@ -150,7 +155,9 @@ export function VmsAndTemplatesPage() {
     if (selectedFolderId === null) sessionStorage.removeItem(folderMemoryKey)
     else sessionStorage.setItem(folderMemoryKey, selectedFolderId)
   }, [selectedFolderId, navigate, folderMemoryKey])
-  const [isTreeOpen, setIsTreeOpen] = useState(true)
+  // Shared area key with Hosts & Clusters: the two inventory views are one
+  // surface, so a collapsed tree stays collapsed across the view switcher.
+  const [isTreeOpen, toggleTree] = useTreeOpen('inventory')
   // One right-click menu per surface: right-clicking a row (VM or template)
   // opens that row's kebab item set at the cursor. ctx carries the whole row
   // so the render below picks the matching dual-mode menu; the target lives
@@ -168,6 +175,10 @@ export function VmsAndTemplatesPage() {
   // (two collections behind one box would need two dialects; the dedicated
   // list pages keep the full search).
   const [filter, setFilter] = useState('')
+  // Attribute filters (status / type / cluster / data center / host) — the
+  // discoverable half of what the DSL would give: URL-backed, so a filtered
+  // view is a link. Composed with the name box and the folder tree by &&.
+  const facets = useFacetFilters()
   const [page, setPage] = useState(1)
   const [perPage, setPerPage] = useState(50)
 
@@ -192,28 +203,6 @@ export function VmsAndTemplatesPage() {
     ...(templates.data ?? []).map((template): VmListRow => ({ kind: 'template', template })),
   ]
 
-  // Folder subtree filter (same semantics as VmsPage) composed with the name
-  // filter; both are synchronous derivations over the followed tags.
-  const folderIds = selectedFolderId === null ? null : folderSubtreeIds(all, selectedFolderId)
-  const needle = filter.trim().toLowerCase()
-  const visible = rows.filter((row) => {
-    const entity = rowEntity(row)
-    if (folderIds !== null) {
-      const entityTags = followedTagsOf(entity) ?? []
-      if (!entityTags.some((tag) => folderIds.has(tag.id))) return false
-    }
-    return needle === '' || entity.name.toLowerCase().includes(needle)
-  })
-
-  // The table gates on the VM collection alone: template rows merge in when
-  // their (usually faster) query lands, so a slow /templates read never holds
-  // the VM rows back. A failed templates read degrades to a VM-only table
-  // with an inline notice (below) instead of blanking the whole view.
-  const isPending = vms.isPending
-  const isError = vms.isError
-  const error = vms.error
-  const isFiltering = selectedFolderId !== null && tags.isPending
-
   // id-keyed joins for the Host/Cluster/DC cells AND the matching sortValue
   // extractors, so sorting by a joined column follows what the cells show
   const hostsById = new Map((hostsQuery.data ?? []).map((host) => [host.id, host.name]))
@@ -229,11 +218,54 @@ export function VmsAndTemplatesPage() {
       return dcId !== undefined && name !== undefined ? { id: dcId, name } : undefined
     },
   }
+  // Same joins plus what the facet menus need to NAME an id they hold.
+  const facetCtx: VmListFacetCtx = { ...ctx, t, dataCenterName: (id) => dcsById.get(id) }
+
+  // Folder subtree filter (same semantics as VmsPage) composed with the name
+  // filter; both are synchronous derivations over the followed tags. This is
+  // the scope the facet menus describe — their option lists and counts come
+  // from these rows, so a folder with no Windows VMs offers no Windows.
+  const folderIds = selectedFolderId === null ? null : folderSubtreeIds(all, selectedFolderId)
+  const needle = filter.trim().toLowerCase()
+  const scoped = rows.filter((row) => {
+    const entity = rowEntity(row)
+    if (folderIds !== null) {
+      const entityTags = followedTagsOf(entity) ?? []
+      if (!entityTags.some((tag) => folderIds.has(tag.id))) return false
+    }
+    return needle === '' || entity.name.toLowerCase().includes(needle)
+  })
+  const visible = scoped.filter((row) =>
+    matchesFacets(row, facetCtx, VM_LIST_FACETS, facets.selection),
+  )
+  // buildFacetViews preserves the catalog's order, so the localized name
+  // zips on by index — the menus read Status, Type, Cluster, … left to right,
+  // and each borrows its column's label rather than inventing a second name
+  // for the same attribute.
+  const facetViews = buildFacetViews(VM_LIST_FACETS, scoped, facetCtx, facets.selection).map(
+    (view, index) => ({ ...view, label: t(VM_LIST_FACETS[index].labelId) }),
+  )
+  const hasFacets = activeFacetCount(facets.selection) > 0
+
+  // The table gates on the VM collection alone: template rows merge in when
+  // their (usually faster) query lands, so a slow /templates read never holds
+  // the VM rows back. A failed templates read degrades to a VM-only table
+  // with an inline notice (below) instead of blanking the whole view.
+  const isPending = vms.isPending
+  const isError = vms.isError
+  const error = vms.error
+  const isFiltering = selectedFolderId !== null && tags.isPending
 
   // a new filter or folder selection starts back at page 1
   const [prevFilter, setPrevFilter] = useState(filter)
   if (filter !== prevFilter) {
     setPrevFilter(filter)
+    setPage(1)
+  }
+  const facetKey = encodeFacets(facets.selection) ?? ''
+  const [prevFacetKey, setPrevFacetKey] = useState(facetKey)
+  if (facetKey !== prevFacetKey) {
+    setPrevFacetKey(facetKey)
     setPage(1)
   }
   const [prevFolder, setPrevFolder] = useState(selectedFolderId)
@@ -404,37 +436,70 @@ export function VmsAndTemplatesPage() {
               <Button variant="link" onClick={() => setFilter('')}>
                 <FormattedMessage id="inventory.searchEmpty.clear" />
               </Button>
+              {/* the name box may not be the only thing hiding rows */}
+              {hasFacets && (
+                <Button variant="link" onClick={facets.clearAll}>
+                  <FormattedMessage id="common.filter.clearAll" />
+                </Button>
+              )}
             </EmptyStateActions>
           </EmptyStateFooter>
         </EmptyState>
       )}
 
-      {!isPending && !isError && !isFiltering && visible.length === 0 && needle === '' && (
-        <EmptyState
-          titleText={
-            selectedFolderId !== null
-              ? t('inventory.emptyFolder.title')
-              : t('inventory.empty.title')
-          }
-        >
-          <EmptyStateBody>
-            {selectedFolderId !== null ? (
-              <FormattedMessage id="inventory.emptyFolder.body" />
-            ) : (
-              <FormattedMessage id="inventory.empty.body" />
-            )}
-          </EmptyStateBody>
-          {selectedFolderId !== null && (
+      {/* Facets alone emptied the table — say so and offer the one click back,
+          rather than reading as "this folder is empty". */}
+      {!isPending &&
+        !isError &&
+        !isFiltering &&
+        visible.length === 0 &&
+        needle === '' &&
+        hasFacets && (
+          <EmptyState titleText={t('inventory.filterEmpty.title')}>
+            <EmptyStateBody>
+              <FormattedMessage id="inventory.filterEmpty.body" />
+            </EmptyStateBody>
             <EmptyStateFooter>
               <EmptyStateActions>
-                <Button variant="link" onClick={() => setSelectedFolderId(null)}>
-                  <FormattedMessage id="folders.emptyState.clear" />
+                <Button variant="link" onClick={facets.clearAll}>
+                  <FormattedMessage id="common.filter.clearAll" />
                 </Button>
               </EmptyStateActions>
             </EmptyStateFooter>
-          )}
-        </EmptyState>
-      )}
+          </EmptyState>
+        )}
+
+      {!isPending &&
+        !isError &&
+        !isFiltering &&
+        visible.length === 0 &&
+        needle === '' &&
+        !hasFacets && (
+          <EmptyState
+            titleText={
+              selectedFolderId !== null
+                ? t('inventory.emptyFolder.title')
+                : t('inventory.empty.title')
+            }
+          >
+            <EmptyStateBody>
+              {selectedFolderId !== null ? (
+                <FormattedMessage id="inventory.emptyFolder.body" />
+              ) : (
+                <FormattedMessage id="inventory.empty.body" />
+              )}
+            </EmptyStateBody>
+            {selectedFolderId !== null && (
+              <EmptyStateFooter>
+                <EmptyStateActions>
+                  <Button variant="link" onClick={() => setSelectedFolderId(null)}>
+                    <FormattedMessage id="folders.emptyState.clear" />
+                  </Button>
+                </EmptyStateActions>
+              </EmptyStateFooter>
+            )}
+          </EmptyState>
+        )}
 
       {!isPending && !isError && !isFiltering && visible.length > 0 && (
         <div className="app-table-viewport">
@@ -558,7 +623,7 @@ export function VmsAndTemplatesPage() {
       <InventoryToolbar
         view="inventory"
         isTreeOpen={isTreeOpen}
-        onToggleTree={() => setIsTreeOpen((open) => !open)}
+        onToggleTree={toggleTree}
         treeToggleLabelIds={{ hide: 'folders.tree.toggle.hide', show: 'folders.tree.toggle.show' }}
         filter={filter}
         onFilterChange={setFilter}
@@ -650,6 +715,13 @@ export function VmsAndTemplatesPage() {
           {/* Tier 2: what targets the table below — its paging, export and
               columns. Same slot order as the Hosts & Clusters panes. */}
           <PaneToolbar
+            filters={
+              <FacetFilters facets={facetViews} onToggle={facets.toggle} onClear={facets.clear} />
+            }
+            // PF only renders its Clear-all button while something is
+            // applied, but pass the callback unconditionally so the toolbar
+            // keeps one stable shape
+            onClearFilters={facets.clearAll}
             bulk={
               selectedRows.length > 0 ? (
                 <>

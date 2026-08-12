@@ -94,6 +94,9 @@ export const es: LocaleCatalog = {
   'action.retry': 'Reintentar',
   'action.exportCsv': 'Exportar CSV',
   'common.filter.all': 'Todos',
+  'common.filter.clearAll': 'Borrar todos los filtros',
+  'common.filter.appliedCount':
+    '{count, plural, one {# filtro aplicado} other {# filtros aplicados}}',
   'folders.tree.ariaLabel': 'Carpetas de máquinas virtuales',
   'folders.tree.allVms': 'Todas las máquinas virtuales',
   'folders.tree.loading': 'Cargando carpetas',
@@ -210,6 +213,8 @@ export const es: LocaleCatalog = {
   'inventory.empty.title': 'No hay máquinas virtuales ni plantillas',
   'inventory.empty.body':
     'Las máquinas virtuales y las plantillas que tiene permiso para ver aparecerán aquí.',
+  'inventory.filterEmpty.title': 'No hay VM o plantillas coincidentes',
+  'inventory.filterEmpty.body': 'Nada coincide con los filtros aplicados.',
   'inventory.emptyFolder.title': 'No hay VM o plantillas coincidentes',
   'inventory.emptyFolder.body': 'No hay nada etiquetado en la carpeta seleccionada.',
   'inventory.searchEmpty.title': 'Nada coincide con el filtro',

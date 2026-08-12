@@ -120,6 +120,8 @@ export const en = {
   'action.retry': 'Retry',
   'action.exportCsv': 'Export CSV',
   'common.filter.all': 'All',
+  'common.filter.clearAll': 'Clear all filters',
+  'common.filter.appliedCount': '{count, plural, one {# filter} other {# filters}} applied',
 
   // Folder tree, breadcrumb, move-to-folder (components/tags/*, VmsPage) ----
   'folders.tree.ariaLabel': 'Virtual machine folders',
@@ -243,6 +245,8 @@ export const en = {
   'inventory.error.title': 'Could not load VMs and templates',
   'inventory.empty.title': 'No VMs or templates',
   'inventory.empty.body': 'VMs and templates you have permission to see will appear here.',
+  'inventory.filterEmpty.title': 'No matching VMs or templates',
+  'inventory.filterEmpty.body': 'Nothing matches the applied filters.',
   'inventory.emptyFolder.title': 'No matching VMs or templates',
   'inventory.emptyFolder.body': 'Nothing is tagged into the selected folder.',
   'inventory.searchEmpty.title': 'Nothing matches the filter',

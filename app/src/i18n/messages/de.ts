@@ -94,6 +94,9 @@ export const de: LocaleCatalog = {
   'action.retry': 'Erneut versuchen',
   'action.exportCsv': 'Als CSV exportieren',
   'common.filter.all': 'Alle',
+  'common.filter.clearAll': 'Alle Filter löschen',
+  'common.filter.appliedCount':
+    '{count, plural, one {# Filter angewendet} other {# Filter angewendet}}',
   'folders.tree.ariaLabel': 'Ordner für virtuelle Maschinen',
   'folders.tree.allVms': 'Alle virtuellen Maschinen',
   'folders.tree.loading': 'Ordner werden geladen...',
@@ -212,6 +215,8 @@ export const de: LocaleCatalog = {
   'inventory.empty.title': 'Keine VMs oder Vorlagen',
   'inventory.empty.body':
     'VMs und Vorlagen, für die Sie die Berechtigung haben, werden hier angezeigt.',
+  'inventory.filterEmpty.title': 'Keine passenden VMs oder Vorlagen',
+  'inventory.filterEmpty.body': 'Nichts entspricht den angewendeten Filtern.',
   'inventory.emptyFolder.title': 'Keine passenden VMs oder Vorlagen',
   'inventory.emptyFolder.body': 'Im ausgewählten Ordner ist nichts markiert.',
   'inventory.searchEmpty.title': 'Nichts entspricht dem Textfilter',

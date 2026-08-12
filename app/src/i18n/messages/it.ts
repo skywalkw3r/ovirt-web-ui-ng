@@ -94,6 +94,9 @@ export const it: LocaleCatalog = {
   'action.retry': 'Riprova',
   'action.exportCsv': 'Esporta CSV',
   'common.filter.all': 'Tutti',
+  'common.filter.clearAll': 'Cancella tutti i filtri',
+  'common.filter.appliedCount':
+    '{count, plural, one {# filtro applicato} other {# filtri applicati}}',
   'folders.tree.ariaLabel': 'Cartelle della macchina virtuale',
   'folders.tree.allVms': 'Tutte le macchine virtuali',
   'folders.tree.loading': 'Caricamento cartelle',
@@ -210,6 +213,8 @@ export const it: LocaleCatalog = {
   'inventory.error.title': 'Impossibile caricare VM e modelli',
   'inventory.empty.title': 'Nessuna VM o modello',
   'inventory.empty.body': 'Le VM e i modelli che hai il permesso di vedere appariranno qui.',
+  'inventory.filterEmpty.title': 'Nessuna VM o modello corrispondente',
+  'inventory.filterEmpty.body': 'Nulla corrisponde ai filtri applicati.',
   'inventory.emptyFolder.title': 'Nessuna VM o modello corrispondente',
   'inventory.emptyFolder.body': 'Nulla è taggato nella cartella selezionata.',
   'inventory.searchEmpty.title': 'Non ci sono corrispondenze al testo filtro',

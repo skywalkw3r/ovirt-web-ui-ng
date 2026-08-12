@@ -93,6 +93,9 @@ export const tr: LocaleCatalog = {
   'action.retry': 'Tekrar dene',
   'action.exportCsv': "CSV'ye aktar",
   'common.filter.all': 'Tümü',
+  'common.filter.clearAll': 'Tüm filtreleri temizle',
+  'common.filter.appliedCount':
+    '{count, plural, one {# filtre uygulandı} other {# filtre uygulandı}}',
   'folders.tree.ariaLabel': 'Sanal makine klasörleri',
   'folders.tree.allVms': 'Tüm sanal makineler',
   'folders.tree.loading': 'Klasörler yükleniyor',
@@ -207,6 +210,8 @@ export const tr: LocaleCatalog = {
   'inventory.error.title': 'Sanal makineler ve şablonlar yüklenemedi',
   'inventory.empty.title': 'Sanal makine veya şablon yok',
   'inventory.empty.body': 'Görme izniniz olan sanal makineler ve şablonlar burada görünecektir.',
+  'inventory.filterEmpty.title': 'Eşleşen sanal makine veya şablon yok',
+  'inventory.filterEmpty.body': 'Uygulanan filtrelerle hiçbir şey eşleşmedi.',
   'inventory.emptyFolder.title': 'Eşleşen sanal makine veya şablon yok',
   'inventory.emptyFolder.body': 'Seçilen klasöre hiçbir şey etiketlenmedi.',
   'inventory.searchEmpty.title': 'Metin filtresiyle hiçbir şey eşleşmedi',

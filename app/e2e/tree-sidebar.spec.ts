@@ -80,3 +80,34 @@ test('the Hosts & Clusters view shares the same persisted width', async ({ page 
   await expect(handle).toBeVisible()
   expect(Number(await handle.getAttribute('aria-valuenow'))).toBe(committed)
 })
+
+// Collapsing is a choice, not a per-page default: the two inventory views
+// share one persisted open/closed flag ('console-tree-open'), so switching
+// surfaces through the view switcher can no longer re-expand a tree the user
+// just collapsed (it used to remount at each page's useState(true)).
+test('a collapsed tree stays collapsed across the view switcher and a reload', async ({ page }) => {
+  await login(page, { path: '/vms-templates' })
+  await expect(sidebarHandle(page)).toBeVisible()
+
+  await page.getByRole('button', { name: 'Hide folder tree' }).click()
+  await expect(sidebarHandle(page)).toHaveCount(0)
+
+  // with the tree collapsed the switcher rides the toolbar as a segmented
+  // control rather than the above-tree tab strip
+  await page
+    .locator('nav.app-view-switcher')
+    .getByRole('link', { name: 'Hosts & Clusters' })
+    .click()
+  await expect(page.getByRole('button', { name: 'Show infrastructure tree' })).toBeVisible()
+  await expect(sidebarHandle(page)).toHaveCount(0)
+
+  // and back again — still collapsed, on both surfaces
+  await page.locator('nav.app-view-switcher').getByRole('link', { name: 'VMs & Templates' }).click()
+  await expect(page.getByRole('button', { name: 'Show folder tree' })).toBeVisible()
+
+  // re-expanding persists just as explicitly
+  await page.getByRole('button', { name: 'Show folder tree' }).click()
+  await expect(sidebarHandle(page)).toBeVisible()
+  await page.locator('nav.pf-v6-c-tabs').getByRole('link', { name: 'Hosts & Clusters' }).click()
+  await expect(page.getByRole('tree', { name: 'Infrastructure tree' })).toBeVisible()
+})

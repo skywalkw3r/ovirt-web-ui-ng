@@ -61,6 +61,7 @@ import { useColumnPrefs, type ColumnPrefs } from '../hooks/useColumnPrefs'
 import { sortRows, useColumnSort } from '../hooks/useColumnSort'
 import { useDataCenters, useClustersInventory } from '../hooks/useAdminResources'
 import { useHosts, useHostsUsage } from '../hooks/useHosts'
+import { useTreeOpen } from '../hooks/useTreeOpen'
 import { useVms } from '../hooks/useVms'
 import { downloadCsv, toCsv } from '../lib/csv'
 import { formatBytes, hostSpmText, statusText } from '../lib/format'
@@ -1243,7 +1244,9 @@ export function HostsClustersPage() {
   }
   // client-side tree name filter (hosts/clusters/DCs) — bookmarkable
   const [filter, setFilter] = useState('')
-  const [isTreeOpen, setIsTreeOpen] = useState(true)
+  // Shared area key with VMs & Templates: the two inventory views are one
+  // surface, so a collapsed tree stays collapsed across the view switcher.
+  const [isTreeOpen, toggleTree] = useTreeOpen('inventory')
   const [creatingCluster, setCreatingCluster] = useState(false)
   const [creatingHost, setCreatingHost] = useState(false)
 
@@ -1853,7 +1856,7 @@ export function HostsClustersPage() {
       <InventoryToolbar
         view="infra"
         isTreeOpen={isTreeOpen}
-        onToggleTree={() => setIsTreeOpen((open) => !open)}
+        onToggleTree={toggleTree}
         treeToggleLabelIds={{ hide: 'infra.tree.toggle.hide', show: 'infra.tree.toggle.show' }}
         filter={filter}
         onFilterChange={setFilter}

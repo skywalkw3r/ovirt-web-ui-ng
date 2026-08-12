@@ -58,6 +58,7 @@ import { sortRows, useColumnSort } from '../hooks/useColumnSort'
 import { useFolderParam, usePruneGhostFolder } from '../hooks/useFolderParam'
 import { useHosts } from '../hooks/useHosts'
 import { folderPathOf, folderSubtreeIds, followedTagsOf, useTags } from '../hooks/useTags'
+import { useTreeOpen } from '../hooks/useTreeOpen'
 import { useVirtualRows } from '../hooks/useVirtualRows'
 import { dragPropsFor } from '../hooks/useVmDragDrop'
 import { useVmSearch } from '../hooks/useVmSearch'
@@ -341,7 +342,9 @@ export function VmsPage() {
   // Selected folder rides the URL ('folder' param) — deep-linkable, and
   // back/forward walk folder selections.
   const { folderId: selectedFolderId, setFolderId: setSelectedFolderId } = useFolderParam()
-  const [isTreeOpen, setIsTreeOpen] = useState(true)
+  // Own area — this flat page is out of the nav and keeps its own tree
+  // choice, separate from the two inventory views' shared one.
+  const [isTreeOpen, toggleTree] = useTreeOpen('vms')
   // Selection is keyed by id so it survives the 10s poll replacing the Vm
   // objects; the toolbar gets fresh Vms derived from the visible list below.
   const [selectedIds, setSelectedIds] = useState<ReadonlySet<string>>(new Set())
@@ -725,7 +728,7 @@ export function VmsPage() {
               variant="plain"
               aria-label={t(isTreeOpen ? 'folders.tree.toggle.hide' : 'folders.tree.toggle.show')}
               icon={<BarsIcon />}
-              onClick={() => setIsTreeOpen((open) => !open)}
+              onClick={toggleTree}
             />
           </ToolbarItem>
           <ToolbarItem style={{ width: '22rem' }}>

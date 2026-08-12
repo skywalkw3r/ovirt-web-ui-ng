@@ -120,6 +120,26 @@ test('Hosts & Clusters view has no serious accessibility violations', async ({ p
   await expectNoSeriousViolations(page)
 })
 
+// The facet filter menus are open-only surfaces the scans above never reach:
+// a checkbox Select defaults to role="listbox" while its hasCheckbox rows
+// render role="menuitem", an invalid ARIA pairing (FacetFilters passes
+// role="menu" for exactly this reason). Scanned with a menu open AND filters
+// applied, so the toolbar's label group is in the tree too.
+test('VMs & Templates facet menus have no serious accessibility violations', async ({ page }) => {
+  await login(page, { path: '/vms-templates?filters=status%3Aup' })
+  await expect(page.getByRole('button', { name: 'Close Running' })).toBeVisible()
+
+  // scoped to the filter group: 'Status' also names a column header button
+  // and the applied-labels group's remove button
+  await page
+    .locator('.pf-v6-c-toolbar__group.pf-m-filter-group')
+    .getByRole('button', { name: 'Status' })
+    .click()
+  await expect(page.getByRole('menuitem', { name: /^Powered off/ })).toBeVisible()
+
+  await expectNoSeriousViolations(page)
+})
+
 // The PaneHeader identity banner (icon tile, h2, meta line, inline Open
 // details) renders only once something is SELECTED — the root pane has no
 // entity to identify — so the root scans above never reach it. This is the

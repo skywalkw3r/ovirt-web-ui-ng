@@ -93,6 +93,9 @@ export const ptBR: LocaleCatalog = {
   'action.retry': 'Tentar novamente',
   'action.exportCsv': 'Exportar CSV',
   'common.filter.all': 'Todos',
+  'common.filter.clearAll': 'Limpar todos os filtros',
+  'common.filter.appliedCount':
+    '{count, plural, one {# filtro aplicado} other {# filtros aplicados}}',
   'folders.tree.ariaLabel': 'Pastas de máquinas virtuais',
   'folders.tree.allVms': 'Todas as máquinas virtuais',
   'folders.tree.loading': 'Carregando pastas',
@@ -208,6 +211,8 @@ export const ptBR: LocaleCatalog = {
   'inventory.error.title': 'Não foi possível carregar VMs e modelos',
   'inventory.empty.title': 'Sem VMs ou modelos',
   'inventory.empty.body': 'As VMs e os modelos que você tem permissão para ver aparecerão aqui.',
+  'inventory.filterEmpty.title': 'Sem VMs ou modelos correspondentes',
+  'inventory.filterEmpty.body': 'Nada corresponde aos filtros aplicados.',
   'inventory.emptyFolder.title': 'Sem VMs ou modelos correspondentes',
   'inventory.emptyFolder.body': 'Nada está marcado na pasta selecionada.',
   'inventory.searchEmpty.title': 'Nada corresponde ao filtro',

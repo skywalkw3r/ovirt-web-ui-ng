@@ -1,6 +1,12 @@
 import { readFileSync } from 'node:fs'
-import { expect, test } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
 import { login } from './helpers'
+
+// Facet toggles are scoped to the toolbar's filter group: 'Cluster' and
+// 'Status' also name a sortable column header button, and 'Status' again
+// names the applied-labels group's remove button.
+const facetToggle = (page: Page, name: string) =>
+  page.locator('.pf-v6-c-toolbar__group.pf-m-filter-group').getByRole('button', { name })
 
 // The combined inventory: VMs and templates as typed rows under the one
 // folder tree, with per-kind Move to folder.
@@ -78,6 +84,67 @@ test('the client-side name filter narrows both kinds', async ({ page }) => {
   await page.getByLabel('Filter VMs and templates by name').fill('win2022')
   // win2022-ad (VM) + win2022-base (template)
   await expect(rows).toHaveCount(2)
+})
+
+// The attribute filters under the pane's identity banner: multi-select menus
+// per facet (Status, Type, Cluster, Data Center) with option counts, applied
+// values as removable labels, and the whole set carried in the URL.
+test('facet filters narrow the table, stack, and ride the URL', async ({ page }) => {
+  await login(page, { path: '/vms-templates' })
+  const rows = page.locator('table[aria-label="VMs and templates"] tbody tr')
+  await expect.poll(() => rows.count()).toBeGreaterThanOrEqual(12)
+
+  // cluster-02 'lab-nested' holds build-runner (powering up) and staging-app
+  // (suspended). The flat /templates list fixture carries no cluster link
+  // (see `templates` in mock/handlers.ts — only the detail bodies do), so no
+  // template holds a value for this facet and all three drop out.
+  await facetToggle(page, 'Cluster').click()
+  // checkbox selects render menuitem rows, not listbox options (role="menu")
+  await page.getByRole('menuitem', { name: /^lab-nested/ }).click()
+  await expect(rows).toHaveCount(2)
+  await expect(page).toHaveURL(/filters=cluster%3Acluster-02/)
+  await page.keyboard.press('Escape')
+
+  // AND across facets, down to one row
+  await facetToggle(page, 'Status').click()
+  await page.getByRole('menuitem', { name: /^Suspended/ }).click()
+  await expect(rows).toHaveCount(1)
+  await expect(rows).toContainText('staging-app')
+
+  // OR within a facet: Powering up joins Suspended rather than replacing it
+  await page.getByRole('menuitem', { name: /^Powering up/ }).click()
+  await expect(rows).toHaveCount(2)
+  await page.keyboard.press('Escape')
+
+  // each applied value is a removable label; removing one narrows back
+  await page.getByRole('button', { name: 'Close Suspended' }).click()
+  await expect(rows).toHaveCount(1)
+  await expect(rows).toContainText('build-runner')
+
+  // Clear all filters drops every facet and the URL param with them
+  await page.getByRole('button', { name: 'Clear all filters' }).click()
+  await expect.poll(() => rows.count()).toBeGreaterThanOrEqual(12)
+  await expect(page).not.toHaveURL(/filters=/)
+})
+
+// A filtered view is a link: the URL param alone reproduces the selection,
+// which is what makes it shareable and bookmarkable.
+test('a facet-filtered inventory URL restores its filters', async ({ page }) => {
+  await login(page, { path: '/vms-templates?filters=status%3Aup' })
+  const rows = page.locator('table[aria-label="VMs and templates"] tbody tr')
+  await expect(rows).toHaveCount(4)
+  await expect(page.getByRole('button', { name: 'Close Running' })).toBeVisible()
+})
+
+// Facets alone emptying the table reads as its own empty state, not as an
+// empty folder — with the one click back out.
+test('facets that match nothing offer a clear-filters escape', async ({ page }) => {
+  // 'ok' is a template status, so no VM carries it and Type=VM contradicts it
+  await login(page, { path: '/vms-templates?filters=status%3Aok%3Btype%3Avm' })
+  await expect(page.getByText('No matching VMs or templates')).toBeVisible()
+  await page.getByRole('button', { name: 'Clear all filters' }).first().click()
+  const rows = page.locator('table[aria-label="VMs and templates"] tbody tr')
+  await expect.poll(() => rows.count()).toBeGreaterThanOrEqual(12)
 })
 
 // The inventory table now rides the shared COLUMNS+useColumnPrefs+ColumnPicker
