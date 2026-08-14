@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { Toolbar, ToolbarContent, ToolbarGroup, ToolbarItem } from '@patternfly/react-core'
+import { ToolbarItem } from '@patternfly/react-core'
 import type { Vm } from '../../api/schemas/vm'
 import { useClustersInventory } from '../../hooks/useAdminResources'
 import { useColumnPrefs } from '../../hooks/useColumnPrefs'
@@ -105,21 +105,16 @@ export function QuotaVmsTab({ quotaId }: { quotaId: string }) {
       // not from the quota's side
       emptyBody={t('quotaVms.empty.body')}
       resizePrefs={prefs}
-      toolbar={
-        <Toolbar>
-          <ToolbarContent>
-            <ToolbarGroup align={{ default: 'alignEnd' }}>
-              <ToolbarItem>
-                <ColumnPicker
-                  columns={columns}
-                  isVisible={prefs.isVisible}
-                  onToggle={prefs.toggle}
-                  onReset={prefs.reset}
-                />
-              </ToolbarItem>
-            </ToolbarGroup>
-          </ToolbarContent>
-        </Toolbar>
+      // rides the shell's own toolbar, right of its search + pagination
+      toolbarItems={
+        <ToolbarItem>
+          <ColumnPicker
+            columns={columns}
+            isVisible={prefs.isVisible}
+            onToggle={prefs.toggle}
+            onReset={prefs.reset}
+          />
+        </ToolbarItem>
       }
     />
   )
