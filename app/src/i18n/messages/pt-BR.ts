@@ -2821,7 +2821,8 @@ export const ptBR: LocaleCatalog = {
   'bulk.migrate.auto.label': 'Escolher um host automaticamente',
   'bulk.migrate.noHosts': 'Nenhum host disponível',
   'bulk.migrate.pinned.label': 'Selecione um host de destino',
-  'bulk.migrate.title': 'Migrar {length} máquinas virtuais',
+  'bulk.migrate.title':
+    '{count, plural, one {Migrar # máquina virtual} other {Migrar # máquinas virtuais}}',
   'cloneVm.collapseSnapshots.help':
     'Os discos do clone são achatados em um único volume; desative para manter a cadeia de snapshots da VM de origem no clone.',
   'cloneVm.collapseSnapshots.label': 'Achatar snapshots',
@@ -4511,4 +4512,19 @@ export const ptBR: LocaleCatalog = {
     'O número exato de filas VirtIO-SCSI. Deixe vazio (Automático) para derivá-lo das vCPUs e discos da VM.',
   'fieldHelp.vm.multiQueues':
     'Dá a cada NIC virtual um número ideal de filas com base nas vCPUs da VM, melhorando o desempenho de rede de VMs multi-vCPU.',
+  'common.field.value': 'Valor',
+  'runOnce.initialRun.enable': 'Configurar execução inicial',
+  'runOnce.sysprep.title': 'Sysprep',
+  'runOnce.sysprep.domain': 'Domínio',
+  'runOnce.cloudInit.title': 'Cloud-init',
+  'runOnce.cloudInit.network.title': 'Rede',
+  'runOnce.cloudInit.nic.netmask': 'Máscara de rede',
+  'runOnce.cloudInit.nic.gateway': 'Gateway',
+  'runOnce.kernel.path': 'Caminho do kernel',
+  'runOnce.kernel.params': 'Linha de comando do kernel',
+  'runOnce.customProps.add': 'Adicionar propriedade personalizada',
+  'cpuProfiles.name.required': 'Um nome é obrigatório.',
+  'console.rdp.download': 'Baixar arquivo RDP (.rdp)',
+  'console.rdp.description': 'Área de Trabalho Remota para o convidado Windows',
+  'monitoring.history.noData': 'Sem dados no intervalo',
 }

@@ -59,7 +59,9 @@ function HistoryChart({ chart }: { chart: DwhChart }) {
       <CardTitle component="h3">{chart.title}</CardTitle>
       <CardBody>
         {series.length === 0 ? (
-          <div style={{ color: 'var(--pf-t--global--text--color--subtle)' }}>no data in range</div>
+          <div style={{ color: 'var(--pf-t--global--text--color--subtle)' }}>
+            <FormattedMessage id="monitoring.history.noData" />
+          </div>
         ) : (
           <div style={{ height: `${CHART_HEIGHT}px`, maxWidth: '100%' }}>
             <Chart

@@ -2803,7 +2803,7 @@ export const ja: LocaleCatalog = {
   'bulk.migrate.auto.label': 'ホストを自動的に選択',
   'bulk.migrate.noHosts': '使用可能なホストがありません',
   'bulk.migrate.pinned.label': '移行先ホストを選択',
-  'bulk.migrate.title': '{length}台の仮想マシンを移行',
+  'bulk.migrate.title': '{count}台の仮想マシンを移行',
   'cloneVm.collapseSnapshots.help':
     'クローンのディスクは単一のボリュームにフラット化されます。ソースVMのスナップショットチェーンをクローンに保持するにはオフにします。',
   'cloneVm.collapseSnapshots.label': 'スナップショットを統合',
@@ -4476,4 +4476,19 @@ export const ja: LocaleCatalog = {
     'VirtIO-SCSIキューの正確な数。空欄（自動）ならVMのvCPUとディスクから導出します。',
   'fieldHelp.vm.multiQueues':
     'VMのvCPUに基づき各仮想NICに最適なキュー数を与え、多vCPU VMのネットワークスループットを改善します。',
+  'common.field.value': '値',
+  'runOnce.initialRun.enable': '初回実行を構成',
+  'runOnce.sysprep.title': 'Sysprep',
+  'runOnce.sysprep.domain': 'ドメイン',
+  'runOnce.cloudInit.title': 'Cloud-init',
+  'runOnce.cloudInit.network.title': 'ネットワーク',
+  'runOnce.cloudInit.nic.netmask': 'ネットマスク',
+  'runOnce.cloudInit.nic.gateway': 'ゲートウェイ',
+  'runOnce.kernel.path': 'カーネルパス',
+  'runOnce.kernel.params': 'カーネルコマンドライン',
+  'runOnce.customProps.add': 'カスタムプロパティを追加',
+  'cpuProfiles.name.required': '名前は必須です。',
+  'console.rdp.download': 'RDPファイルをダウンロード (.rdp)',
+  'console.rdp.description': 'Windowsゲストへのリモートデスクトップ',
+  'monitoring.history.noData': '範囲内にデータがありません',
 }

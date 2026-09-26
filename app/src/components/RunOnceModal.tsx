@@ -87,9 +87,8 @@ export function RunOnceModalItem({ vm }: { vm: Vm }) {
 // shape — cloud-init (Linux) / sysprep (Windows) as vm.initialization with the
 // use_cloud_init / use_sysprep action flags, a custom direct-kernel boot
 // (vm.os.kernel/initrd/cmdline), and one-shot custom_properties rows. Everything
-// here is discarded when the VM next powers off. New depth fields are hardcoded
-// English (the runOnce.* ids cover the base dialog; a later i18n pass owns the
-// rest).
+// here is discarded when the VM next powers off. Every user-facing string here
+// resolves through the runOnce.* catalog ids (plus the shared common.field.*).
 function RunOnceModal({ vm, onClose }: { vm: Vm; onClose: () => void }) {
   useMenuClickShield()
   const t = useT()
@@ -307,39 +306,49 @@ function RunOnceModal({ vm, onClose }: { vm: Vm; onClose: () => void }) {
             />
           </FormGroup>
 
-          <FormGroup label="Configure Initial Run" fieldId="run-once-init-enabled">
+          <FormGroup label={t('runOnce.initialRun.enable')} fieldId="run-once-init-enabled">
             <Switch
               id="run-once-init-enabled"
-              label={windows ? 'Run sysprep on this boot' : 'Run cloud-init on this boot'}
-              aria-label="Configure Initial Run"
+              label={windows ? t('runOnce.initialRun.sysprep') : t('runOnce.initialRun.cloudInit')}
+              aria-label={t('runOnce.initialRun.enable')}
               isChecked={initEnabled}
               onChange={(_event, checked) => setInitEnabled(checked)}
             />
           </FormGroup>
 
           {initEnabled && windows && (
-            <FormSection title="Sysprep" titleElement="h3" aria-label="Sysprep">
-              <FormGroup label="Domain" fieldId="run-once-sysprep-domain">
+            <FormSection
+              title={t('runOnce.sysprep.title')}
+              titleElement="h3"
+              aria-label={t('runOnce.sysprep.title')}
+            >
+              <FormGroup label={t('runOnce.sysprep.domain')} fieldId="run-once-sysprep-domain">
                 <TextInput
                   id="run-once-sysprep-domain"
-                  aria-label="Sysprep domain"
+                  aria-label={t('runOnce.sysprep.domain.ariaLabel')}
                   value={sysprepDomain}
                   onChange={(_event, value) => setSysprepDomain(value)}
                 />
               </FormGroup>
-              <FormGroup label="Administrator password" fieldId="run-once-sysprep-password">
+              <FormGroup
+                label={t('runOnce.sysprep.adminPassword')}
+                fieldId="run-once-sysprep-password"
+              >
                 <TextInput
                   id="run-once-sysprep-password"
                   type="password"
-                  aria-label="Sysprep administrator password"
+                  aria-label={t('runOnce.sysprep.adminPassword.ariaLabel')}
                   value={sysprepAdminPassword}
                   onChange={(_event, value) => setSysprepAdminPassword(value)}
                 />
               </FormGroup>
-              <FormGroup label="Custom script (unattend)" fieldId="run-once-sysprep-script">
+              <FormGroup
+                label={t('runOnce.sysprep.customScript')}
+                fieldId="run-once-sysprep-script"
+              >
                 <TextArea
                   id="run-once-sysprep-script"
-                  aria-label="Sysprep custom script"
+                  aria-label={t('runOnce.sysprep.customScript.ariaLabel')}
                   value={sysprepCustomScript}
                   onChange={(_event, value) => setSysprepCustomScript(value)}
                   resizeOrientation="vertical"
@@ -350,37 +359,44 @@ function RunOnceModal({ vm, onClose }: { vm: Vm; onClose: () => void }) {
           )}
 
           {initEnabled && !windows && (
-            <FormSection title="Cloud-init" titleElement="h3" aria-label="Cloud-init">
-              <FormGroup label="Hostname" fieldId="run-once-ci-hostname">
+            <FormSection
+              title={t('runOnce.cloudInit.title')}
+              titleElement="h3"
+              aria-label={t('runOnce.cloudInit.title')}
+            >
+              <FormGroup label={t('runOnce.cloudInit.hostname')} fieldId="run-once-ci-hostname">
                 <TextInput
                   id="run-once-ci-hostname"
-                  aria-label="Cloud-init hostname"
+                  aria-label={t('runOnce.cloudInit.hostname.ariaLabel')}
                   value={ciHostname}
                   onChange={(_event, value) => setCiHostname(value)}
                 />
               </FormGroup>
-              <FormGroup label="DNS servers" fieldId="run-once-ci-dns-servers">
+              <FormGroup
+                label={t('runOnce.cloudInit.dnsServers')}
+                fieldId="run-once-ci-dns-servers"
+              >
                 <TextInput
                   id="run-once-ci-dns-servers"
-                  aria-label="Cloud-init DNS servers"
-                  placeholder="e.g. 8.8.8.8 8.8.4.4"
+                  aria-label={t('runOnce.cloudInit.dnsServers.ariaLabel')}
+                  placeholder={t('runOnce.cloudInit.dnsServers.placeholder')}
                   value={ciDnsServers}
                   onChange={(_event, value) => setCiDnsServers(value)}
                 />
               </FormGroup>
-              <FormGroup label="DNS search domains" fieldId="run-once-ci-dns-search">
+              <FormGroup label={t('runOnce.cloudInit.dnsSearch')} fieldId="run-once-ci-dns-search">
                 <TextInput
                   id="run-once-ci-dns-search"
-                  aria-label="Cloud-init DNS search domains"
-                  placeholder="e.g. example.com"
+                  aria-label={t('runOnce.cloudInit.dnsSearch.ariaLabel')}
+                  placeholder={t('runOnce.cloudInit.dnsSearch.placeholder')}
                   value={ciDnsSearch}
                   onChange={(_event, value) => setCiDnsSearch(value)}
                 />
               </FormGroup>
-              <FormGroup label="Custom script" fieldId="run-once-ci-script">
+              <FormGroup label={t('runOnce.cloudInit.customScript')} fieldId="run-once-ci-script">
                 <TextArea
                   id="run-once-ci-script"
-                  aria-label="Cloud-init custom script"
+                  aria-label={t('runOnce.cloudInit.customScript.ariaLabel')}
                   value={ciCustomScript}
                   onChange={(_event, value) => setCiCustomScript(value)}
                   resizeOrientation="vertical"
@@ -388,45 +404,69 @@ function RunOnceModal({ vm, onClose }: { vm: Vm; onClose: () => void }) {
                 />
               </FormGroup>
 
-              <FormSection title="Network" titleElement="h4" aria-label="Cloud-init network">
-                {ciNics.length === 0 && <p>No static NICs configured for this run.</p>}
+              <FormSection
+                title={t('runOnce.cloudInit.network.title')}
+                titleElement="h4"
+                aria-label={t('runOnce.cloudInit.network.ariaLabel')}
+              >
+                {ciNics.length === 0 && <p>{t('runOnce.cloudInit.noNics')}</p>}
                 {ciNics.map((nic, index) => (
                   <Grid key={index} hasGutter>
                     <GridItem span={3}>
-                      <FormGroup label="Name" fieldId={`run-once-ci-nic-name-${index}`}>
+                      <FormGroup
+                        label={t('common.field.name')}
+                        fieldId={`run-once-ci-nic-name-${index}`}
+                      >
                         <TextInput
                           id={`run-once-ci-nic-name-${index}`}
-                          aria-label={`NIC name ${index + 1}`}
+                          aria-label={t('runOnce.cloudInit.nic.name.ariaLabel', {
+                            index: index + 1,
+                          })}
                           value={nic.name}
                           onChange={(_event, value) => updateNic(index, { name: value })}
                         />
                       </FormGroup>
                     </GridItem>
                     <GridItem span={3}>
-                      <FormGroup label="Address" fieldId={`run-once-ci-nic-address-${index}`}>
+                      <FormGroup
+                        label={t('runOnce.cloudInit.nic.address')}
+                        fieldId={`run-once-ci-nic-address-${index}`}
+                      >
                         <TextInput
                           id={`run-once-ci-nic-address-${index}`}
-                          aria-label={`NIC address ${index + 1}`}
+                          aria-label={t('runOnce.cloudInit.nic.address.ariaLabel', {
+                            index: index + 1,
+                          })}
                           value={nic.address}
                           onChange={(_event, value) => updateNic(index, { address: value })}
                         />
                       </FormGroup>
                     </GridItem>
                     <GridItem span={2}>
-                      <FormGroup label="Netmask" fieldId={`run-once-ci-nic-netmask-${index}`}>
+                      <FormGroup
+                        label={t('runOnce.cloudInit.nic.netmask')}
+                        fieldId={`run-once-ci-nic-netmask-${index}`}
+                      >
                         <TextInput
                           id={`run-once-ci-nic-netmask-${index}`}
-                          aria-label={`NIC netmask ${index + 1}`}
+                          aria-label={t('runOnce.cloudInit.nic.netmask.ariaLabel', {
+                            index: index + 1,
+                          })}
                           value={nic.netmask}
                           onChange={(_event, value) => updateNic(index, { netmask: value })}
                         />
                       </FormGroup>
                     </GridItem>
                     <GridItem span={3}>
-                      <FormGroup label="Gateway" fieldId={`run-once-ci-nic-gateway-${index}`}>
+                      <FormGroup
+                        label={t('runOnce.cloudInit.nic.gateway')}
+                        fieldId={`run-once-ci-nic-gateway-${index}`}
+                      >
                         <TextInput
                           id={`run-once-ci-nic-gateway-${index}`}
-                          aria-label={`NIC gateway ${index + 1}`}
+                          aria-label={t('runOnce.cloudInit.nic.gateway.ariaLabel', {
+                            index: index + 1,
+                          })}
                           value={nic.gateway}
                           onChange={(_event, value) => updateNic(index, { gateway: value })}
                         />
@@ -437,7 +477,9 @@ function RunOnceModal({ vm, onClose }: { vm: Vm; onClose: () => void }) {
                         <Button
                           id={`run-once-ci-nic-remove-${index}`}
                           variant="plain"
-                          aria-label={`Remove NIC ${index + 1}`}
+                          aria-label={t('runOnce.cloudInit.nic.remove.ariaLabel', {
+                            index: index + 1,
+                          })}
                           icon={<MinusCircleIcon />}
                           onClick={() => removeNic(index)}
                         />
@@ -449,9 +491,9 @@ function RunOnceModal({ vm, onClose }: { vm: Vm; onClose: () => void }) {
                   variant="link"
                   icon={<PlusCircleIcon />}
                   onClick={addNic}
-                  aria-label="Add NIC"
+                  aria-label={t('runOnce.cloudInit.addNic')}
                 >
-                  Add NIC
+                  {t('runOnce.cloudInit.addNic')}
                 </Button>
               </FormSection>
             </FormSection>
@@ -462,27 +504,27 @@ function RunOnceModal({ vm, onClose }: { vm: Vm; onClose: () => void }) {
             titleElement="h3"
             aria-label={t('runOnce.kernel.ariaLabel')}
           >
-            <FormGroup label="Kernel path" fieldId="run-once-kernel-path">
+            <FormGroup label={t('runOnce.kernel.path')} fieldId="run-once-kernel-path">
               <TextInput
                 id="run-once-kernel-path"
-                aria-label="Kernel path"
-                placeholder="e.g. iso://vmlinuz"
+                aria-label={t('runOnce.kernel.path')}
+                placeholder={t('runOnce.kernel.path.placeholder')}
                 value={kernelPath}
                 onChange={(_event, value) => setKernelPath(value)}
               />
             </FormGroup>
-            <FormGroup label="Initrd path" fieldId="run-once-initrd-path">
+            <FormGroup label={t('runOnce.kernel.initrd')} fieldId="run-once-initrd-path">
               <TextInput
                 id="run-once-initrd-path"
-                aria-label="Initrd path"
+                aria-label={t('runOnce.kernel.initrd')}
                 value={initrdPath}
                 onChange={(_event, value) => setInitrdPath(value)}
               />
             </FormGroup>
-            <FormGroup label="Kernel command line" fieldId="run-once-kernel-params">
+            <FormGroup label={t('runOnce.kernel.params')} fieldId="run-once-kernel-params">
               <TextInput
                 id="run-once-kernel-params"
-                aria-label="Kernel command line"
+                aria-label={t('runOnce.kernel.params')}
                 value={kernelParams}
                 onChange={(_event, value) => setKernelParams(value)}
               />
@@ -494,24 +536,27 @@ function RunOnceModal({ vm, onClose }: { vm: Vm; onClose: () => void }) {
             titleElement="h3"
             aria-label={t('runOnce.customProps.ariaLabel')}
           >
-            {customProps.length === 0 && <p>No custom properties for this run.</p>}
+            {customProps.length === 0 && <p>{t('runOnce.customProps.empty')}</p>}
             {customProps.map((row, index) => (
               <Grid key={index} hasGutter>
                 <GridItem span={5}>
-                  <FormGroup label="Name" fieldId={`run-once-prop-name-${index}`}>
+                  <FormGroup label={t('common.field.name')} fieldId={`run-once-prop-name-${index}`}>
                     <TextInput
                       id={`run-once-prop-name-${index}`}
-                      aria-label={`Property name ${index + 1}`}
+                      aria-label={t('runOnce.customProps.name.ariaLabel', { index: index + 1 })}
                       value={row.name}
                       onChange={(_event, value) => updateProp(index, { name: value })}
                     />
                   </FormGroup>
                 </GridItem>
                 <GridItem span={6}>
-                  <FormGroup label="Value" fieldId={`run-once-prop-value-${index}`}>
+                  <FormGroup
+                    label={t('common.field.value')}
+                    fieldId={`run-once-prop-value-${index}`}
+                  >
                     <TextInput
                       id={`run-once-prop-value-${index}`}
-                      aria-label={`Property value ${index + 1}`}
+                      aria-label={t('runOnce.customProps.value.ariaLabel', { index: index + 1 })}
                       value={row.value}
                       onChange={(_event, value) => updateProp(index, { value })}
                     />
@@ -522,7 +567,7 @@ function RunOnceModal({ vm, onClose }: { vm: Vm; onClose: () => void }) {
                     <Button
                       id={`run-once-prop-remove-${index}`}
                       variant="plain"
-                      aria-label={`Remove property ${index + 1}`}
+                      aria-label={t('runOnce.customProps.remove.ariaLabel', { index: index + 1 })}
                       icon={<MinusCircleIcon />}
                       onClick={() => removeProp(index)}
                     />
@@ -534,9 +579,9 @@ function RunOnceModal({ vm, onClose }: { vm: Vm; onClose: () => void }) {
               variant="link"
               icon={<PlusCircleIcon />}
               onClick={addProp}
-              aria-label="Add custom property"
+              aria-label={t('runOnce.customProps.add')}
             >
-              Add custom property
+              {t('runOnce.customProps.add')}
             </Button>
           </FormSection>
         </Form>

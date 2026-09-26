@@ -16,21 +16,27 @@ spec:
     spec:
       containers:
         - name: web-ui-ng
-          # Built from packaging/Containerfile (nginx-unprivileged base — runs
-          # under the restricted SCC's random UID). Set the real registry/tag
-          # via the kustomization `images:` transformer.
+          # Built from packaging/Containerfile — Red Hat UBI (ubi9/nodejs-24
+          # build stage, ubi9/ubi-minimal + nginx serve stage); runs under the
+          # restricted SCC's random UID. Set the real registry/tag via the
+          # kustomization `images:` transformer, or point at an in-cluster
+          # ImageStream with an image trigger.
           image: ovirt-web-ui-ng:latest
           ports:
             - name: http
               containerPort: 8080
           env:
-            # The engine this pod reverse-proxies same-origin (/ovirt-engine/*
-            # REST, SSO, websocket-proxy) — the console's "default" engine.
+            # Single-engine shape only (no default.conf mounted): the engine
+            # this pod reverse-proxies same-origin (/ovirt-engine/* REST, SSO,
+            # websocket-proxy). Dormant when a multi-engine default.conf is
+            # mounted — the recommended shape, see README.md.
             - name: ENGINE_ORIGIN
               value: https://engine1.example.com
-            # Multi-engine: space-separated origins of the ADDITIONAL engines
-            # listed in config.js — appended to the CSP connect-src (header
-            # and <meta>) at container start. Empty = strict single-engine.
+            # Direct-connect (CORS) engines ONLY: space-separated origins of
+            # engines listed in config.js with an absolute https:// url —
+            # appended to the CSP connect-src (header and <meta>) at container
+            # start. Leave empty for the same-origin /e/<slug> proxy shape and
+            # for strict single-engine.
             #   value: "https://engine2.example.com https://engine3.example.com"
             - name: CSP_CONNECT_EXTRA
               value: ""
@@ -40,10 +46,23 @@ spec:
             - name: runtime-config
               mountPath: /usr/share/nginx/html/ovirt-engine/web-ui-ng/config.js
               subPath: config.js
-            # Engine CA for the nginx→engine TLS hop: nginx-sample.conf ships
-            # proxy_ssl_verify on and reads the bundle from this exact path —
-            # the pod will not serve without it. Create the ConfigMap once:
+            # Multi-engine (recommended): mount your own nginx server config —
+            # one `location /e/<slug>/` proxy block per engine, verifying each
+            # engine against the image's system CA bundle — read-only over the
+            # image's rendered template. The entrypoint leaves a read-only
+            # default.conf untouched. Block outline in README.md.
+            # - name: nginx-config
+            #   mountPath: /etc/nginx/conf.d/default.conf
+            #   subPath: default.conf
+            #   readOnly: true
+            # Single-engine shape only: nginx-sample.conf verifies the
+            # nginx→engine TLS hop against /etc/pki/ovirt-engine/ca.pem, so with
+            # no default.conf mounted the pod needs this ConfigMap (nginx
+            # refuses to start when the file is missing). Create it once:
             #   oc create configmap engine-ca --from-file=ca.pem=/path/to/engine-ca.pem
+            # The multi-engine proxy shape verifies against the system CA bundle
+            # instead — drop this mount and its volume below (or leave them;
+            # they are unused).
             - name: engine-ca
               mountPath: /etc/pki/ovirt-engine/ca.pem
               subPath: ca.pem
@@ -79,6 +98,11 @@ spec:
           configMap:
             # kustomize's configMapGenerator rewrites this to the hashed name
             name: web-ui-ng-config
+        # Multi-engine proxy shape: add a configMapGenerator entry for your
+        # default.conf and reference it here (see the commented mount above).
+        # - name: nginx-config
+        #   configMap:
+        #     name: web-ui-ng-nginx
         - name: engine-ca
           configMap:
             name: engine-ca

@@ -9,7 +9,7 @@
 # Our SPA reads that global at boot (src/auth/bootstrap.ts), so all we ship is
 # static HTML/JS/CSS plus an Apache alias that maps the sub-path to our files.
 #
-# ASSUMPTIONS (documented, verify at cutover -- see docs/LIVE-ENGINE-CHECKLIST.md):
+# ASSUMPTIONS (documented, verify at cutover -- see docs/DEPLOY.md):
 #   * The engine serves us under /ovirt-engine/web-ui-ng/ (matches the Vite
 #     `base` in app/vite.config.ts and VITE_BASE). Change BASE_PATH below AND
 #     the Vite base together if this ever moves.

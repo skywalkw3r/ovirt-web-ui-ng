@@ -6,7 +6,7 @@
 // app/src/api/transport.ts), then probes each assumption the mock fixtures
 // (app/src/api/mock/handlers.ts) bake in and prints a PASS/FAIL table. Exits
 // non-zero if any probe fails, so the operator running the cutover
-// (docs/LIVE-ENGINE-CHECKLIST.md) gets a hard signal.
+// (docs/DEPLOY.md) gets a hard signal.
 //
 // Usage:
 //   ENGINE_URL=https://engine.lab.example \

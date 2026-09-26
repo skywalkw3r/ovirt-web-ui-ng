@@ -2702,7 +2702,7 @@ export const zhCN: LocaleCatalog = {
   'bulk.migrate.auto.label': '自动选择主机',
   'bulk.migrate.noHosts': '没有可用的主机',
   'bulk.migrate.pinned.label': '选择目标主机',
-  'bulk.migrate.title': '迁移 {length} 台虚拟机',
+  'bulk.migrate.title': '迁移 {count} 台虚拟机',
   'cloneVm.collapseSnapshots.help':
     '克隆的磁盘会被压平为单个卷；关闭则在克隆上保留源虚拟机的快照链。',
   'cloneVm.collapseSnapshots.label': '折叠快照',
@@ -4286,4 +4286,19 @@ export const zhCN: LocaleCatalog = {
     '确切的 VirtIO-SCSI 队列数。留空（自动）则根据虚拟机的 vCPU 和磁盘推导。',
   'fieldHelp.vm.multiQueues':
     '按虚拟机的 vCPU 为每个虚拟网卡分配最优队列数，提升多 vCPU 虚拟机的网络吞吐量。',
+  'common.field.value': '值',
+  'runOnce.initialRun.enable': '配置初始运行',
+  'runOnce.sysprep.title': 'Sysprep',
+  'runOnce.sysprep.domain': '域',
+  'runOnce.cloudInit.title': 'Cloud-init',
+  'runOnce.cloudInit.network.title': '网络',
+  'runOnce.cloudInit.nic.netmask': '子网掩码',
+  'runOnce.cloudInit.nic.gateway': '网关',
+  'runOnce.kernel.path': '内核路径',
+  'runOnce.kernel.params': '内核命令行',
+  'runOnce.customProps.add': '添加自定义属性',
+  'cpuProfiles.name.required': '名称为必填项。',
+  'console.rdp.download': '下载 RDP 文件 (.rdp)',
+  'console.rdp.description': '远程桌面连接到 Windows 客户机',
+  'monitoring.history.noData': '范围内无数据',
 }

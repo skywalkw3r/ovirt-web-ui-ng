@@ -198,7 +198,7 @@ export function ClusterUpgradeModal({
                         <Td>
                           <Checkbox
                             id={`cluster-upgrade-host-${host.id}`}
-                            aria-label={`Select ${host.name}`}
+                            aria-label={t('clusterUpgrade.aria.selectHost', { name: host.name })}
                             isChecked={selected.has(host.id)}
                             onChange={() => toggle(host.id)}
                           />

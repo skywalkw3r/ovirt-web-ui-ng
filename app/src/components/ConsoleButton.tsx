@@ -177,15 +177,15 @@ export function ConsoleButton({ vm }: { vm: Vm }) {
               </DropdownItem>
             ))}
 
-          {/* RDP download for Windows guests. Hardcoded English this wave; the
-            (.rdp) token stays verbatim in every locale. */}
+          {/* RDP download for Windows guests; the (.rdp) token stays verbatim in
+            every locale. */}
           {isWindows && (
             <DropdownItem
               icon={<DownloadIcon />}
-              description="Remote Desktop to the Windows guest"
+              description={t('console.rdp.description')}
               onClick={downloadRdp}
             >
-              Download RDP file (.rdp)
+              {t('console.rdp.download')}
             </DropdownItem>
           )}
 
