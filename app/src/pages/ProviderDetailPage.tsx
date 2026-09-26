@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -16,14 +15,13 @@ import {
   TabTitleText,
 } from '@patternfly/react-core'
 import { Link, useNavigate } from '@tanstack/react-router'
-import { listProviders } from '../api/resources/providers'
 import { useCapabilities } from '../auth/capabilities'
 import { ListPageHeader } from '../components/ListPageHeader'
 import { NotPermitted } from '../components/NotPermitted'
 import { ProviderGeneralTab } from '../components/provider-tabs/ProviderGeneralTab'
 import { ProviderNetworksTab } from '../components/provider-tabs/ProviderNetworksTab'
 import { ProviderTypeLabel } from '../components/provider-tabs/ProviderTypeLabel'
-import { useAdminResourcePollInterval } from '../hooks/useAdminResources'
+import { useProviders } from '../hooks/useParityResources'
 import { useT } from '../i18n/useT'
 import { providerDetailRoute } from '../routes/router'
 
@@ -40,15 +38,10 @@ export function ProviderDetailPage() {
   const navigate = useNavigate()
   const { providerId } = providerDetailRoute.useParams()
   const { loaded, isAdmin } = useCapabilities()
-  const refetchInterval = useAdminResourcePollInterval()
   const [activeKey, setActiveKey] = useState<string | number>('general')
 
-  const providers = useQuery({
-    queryKey: ['providers'],
-    queryFn: () => listProviders(),
-    refetchInterval,
-    enabled: isAdmin,
-  })
+  // The same admin-gated, 60s-floor ['providers'] observer the list page uses.
+  const providers = useProviders()
   const provider = providers.data?.find((entry) => entry.id === providerId)
 
   // The nav already hides Providers from user-tier accounts; this covers deep

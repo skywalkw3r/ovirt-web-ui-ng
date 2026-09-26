@@ -14,11 +14,6 @@ import {
 } from '@patternfly/react-core'
 import { LockIcon } from '@patternfly/react-icons'
 import { ActionsColumn, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table'
-import {
-  isDefaultPolicy,
-  isLockedPolicy,
-  type SchedulingPolicy,
-} from '../api/resources/schedulingPolicies'
 import { useCapabilities } from '../auth/capabilities'
 import { ConfirmModal } from '../components/ConfirmModal'
 import { ListPageHeader } from '../components/ListPageHeader'
@@ -32,9 +27,12 @@ import {
   type SchedulingPolicyEditorMode,
 } from '../components/scheduling-policy-form/SchedulingPolicyFormModal'
 import {
+  isDefaultPolicy,
+  isLockedPolicy,
   useDeleteSchedulingPolicy,
   useSchedulingPoliciesAdmin,
-} from '../components/scheduling-policy-form/useSchedulingPolicies'
+  type SchedulingPolicy,
+} from '../hooks/useSchedulingPolicies'
 
 interface EditorState {
   mode: SchedulingPolicyEditorMode

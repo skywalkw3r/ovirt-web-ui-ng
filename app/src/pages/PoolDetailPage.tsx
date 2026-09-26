@@ -19,17 +19,15 @@ import {
   TextInput,
 } from '@patternfly/react-core'
 import { Link, useNavigate } from '@tanstack/react-router'
-import { useQuery } from '@tanstack/react-query'
 import { ApiError } from '../api/transport'
-import { getPool } from '../api/resources/pools'
-import { listClusters } from '../api/resources/clusters'
 import { ConfirmModal } from '../components/ConfirmModal'
 import { ListPageHeader } from '../components/ListPageHeader'
 import { PoolFormModal } from '../components/pool-form/PoolFormModal'
 import { PoolGeneralTab } from '../components/pool-tabs/PoolGeneralTab'
 import { PoolPermissionsTab } from '../components/pool-tabs/PoolPermissionsTab'
 import { PoolVmsTab } from '../components/pool-tabs/PoolVmsTab'
-import { useAdminResourcePollInterval } from '../hooks/useAdminResources'
+import { useClusters } from '../hooks/useCatalog'
+import { usePool } from '../hooks/usePoolDetail'
 import { useDeletePool } from '../hooks/usePoolMutations'
 import { useT } from '../i18n/useT'
 import { poolDetailRoute } from '../routes/router'
@@ -38,21 +36,13 @@ export function PoolDetailPage() {
   const t = useT()
   const { poolId } = poolDetailRoute.useParams()
   const navigate = useNavigate()
-  const refetchInterval = useAdminResourcePollInterval()
-  const pool = useQuery({
-    queryKey: ['pool', poolId],
-    queryFn: () => getPool(poolId),
-    refetchInterval,
-  })
+  const pool = usePool(poolId)
 
   // The pool read returns cluster as an id-only link (VmPoolMapper), so resolve
-  // the display name client-side against the clusters inventory — the same
-  // unsearched ['clusters', ''] cache PoolFormModal seeds its picker from.
-  const clusters = useQuery({
-    queryKey: ['clusters', ''],
-    queryFn: () => listClusters(),
-    enabled: pool.isSuccess,
-  })
+  // the display name client-side against the clusters catalog — the same
+  // unsearched, ungated ['clusters', ''] cache PoolFormModal seeds its picker
+  // from (user-tier pool consumers can read it too).
+  const clusters = useClusters()
   const clusterId = pool.data?.cluster?.id
   const clusterName =
     clusterId === undefined ? undefined : clusters.data?.find((c) => c.id === clusterId)?.name

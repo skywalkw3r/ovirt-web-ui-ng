@@ -22,15 +22,12 @@ import {
 } from '@patternfly/react-core'
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table'
 import { BarsIcon, DownloadIcon } from '@patternfly/react-icons'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { FormattedMessage } from 'react-intl'
 import { formatBytes, formatUptime, statusText, vmUptimeSeconds } from '../lib/format'
 import { isFollowDenied } from '../api/followDegrade'
-import { migrateVm } from '../api/resources/vms'
 import type { Vm } from '../api/schemas/vm'
 import { useCapabilities } from '../auth/capabilities'
-import { useNotify } from '../notifications/context'
 import { useT } from '../i18n/useT'
 import { downloadCsv, toCsv } from '../lib/csv'
 import type { MessageId } from '../i18n/messages/en'
@@ -53,6 +50,7 @@ import { VmActionsMenu } from '../components/VmActionsMenu'
 import { VmWarnings } from '../components/VmWarnings'
 import { VmStatusLabel } from '../components/VmStatusLabel'
 import { useClustersInventory, useDataCenters } from '../hooks/useAdminResources'
+import { useBulkVmAction } from '../hooks/useBulkVmActions'
 import { useColumnPrefs } from '../hooks/useColumnPrefs'
 import { sortRows, useColumnSort } from '../hooks/useColumnSort'
 import { useFolderParam, usePruneGhostFolder } from '../hooks/useFolderParam'
@@ -241,55 +239,15 @@ function isInteractiveTarget(target: EventTarget | null): boolean {
   return target instanceof Element && target.closest('a, button, input, label') !== null
 }
 
-// Bulk live-migration mirrors useBulkVmAction: one migrate request per VM,
-// Promise.allSettled (never rejects, so partial failure still reaches
-// onSuccess), ONE aggregate toast and ONE ['vms'] invalidation. The engine's
-// scheduler picks each destination — pinning a specific host is the per-row /
-// detail Migrate button's job (its picker modal). Toast strings are hardcoded
-// English by project convention.
-function useBulkMigrate(): { run: (vms: Vm[]) => void; pending: boolean } {
-  const queryClient = useQueryClient()
-  const { notify } = useNotify()
-
-  const mutation = useMutation({
-    mutationFn: async (vms: Vm[]) => Promise.allSettled(vms.map((vm) => migrateVm(vm.id))),
-    onSuccess: (results, vms) => {
-      // allSettled preserves input order, so index i pairs with vms[i].
-      const failedNames = vms
-        .filter((_vm, index) => results[index].status === 'rejected')
-        .map((vm) => vm.name)
-      const succeeded = vms.length - failedNames.length
-
-      if (failedNames.length === 0) {
-        notify({
-          title: `Migration requested for ${vms.length} VM${vms.length === 1 ? '' : 's'}`,
-          variant: 'success',
-        })
-      } else {
-        notify({
-          title: `${succeeded} migrating, ${failedNames.length} failed: ${failedNames.join(', ')}`,
-          variant: succeeded > 0 ? 'warning' : 'danger',
-        })
-      }
-    },
-    onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['vms'] })
-    },
-  })
-
-  return {
-    run: (vms) => {
-      if (vms.length === 0) return
-      mutation.mutate(vms)
-    },
-    pending: mutation.isPending,
-  }
-}
-
-// Only 'up' VMs migrate (the engine rejects the rest), so — like the bulk
-// lifecycle buttons — the button disables unless every selected VM is running.
+// Bulk live-migration rides useBulkVmAction's runMigrate: one migrate request
+// per VM, Promise.allSettled (partial failure still reaches the aggregate
+// toast), ONE toast and ONE ['vms'] invalidation. No host is pinned — the
+// engine's scheduler picks each destination; pinning a specific host is the
+// per-row / detail Migrate button's job (its picker modal). Only 'up' VMs
+// migrate (the engine rejects the rest), so — like the bulk lifecycle buttons
+// — the button disables unless every selected VM is running.
 function BulkMigrateBar({ selected }: { selected: Vm[] }) {
-  const { run, pending } = useBulkMigrate()
+  const { runMigrate, pending } = useBulkVmAction()
   const t = useT()
 
   if (selected.length === 0) return null
@@ -300,7 +258,11 @@ function BulkMigrateBar({ selected }: { selected: Vm[] }) {
     <Toolbar style={{ paddingTop: 0 }}>
       <ToolbarContent>
         <ToolbarItem>
-          <Button variant="secondary" isDisabled={pending || !allUp} onClick={() => run(selected)}>
+          <Button
+            variant="secondary"
+            isDisabled={pending || !allUp}
+            onClick={() => runMigrate(selected)}
+          >
             {t('common.action.migrate')}
           </Button>
         </ToolbarItem>

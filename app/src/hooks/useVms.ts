@@ -4,6 +4,17 @@ import type { Vm } from '../api/schemas/vm'
 import { isActiveEngineWan } from '../servers/registry'
 import { useSettings } from '../settings/SettingsProvider'
 
+// Query-key builders for the VM collection. `all` is the bare prefix every VM
+// mutation invalidates (it covers each searched list entry); `list` the
+// per-search entry useVms polls ('' and undefined normalize to the same
+// entry — see useVms); `detail` the single-VM read useVm registers, which
+// the per-VM subcollection hooks nest under (['vm', id, <slice>]).
+export const vmKeys = {
+  all: ['vms'] as const,
+  list: (search = '') => ['vms', search] as const,
+  detail: (id: string) => ['vm', id] as const,
+}
+
 // Poll cadence mirrors legacy background-refresh (10s); TanStack pauses
 // refetching automatically while the tab is hidden. This constant is the
 // default — the live cadence comes from useSettings (Preferences).
@@ -76,7 +87,7 @@ export function useVms(search?: string) {
   // search= param would otherwise ride on some observers' reads). The follow
   // shape reads the CACHED count at fetch time, so it too is identical for
   // every observer of the key.
-  const queryKey = ['vms', search ?? '']
+  const queryKey = vmKeys.list(search)
   return useQuery({
     queryKey,
     // isActiveEngineWan is read at fetch/interval time (not render) so every

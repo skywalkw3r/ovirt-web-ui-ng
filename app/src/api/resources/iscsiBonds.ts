@@ -1,5 +1,7 @@
 import { z } from 'zod'
+import { fetchWithFollowFallback } from '../followDegrade'
 import { request } from '../transport'
+import { listDataCenterNetworks } from './datacenters'
 
 // iSCSI multipathing (iSCSI bonds) live under a data center:
 // GET/POST /datacenters/{id}/iscsibonds and DELETE .../{bondId} (verified
@@ -59,17 +61,66 @@ const StorageConnectionListSchema = z.looseObject({
   storage_connection: z.array(StorageConnectionSchema).optional(),
 })
 
+// The followed read's denial key for fetchWithFollowFallback (engine scoping
+// is added by the helper); stable per follow shape like 'vms.list:tags,…'.
+const ISCSI_BONDS_FOLLOW_KEY = 'datacenters.iscsibonds:networks,storage_connections'
+
+// A bare read serialises a bond's networks / storage_connections as { id, href }
+// link stubs; resolve the names and targets the tab renders from the two
+// catalogs instead. A stub whose id the catalog lacks stays as it came (id
+// only) rather than being dropped — the bond still lists its members.
+function joinBondLinks(
+  bond: IscsiBond,
+  networkById: Map<string | undefined, { id?: string; name?: string }>,
+  connectionById: Map<string | undefined, StorageConnection>,
+): IscsiBond {
+  return {
+    ...bond,
+    networks: bond.networks && {
+      ...bond.networks,
+      network: bond.networks.network?.map((stub) => ({ ...networkById.get(stub.id), ...stub })),
+    },
+    storage_connections: bond.storage_connections && {
+      ...bond.storage_connections,
+      storage_connection: bond.storage_connections.storage_connection?.map((stub) => ({
+        ...connectionById.get(stub.id),
+        ...stub,
+      })),
+    },
+  }
+}
+
 // GET /datacenters/{id}/iscsibonds — the data center's iSCSI bonds. follow
 // inlines each bond's networks and storage connections so the tab can render
 // their names/targets without an N+1 fetch (these are proper links, not the
-// host-storage follow that 500s on live engines).
+// host-storage follow that 500s on live engines). Per the followed-read
+// degrade contract (CLAUDE.md "Live-engine REST hygiene") a 5xx, transport
+// timeout or 400-on-follow answers with the BARE read instead of failing the
+// tab — and since the bare shape carries only id stubs for the members, the
+// names/targets are joined client-side from the data center's networks and
+// the engine's storage connections (two extra reads, on the degraded path
+// only). The joins are best-effort: a failed catalog read leaves that member
+// list id-only rather than turning a degraded read into an error.
 export async function listIscsiBonds(dataCenterId: string): Promise<IscsiBond[]> {
-  const data = IscsiBondListSchema.parse(
-    await request(
-      `/datacenters/${encodeURIComponent(dataCenterId)}/iscsibonds?follow=networks,storage_connections`,
-    ),
+  const base = `/datacenters/${encodeURIComponent(dataCenterId)}/iscsibonds`
+  const read = async (path: string) => {
+    const data = IscsiBondListSchema.parse(await request(path))
+    return data.iscsi_bond ?? []
+  }
+  return fetchWithFollowFallback(
+    ISCSI_BONDS_FOLLOW_KEY,
+    () => read(`${base}?follow=networks,storage_connections`),
+    async () => {
+      const [bonds, networks, connections] = await Promise.all([
+        read(base),
+        listDataCenterNetworks(dataCenterId).catch((): { id?: string; name?: string }[] => []),
+        readStorageConnections().catch((): StorageConnection[] => []),
+      ])
+      const networkById = new Map(networks.map((network) => [network.id, network]))
+      const connectionById = new Map(connections.map((connection) => [connection.id, connection]))
+      return bonds.map((bond) => joinBondLinks(bond, networkById, connectionById))
+    },
   )
-  return data.iscsi_bond ?? []
 }
 
 // The create contract the Add dialog drives: a name (required), an optional
@@ -156,6 +207,12 @@ export async function deleteIscsiBond(dataCenterId: string, bondId: string): Pro
 // rejects a bond whose connections do not belong to the data center. Same
 // documented REST-only tradeoff as resources/networks.ts membership joins.
 export async function listIscsiStorageConnections(): Promise<StorageConnection[]> {
+  return (await readStorageConnections()).filter((connection) => connection.type === 'iscsi')
+}
+
+// The unfiltered /storageconnections read — the picker filters it to iSCSI
+// above; the degraded bond read joins against all of it by id.
+async function readStorageConnections(): Promise<StorageConnection[]> {
   const data = StorageConnectionListSchema.parse(await request('/storageconnections'))
-  return (data.storage_connection ?? []).filter((connection) => connection.type === 'iscsi')
+  return data.storage_connection ?? []
 }
