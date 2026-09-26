@@ -43,6 +43,7 @@ import { SearchInput } from '../components/list-toolbar/SearchInput'
 import { useColumnPrefs } from '../hooks/useColumnPrefs'
 import { sortRows, useColumnSort } from '../hooks/useColumnSort'
 import { useListSearch } from '../hooks/useListSearch'
+import { usePagination } from '../hooks/usePagination'
 import { useStorageDomains } from '../hooks/useStorageDomains'
 import { formatBytes, statusText } from '../lib/format'
 import { capacityVariant } from '../lib/utilization'
@@ -289,12 +290,6 @@ const COLUMNS: StorageColumn[] = [
 // always duplicate Free Space), and the Shared/Additional Status icon columns
 // (need the shared-status enum + per-DC alert data the REST model lacks).
 
-const PER_PAGE_OPTIONS = [
-  { title: '20', value: 20 },
-  { title: '50', value: 50 },
-  { title: '100', value: 100 },
-]
-
 export function StorageDomainsPage() {
   const t = useT()
   const { loaded, isAdmin } = useCapabilities()
@@ -305,27 +300,17 @@ export function StorageDomainsPage() {
   // client-side header sort; no default — the engine list order stands
   // until a header is clicked (see hooks/useColumnSort)
   const { sort, thSort } = useColumnSort()
-  const [page, setPage] = useState(1)
-  const [perPage, setPerPage] = useState(50)
   const [creating, setCreating] = useState(false)
   const [importing, setImporting] = useState(false)
-
-  // a new committed search starts back at page 1
-  const [prevQuery, setPrevQuery] = useState(query)
-  if (query !== prevQuery) {
-    setPrevQuery(query)
-    setPage(1)
-  }
 
   const visible = sortRows(domains.data ?? [], sort, (row, key) =>
     columns.find((column) => column.key === key)?.sortValue?.(row),
   )
 
   // clamp rather than effect-reset: polling refetches can shrink the list
-  // underneath the current page
-  const lastPage = Math.max(1, Math.ceil(visible.length / perPage))
-  const currentPage = Math.min(page, lastPage)
-  const paged = visible.slice((currentPage - 1) * perPage, currentPage * perPage)
+  // underneath the current page; a new committed search starts back at page 1
+  const paging = usePagination({ total: visible.length, resetKeys: [query] })
+  const paged = paging.pageSlice(visible)
 
   const visibleColumns = columns.filter((column) => prefs.isVisible(column.key))
 
@@ -375,14 +360,11 @@ export function StorageDomainsPage() {
                 isCompact
                 variant="top"
                 itemCount={visible.length}
-                page={currentPage}
-                perPage={perPage}
-                perPageOptions={PER_PAGE_OPTIONS}
-                onSetPage={(_event, nextPage) => setPage(nextPage)}
-                onPerPageSelect={(_event, nextPerPage, nextPage) => {
-                  setPerPage(nextPerPage)
-                  setPage(nextPage)
-                }}
+                page={paging.page}
+                perPage={paging.perPage}
+                perPageOptions={paging.perPageOptions}
+                onSetPage={paging.onSetPage}
+                onPerPageSelect={paging.onPerPageSelect}
                 titles={{ paginationAriaLabel: t('storage.pagination.ariaLabel') }}
               />
             </ToolbarItem>

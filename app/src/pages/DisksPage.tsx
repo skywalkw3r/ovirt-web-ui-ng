@@ -57,6 +57,7 @@ import {
   useSparsifyDisk,
 } from '../hooks/useDiskMutations'
 import { useListSearch } from '../hooks/useListSearch'
+import { usePagination } from '../hooks/usePagination'
 import { useStorageDomains } from '../hooks/useStorageDomains'
 import {
   diskContentTypeText,
@@ -229,12 +230,6 @@ const COLUMNS: DiskColumn[] = [
 // quota inventory to join), LUN ID/Serial/Vendor/Product (webadmin shows
 // them only in its LUN-only radio view).
 
-const PER_PAGE_OPTIONS = [
-  { title: '20', value: 20 },
-  { title: '50', value: 50 },
-  { title: '100', value: 100 },
-]
-
 // --- Action gating (webadmin DiskOperationsHelper / VmDiskListModel rules) ----
 // The pure rules live in lib/diskActionGuards (shared with the VM Disks tab so
 // direct-LUN/locked gating stays consistent); each returns a MessageId the
@@ -282,8 +277,6 @@ function DisksTable() {
   // client-side header sort; no default — the engine list order stands
   // until a header is clicked (see hooks/useColumnSort)
   const { sort, thSort } = useColumnSort()
-  const [page, setPage] = useState(1)
-  const [perPage, setPerPage] = useState(50)
 
   const move = useMoveDisk()
   const copy = useCopyDisk()
@@ -311,13 +304,6 @@ function DisksTable() {
   // Remove runs through the destructive-action ConfirmModal (danger variant).
   const [removing, setRemoving] = useState<Disk | null>(null)
 
-  // a new committed search starts back at page 1
-  const [prevQuery, setPrevQuery] = useState(query)
-  if (query !== prevQuery) {
-    setPrevQuery(query)
-    setPage(1)
-  }
-
   // Webadmin's disk-grid filter row: the storage kind as a toggle strip
   // (All / Images / Direct LUN / Managed Block) and the content type as a
   // dropdown — both client-side over the committed search result, exactly
@@ -333,13 +319,6 @@ function DisksTable() {
         .filter((value): value is string => value !== undefined),
     ),
   ].sort()
-  // a filter change re-scopes the whole list — start back at page 1
-  const [prevDiskFilter, setPrevDiskFilter] = useState(`${diskType}/${contentType}`)
-  if (`${diskType}/${contentType}` !== prevDiskFilter) {
-    setPrevDiskFilter(`${diskType}/${contentType}`)
-    setPage(1)
-  }
-
   const filtered = (disks.data ?? []).filter(
     (disk) =>
       // a disk without storage_type is an image (the engine default)
@@ -352,10 +331,10 @@ function DisksTable() {
   )
 
   // clamp rather than effect-reset: polling refetches can shrink the list
-  // underneath the current page
-  const lastPage = Math.max(1, Math.ceil(visible.length / perPage))
-  const currentPage = Math.min(page, lastPage)
-  const paged = visible.slice((currentPage - 1) * perPage, currentPage * perPage)
+  // underneath the current page; a new committed search or filter
+  // re-scopes the whole list, so it starts back at page 1
+  const paging = usePagination({ total: visible.length, resetKeys: [query, diskType, contentType] })
+  const paged = paging.pageSlice(visible)
 
   const visibleColumns = columns.filter((column) => prefs.isVisible(column.key))
 
@@ -453,14 +432,11 @@ function DisksTable() {
                 isCompact
                 variant="top"
                 itemCount={visible.length}
-                page={currentPage}
-                perPage={perPage}
-                perPageOptions={PER_PAGE_OPTIONS}
-                onSetPage={(_event, nextPage) => setPage(nextPage)}
-                onPerPageSelect={(_event, nextPerPage, nextPage) => {
-                  setPerPage(nextPerPage)
-                  setPage(nextPage)
-                }}
+                page={paging.page}
+                perPage={paging.perPage}
+                perPageOptions={paging.perPageOptions}
+                onSetPage={paging.onSetPage}
+                onPerPageSelect={paging.onPerPageSelect}
                 titles={{ paginationAriaLabel: t('disks.pagination.ariaLabel') }}
               />
             </ToolbarItem>

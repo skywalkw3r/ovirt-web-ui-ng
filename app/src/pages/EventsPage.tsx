@@ -36,6 +36,7 @@ import { useColumnPrefs } from '../hooks/useColumnPrefs'
 import { useEventsPage } from '../hooks/useEvents'
 import { useEventSearch } from '../hooks/useEventSearch'
 import { useNow } from '../hooks/useNow'
+import { usePagination } from '../hooks/usePagination'
 import { indeterminateItemCount } from '../lib/indeterminatePagination'
 import { useT } from '../i18n/useT'
 import type { MessageId } from '../i18n/messages/en'
@@ -123,12 +124,6 @@ const COLUMNS: EventColumn[] = [
   { key: 'vm', labelId: 'events.column.vm', width: 15, cell: (event) => event.vm?.name ?? '—' },
 ]
 
-const PER_PAGE_OPTIONS = [
-  { title: '20', value: 20 },
-  { title: '50', value: 50 },
-  { title: '100', value: 100 },
-]
-
 export function EventsPage() {
   const t = useT()
   const { query, draft, setDraft, commit } = useEventSearch()
@@ -142,16 +137,11 @@ export function EventsPage() {
   const prefs = useColumnPrefs('events', columns)
   const [severity, setSeverity] = useState<SeverityFilter>('all')
   const [isFilterOpen, setIsFilterOpen] = useState(false)
-  const [page, setPage] = useState(1)
-  const [perPage, setPerPage] = useState(50)
 
-  // a new committed search starts back at page 1 (severity does the same in
-  // its onSelect below)
-  const [prevQuery, setPrevQuery] = useState(query)
-  if (query !== prevQuery) {
-    setPrevQuery(query)
-    setPage(1)
-  }
+  // Server-side paging without a grand total: no `total`, so the page is never
+  // clamped — it rides the query key below. A new committed search starts back
+  // at page 1 (severity does the same in its onSelect below).
+  const paging = usePagination({ resetKeys: [query] })
 
   // The severity facet rides the engine search DSL alongside the committed
   // query, so it narrows the WHOLE audit log server-side — filtering the
@@ -161,16 +151,16 @@ export function EventsPage() {
   const search = [query, severity === 'all' ? '' : `severity=${severity}`]
     .filter(Boolean)
     .join(' and ')
-  const events = useEventsPage(search, page, perPage)
+  const events = useEventsPage(search, paging.page, paging.perPage)
   const rows = events.data ?? []
 
   // The audit log effectively only grows, but if a beyond-the-end window ever
   // comes back empty (log rotation between polls), step back rather than
-  // strand the user on an empty page — render-time state adjustment, same
-  // pattern as prevQuery above. Skipped while rows are another window's
-  // placeholder (keepPreviousData), which says nothing about this one.
-  if (events.isSuccess && !events.isPlaceholderData && rows.length === 0 && page > 1) {
-    setPage(page - 1)
+  // strand the user on an empty page — render-time state adjustment, the same
+  // pattern usePagination's reset keys use. Skipped while rows are another
+  // window's placeholder (keepPreviousData), which says nothing about this one.
+  if (events.isSuccess && !events.isPlaceholderData && rows.length === 0 && paging.page > 1) {
+    paging.setPage(paging.page - 1)
   }
 
   const visibleColumns = columns.filter((column) => prefs.isVisible(column.key))
@@ -205,7 +195,7 @@ export function EventsPage() {
                   onSelect={(_event, value) => {
                     setSeverity(value as SeverityFilter)
                     setIsFilterOpen(false)
-                    setPage(1)
+                    paging.setPage(1)
                   }}
                   onOpenChange={setIsFilterOpen}
                   toggle={(toggleRef: Ref<MenuToggleElement>) => (
@@ -242,20 +232,20 @@ export function EventsPage() {
               <Pagination
                 isCompact
                 variant="top"
-                itemCount={indeterminateItemCount(page, perPage, rows.length)}
+                itemCount={indeterminateItemCount(paging.page, paging.perPage, rows.length)}
                 toggleTemplate={({ firstIndex, lastIndex }) => (
                   <>
                     {firstIndex} - {lastIndex}
                   </>
                 )}
-                page={page}
-                perPage={perPage}
-                perPageOptions={PER_PAGE_OPTIONS}
-                onSetPage={(_event, nextPage) => setPage(nextPage)}
+                page={paging.page}
+                perPage={paging.perPage}
+                perPageOptions={paging.perPageOptions}
+                onSetPage={paging.onSetPage}
                 onPerPageSelect={(_event, nextPerPage) => {
                   // window geometry changed — restart from the newest window
-                  setPerPage(nextPerPage)
-                  setPage(1)
+                  paging.setPerPage(nextPerPage)
+                  paging.setPage(1)
                 }}
                 titles={{ paginationAriaLabel: t('events.pagination.ariaLabel') }}
               />
