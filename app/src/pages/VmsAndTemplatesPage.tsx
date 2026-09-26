@@ -47,6 +47,7 @@ import { useColumnPrefs } from '../hooks/useColumnPrefs'
 import { sortRows, useColumnSort } from '../hooks/useColumnSort'
 import { useFacetFilters } from '../hooks/useFacetFilters'
 import { useFolderParam, usePruneGhostFolder } from '../hooks/useFolderParam'
+import { usePagination } from '../hooks/usePagination'
 import { useTreeOpen } from '../hooks/useTreeOpen'
 import { activeFacetCount, buildFacetViews, encodeFacets, matchesFacets } from '../lib/facets'
 import { getActiveBase } from '../servers/registry'
@@ -179,8 +180,6 @@ export function VmsAndTemplatesPage() {
   // discoverable half of what the DSL would give: URL-backed, so a filtered
   // view is a link. Composed with the name box and the folder tree by &&.
   const facets = useFacetFilters()
-  const [page, setPage] = useState(1)
-  const [perPage, setPerPage] = useState(50)
 
   // useColumnPrefs takes localized labels (this page is i18n'd), so resolve the
   // MessageId labels through t in a memo — same shape as ClustersPage.
@@ -255,29 +254,6 @@ export function VmsAndTemplatesPage() {
   const isError = vms.isError
   const error = vms.error
   const isFiltering = selectedFolderId !== null && tags.isPending
-
-  // a new filter or folder selection starts back at page 1
-  const [prevFilter, setPrevFilter] = useState(filter)
-  if (filter !== prevFilter) {
-    setPrevFilter(filter)
-    setPage(1)
-  }
-  const facetKey = encodeFacets(facets.selection) ?? ''
-  const [prevFacetKey, setPrevFacetKey] = useState(facetKey)
-  if (facetKey !== prevFacetKey) {
-    setPrevFacetKey(facetKey)
-    setPage(1)
-  }
-  const [prevFolder, setPrevFolder] = useState(selectedFolderId)
-  if (selectedFolderId !== prevFolder) {
-    setPrevFolder(selectedFolderId)
-    setPage(1)
-  }
-  const [prevSort, setPrevSort] = useState(sort)
-  if (sort !== prevSort) {
-    setPrevSort(sort)
-    setPage(1)
-  }
 
   const sorted = sortRows(visible, sort, (row, key) =>
     columns.find((column) => column.key === key)?.sortValue?.(row, ctx),
@@ -366,10 +342,13 @@ export function VmsAndTemplatesPage() {
     )
   }
 
-  // clamp rather than effect-reset — polls can shrink the list underneath
-  const lastPage = Math.max(1, Math.ceil(sorted.length / perPage))
-  const currentPage = Math.min(page, lastPage)
-  const paged = sorted.slice((currentPage - 1) * perPage, currentPage * perPage)
+  // clamp rather than effect-reset — polls can shrink the list underneath; a
+  // new name filter, facet selection, folder or sort starts back at page 1
+  const paging = usePagination({
+    total: sorted.length,
+    resetKeys: [filter, encodeFacets(facets.selection) ?? '', selectedFolderId, sort],
+  })
+  const paged = paging.pageSlice(sorted)
 
   const folderPath = selectedFolderId === null ? [] : folderPathOf(all, selectedFolderId)
   // The selected folder (last crumb) plus the counts the table actually shows,
@@ -738,13 +717,10 @@ export function VmsAndTemplatesPage() {
             }
             pagination={{
               itemCount: visible.length,
-              page: currentPage,
-              perPage,
-              onSetPage: setPage,
-              onPerPageSelect: (nextPerPage, nextPage) => {
-                setPerPage(nextPerPage)
-                setPage(nextPage)
-              },
+              page: paging.page,
+              perPage: paging.perPage,
+              onSetPage: paging.setPage,
+              onPerPageSelect: paging.selectPerPage,
               ariaLabelId: 'inventory.pagination.ariaLabel',
             }}
             onExportCsv={exportCsv}
