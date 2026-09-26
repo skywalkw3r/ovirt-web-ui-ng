@@ -2767,7 +2767,7 @@ export const ko: LocaleCatalog = {
   'bulk.migrate.auto.label': '자동으로 호스트 선택',
   'bulk.migrate.noHosts': '사용 가능한 호스트가 없습니다',
   'bulk.migrate.pinned.label': '대상 호스트 선택',
-  'bulk.migrate.title': '가상 머신 {length}개 마이그레이션',
+  'bulk.migrate.title': '가상 머신 {count}개 마이그레이션',
   'cloneVm.collapseSnapshots.help':
     '복제본의 디스크가 단일 볼륨으로 평탄화됩니다. 원본 VM의 스냅샷 체인을 복제본에 유지하려면 끄십시오.',
   'cloneVm.collapseSnapshots.label': '스냅샷 병합',
@@ -4423,4 +4423,19 @@ export const ko: LocaleCatalog = {
     '정확한 VirtIO-SCSI 큐 수입니다. 비워 두면(자동) VM의 vCPU와 디스크에서 유추합니다.',
   'fieldHelp.vm.multiQueues':
     'VM의 vCPU에 따라 각 가상 NIC에 최적의 큐 수를 부여해 다중 vCPU VM의 네트워크 처리량을 높입니다.',
+  'common.field.value': '값',
+  'runOnce.initialRun.enable': '초기 실행 구성',
+  'runOnce.sysprep.title': 'Sysprep',
+  'runOnce.sysprep.domain': '도메인',
+  'runOnce.cloudInit.title': 'Cloud-init',
+  'runOnce.cloudInit.network.title': '네트워크',
+  'runOnce.cloudInit.nic.netmask': '넷마스크',
+  'runOnce.cloudInit.nic.gateway': '게이트웨이',
+  'runOnce.kernel.path': '커널 경로',
+  'runOnce.kernel.params': '커널 명령줄',
+  'runOnce.customProps.add': '사용자 지정 속성 추가',
+  'cpuProfiles.name.required': '이름이 필요합니다.',
+  'console.rdp.download': 'RDP 파일 다운로드 (.rdp)',
+  'console.rdp.description': 'Windows 게스트로 원격 데스크톱 연결',
+  'monitoring.history.noData': '범위 내 데이터 없음',
 }

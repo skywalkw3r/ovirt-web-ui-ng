@@ -2793,7 +2793,7 @@ export const tr: LocaleCatalog = {
   'bulk.migrate.auto.label': 'Otomatik olarak bir ana makine seç',
   'bulk.migrate.noHosts': 'Kullanılabilir ana makine yok',
   'bulk.migrate.pinned.label': 'Bir hedef ana makine seçin',
-  'bulk.migrate.title': '{length} sanal makineyi taşı',
+  'bulk.migrate.title': '{count} sanal makineyi taşı',
   'cloneVm.collapseSnapshots.help':
     'Klonun diskleri tek bir birime düzleştirilir; kaynak VM’nin anlık görüntü zincirini klonda korumak için kapatın.',
   'cloneVm.collapseSnapshots.label': 'Anlık görüntüleri birleştir',
@@ -4468,4 +4468,19 @@ export const tr: LocaleCatalog = {
     'Tam VirtIO-SCSI kuyruk sayısı. VM’nin vCPU ve disklerinden türetmek için boş bırakın (Otomatik).',
   'fieldHelp.vm.multiQueues':
     'VM’nin vCPU’larına göre her sanal ağ kartına en uygun kuyruk sayısını vererek çok vCPU’lu VM’lerin ağ verimini artırır.',
+  'common.field.value': 'Değer',
+  'runOnce.initialRun.enable': 'İlk Çalıştırmayı Yapılandır',
+  'runOnce.sysprep.title': 'Sysprep',
+  'runOnce.sysprep.domain': 'Etki alanı',
+  'runOnce.cloudInit.title': 'Cloud-init',
+  'runOnce.cloudInit.network.title': 'Ağ',
+  'runOnce.cloudInit.nic.netmask': 'Ağ maskesi',
+  'runOnce.cloudInit.nic.gateway': 'Ağ geçidi',
+  'runOnce.kernel.path': 'Çekirdek yolu',
+  'runOnce.kernel.params': 'Çekirdek komut satırı',
+  'runOnce.customProps.add': 'Özel özellik ekle',
+  'cpuProfiles.name.required': 'Bir ad gereklidir.',
+  'console.rdp.download': 'RDP dosyasını indir (.rdp)',
+  'console.rdp.description': 'Windows konuğuna Uzak Masaüstü',
+  'monitoring.history.noData': 'Aralıkta veri yok',
 }

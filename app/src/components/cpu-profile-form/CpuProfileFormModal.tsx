@@ -26,6 +26,7 @@ import {
   useCreateClusterCpuProfile,
   useUpdateCpuProfile,
 } from '../../hooks/useClusterCpuProfileMutations'
+import { useT } from '../../i18n/useT'
 
 // The Create/Edit CPU profile modal. Owns a single flat draft — seeded from the
 // profile's read model in edit mode, blank defaults in create mode. Save POSTs
@@ -51,6 +52,7 @@ export function CpuProfileFormModal({
   isOpen: boolean
   onClose: () => void
 }) {
+  const t = useT()
   const isEdit = profile !== undefined
   const blank: CpuProfileDraft = { name: '', description: '', qosId: '' }
   const [draft, setDraft] = useState<CpuProfileDraft>(() =>
@@ -99,7 +101,9 @@ export function CpuProfileFormModal({
   const pending = create.isPending || update.isPending
 
   const nameEmpty = draft.name.trim() === ''
-  const title = isEdit ? `Edit CPU profile — ${profile.name ?? profile.id}` : 'New CPU profile'
+  const title = isEdit
+    ? t('cpuProfiles.editTitle', { name: profile.name ?? profile.id })
+    : t('cpuProfiles.new')
 
   const save = () => {
     const body = buildCpuProfilePayload(draft, { isEdit })
@@ -121,11 +125,11 @@ export function CpuProfileFormModal({
       <ModalHeader title={title} labelId="cpu-profile-form-title" />
       <ModalBody id="cpu-profile-form-body">
         <Form onSubmit={(event) => event.preventDefault()}>
-          <FormGroup label="Name" isRequired fieldId="cpu-profile-name">
+          <FormGroup label={t('common.field.name')} isRequired fieldId="cpu-profile-name">
             <TextInput
               id="cpu-profile-name"
               isRequired
-              aria-label="CPU profile name"
+              aria-label={t('cpuProfiles.name.aria')}
               value={draft.name}
               validated={nameEmpty ? 'error' : 'default'}
               onChange={(_event, value) => set('name', value)}
@@ -133,33 +137,33 @@ export function CpuProfileFormModal({
             {nameEmpty && (
               <FormHelperText>
                 <HelperText>
-                  <HelperTextItem variant="error">A name is required.</HelperTextItem>
+                  <HelperTextItem variant="error">{t('cpuProfiles.name.required')}</HelperTextItem>
                 </HelperText>
               </FormHelperText>
             )}
           </FormGroup>
 
-          <FormGroup label="Description" fieldId="cpu-profile-description">
+          <FormGroup label={t('common.field.description')} fieldId="cpu-profile-description">
             <TextInput
               id="cpu-profile-description"
-              aria-label="CPU profile description"
+              aria-label={t('cpuProfiles.description.aria')}
               value={draft.description}
               onChange={(_event, value) => set('description', value)}
             />
           </FormGroup>
 
-          <FormGroup label="QoS" fieldId="cpu-profile-qos">
+          <FormGroup label={t('cpuProfiles.column.qos')} fieldId="cpu-profile-qos">
             {qoss.isPending && isOpen && dcId !== '' ? (
-              <Skeleton width="100%" height="36px" screenreaderText="Loading QoS profiles" />
+              <Skeleton width="100%" height="36px" screenreaderText={t('qos.loading')} />
             ) : (
               <FormSelect
                 id="cpu-profile-qos"
-                aria-label="QoS"
+                aria-label={t('cpuProfiles.column.qos')}
                 value={draft.qosId}
                 isDisabled={dcId === ''}
                 onChange={(_event, value) => set('qosId', value)}
               >
-                <FormSelectOption value="" label="No QoS" />
+                <FormSelectOption value="" label={t('cpuProfiles.qos.none')} />
                 {cpuQoss.map((qos) => (
                   <FormSelectOption
                     key={qos.id}
@@ -172,9 +176,7 @@ export function CpuProfileFormModal({
             {dcId === '' && (
               <FormHelperText>
                 <HelperText>
-                  <HelperTextItem>
-                    The data center is still loading its QoS profiles.
-                  </HelperTextItem>
+                  <HelperTextItem>{t('cpuProfiles.qos.dcLoading')}</HelperTextItem>
                 </HelperText>
               </FormHelperText>
             )}
@@ -188,10 +190,10 @@ export function CpuProfileFormModal({
           isLoading={pending}
           isDisabled={pending || nameEmpty}
         >
-          Save
+          {t('common.action.save')}
         </Button>
         <Button variant="secondary" onClick={onClose} isDisabled={pending}>
-          Cancel
+          {t('common.action.cancel')}
         </Button>
       </ModalFooter>
     </Modal>

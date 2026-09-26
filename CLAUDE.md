@@ -15,8 +15,9 @@ rules) — link to them, don't duplicate them.
   See the Acknowledgements section in README.md.)
 - `lab/` — Ansible automation that builds a single-node oVirt 4.5 lab on
   Proxmox (nested-virt node + self-hosted engine). See `lab/ansible/README.md`.
-- `docs/` — `PLAN.md`, `COMPONENTS.md`, and `LAB-SETUP.md` (the manual lab
-  build the Ansible pipeline automates).
+- `docs/` — `PLAN.md`, `COMPONENTS.md`, `GAP-ANALYSIS.md` (webadmin parity
+  audit; status may lag README), `DEPLOY.md`, and `LAB-SETUP.md` (the manual
+  lab build the Ansible pipeline automates).
 
 ## App architecture (`app/src/`)
 
@@ -84,7 +85,8 @@ pt-BR, it, ru, zh-CN, ja, ko, tr — flat `id → string` catalogs in
   terminology (nav labels, entity names, pagination phrasing) when
   translating, and don't propagate an existing mistranslation you notice —
   fix or flag it. `src/i18n/coverage.test.ts` fails on dead keys (locale ids
-  missing from en) and logs per-locale coverage %, which should stay at 100%.
+  missing from en) and on any locale below 100% coverage — a missing
+  translation is a red test, not a warning.
 - **Converting a string** — add the id to `en.ts` (namespaced: `nav.*`,
   `login.*`, `action.*`, `viewState.*`, …), then `<FormattedMessage id="…" />`
   for element text, or `t('…')` from `useT()` (`i18n/useT.ts`) for string
@@ -97,8 +99,9 @@ pt-BR, it, ru, zh-CN, ja, ko, tr — flat `id → string` catalogs in
   `t('vms.count', { count })`. Keep product/technical tokens (oVirt, vNIC,
   Keycloak SSO, aaa-jdbc, SPICE/VNC) and ICU placeholders verbatim in every
   locale.
-- **New locale** — add `messages/<locale>.ts`, register it in
-  `i18n/catalogs.ts` CATALOGS, `SUPPORTED_LOCALES` (settings/context.ts), and
+- **New locale** — add `messages/<locale>.ts`, register a loader for it in
+  `i18n/catalogs.ts` CATALOG_LOADERS (translated catalogs are lazy-loaded; en
+  stays static), then `SUPPORTED_LOCALES` (settings/context.ts) and
   `LOCALE_LABELS` (`i18n/locales.ts`).
 
 ## Commands
@@ -124,7 +127,8 @@ inventory prerequisites in `lab/ansible/README.md`).
 - **Destructive actions** confirm via `ConfirmModal` (danger variant;
   typed-name confirm for VM delete).
 - **Accessibility**: aria-labels on icon-only buttons, tables, and inputs —
-  the e2e suite runs axe against every page.
+  the e2e suite runs axe against every routed page
+  (`app/e2e/route-sweep.spec.ts`) plus the targeted a11y spec.
 - **No deprecated PF components** (`Chip` → `Label`, `Tile` → `Card`); no
   beta PF components without explicit sign-off; PF tokens only, no hardcoded
   colors (brand overrides live in `app/src/styles/brand-tokens.css`).

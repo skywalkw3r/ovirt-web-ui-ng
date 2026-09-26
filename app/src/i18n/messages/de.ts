@@ -2847,7 +2847,8 @@ export const de: LocaleCatalog = {
   'bulk.migrate.auto.label': 'Host automatisch auswählen',
   'bulk.migrate.noHosts': 'Keine verfügbaren Hosts',
   'bulk.migrate.pinned.label': 'Ziel-Host auswählen',
-  'bulk.migrate.title': '{length} virtuelle Maschinen migrieren',
+  'bulk.migrate.title':
+    '{count, plural, one {# virtuelle Maschine migrieren} other {# virtuelle Maschinen migrieren}}',
   'cloneVm.collapseSnapshots.help':
     'Die Datenträger des Klons werden zu einem einzigen Volume zusammengeführt; deaktivieren Sie dies, um die Snapshot-Kette der Quell-VM im Klon beizubehalten.',
   'cloneVm.collapseSnapshots.label': 'Snapshots zusammenführen',
@@ -4555,4 +4556,19 @@ export const de: LocaleCatalog = {
     'Die genaue Anzahl der VirtIO-SCSI-Queues. Leer lassen (Automatisch), um sie aus vCPUs und Festplatten der VM abzuleiten.',
   'fieldHelp.vm.multiQueues':
     'Gibt jeder virtuellen NIC eine optimale Queue-Anzahl auf Basis der vCPUs und verbessert den Netzwerkdurchsatz von Multi-vCPU-VMs.',
+  'common.field.value': 'Wert',
+  'runOnce.initialRun.enable': 'Erstausführung konfigurieren',
+  'runOnce.sysprep.title': 'Sysprep',
+  'runOnce.sysprep.domain': 'Domäne',
+  'runOnce.cloudInit.title': 'Cloud-init',
+  'runOnce.cloudInit.network.title': 'Netzwerk',
+  'runOnce.cloudInit.nic.netmask': 'Netzmaske',
+  'runOnce.cloudInit.nic.gateway': 'Gateway',
+  'runOnce.kernel.path': 'Kernel-Pfad',
+  'runOnce.kernel.params': 'Kernel-Befehlszeile',
+  'runOnce.customProps.add': 'Benutzerdefinierte Eigenschaft hinzufügen',
+  'cpuProfiles.name.required': 'Ein Name ist erforderlich.',
+  'console.rdp.download': 'RDP-Datei herunterladen (.rdp)',
+  'console.rdp.description': 'Remotedesktop zum Windows-Gast',
+  'monitoring.history.noData': 'Keine Daten im Zeitraum',
 }

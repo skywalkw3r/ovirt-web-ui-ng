@@ -1,12 +1,13 @@
 # Packaging & deployment -- ovirt-web-ui-ng
 
-The next-gen VM Portal is a **Vite static build** (React 19 + TypeScript). It is
-not a Java WAR like the legacy portal -- there is no servlet and no SSO filter
+The console is a **Vite static build** (React 19 + TypeScript). It is
+not a Java WAR like the original VM Portal -- there is no servlet and no SSO filter
 chain. The engine's own SSO login page authenticates the user and, on redirect
 back to our app, a bootstrap script injects `window.userInfo` (the SSO token,
 username, etc). Our SPA reads that global at boot (`app/src/auth/bootstrap.ts`)
 and calls the **same-origin** `/ovirt-engine/api` REST endpoints. This app runs
-_alongside_ the GWT Administration Portal and replaces only the VM Portal.
+_alongside_ the existing portals during cutover — it converges the VM Portal
+and the GWT Administration Portal into one console (see the root README).
 
 Three deploy targets are provided:
 
@@ -135,13 +136,14 @@ at runtime; `script-src` does **not**.
 - **httpd conf.d path**: the RPM drops its Alias in `/etc/httpd/conf.d/`. The
   exact include directory used by the engine's Apache is engine-version
   specific; if your engine uses a dedicated vhost include dir, move the file
-  accordingly. Verify at cutover (see `docs/LIVE-ENGINE-CHECKLIST.md`).
+  accordingly. Verify on the target engine host at cutover.
 - **Engine still owns `/ovirt-engine/api`, `/sso`, `/websocket-proxy`**: the RPM
   path relies on the engine's existing Apache config to proxy those; we add only
   our own Alias and never touch theirs. The container path proxies them itself.
 - **Version tokens**: `@PACKAGE_*@` are release-tool placeholders, matching the
   legacy `.spec.in` convention.
-- **Not built/tested here**: `rpmbuild` and `podman` were unavailable in the
-  authoring environment; these files were written and self-reviewed against the
-  legacy spec (`legacy/ovirt-web-ui.spec.in`) and standard httpd/nginx. Run a
-  real `rpmbuild -ta` and `podman build` before relying on them.
+- **Exercised in CI**: `.github/workflows/ci.yml` runs the full two-stage
+  container build of `Containerfile` and a real `rpmbuild -ta` on AlmaLinux 9
+  against the pre-bundled dist on every push (see `docs/DEPLOY.md` §CI
+  coverage). The spec follows the original ovirt-web-ui `ovirt-web-ui.spec.in`
+  conventions minus the WAR machinery.

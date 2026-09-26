@@ -327,7 +327,7 @@ export function HostActionsMenu({
             setDiscoveringIscsi(true)
           }}
         >
-          Discover iSCSI
+          {t('host.action.discoverIscsi')}
         </DropdownItem>
       )}
 
@@ -361,7 +361,7 @@ export function HostActionsMenu({
             setReinstalling(true)
           }}
         >
-          Reinstall
+          {t('host.action.reinstall')}
         </DropdownItem>
       )}
       {showEnroll && (
@@ -431,7 +431,7 @@ export function HostActionsMenu({
           setAssigningTags(true)
         }}
       >
-        Assign tags
+        {t('host.action.assignTags')}
       </DropdownItem>
     </DropdownList>
   )
@@ -455,7 +455,7 @@ export function HostActionsMenu({
           toggle={(toggleRef: Ref<MenuToggleElement>) => (
             <MenuToggle
               ref={toggleRef}
-              aria-label={`Actions for ${host.name}`}
+              aria-label={t('common.action.actionsFor', { name: host.name })}
               variant="plain"
               icon={<EllipsisVIcon />}
               onClick={() => setIsOpen(!isOpen)}

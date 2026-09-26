@@ -50,12 +50,6 @@ const APP_VERSION: string = (() => {
 // exposes it as import.meta.env.BASE_URL. In dev the base is '/' so the
 // proxy and mock keep working unchanged. Override with VITE_BASE if the
 // engine mounts the app elsewhere.
-//
-// NOTE (router wiring, owned elsewhere): TanStack Router does not read the
-// Vite base automatically — src/routes/router.tsx must pass
-// `basepath: import.meta.env.BASE_URL` to createRouter so client-side
-// navigation resolves under the sub-path. Until that lands, deep links work
-// (Apache serves index.html) but generated hrefs assume '/'.
 const PROD_BASE = '/ovirt-engine/web-ui-ng/'
 
 export default defineConfig(({ mode }) => {

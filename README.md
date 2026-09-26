@@ -64,7 +64,7 @@ can eventually be retired. It shares **no runtime code** with either.
 
 A unified user/admin console at broad **oVirt 4.5 Administration-Portal parity**
 across **Compute / Network / Storage / Administration**, reached through
-successive review-and-implement waves. 43 routed pages; the remaining honest
+successive review-and-implement waves. 42 routed pages; the remaining honest
 gaps are tracked in [`docs/GAP-ANALYSIS.md`](docs/GAP-ANALYSIS.md).
 
 - **Compute** — full VM lifecycle (create wizard with cloud-init/sysprep, bulk

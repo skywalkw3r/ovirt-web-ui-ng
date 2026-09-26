@@ -2829,7 +2829,8 @@ export const ru: LocaleCatalog = {
   'bulk.migrate.auto.label': 'Автоматически выбрать хост',
   'bulk.migrate.noHosts': 'Нет доступных хостов',
   'bulk.migrate.pinned.label': 'Выберите целевой хост',
-  'bulk.migrate.title': 'Миграция {length} виртуальных машин',
+  'bulk.migrate.title':
+    '{count, plural, one {Миграция # виртуальной машины} few {Миграция # виртуальных машин} many {Миграция # виртуальных машин} other {Миграция # виртуальных машин}}',
 
   // cloneVm
   'cloneVm.collapseSnapshots.help':
@@ -4694,4 +4695,19 @@ export const ru: LocaleCatalog = {
     'Точное число очередей VirtIO-SCSI. Оставьте пустым («Автоматически»), чтобы вывести его из vCPU и дисков ВМ.',
   'fieldHelp.vm.multiQueues':
     'Даёт каждой виртуальной сетевой карте оптимальное число очередей исходя из vCPU ВМ, повышая пропускную способность сети для ВМ с многими vCPU.',
+  'common.field.value': 'Значение',
+  'runOnce.initialRun.enable': 'Настроить первичный запуск',
+  'runOnce.sysprep.title': 'Sysprep',
+  'runOnce.sysprep.domain': 'Домен',
+  'runOnce.cloudInit.title': 'Cloud-init',
+  'runOnce.cloudInit.network.title': 'Сеть',
+  'runOnce.cloudInit.nic.netmask': 'Маска сети',
+  'runOnce.cloudInit.nic.gateway': 'Шлюз',
+  'runOnce.kernel.path': 'Путь к ядру',
+  'runOnce.kernel.params': 'Командная строка ядра',
+  'runOnce.customProps.add': 'Добавить пользовательское свойство',
+  'cpuProfiles.name.required': 'Требуется имя.',
+  'console.rdp.download': 'Скачать файл RDP (.rdp)',
+  'console.rdp.description': 'Удалённый рабочий стол к гостевой системе Windows',
+  'monitoring.history.noData': 'Нет данных за период',
 }
