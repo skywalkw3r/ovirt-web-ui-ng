@@ -397,6 +397,10 @@ export function NovncConsole({
             across states so the RFB always has a target; overlays cover it. */}
         <div
           ref={screenRef}
+          // An interactive remote-desktop surface: `application` hands key
+          // events to the widget (what noVNC needs) and, unlike the generic
+          // div role, permits aria-label (axe aria-prohibited-attr).
+          role="application"
           aria-label={t('console.screen.ariaLabel')}
           style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
         />

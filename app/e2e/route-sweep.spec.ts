@@ -73,12 +73,7 @@ const SHELL_LESS_ROUTES = new Set(['/vms/$vmId/console'])
 // globally. Remove an entry as soon as the owning file is fixed — the sweep
 // then enforces it.
 const KNOWN_VIOLATIONS: Record<string, readonly string[]> = {
-  // components/console/NovncConsole.tsx ~L398: the noVNC canvas container is a
-  // bare <div aria-label="Console screen"> with no role. ARIA 1.2 prohibits
-  // aria-label on the generic role (axe: aria-prohibited-attr, serious —
-  // target `div[aria-label="Console screen"]`). Fix in that file: give the
-  // container a role that permits naming (role="application" or "img").
-  '/vms/$vmId/console': ['aria-prohibited-attr'],
+  // (empty — every routed page currently passes the critical+serious gate)
 }
 
 function escapeRegExp(text: string): string {
