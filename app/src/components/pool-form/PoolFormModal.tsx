@@ -18,6 +18,9 @@ import { listClusters } from '../../api/resources/clusters'
 import { listTemplates } from '../../api/resources/templates'
 import { useT } from '../../i18n/useT'
 import { FieldHelp } from '../forms/FieldHelp'
+import { OptionsSelect } from '../forms/OptionsSelect'
+import { clusterKeys } from '../../hooks/useAdminResources'
+import { templateKeys } from '../../hooks/useCatalog'
 import { useCreatePool, useUpdatePool } from '../../hooks/usePoolMutations'
 import {
   blankDraft,
@@ -64,14 +67,15 @@ export function PoolFormModal({
   // !isEdit). Both reads stay bare (no ?follow=) and call the resource fns
   // directly — same as ClusterFormModal seeding its data-center select — so
   // the picker works for user-tier pool creators, not just admins. The
-  // ['clusters', ''] key shares ClustersPage's unsearched inventory cache.
+  // unsearched keys (clusterKeys.list() / templateKeys.list()) share
+  // ClustersPage's and the create wizard's inventory cache entries.
   const clusters = useQuery({
-    queryKey: ['clusters', ''],
+    queryKey: clusterKeys.list(),
     queryFn: () => listClusters(),
     enabled: isOpen && !isEdit,
   })
   const templates = useQuery({
-    queryKey: ['templates', ''],
+    queryKey: templateKeys.list(),
     queryFn: () => listTemplates(),
     enabled: isOpen && !isEdit,
   })
@@ -151,21 +155,24 @@ export function PoolFormModal({
                 readOnlyVariant="default"
               />
             ) : (
-              <FormSelect
+              <OptionsSelect
                 id="pool-cluster"
-                aria-label={t('common.field.cluster')}
+                ariaLabel={t('common.field.cluster')}
                 value={draft.clusterId}
-                onChange={(_event, value) => set('clusterId', value)}
+                onChange={(value) => set('clusterId', value)}
+                query={clusters}
+                placeholder={{ label: t('poolForm.cluster.placeholder'), isDisabled: true }}
               >
-                <FormSelectOption value="" label={t('poolForm.cluster.placeholder')} isDisabled />
-                {(clusters.data ?? []).map((cluster) => (
-                  <FormSelectOption
-                    key={cluster.id}
-                    value={cluster.id}
-                    label={cluster.name ?? cluster.id}
-                  />
-                ))}
-              </FormSelect>
+                {(items) =>
+                  items.map((cluster) => (
+                    <FormSelectOption
+                      key={cluster.id}
+                      value={cluster.id}
+                      label={cluster.name ?? cluster.id}
+                    />
+                  ))
+                }
+              </OptionsSelect>
             )}
           </FormGroup>
 
@@ -185,21 +192,24 @@ export function PoolFormModal({
                 readOnlyVariant="default"
               />
             ) : (
-              <FormSelect
+              <OptionsSelect
                 id="pool-template"
-                aria-label={t('poolForm.template')}
+                ariaLabel={t('poolForm.template')}
                 value={draft.templateId}
-                onChange={(_event, value) => set('templateId', value)}
+                onChange={(value) => set('templateId', value)}
+                query={templates}
+                placeholder={{ label: t('poolForm.template.placeholder'), isDisabled: true }}
               >
-                <FormSelectOption value="" label={t('poolForm.template.placeholder')} isDisabled />
-                {visibleTemplates(templates.data ?? []).map((template) => (
-                  <FormSelectOption
-                    key={template.id}
-                    value={template.id}
-                    label={template.name ?? template.id}
-                  />
-                ))}
-              </FormSelect>
+                {(items) =>
+                  visibleTemplates(items).map((template) => (
+                    <FormSelectOption
+                      key={template.id}
+                      value={template.id}
+                      label={template.name ?? template.id}
+                    />
+                  ))
+                }
+              </OptionsSelect>
             )}
           </FormGroup>
 

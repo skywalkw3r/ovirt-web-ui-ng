@@ -15,5 +15,33 @@
         ]
       }
     ]
-  }
+  },
+  "overrides": [
+    {
+      "files": ["src/pages/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "@patternfly/react-core/deprecated",
+                "message": "Deprecated PF components (Chip, Tile, ...) are banned — see docs/COMPONENTS.md ground rules"
+              },
+              {
+                "name": "@tanstack/react-query",
+                "message": "pages consume hooks from ../hooks; queries and mutations live there — see CLAUDE.md architecture"
+              }
+            ],
+            "patterns": [
+              {
+                "group": ["../api/resources/*", "**/api/resources/*"],
+                "message": "pages consume hooks from ../hooks; resource calls live there (re-export a type from the hook or import it from ../api/schemas) — see CLAUDE.md architecture"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
 }

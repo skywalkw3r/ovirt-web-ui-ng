@@ -23,7 +23,22 @@ import { useAdminResourcePollInterval } from './useAdminResources'
 // state rather than the query cache, so granting/revoking your OWN system admin
 // role only re-tiers the session after a fresh sign-in — matching the
 // per-object Permissions tabs, which likewise don't live-re-tier.
-export const SYSTEM_PERMISSIONS_KEY = ['system-permissions'] as const
+export const systemPermissionKeys = {
+  all: ['system-permissions'] as const,
+}
+// The original single-key export, kept as an alias of the builder's `all`.
+export const SYSTEM_PERMISSIONS_KEY = systemPermissionKeys.all
+
+// The row predicates and the principal resolver SystemPermissionsPage renders
+// its table with, surfaced here so the page consumes them through the hooks
+// layer instead of importing api/resources (CLAUDE.md: transport → schemas →
+// resources → hooks → pages). Pure functions over the Permission read model.
+export {
+  isAdministrativePermission,
+  isInheritedPermission,
+  systemPermissionPrincipal,
+  type SystemPermissionPrincipal,
+} from '../api/resources/permissions'
 
 export function useSystemPermissions() {
   const { isAdmin } = useCapabilities()

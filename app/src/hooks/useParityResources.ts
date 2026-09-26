@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { listErrata } from '../api/resources/errata'
+import { getErratum, listErrata } from '../api/resources/errata'
 import {
   createProvider,
   deleteProvider,
@@ -22,6 +22,18 @@ import { useAdminResourcePollInterval } from './useAdminResources'
 // Gating on isAdmin alone is safe: it stays false until the profile has
 // loaded.
 
+// Query-key builders for the parity collections this module owns. `all` is
+// the list entry AND the prefix the provider mutations invalidate; the errata
+// detail read nests under the list prefix so an errata invalidation covers it.
+export const providerKeys = {
+  all: ['providers'] as const,
+}
+
+export const errataKeys = {
+  all: ['errata'] as const,
+  detail: (id: string) => ['errata', id] as const,
+}
+
 // listQuotas fans out GET /datacenters/{id}/quotas per data center and
 // flattens the results.
 export function useQuotas() {
@@ -43,7 +55,7 @@ export function useProviders() {
   const { isAdmin } = useCapabilities()
   const refetchInterval = useAdminResourcePollInterval()
   return useQuery({
-    queryKey: ['providers'],
+    queryKey: providerKeys.all,
     queryFn: () => listProviders(),
     refetchInterval,
     enabled: isAdmin,
@@ -77,7 +89,7 @@ export function useCreateProvider() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['providers'] })
+      void queryClient.invalidateQueries({ queryKey: providerKeys.all })
     },
   })
 }
@@ -107,7 +119,7 @@ export function useUpdateProvider() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['providers'] })
+      void queryClient.invalidateQueries({ queryKey: providerKeys.all })
     },
   })
 }
@@ -128,7 +140,7 @@ export function useDeleteProvider() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['providers'] })
+      void queryClient.invalidateQueries({ queryKey: providerKeys.all })
     },
   })
 }
@@ -154,8 +166,25 @@ export function useErrata() {
   const { isAdmin } = useCapabilities()
   const refetchInterval = useAdminResourcePollInterval()
   return useQuery({
-    queryKey: ['errata'],
+    queryKey: errataKeys.all,
     queryFn: () => listErrata(),
+    refetchInterval,
+    enabled: isAdmin,
+  })
+}
+
+// GET /katelloerrata/{id} — one erratum for ErratumDetailPage, keyed under the
+// list's ['errata'] prefix. Admin-gated like useErrata: the page renders
+// <NotPermitted> for user-tier accounts, so the doomed request is skipped
+// (isAdmin stays false until the capability profile loads, so the gate is
+// safe). A 404 is a genuine "this erratum is gone" the page surfaces as its
+// error state — getErratum does not swallow it the way listErrata does.
+export function useErratum(id: string) {
+  const { isAdmin } = useCapabilities()
+  const refetchInterval = useAdminResourcePollInterval()
+  return useQuery({
+    queryKey: errataKeys.detail(id),
+    queryFn: () => getErratum(id),
     refetchInterval,
     enabled: isAdmin,
   })

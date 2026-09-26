@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { createPool, deletePool, updatePool } from '../api/resources/pools'
 import { useNotify } from '../notifications/context'
+import { poolKeys } from './useAdminResources'
 
 // The Create Pool modal's save mutation. Mirrors useCreateCluster: notify on
 // success/failure and invalidate the pool list query so the refetch shows the
@@ -19,7 +20,7 @@ export function useCreatePool() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['pools'] })
+      void queryClient.invalidateQueries({ queryKey: poolKeys.all })
     },
   })
 }
@@ -42,7 +43,7 @@ export function useUpdatePool() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['pools'] })
+      void queryClient.invalidateQueries({ queryKey: poolKeys.all })
     },
   })
 }
@@ -65,7 +66,7 @@ export function useDeletePool() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['pools'] })
+      void queryClient.invalidateQueries({ queryKey: poolKeys.all })
     },
   })
 }

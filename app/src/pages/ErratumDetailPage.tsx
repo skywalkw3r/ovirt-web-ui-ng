@@ -20,13 +20,11 @@ import {
   TimestampFormat,
 } from '@patternfly/react-core'
 import { Link } from '@tanstack/react-router'
-import { useQuery } from '@tanstack/react-query'
-import { getErratum } from '../api/resources/errata'
 import { useCapabilities } from '../auth/capabilities'
 import { ListPageHeader } from '../components/ListPageHeader'
 import { NotPermitted } from '../components/NotPermitted'
 import { StatusBadge } from '../components/StatusBadge'
-import { useAdminResourcePollInterval } from '../hooks/useAdminResources'
+import { useErratum } from '../hooks/useParityResources'
 import { useT } from '../i18n/useT'
 import { errataDetailRoute } from '../routes/router'
 
@@ -45,17 +43,9 @@ export function ErratumDetailPage() {
   const t = useT()
   const { loaded, isAdmin } = useCapabilities()
   const { erratumId } = errataDetailRoute.useParams()
-  const refetchInterval = useAdminResourcePollInterval()
-  // GET /katelloerrata/{id}, keyed ['errata', id] under the list's ['errata']
-  // prefix. Admin-gated like useErrata — the query skips the doomed request for
-  // user-tier accounts (they get <NotPermitted> above); gating on isAdmin is
-  // safe since it stays false until the capability profile loads.
-  const erratum = useQuery({
-    queryKey: ['errata', erratumId],
-    queryFn: () => getErratum(erratumId),
-    refetchInterval,
-    enabled: isAdmin,
-  })
+  // Admin-gated inside the hook — the query skips the doomed request for
+  // user-tier accounts (they get <NotPermitted> below).
+  const erratum = useErratum(erratumId)
 
   // The nav already hides Errata from user-tier accounts; this covers a deep
   // link typed straight into the address bar. Before the profile loads the

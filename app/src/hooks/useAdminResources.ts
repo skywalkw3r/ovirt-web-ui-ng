@@ -2,9 +2,54 @@ import { useQuery } from '@tanstack/react-query'
 import { listClusters } from '../api/resources/clusters'
 import { listDataCenters } from '../api/resources/datacenters'
 import { listPools } from '../api/resources/pools'
-import { listUsers } from '../api/resources/users'
+import { listGroups, listUsers } from '../api/resources/users'
 import { useCapabilities } from '../auth/capabilities'
 import { useSettings } from '../settings/SettingsProvider'
+
+// ClustersPage's Upgrade Status column reads the in-flight rolling-upgrade
+// flag off the inventory rows this module serves; the predicate is surfaced
+// here so the page consumes it through the hooks layer instead of importing
+// api/resources (CLAUDE.md: transport → schemas → resources → hooks → pages).
+export { isClusterUpgradeRunning } from '../api/resources/clusters'
+
+// Query-key builders for the admin inventory collections. Every hook that
+// registers one of these keys and every mutation that invalidates it builds
+// the key here, so a hand-typed copy can never drift from the observer it is
+// meant to hit. `all` is the bare prefix the mutations invalidate (it is ALSO
+// the exact key the create-dialog option lists register — ClusterFormModal's
+// data centers read ['datacenters'] bare, distinct from the searched
+// ['datacenters', ''] inventory entry); `list` is the per-search entry the
+// inventory hooks poll; `detail` the single-entity read.
+export const poolKeys = {
+  all: ['pools'] as const,
+  detail: (id: string) => ['pool', id] as const,
+}
+
+export const userKeys = {
+  all: ['users'] as const,
+  list: (search = '') => ['users', search] as const,
+  detail: (id: string) => ['user', id] as const,
+}
+
+export const groupKeys = {
+  all: ['groups'] as const,
+  list: (search = '') => ['groups', search] as const,
+}
+
+export const dataCenterKeys = {
+  all: ['datacenters'] as const,
+  list: (search = '') => ['datacenters', search] as const,
+  detail: (id: string) => ['datacenter', id] as const,
+}
+
+export const clusterKeys = {
+  all: ['clusters'] as const,
+  list: (search = '') => ['clusters', search] as const,
+  detail: (id: string) => ['cluster', id] as const,
+  // the cluster's cpuprofiles subcollection — useClusterCpuProfiles
+  // (useClusterDetail) and the Edit VM CPU-profile select share this entry
+  cpuProfiles: (id: string) => ['cluster', id, 'cpuProfiles'] as const,
+}
 
 // Pools, users, data centers, and clusters are near-static inventory; 60s
 // keeps them fresh without adding to the engine load the 10s VM poll and the
@@ -23,7 +68,7 @@ export function useAdminResourcePollInterval() {
 export function usePools() {
   const refetchInterval = useAdminResourcePollInterval()
   return useQuery({
-    queryKey: ['pools'],
+    queryKey: poolKeys.all,
     queryFn: () => listPools(),
     refetchInterval,
   })
@@ -40,8 +85,25 @@ export function useUsers(search = '') {
   const { isAdmin } = useCapabilities()
   const refetchInterval = useAdminResourcePollInterval()
   return useQuery({
-    queryKey: ['users', search],
+    queryKey: userKeys.list(search),
     queryFn: () => listUsers({ search: search || undefined }),
+    refetchInterval,
+    enabled: isAdmin,
+  })
+}
+
+// GET /groups — the directory groups materialized into the engine DB (the
+// Groups tab of UsersGroupsPage). Admin-only for the same reason as useUsers.
+// Shares the ['groups', search] cache entries the Add-Permission group picker
+// reads (usePermissionMutations.useGroups) — this observer just adds the poll
+// and the admin gate, mirroring useClustersInventory over useCatalog's
+// useClusters; both queryFns issue the identical URL for a given search.
+export function useGroupsInventory(search = '') {
+  const { isAdmin } = useCapabilities()
+  const refetchInterval = useAdminResourcePollInterval()
+  return useQuery({
+    queryKey: groupKeys.list(search),
+    queryFn: () => listGroups({ search: search || undefined }),
     refetchInterval,
     enabled: isAdmin,
   })
@@ -54,7 +116,7 @@ export function useDataCenters(search = '') {
   const { isAdmin } = useCapabilities()
   const refetchInterval = useAdminResourcePollInterval()
   return useQuery({
-    queryKey: ['datacenters', search],
+    queryKey: dataCenterKeys.list(search),
     queryFn: () => listDataCenters({ search: search || undefined }),
     refetchInterval,
     enabled: isAdmin,
@@ -69,7 +131,7 @@ export function useClustersInventory(search = '') {
   const { isAdmin } = useCapabilities()
   const refetchInterval = useAdminResourcePollInterval()
   return useQuery({
-    queryKey: ['clusters', search],
+    queryKey: clusterKeys.list(search),
     queryFn: () => listClusters({ search: search || undefined }),
     refetchInterval,
     enabled: isAdmin,

@@ -16,6 +16,23 @@ import { useCapabilities } from '../auth/capabilities'
 import { useNotify } from '../notifications/context'
 import { useAdminResourcePollInterval } from './useAdminResources'
 
+// The Role read model and the two flag predicates RolesPage renders its rows
+// with (administrative vs user account type, mutable vs engine-shipped system
+// role), surfaced here so the page consumes them through the hooks layer
+// instead of importing api/resources (CLAUDE.md: transport → schemas →
+// resources → hooks → pages). RoleSchema lives beside its resource fns, not
+// in api/schemas, so the type re-exports from here too.
+export { isAdministrativeRole, isMutableRole, type Role } from '../api/resources/roles'
+
+// Query-key builders for the roles catalog. `all` is the list entry (shared
+// with usePermissionMutations' role select) and the prefix every role
+// mutation invalidates; the permit catalog and per-role permits nest under it.
+export const roleKeys = {
+  all: ['roles'] as const,
+  permitCatalog: ['roles', 'permit-catalog'] as const,
+  permits: (roleId: string | undefined) => ['roles', roleId, 'permits'] as const,
+}
+
 // The Roles admin page's list query. Shares the ['roles'] cache the Add
 // Permission modal's role select already registers (usePermissionMutations),
 // so a role created/edited/removed here also refreshes that select. Gated on
@@ -26,7 +43,7 @@ export function useManagedRoles() {
   const { isAdmin } = useCapabilities()
   const refetchInterval = useAdminResourcePollInterval()
   return useQuery({
-    queryKey: ['roles'],
+    queryKey: roleKeys.all,
     queryFn: () => listRoles(),
     refetchInterval,
     enabled: isAdmin,
@@ -38,7 +55,7 @@ export function useManagedRoles() {
 // the session — the catalog is fixed for a given engine version.
 export function usePermitCatalog(enabled: boolean) {
   return useQuery({
-    queryKey: ['roles', 'permit-catalog'],
+    queryKey: roleKeys.permitCatalog,
     queryFn: () => listPermitCatalog(),
     enabled,
     staleTime: Infinity,
@@ -49,7 +66,7 @@ export function usePermitCatalog(enabled: boolean) {
 // and clone mode. Keyed per role; enabled only while that editor is open.
 export function useRolePermits(roleId: string | undefined, enabled: boolean) {
   return useQuery({
-    queryKey: ['roles', roleId, 'permits'],
+    queryKey: roleKeys.permits(roleId),
     queryFn: () => listRolePermits(roleId as string),
     enabled: enabled && roleId !== undefined,
     staleTime: Infinity,
@@ -71,7 +88,7 @@ export function useCreateRole() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['roles'] })
+      void queryClient.invalidateQueries({ queryKey: roleKeys.all })
     },
   })
 }
@@ -107,8 +124,8 @@ export function useUpdateRole() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: (_role, _error, { id }) => {
-      void queryClient.invalidateQueries({ queryKey: ['roles'] })
-      void queryClient.invalidateQueries({ queryKey: ['roles', id, 'permits'] })
+      void queryClient.invalidateQueries({ queryKey: roleKeys.all })
+      void queryClient.invalidateQueries({ queryKey: roleKeys.permits(id) })
     },
   })
 }
@@ -128,7 +145,7 @@ export function useDeleteRole() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['roles'] })
+      void queryClient.invalidateQueries({ queryKey: roleKeys.all })
     },
   })
 }

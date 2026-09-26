@@ -25,9 +25,7 @@ import {
 } from '@patternfly/react-core'
 import { EllipsisVIcon } from '@patternfly/react-icons'
 import { Link, useNavigate } from '@tanstack/react-router'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { ApiError } from '../api/transport'
-import { cleanFinishedTasks, deleteDataCenter } from '../api/resources/datacenters'
 import { useCapabilities } from '../auth/capabilities'
 import { useT } from '../i18n/useT'
 import { ConfirmModal } from '../components/ConfirmModal'
@@ -35,8 +33,11 @@ import { ListPageHeader } from '../components/ListPageHeader'
 import { StatusBadge } from '../components/StatusBadge'
 import { NotPermitted } from '../components/NotPermitted'
 import { DataCenterFormModal } from '../components/datacenter-form/DataCenterFormModal'
-import { useDeleteDataCenter } from '../hooks/useDataCenterMutations'
-import { useNotify } from '../notifications/context'
+import {
+  useCleanFinishedTasks,
+  useDeleteDataCenter,
+  useForceDeleteDataCenter,
+} from '../hooks/useDataCenterMutations'
 import { DataCenterClustersTab } from '../components/datacenter-tabs/DataCenterClustersTab'
 import { DataCenterGeneralTab } from '../components/datacenter-tabs/DataCenterGeneralTab'
 import { DataCenterNetworksTab } from '../components/datacenter-tabs/DataCenterNetworksTab'
@@ -90,41 +91,13 @@ export function DataCenterDetailPage() {
   const [removing, setRemoving] = useState<{ nameInput: string } | null>(null)
   const [forcing, setForcing] = useState<{ nameInput: string } | null>(null)
   const deleteMutation = useDeleteDataCenter()
-
   // Force remove (webadmin's separate Force Remove action → force=true) removes
   // the data center from the engine's database even when its storage is
-  // unreachable. Mirrors useDeleteDataCenter otherwise.
-  const queryClient = useQueryClient()
-  const { notify } = useNotify()
-  const forceDeleteMutation = useMutation({
-    mutationFn: ({ id }: { id: string; name: string }) => deleteDataCenter(id, { force: true }),
-    onSuccess: (_data, { name }) => {
-      notify({ title: `Data center ${name} removed`, variant: 'success' })
-    },
-    onError: (error) => {
-      notify({ title: error.message, variant: 'danger' })
-    },
-    onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['datacenters'] })
-    },
-  })
-
-  // Clean Finished Tasks (POST .../cleanfinishedtasks) clears the data center's
-  // completed/aborted async tasks. Non-destructive — it only removes finished
-  // task records — so it fires straight from the kebab with no confirm. On
-  // settle we re-read the data center in case its status reflected a stuck task.
-  const cleanTasksMutation = useMutation({
-    mutationFn: ({ id }: { id: string; name: string }) => cleanFinishedTasks(id),
-    onSuccess: (_data, { name }) => {
-      notify({ title: `Finished tasks cleared on ${name}`, variant: 'success' })
-    },
-    onError: (error) => {
-      notify({ title: error.message, variant: 'danger' })
-    },
-    onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['datacenter', dataCenterId] })
-    },
-  })
+  // unreachable; the typed-name confirm below drives it like Remove.
+  const forceDeleteMutation = useForceDeleteDataCenter()
+  // Clean Finished Tasks is non-destructive (it only removes finished task
+  // records), so it fires straight from the kebab with no confirm.
+  const cleanTasksMutation = useCleanFinishedTasks()
 
   const notFound = dataCenter.error instanceof ApiError && dataCenter.error.status === 404
 

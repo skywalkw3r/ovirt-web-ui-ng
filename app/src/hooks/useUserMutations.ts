@@ -5,11 +5,13 @@ import {
   listDirectoryGroups,
   listDirectoryUsers,
   listDomains,
+  removeGroup,
   removeUser,
   type AddGroupSpec,
   type AddUserSpec,
 } from '../api/resources/users'
 import { useNotify } from '../notifications/context'
+import { groupKeys, userKeys } from './useAdminResources'
 
 // The data layer for the Users page's add-from-directory + remove flow. The
 // DB list the page renders is owned by useUsers (key ['users', search]); the
@@ -88,7 +90,7 @@ export function useAddUser() {
     },
     onSettled: () => {
       // prefix match covers every ['users', search] entry useUsers registers
-      void queryClient.invalidateQueries({ queryKey: ['users'] })
+      void queryClient.invalidateQueries({ queryKey: userKeys.all })
     },
   })
 }
@@ -119,7 +121,7 @@ export function useAddGroup() {
     },
     onSettled: () => {
       // prefix match covers every ['groups', search] entry useGroups registers
-      void queryClient.invalidateQueries({ queryKey: ['groups'] })
+      void queryClient.invalidateQueries({ queryKey: groupKeys.all })
     },
   })
 }
@@ -145,7 +147,37 @@ export function useRemoveUser() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['users'] })
+      void queryClient.invalidateQueries({ queryKey: userKeys.all })
+    },
+  })
+}
+
+// Group analogue of RemoveUserVars — displayName rides through purely for the
+// toast, resolved from the group row.
+export interface RemoveGroupVars {
+  groupId: string
+  displayName: string
+}
+
+// DELETE /groups/{id} — GroupService.remove unmaterializes the directory group.
+// Engine faults (e.g. the group still grants access) surface via error.message
+// verbatim; the prefix invalidation refreshes both the Groups tab and the
+// Add-Permission group picker that reads the same ['groups', …] cache.
+export function useRemoveGroup() {
+  const queryClient = useQueryClient()
+  const { notify } = useNotify()
+
+  return useMutation({
+    mutationFn: ({ groupId }: RemoveGroupVars) => removeGroup(groupId),
+    onSuccess: (_data, { displayName }) => {
+      notify({ title: `Group ${displayName} removed`, variant: 'success' })
+    },
+    onError: (error) => {
+      // ApiError.message carries the engine fault detail verbatim
+      notify({ title: error.message, variant: 'danger' })
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: groupKeys.all })
     },
   })
 }

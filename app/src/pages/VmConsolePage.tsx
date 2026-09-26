@@ -9,8 +9,6 @@ import {
   Spinner,
 } from '@patternfly/react-core'
 import { FormattedMessage } from 'react-intl'
-import { buildConsoleConnection, listGraphicsConsoles } from '../api/resources/consoles'
-import { getVm } from '../api/resources/vms'
 import type { GraphicsConsole } from '../api/schemas/console'
 import {
   clearSessionToken,
@@ -24,6 +22,7 @@ import { onLogoutBroadcast } from '../auth/sessionChannel'
 import { useBrandedTab } from '../branding/useBrandedTab'
 import { isConfiguredBase, setActiveBase } from '../servers/registry'
 import { NovncConsole } from '../components/console/NovncConsole'
+import { buildConsoleConnection, getVm, listGraphicsConsoles } from '../hooks/useConsoles'
 import { useProductBrand } from '../hooks/useProductBrand'
 import { useT } from '../i18n/useT'
 import { vmConsoleRoute } from '../routes/router'

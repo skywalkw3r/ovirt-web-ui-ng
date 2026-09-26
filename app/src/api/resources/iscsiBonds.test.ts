@@ -7,6 +7,7 @@ import {
   updateIscsiBond,
 } from './iscsiBonds'
 import { ApiError } from '../transport'
+import { resetFollowDenials } from '../followDegrade'
 import { clearSessionToken, setSessionToken } from '../session'
 
 // Transport-level fetch stub — same shape as resources/users.test.ts. Assert the
@@ -22,10 +23,36 @@ function mockFetch(status: number, payload?: unknown) {
   return fn
 }
 
-beforeEach(() => setSessionToken('tok-123'))
+// URL-routed variant for the degraded bond read, which fans out to three
+// collections: each route answers by URL substring so the assertions don't
+// depend on Promise.all's dispatch order.
+function mockFetchByUrl(routes: Record<string, { status: number; payload?: unknown }>) {
+  const fn = vi.fn((url: string) => {
+    const match = Object.keys(routes).find((needle) => url.includes(needle))
+    const route = match !== undefined ? routes[match] : { status: 404, payload: {} }
+    return Promise.resolve({
+      ok: route.status >= 200 && route.status < 300,
+      status: route.status,
+      json: () =>
+        route.payload === undefined
+          ? Promise.reject(new Error('no body'))
+          : Promise.resolve(route.payload),
+    })
+  })
+  vi.stubGlobal('fetch', fn)
+  return fn
+}
+
+beforeEach(() => {
+  setSessionToken('tok-123')
+  // follow-denial memory is module state (per engine + follow shape) — start
+  // every case from a clean slate
+  resetFollowDenials()
+})
 afterEach(() => {
   clearSessionToken()
   vi.unstubAllGlobals()
+  vi.restoreAllMocks()
 })
 
 describe('listIscsiBonds', () => {
@@ -59,6 +86,108 @@ describe('listIscsiBonds', () => {
   it('tolerates the empty-list key-omission quirk', async () => {
     mockFetch(200, {})
     await expect(listIscsiBonds('dc-01')).resolves.toEqual([])
+  })
+
+  // The followed-read degrade contract: a 5xx on the follow= variant answers
+  // with the bare read, and — since the bare shape carries only { id, href }
+  // member stubs — the names/targets are joined from the two catalogs.
+  it('degrades a failed followed read to the bare read and joins member names client-side', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const fetchMock = mockFetchByUrl({
+      'iscsibonds?follow=': { status: 500, payload: { fault: { detail: 'boom' } } },
+      '/dc-01/iscsibonds': {
+        status: 200,
+        payload: {
+          iscsi_bond: [
+            {
+              id: 'bond-01',
+              name: 'multipath-a',
+              networks: { network: [{ id: 'net-01', href: '/networks/net-01' }] },
+              storage_connections: { storage_connection: [{ id: 'conn-01' }, { id: 'conn-99' }] },
+            },
+          ],
+        },
+      },
+      '/dc-01/networks': {
+        status: 200,
+        payload: { network: [{ id: 'net-01', name: 'iscsi-a' }] },
+      },
+      '/storageconnections': {
+        status: 200,
+        payload: {
+          storage_connection: [
+            { id: 'conn-01', type: 'iscsi', address: '10.0.0.5', port: '3260', target: 'iqn.x' },
+          ],
+        },
+      },
+    })
+
+    const bonds = await listIscsiBonds('dc-01')
+
+    const urls = fetchMock.mock.calls.map((call) => call[0] as string)
+    expect(urls[0]).toBe(
+      '/ovirt-engine/api/datacenters/dc-01/iscsibonds?follow=networks,storage_connections',
+    )
+    expect(urls).toContain('/ovirt-engine/api/datacenters/dc-01/iscsibonds')
+    expect(urls).toContain('/ovirt-engine/api/datacenters/dc-01/networks')
+    expect(urls).toContain('/ovirt-engine/api/storageconnections')
+
+    expect(bonds).toHaveLength(1)
+    // the network stub gained its name; the connection its address/target
+    // (port coerced from the engine's JSON-string form)
+    expect(bonds[0]?.networks?.network?.[0]).toMatchObject({ id: 'net-01', name: 'iscsi-a' })
+    expect(bonds[0]?.storage_connections?.storage_connection?.[0]).toMatchObject({
+      id: 'conn-01',
+      address: '10.0.0.5',
+      target: 'iqn.x',
+      port: 3260,
+    })
+    // a stub the catalog cannot resolve stays listed, id-only
+    expect(bonds[0]?.storage_connections?.storage_connection?.[1]).toEqual({ id: 'conn-99' })
+  })
+
+  it('remembers the denial so the next read skips the followed shape', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {})
+    mockFetchByUrl({
+      'iscsibonds?follow=': { status: 500, payload: {} },
+      '/dc-01/iscsibonds': { status: 200, payload: {} },
+      '/dc-01/networks': { status: 200, payload: {} },
+      '/storageconnections': { status: 200, payload: {} },
+    })
+    await listIscsiBonds('dc-01')
+
+    const fetchMock = mockFetch(200, {})
+    await expect(listIscsiBonds('dc-01')).resolves.toEqual([])
+    const urls = fetchMock.mock.calls.map((call) => call[0] as string)
+    expect(urls).not.toContainEqual(expect.stringContaining('follow='))
+    expect(urls[0]).toBe('/ovirt-engine/api/datacenters/dc-01/iscsibonds')
+  })
+
+  it('keeps the members id-only when a join catalog read fails', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {})
+    mockFetchByUrl({
+      'iscsibonds?follow=': { status: 500, payload: {} },
+      '/dc-01/iscsibonds': {
+        status: 200,
+        payload: {
+          iscsi_bond: [{ id: 'bond-01', networks: { network: [{ id: 'net-01' }] } }],
+        },
+      },
+      '/dc-01/networks': { status: 500, payload: { fault: { detail: 'down' } } },
+      '/storageconnections': { status: 403, payload: { fault: { detail: 'denied' } } },
+    })
+
+    const bonds = await listIscsiBonds('dc-01')
+    expect(bonds[0]?.networks?.network).toEqual([{ id: 'net-01' }])
+  })
+
+  it('propagates a non-degradable fault instead of falling back', async () => {
+    const fetchMock = mockFetch(403, { fault: { reason: 'Forbidden', detail: 'no access' } })
+    const error = await listIscsiBonds('dc-01').catch((e: unknown) => e)
+    expect(error).toBeInstanceOf(ApiError)
+    expect(error).toMatchObject({ status: 403 })
+    // no bare retry for an authorization failure
+    expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 })
 
