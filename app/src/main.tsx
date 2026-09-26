@@ -21,6 +21,15 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 10_000,
+      // Never refetch just because the tab regained focus. Some 30 polling
+      // hooks already refetch on their interval (the user-tunable
+      // refreshIntervalMs from useSettings), so TanStack's default would turn
+      // every alt-tab back into a burst of one request per mounted query
+      // against the engine — pure load, with no fresher data than the next
+      // tick brings anyway. A hook that genuinely needs the focus trigger opts
+      // back in explicitly (useDwhHistory: 'always', to pick up a Grafana
+      // sign-in completed in another tab).
+      refetchOnWindowFocus: false,
       retry: (failureCount, error) => {
         // Never retry a 4xx (401/403 included): a client error — auth,
         // forbidden, bad request — won't heal by retrying, so surface it
