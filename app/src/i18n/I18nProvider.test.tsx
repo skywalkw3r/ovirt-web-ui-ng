@@ -1,11 +1,14 @@
 import { describe, expect, it, vi } from 'vitest'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { FormattedMessage } from 'react-intl'
+import { FormattedMessage, FormattedNumber } from 'react-intl'
 
 // The vitest env is 'node' (no jsdom), and the suite has no testing-library,
 // so we render to a static HTML string via react-dom/server rather than into a
-// DOM. That is enough to assert the provider wires react-intl and resolves a
-// <FormattedMessage> against the en catalog.
+// DOM. That covers the synchronous contract — the provider wires react-intl,
+// resolves <FormattedMessage> against the en catalog on first paint and
+// against a translated catalog once it is in the cache — but effects never run
+// in a static render, so the effect-driven load itself is exercised through
+// loadCatalog here and the caching contract in catalogs.test.ts.
 //
 // I18nProvider reads the active locale from useSettings, so we stub the
 // settings module to avoid mounting the real provider tree.
@@ -16,7 +19,7 @@ vi.mock('../settings/SettingsProvider', () => ({
 }))
 
 const { I18nProvider } = await import('./I18nProvider')
-const { withEnFallback } = await import('./catalogs')
+const { loadCatalog, withEnFallback } = await import('./catalogs')
 
 describe('I18nProvider', () => {
   it('resolves a FormattedMessage from the en catalog', () => {
@@ -30,15 +33,37 @@ describe('I18nProvider', () => {
     expect(html).toContain('Sign in')
   })
 
-  it('resolves a registered non-English catalog', () => {
-    // A shipped translation renders in its own language, not English.
+  it('renders English on first paint for a translated locale, formatted in that locale', () => {
+    // Translated catalogs are code-split: until loadCatalog settles (from an
+    // effect, so never inside a static render) text comes from the en catalog
+    // — no blank, no MISSING_TRANSLATION — while the IntlProvider locale is
+    // already the selected one, so number/date formatting is right at once.
+    // 'de' is never loaded elsewhere in this file, so its cache stays cold.
+    currentLocale = 'de'
+    const html = renderToStaticMarkup(
+      <I18nProvider>
+        <FormattedMessage id="login.submit" />
+        <FormattedNumber value={1234.5} />
+      </I18nProvider>,
+    )
+    expect(html).toContain('Sign in')
+    expect(html).toContain('1.234,5')
+  })
+
+  it('renders a translated catalog once it has loaded', async () => {
+    // What the settled re-render shows: 'login.submit' → 'Iniciar sesión' in
+    // messages/es.ts …
+    const merged = withEnFallback(await loadCatalog('es'))
+    expect(merged['login.submit']).toContain('Iniciar sesi')
+    // … and, with the es catalog now in the module cache, a render for 'es'
+    // picks it up synchronously (peekCatalog), so switching back to a language
+    // loaded earlier never flashes English.
     currentLocale = 'es'
     const html = renderToStaticMarkup(
       <I18nProvider>
         <FormattedMessage id="login.submit" />
       </I18nProvider>,
     )
-    // 'login.submit' → 'Iniciar sesión' in messages/es.ts.
     expect(html).toContain('Iniciar sesi')
   })
 
@@ -56,8 +81,9 @@ describe('I18nProvider', () => {
   })
 
   it('falls back to the en catalog for an unknown locale', () => {
-    // A locale with no registered catalog still renders English rather than a
-    // blank string, matching the CATALOGS fallback + defaultLocale.
+    // A locale with no registered loader still renders English rather than a
+    // blank string: nothing is ever in the cache for it, and the effect's
+    // rejected load only logs.
     currentLocale = 'zz'
     const html = renderToStaticMarkup(
       <I18nProvider>
