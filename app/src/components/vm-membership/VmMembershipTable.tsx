@@ -23,13 +23,7 @@ import { ResizableTh, resizableTableProps } from '../list-toolbar/ResizableTh'
 import { SearchInput } from '../list-toolbar/SearchInput'
 import type { VmMembershipColumn } from './columns'
 import { vmMatchesSearch } from './search'
-
-// Page sizes, the same set every inventory table offers (PaneToolbar).
-const PER_PAGE_OPTIONS = [
-  { title: '20', value: 20 },
-  { title: '50', value: 50 },
-  { title: '100', value: 100 },
-]
+import { PER_PAGE_OPTIONS } from '../../hooks/usePagination'
 
 // The five-state shell shared by every "VMs of <parent>" tab (cluster, pool,
 // template, quota — pair with useVmMembership): Skeleton, danger EmptyState +

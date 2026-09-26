@@ -4,6 +4,7 @@ import { listInstanceTypes } from '../api/resources/instanceTypes'
 import { listTemplates } from '../api/resources/templates'
 import { listVnicProfiles } from '../api/resources/vnicProfiles'
 import { useSettings } from '../settings/SettingsProvider'
+import { templateKeys } from './useCatalog'
 
 // Catalog list pages watch slow-moving inventory; 30s matches the cadence of
 // the other secondary collections (networks, storage domains) without adding
@@ -27,7 +28,7 @@ function useCatalogPollInterval() {
 export function useTemplatesList(search = '') {
   const refetchInterval = useCatalogPollInterval()
   return useQuery({
-    queryKey: ['templates', search],
+    queryKey: templateKeys.list(search),
     queryFn: () => listTemplates({ search: search || undefined, follow: 'tags' }),
     refetchInterval,
   })

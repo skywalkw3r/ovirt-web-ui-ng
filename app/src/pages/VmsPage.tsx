@@ -61,18 +61,13 @@ import { useVirtualRows } from '../hooks/useVirtualRows'
 import { dragPropsFor } from '../hooks/useVmDragDrop'
 import { useVmSearch } from '../hooks/useVmSearch'
 import { useVms } from '../hooks/useVms'
+import { PER_PAGE_OPTIONS } from '../hooks/usePagination'
 
 // Above this many visible rows the table body is windowed (VITE_MOCK_SCALE /
 // large-estate territory); at lab scale rendering stays plain and identical.
 // With pagination capping a page at 100 rows this stays dormant — kept for a
 // future "show all" escape hatch.
 const VIRTUALIZE_THRESHOLD = 100
-
-const PER_PAGE_OPTIONS = [
-  { title: '20', value: 20 },
-  { title: '50', value: 50 },
-  { title: '100', value: 100 },
-]
 
 // Host/cluster/DC names come from client-side joins against the cached
 // inventories (the flat /vms list carries them as id-only links). The join

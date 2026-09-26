@@ -9,7 +9,7 @@ lab/ansible/vars.yml
 lab/ansible/inventory.ini
 
 # deploy — the LIVE OpenShift manifests (real config.js, routes, nginx engine
-# map) carry internal Keysight hostnames; this repo is public, so they stay
+# map) carry internal hostnames; this repo is public, so they stay
 # local-only. The sanitized template lives in packaging/openshift/.
 /deploy/
 
