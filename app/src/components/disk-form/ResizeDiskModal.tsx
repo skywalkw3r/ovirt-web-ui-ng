@@ -15,8 +15,7 @@ import {
 import type { DiskAttachment } from '../../api/schemas/disk'
 import { useT } from '../../i18n/useT'
 import { formatBytes } from '../../lib/format'
-
-const GiB = 1024 ** 3
+import { GiB } from './diskFormModel'
 
 // The VM Disks tab's Resize dialog: grow-only, whole GiB above the current
 // provisioned size.
