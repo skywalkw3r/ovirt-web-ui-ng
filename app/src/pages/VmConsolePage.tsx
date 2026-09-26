@@ -22,7 +22,7 @@ import {
 import { ApiError } from '../api/transport'
 import { onLogoutBroadcast } from '../auth/sessionChannel'
 import { useBrandedTab } from '../branding/useBrandedTab'
-import { setActiveBase } from '../servers/registry'
+import { isConfiguredBase, setActiveBase } from '../servers/registry'
 import { NovncConsole } from '../components/console/NovncConsole'
 import { useProductBrand } from '../hooks/useProductBrand'
 import { useT } from '../i18n/useT'
@@ -100,6 +100,10 @@ export function VmConsolePage() {
     }
     const onMessage = (event: MessageEvent) => {
       if (event.origin !== window.location.origin) return
+      // Only the window we asked may answer. Same-origin is necessary but not
+      // sufficient: any same-origin document holding a reference to this tab
+      // could otherwise hand it a token of its choosing.
+      if (event.source !== opener) return
       const data = event.data as {
         type?: string
         token?: string
@@ -110,8 +114,10 @@ export function VmConsolePage() {
         // Bind this tab to the engine the opener's token belongs to BEFORE
         // storing the token (multi-engine): a fresh tab's registry would
         // otherwise resolve from localStorage, which another tab may have
-        // re-pointed at a different server since the opener signed in.
-        if (typeof data.serverBase === 'string') {
+        // re-pointed at a different server since the opener signed in. Only a
+        // deployer-configured base is ever pinned — setActiveBase already
+        // ignores anything else, and the session stamp must agree with it.
+        if (typeof data.serverBase === 'string' && isConfiguredBase(data.serverBase)) {
           setActiveBase(data.serverBase)
           setSessionServerBase(data.serverBase)
         }

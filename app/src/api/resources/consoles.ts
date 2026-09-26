@@ -359,8 +359,29 @@ const RDP_BASE_CONFIG = [
   'use redirection server name:i:0',
 ].join('\n')
 
+// RDP `full address`: a hostname / IPv4 literal (RFC 1123 labels) with an
+// optional :port. The usual candidate is vm.fqdn, which the GUEST AGENT
+// reports — i.e. whoever owns the guest OS chooses it — so it is validated,
+// never trusted: .rdp is a line-oriented format, and a value carrying CR/LF
+// would splice arbitrary directives (auth-level downgrade, drive redirection,
+// a different target host) into a file an administrator double-clicks.
+const RDP_ADDRESS_RE =
+  /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,62})(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,62}))*\.?(?::\d{1,5})?$/
+
+export function isValidRdpAddress(address: string): boolean {
+  return address.length <= 260 && RDP_ADDRESS_RE.test(address)
+}
+
+// Every interpolated .rdp value loses control characters (CR, LF, NUL, ...):
+// a newline inside a value would otherwise start a new directive.
+function rdpValue(value: string): string {
+  // oxlint-disable-next-line no-control-regex -- matching control chars is the point
+  return value.replace(/[\u0000-\u001f\u007f]/g, '')
+}
+
 export interface RdpOptions {
-  // Host to connect to — the guest FQDN, or the VM name as the legacy fallback.
+  // Host to connect to — the guest FQDN, or the VM name as the legacy
+  // fallback. Must satisfy isValidRdpAddress (callers pick a valid candidate).
   address: string
   // Defaults mirror the legacy RDPBuilder (fullscreen, 640x480, auth level 2).
   fullScreen?: boolean
@@ -380,6 +401,9 @@ export function isWindowsOs(osType: string | undefined): boolean {
 }
 
 export function buildRdpFile(options: RdpOptions): string {
+  if (!isValidRdpAddress(options.address)) {
+    throw new Error('buildRdpFile: address is not a valid host[:port]')
+  }
   const fullScreen = options.fullScreen ?? true
   const width = options.width ?? 640
   const height = options.height ?? 480
@@ -399,9 +423,11 @@ export function buildRdpFile(options: RdpOptions): string {
   ]
 
   if (options.username) {
-    const atIndex = options.username.indexOf('@')
-    const bare = atIndex === -1 ? options.username : options.username.slice(0, atIndex)
-    lines.push(`username:s:${options.domain ? `${bare}@${options.domain}` : bare}`)
+    const username = rdpValue(options.username)
+    const domain = options.domain ? rdpValue(options.domain) : ''
+    const atIndex = username.indexOf('@')
+    const bare = atIndex === -1 ? username : username.slice(0, atIndex)
+    lines.push(`username:s:${domain ? `${bare}@${domain}` : bare}`)
   }
 
   return lines.join('\n')

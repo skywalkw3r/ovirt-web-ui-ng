@@ -59,3 +59,7 @@ configure~
 
 # Playwright e2e artifacts
 test-results/
+
+# Claude Code local state (never commit local settings or agent worktrees)
+.claude/settings.local.json
+.claude/worktrees/
