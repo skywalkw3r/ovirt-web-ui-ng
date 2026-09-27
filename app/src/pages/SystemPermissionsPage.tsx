@@ -18,11 +18,6 @@ import {
 import { UserIcon, UsersIcon } from '@patternfly/react-icons'
 import { ActionsColumn, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table'
 import { FormattedMessage } from 'react-intl'
-import {
-  isAdministrativePermission,
-  isInheritedPermission,
-  systemPermissionPrincipal,
-} from '../api/resources/permissions'
 import { useCapabilities } from '../auth/capabilities'
 import { ConfirmModal } from '../components/ConfirmModal'
 import { NotPermitted } from '../components/NotPermitted'
@@ -35,6 +30,9 @@ import { AddSystemPermissionModal } from '../components/system-permissions/AddSy
 import { useColumnPrefs } from '../hooks/useColumnPrefs'
 import { useGroups, usePermissionUsers } from '../hooks/usePermissionMutations'
 import {
+  isAdministrativePermission,
+  isInheritedPermission,
+  systemPermissionPrincipal,
   useCreateSystemPermission,
   useRemoveSystemPermission,
   useSystemPermissions,

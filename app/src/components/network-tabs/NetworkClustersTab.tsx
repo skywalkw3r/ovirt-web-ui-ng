@@ -27,6 +27,7 @@ import { useT } from '../../i18n/useT'
 import { useNotify } from '../../notifications/context'
 import { useSettings } from '../../settings/SettingsProvider'
 import { ConfirmModal } from '../ConfirmModal'
+import { networkKeys } from '../../hooks/useNetworks'
 
 // One row of the Clusters subtab: a cluster of the network's data center plus
 // this network's attachment row on it (the Network object GET
@@ -89,9 +90,8 @@ export function NetworkClustersTab({ network }: { network: Network }) {
 
   // Shares the ['network', id, …] prefix with the other detail slices and the
   // 60s admin/parity floor (the Preferences interval can only slow it further).
-  const clustersKey = ['network', networkId, 'clusters']
   const rows = useQuery({
-    queryKey: clustersKey,
+    queryKey: networkKeys.clusters(networkId),
     queryFn: () => listNetworkClusterAttachments(dataCenterId as string, networkId),
     enabled: dataCenterId !== undefined,
     refetchInterval: Math.max(refreshIntervalMs, NETWORK_DETAIL_POLL_INTERVAL_MS),
@@ -104,7 +104,8 @@ export function NetworkClustersTab({ network }: { network: Network }) {
   // hook order stays stable.
   const { sort, thSort } = useColumnSort()
 
-  const invalidate = () => void queryClient.invalidateQueries({ queryKey: clustersKey })
+  const invalidate = () =>
+    void queryClient.invalidateQueries({ queryKey: networkKeys.clusters(networkId) })
   // ApiError.message carries the engine fault detail verbatim in all three
   const attach = useMutation({
     mutationFn: (clusterId: string) => attachNetworkToCluster(clusterId, networkId),

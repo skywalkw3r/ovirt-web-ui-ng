@@ -64,6 +64,13 @@ vi.mock('@patternfly/react-core', () => ({
   FormSelectOption: ({ value, label }: { value?: string; label?: string }) => (
     <option value={String(value)}>{label}</option>
   ),
+  // The option-list selects (forms/OptionsSelect) render their query state as
+  // helper text under the select.
+  FormHelperText: ({ children }: { children?: ReactNode }) => <div>{children}</div>,
+  HelperText: ({ children }: { children?: ReactNode }) => <div>{children}</div>,
+  HelperTextItem: ({ children, variant }: { children?: ReactNode; variant?: string }) => (
+    <div data-variant={variant ?? 'default'}>{children}</div>
+  ),
   Modal: ({ children }: { children?: ReactNode }) => <div role="dialog">{children}</div>,
   ModalBody: ({ children }: { children?: ReactNode }) => <div>{children}</div>,
   ModalFooter: ({ children }: { children?: ReactNode }) => <footer>{children}</footer>,
@@ -107,7 +114,8 @@ vi.mock('@patternfly/react-core', () => ({
 
 // The three useQuery calls the modal makes, keyed by queryKey[0]. Only the
 // four-state fields the modal reads are modeled. Non-pending empty lists keep
-// the option selects and Skeleton branches inert for the composition assertions.
+// the option selects settled (placeholder + empty hint, no loading/error
+// branches) for the composition assertions.
 const state = vi.hoisted(() => ({
   datacenters: [] as { id: string; name?: string }[],
   schedulingPolicies: [] as { id: string; name?: string }[],

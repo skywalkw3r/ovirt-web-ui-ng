@@ -6,6 +6,7 @@ import {
   listNetworkVnicProfiles,
 } from '../api/resources/networks'
 import { useSettings } from '../settings/SettingsProvider'
+import { networkKeys } from './useNetworks'
 
 // Networks are infrastructure entities that drift slowly and only load while
 // the detail page is mounted; 60s matches the other admin/parity collections.
@@ -20,7 +21,7 @@ export const NETWORK_DETAIL_POLL_INTERVAL_MS = 60_000
 export function useNetwork(id: string) {
   const { refreshIntervalMs } = useSettings()
   return useQuery({
-    queryKey: ['network', id],
+    queryKey: networkKeys.detail(id),
     queryFn: () => getNetwork(id),
     refetchInterval: Math.max(refreshIntervalMs, NETWORK_DETAIL_POLL_INTERVAL_MS),
   })
@@ -29,7 +30,7 @@ export function useNetwork(id: string) {
 export function useNetworkVnicProfiles(id: string) {
   const { refreshIntervalMs } = useSettings()
   return useQuery({
-    queryKey: ['network', id, 'vnicProfiles'],
+    queryKey: networkKeys.vnicProfiles(id),
     queryFn: () => listNetworkVnicProfiles(id),
     refetchInterval: Math.max(refreshIntervalMs, NETWORK_DETAIL_POLL_INTERVAL_MS),
   })
@@ -38,7 +39,7 @@ export function useNetworkVnicProfiles(id: string) {
 export function useNetworkLabels(id: string) {
   const { refreshIntervalMs } = useSettings()
   return useQuery({
-    queryKey: ['network', id, 'labels'],
+    queryKey: networkKeys.labels(id),
     queryFn: () => listNetworkLabels(id),
     refetchInterval: Math.max(refreshIntervalMs, NETWORK_DETAIL_POLL_INTERVAL_MS),
   })
@@ -47,7 +48,7 @@ export function useNetworkLabels(id: string) {
 export function useNetworkPermissions(id: string) {
   const { refreshIntervalMs } = useSettings()
   return useQuery({
-    queryKey: ['network', id, 'permissions'],
+    queryKey: networkKeys.permissions(id),
     queryFn: () => listNetworkPermissions(id),
     refetchInterval: Math.max(refreshIntervalMs, NETWORK_DETAIL_POLL_INTERVAL_MS),
   })

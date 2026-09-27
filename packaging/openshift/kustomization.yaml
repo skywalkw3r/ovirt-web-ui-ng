@@ -3,7 +3,10 @@ kind: Kustomization
 
 # Base for deploying the console on OpenShift (ArgoCD-friendly).
 # Typical use: reference this base from a per-cluster/per-env overlay that
-# patches ENGINE_ORIGIN / CSP_CONNECT_EXTRA and swaps config.js. See README.md.
+# swaps in its own config.js and (recommended multi-engine shape) an nginx
+# default.conf with one /e/<slug> proxy block per engine; ENGINE_ORIGIN /
+# CSP_CONNECT_EXTRA only matter for the single-engine / direct-connect
+# alternative. See README.md.
 
 resources:
   - deployment.yaml

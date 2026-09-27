@@ -22,12 +22,13 @@ import { useQuery } from '@tanstack/react-query'
 import { getCluster } from '../api/resources/clusters'
 import { listDataCenterStorageDomains } from '../api/resources/datacenters'
 import { listVmDisks } from '../api/resources/disks'
-import { listVms } from '../api/resources/vms'
 import type { Vm } from '../api/schemas/vm'
 import { useCloneVm } from '../hooks/useCloneVm'
 import { useT } from '../i18n/useT'
 import { statusText } from '../lib/format'
 import { vmNameError } from './edit-vm/editVmDraft'
+import { useVms, vmKeys } from '../hooks/useVms'
+import { clusterKeys, dataCenterKeys } from '../hooks/useAdminResources'
 
 // Marker class the click shield below uses to recognize its own modal.
 const MODAL_CLASS = 'clone-vm-modal'
@@ -115,13 +116,13 @@ function CloneVmModal({ vm, onClose }: { vm: Vm; onClose: () => void }) {
   // data domain of the VM's own DC, so the target options are scoped there
   // (same doomed-request rationale as MakeTemplateModal's cluster scoping).
   const cluster = useQuery({
-    queryKey: ['cluster', vm.cluster?.id],
+    queryKey: clusterKeys.detail(vm.cluster?.id),
     queryFn: () => getCluster(vm.cluster?.id ?? ''),
     enabled: vm.cluster?.id !== undefined,
   })
   const dataCenterId = cluster.data?.data_center?.id
   const storageDomains = useQuery({
-    queryKey: ['datacenter', dataCenterId, 'storageDomains'],
+    queryKey: dataCenterKeys.storageDomains(dataCenterId),
     queryFn: () => listDataCenterStorageDomains(dataCenterId ?? ''),
     enabled: dataCenterId !== undefined,
   })
@@ -133,16 +134,17 @@ function CloneVmModal({ vm, onClose }: { vm: Vm; onClose: () => void }) {
   // environment before submitting; mirror it against the VM list (same cache
   // entry as useVms, hence the follow=tags). If the list fails to load the
   // check degrades to nothing — the engine still enforces uniqueness.
-  const vms = useQuery({
-    queryKey: ['vms', ''],
-    queryFn: () => listVms({ follow: 'tags' }),
-  })
+  // The shared VM list hook (same cache entry and queryFn as the inventory
+  // views, so this dialog can never overwrite their payload shape with a
+  // lighter one); mounted only while the dialog is open, so its polling
+  // lives and dies with it.
+  const vms = useVms()
   const nameTaken = (vms.data ?? []).some((existing) => existing.name === name)
 
   // Webadmin's clone dialog warns when the VM carries direct-LUN disks: the
   // engine clones image disks only, so the clone silently drops the LUNs.
   const disks = useQuery({
-    queryKey: ['vm', vm.id, 'disks'],
+    queryKey: vmKeys.disks(vm.id),
     queryFn: () => listVmDisks(vm.id),
   })
   const hasLunDisk = (disks.data ?? []).some(

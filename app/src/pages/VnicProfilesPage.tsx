@@ -30,15 +30,10 @@ import { useVnicProfiles } from '../hooks/useCatalogPages'
 import { useColumnPrefs } from '../hooks/useColumnPrefs'
 import { sortRows, useColumnSort } from '../hooks/useColumnSort'
 import { useNetworks } from '../hooks/useNetworks'
+import { usePagination } from '../hooks/usePagination'
 import { useDeleteVnicProfile } from '../hooks/useVnicProfileMutations'
 import { useT } from '../i18n/useT'
 import type { MessageId } from '../i18n/messages/en'
-
-const PER_PAGE_OPTIONS = [
-  { title: '20', value: 20 },
-  { title: '50', value: 50 },
-  { title: '100', value: 100 },
-]
 
 // Network/DC names come from client-side joins: flat /vnicprofiles carries
 // network as an id-only link, and flat /networks carries data_center the same
@@ -161,12 +156,9 @@ function VnicProfilesTable() {
   // client-side header sort; no default — the engine list order stands
   // until a header is clicked (see hooks/useColumnSort)
   const { sort, thSort } = useColumnSort()
-  const [page, setPage] = useState(1)
-  const [perPage, setPerPage] = useState(50)
   // client-side name/description/network filter — /vnicprofiles has no
   // server-side search
   const [filter, setFilter] = useState('')
-  const [prevFilter, setPrevFilter] = useState(filter)
   // create when null-with-flag, edit when a profile is set; removing gates the
   // destructive ConfirmModal per project rule.
   const [creating, setCreating] = useState(false)
@@ -203,18 +195,10 @@ function VnicProfilesTable() {
     columns.find((column) => column.key === key)?.sortValue?.(row, columnCtx),
   )
 
-  // a new filter starts back at page 1 (guarded setState during render, like
-  // the server-side search pages)
-  if (filter !== prevFilter) {
-    setPrevFilter(filter)
-    setPage(1)
-  }
-
   // clamp rather than effect-reset: polling refetches can shrink the list
-  // underneath the current page
-  const lastPage = Math.max(1, Math.ceil(items.length / perPage))
-  const currentPage = Math.min(page, lastPage)
-  const paged = items.slice((currentPage - 1) * perPage, currentPage * perPage)
+  // underneath the current page; a new filter starts back at page 1
+  const paging = usePagination({ total: items.length, resetKeys: [filter] })
+  const paged = paging.pageSlice(items)
 
   const visibleColumns = columns.filter((column) => prefs.isVisible(column.key))
 
@@ -245,14 +229,11 @@ function VnicProfilesTable() {
                 isCompact
                 variant="top"
                 itemCount={items.length}
-                page={currentPage}
-                perPage={perPage}
-                perPageOptions={PER_PAGE_OPTIONS}
-                onSetPage={(_event, nextPage) => setPage(nextPage)}
-                onPerPageSelect={(_event, nextPerPage, nextPage) => {
-                  setPerPage(nextPerPage)
-                  setPage(nextPage)
-                }}
+                page={paging.page}
+                perPage={paging.perPage}
+                perPageOptions={paging.perPageOptions}
+                onSetPage={paging.onSetPage}
+                onPerPageSelect={paging.onPerPageSelect}
                 titles={{ paginationAriaLabel: t('vnicProfiles.pagination.ariaLabel') }}
               />
             </ToolbarItem>

@@ -4,22 +4,33 @@
 // app/public/config.js in the repo.
 window.ovirtWebUiConfig = {
   // Multi-engine server list (login-page picker; first entry is the default
-  // selection for new browsers). Two kinds of entry:
+  // selection for new browsers). Three kinds of entry:
   //
-  //  - url = the console's OWN origin (this Route's host): traffic goes
-  //    same-origin through this pod's nginx proxy to ENGINE_ORIGIN
-  //    (deployment.yaml). No CORS setup needed for that engine. Use this for
-  //    the "default" engine.
+  //  - url = '/e/<slug>' — RECOMMENDED. A same-origin path prefix that this
+  //    pod's nginx proxies to the engine (one `location /e/<slug>/` block per
+  //    engine in the mounted default.conf — see README.md). Everything stays
+  //    on the console's origin: no CORS, no CSP_CONNECT_EXTRA, and browsers
+  //    trust only the console's certificate. `fqdn` names the engine in the
+  //    masthead tooltip; `wan: true` marks a high-latency engine so the app
+  //    starts light against it.
   //
-  //  - url = an engine's own origin: the browser talks to that engine
-  //    DIRECTLY. That engine needs the one-time CORS enablement (engine-config
+  //  - url = the console's OWN origin (this Route's host): the single-engine
+  //    shape — traffic goes same-origin through the baked nginx-sample.conf to
+  //    ENGINE_ORIGIN (deployment.yaml). No CORS; needs the engine-ca mount.
+  //
+  //  - url = an engine's own https:// origin: the browser talks to that engine
+  //    DIRECTLY. It needs the one-time CORS enablement (engine-config
   //    CORSSupport/CORSAllowedOrigins for the API + a CORS-fixed enginesso
-  //    build for SSO) and its origin must be added to CSP_CONNECT_EXTRA in
-  //    deployment.yaml; users' browsers must trust its TLS certificate.
+  //    build for SSO), its origin added to CSP_CONNECT_EXTRA in
+  //    deployment.yaml, and a TLS certificate users' browsers trust. Keep it
+  //    for engines you cannot front with a proxy path.
   servers: {
     list: [
-      { name: 'HE 1 (default)', url: 'https://console.apps.cluster.example.com' },
-      { name: 'HE 2', url: 'https://engine2.example.com' },
+      { name: 'HE 1', url: '/e/he1', fqdn: 'engine1.example.com' },
+      { name: 'HE 2', url: '/e/he2', fqdn: 'engine2.example.com' },
+      { name: 'HE 3 — remote site', url: '/e/he3', fqdn: 'engine3.example.com', wan: true },
+      // Direct-connect alternative (per-engine CORS + CSP_CONNECT_EXTRA):
+      // { name: 'HE 4', url: 'https://engine4.example.com' },
     ],
   },
 

@@ -13,7 +13,7 @@ import { FormattedMessage } from 'react-intl'
 import { useQuery } from '@tanstack/react-query'
 import { fetchApiInfo } from '../api/resources/system'
 import { brandAssets } from '../branding/logos'
-import { useProductBrand } from '../hooks/useProductBrand'
+import { apiInfoKeys, useProductBrand } from '../hooks/useProductBrand'
 import { useT } from '../i18n/useT'
 import { APP_VERSION, COMPONENT_VERSIONS } from '../lib/version'
 
@@ -22,7 +22,7 @@ import { APP_VERSION, COMPONENT_VERSIONS } from '../lib/version'
 // dashboard already fetched instead of hitting the engine again. Product info
 // is effectively static, hence no refetch interval.
 function useApiInfo() {
-  return useQuery({ queryKey: ['apiInfo'], queryFn: fetchApiInfo })
+  return useQuery({ queryKey: apiInfoKeys.all, queryFn: fetchApiInfo })
 }
 
 // The four-states rule applies loosely here: the modal never blanks on a

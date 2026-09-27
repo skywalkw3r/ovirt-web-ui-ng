@@ -35,6 +35,7 @@ import {
 import { useT } from '../../i18n/useT'
 import { useNotify } from '../../notifications/context'
 import { ConfirmModal } from '../ConfirmModal'
+import { bookmarkKeys } from '../../hooks/useListSearch'
 
 // Webadmin's Bookmarks pane, scoped per list page: a star button saves the
 // committed query under a name, a dropdown re-applies or deletes saved
@@ -82,7 +83,7 @@ function useAreaBookmarks(area: string) {
   // retry:false so a 403/404 (non-admin, or an engine that hides the
   // collection) surfaces as isError at once and we fall back rather than spin.
   const serverQuery = useQuery({
-    queryKey: ['bookmarks'],
+    queryKey: bookmarkKeys.all,
     queryFn: listServerBookmarks,
     retry: false,
   })
@@ -99,7 +100,7 @@ function useAreaBookmarks(area: string) {
     [serverQuery.data, area],
   )
 
-  const invalidate = () => void queryClient.invalidateQueries({ queryKey: ['bookmarks'] })
+  const invalidate = () => void queryClient.invalidateQueries({ queryKey: bookmarkKeys.all })
 
   const saveMutation = useMutation({
     // upsert by encoded name: an existing area bookmark is re-queried in place

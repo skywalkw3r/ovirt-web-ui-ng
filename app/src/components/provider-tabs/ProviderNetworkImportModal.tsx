@@ -18,6 +18,9 @@ import { listDataCenters } from '../../api/resources/datacenters'
 import { importExternalNetwork, type OpenStackNetwork } from '../../api/resources/providers'
 import { useT } from '../../i18n/useT'
 import { useNotify } from '../../notifications/context'
+import { dataCenterKeys } from '../../hooks/useAdminResources'
+import { providerKeys } from '../../hooks/useParityResources'
+import { networkKeys } from '../../hooks/useNetworks'
 
 // The per-row Import action from the provider Networks tab. It reuses the exact
 // import machinery ImportExternalNetworksModal drives — POST
@@ -46,7 +49,7 @@ export function ProviderNetworkImportModal({
   // Shares the ['datacenters'] key with the batch import modal, so the cached
   // inventory is reused instead of re-fetched.
   const dataCenters = useQuery({
-    queryKey: ['datacenters'],
+    queryKey: dataCenterKeys.all,
     queryFn: () => listDataCenters(),
     enabled: isOpen,
   })
@@ -59,8 +62,8 @@ export function ProviderNetworkImportModal({
       notify({ title: t('network.import.toast.success', { count: 1 }), variant: 'success' })
       // Refresh the engine networks (the batch modal invalidates the same key)
       // and this provider's imported markers on the Networks tab.
-      void queryClient.invalidateQueries({ queryKey: ['networks'] })
-      void queryClient.invalidateQueries({ queryKey: ['provider', providerId, 'networks'] })
+      void queryClient.invalidateQueries({ queryKey: networkKeys.all })
+      void queryClient.invalidateQueries({ queryKey: providerKeys.networks(providerId) })
       onClose()
     },
     onError: (error) => {

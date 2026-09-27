@@ -19,6 +19,7 @@ import { useT } from '../../i18n/useT'
 import { formatBytes, statusText } from '../../lib/format'
 import { useSettings } from '../../settings/SettingsProvider'
 import { StatusBadge } from '../StatusBadge'
+import { diskKeys } from '../../hooks/useCatalogPages'
 
 const DASH = '—'
 
@@ -33,7 +34,7 @@ const DASH = '—'
 function useDiskSnapshots(disk: Disk, storageDomainIds: string[]) {
   const { refreshIntervalMs } = useSettings()
   return useQuery({
-    queryKey: ['disk', disk.id, 'disksnapshots', [...storageDomainIds].sort().join(',')],
+    queryKey: diskKeys.snapshots(disk.id, storageDomainIds),
     queryFn: async (): Promise<DiskSnapshot[]> => {
       const lists = await Promise.all(
         storageDomainIds.map((sdId) => listStorageDomainDiskSnapshots(sdId)),

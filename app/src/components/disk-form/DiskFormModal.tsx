@@ -4,8 +4,6 @@ import {
   Form,
   FormGroup,
   FormHelperText,
-  FormSelect,
-  FormSelectOption,
   HelperText,
   HelperTextItem,
   Modal,
@@ -13,9 +11,6 @@ import {
   ModalFooter,
   ModalHeader,
   NumberInput,
-  Radio,
-  Skeleton,
-  Switch,
   TextInput,
 } from '@patternfly/react-core'
 import type {
@@ -25,132 +20,61 @@ import type {
 } from '../../api/resources/disks'
 import { diskSizeBytes, type Disk } from '../../api/schemas/disk'
 import type { DiscoveredLun } from '../../api/schemas/host-storage'
-import type { StorageDomain } from '../../api/schemas/storage-domain'
-import {
-  useCreateDirectLunDisk,
-  useCreateDisk,
-  useStorageDomainDiskProfiles,
-  useUpdateDisk,
-} from '../../hooks/useDiskMutations'
+import { useCreateDirectLunDisk, useCreateDisk, useUpdateDisk } from '../../hooks/useDiskMutations'
 import { useHosts } from '../../hooks/useHosts'
 import { useStorageDomains } from '../../hooks/useStorageDomains'
 import { useT } from '../../i18n/useT'
 import { formatBytes } from '../../lib/format'
-import { SanStorageSection } from '../storage-domain-form/SanStorageSection'
+import { DirectLunFields } from './DirectLunFields'
+import {
+  AllocationField,
+  DiskProfileField,
+  DiskSizeField,
+  DiskSwitchField,
+  DiskTypeField,
+  StorageDomainField,
+  type AllocationLabelIds,
+  type DiskProfileLabelIds,
+} from './DiskFields'
+import {
+  DEFAULT_DISK_SIZE_GIB,
+  DEFAULT_PROFILE,
+  GiB,
+  dataDomains,
+  isDiskSizeValid,
+  resolveAllocation,
+  type Allocation,
+  type DiskFormKind,
+} from './diskFormModel'
 
-const GiB = 1024 ** 3
-const MIN_DISK_SIZE_GIB = 1
-// modest thin-provisioned starting point; cow/sparse means it costs little
-const DEFAULT_DISK_SIZE_GIB = 10
-
-// Allocation ⇒ format/sparse, authoritative per webadmin NewDiskModel /
-// AsyncDataProvider.getDiskVolumeFormat: Thin = Sparse ⇒ cow+sparse;
-// Preallocated ⇒ raw+!sparse. A regular block (iscsi/fcp) storage domain
-// DEFAULTS to Preallocated but stays changeable — the user may switch back to
-// Thin (cow/sparse on a block SD is engine-accepted). Only MANAGED block storage
-// (Cinder) is truly non-changeable — updateVolumeType calls setIsChangeable(false)
-// only for that type; for iscsi/fcp it just sets the default while leaving the
-// radio changeable.
-type Allocation = 'thin' | 'preallocated'
-
-interface AllocationDerivation {
-  format: 'cow' | 'raw'
-  sparse: boolean
-}
-
-function deriveAllocation(allocation: Allocation): AllocationDerivation {
-  return allocation === 'thin' ? { format: 'cow', sparse: true } : { format: 'raw', sparse: false }
-}
-
-// Regular block domains back onto LUNs (iscsi/fcp). webadmin defaults their
-// allocation to Preallocated but leaves the radio changeable; the flat
-// /storagedomains list carries storage.type so we can apply that same default.
-const BLOCK_STORAGE_TYPES = new Set(['iscsi', 'fcp'])
-
-function isBlockDomain(domain: StorageDomain | undefined): boolean {
-  return domain !== undefined && BLOCK_STORAGE_TYPES.has(domain.storage?.type ?? '')
-}
-
-// Managed block storage (Cinder) is the one type webadmin makes non-changeable:
-// updateVolumeType locks the volume type to Preallocated there. The flat list
-// carries storage.type so we can lock the radio client-side rather than letting
-// the engine fault.
-function isManagedBlockDomain(domain: StorageDomain | undefined): boolean {
-  return domain !== undefined && domain.storage?.type === 'managed_block_storage'
-}
-
-// Image disks can only live on data domains (iso/export domains hold other
-// content types) — same narrowing as MoveCopyDiskModal / the VM AddDiskModal.
-function dataDomains(domains: StorageDomain[]): StorageDomain[] {
-  return domains.filter((domain) => domain.type === 'data')
-}
+// The shared allocation / size / storage-domain / profile / switch fields live
+// in DiskFields.tsx and the Direct LUN branch in DirectLunFields.tsx (both
+// also rendered by the VM tab's AddDiskModal); the pure rules — allocation ⇒
+// format/sparse, block-SD defaults, the size floor — in diskFormModel.ts.
+export type { DiskFormKind } from './diskFormModel'
 
 function diskLabel(disk: Disk): string {
   return disk.alias ?? disk.name ?? disk.id
 }
 
-// The disk-profile picker's sentinel for "let the engine assign the storage
-// domain's default profile" — distinct from a real profile id so we can omit
-// disk_profile from the body when it's selected.
-const DEFAULT_PROFILE = ''
-
-// Shared storage-domain-scoped disk-profile select (create and edit both use
-// it). Options load off the picked SD; a domain with no profiles (or a mock
-// without the /diskprofiles route) yields [] and the select degrades to a single
-// "Default profile" entry that omits disk_profile from the body.
-function DiskProfileField({
-  storageDomainId,
-  value,
-  onChange,
-  isDisabled = false,
-}: {
-  storageDomainId: string | undefined
-  value: string
-  onChange: (profileId: string) => void
-  isDisabled?: boolean
-}) {
-  const t = useT()
-  const profiles = useStorageDomainDiskProfiles(storageDomainId)
-  const options = profiles.data ?? []
-
-  return (
-    <FormGroup label={t('diskForm.diskProfile')} fieldId="disk-profile">
-      {profiles.isPending && storageDomainId ? (
-        <Skeleton height="2.25rem" screenreaderText={t('diskForm.diskProfile.loading')} />
-      ) : (
-        <FormSelect
-          id="disk-profile"
-          aria-label={t('diskForm.diskProfile')}
-          value={value}
-          isDisabled={isDisabled || !storageDomainId}
-          onChange={(_event, next) => onChange(next)}
-        >
-          <FormSelectOption value={DEFAULT_PROFILE} label={t('diskForm.diskProfile.default')} />
-          {options.map((profile) => (
-            <FormSelectOption
-              key={profile.id}
-              value={profile.id}
-              label={profile.name ?? profile.id}
-            />
-          ))}
-        </FormSelect>
-      )}
-      <FormHelperText>
-        <HelperText>
-          <HelperTextItem>
-            {storageDomainId
-              ? t('diskForm.diskProfile.help')
-              : t('diskForm.diskProfile.selectDomain')}
-          </HelperTextItem>
-        </HelperText>
-      </FormHelperText>
-    </FormGroup>
-  )
+// This form's own wording for the shared fields (the VM tab's Add disk dialog
+// phrases the same fields under vmDisks.addModal.*).
+const PROFILE_LABELS: DiskProfileLabelIds = {
+  label: 'diskForm.diskProfile',
+  loading: 'diskForm.diskProfile.loading',
+  defaultOption: 'diskForm.diskProfile.default',
+  help: 'diskForm.diskProfile.help',
+  selectDomain: 'diskForm.diskProfile.selectDomain',
 }
-
-// The disk kinds the create form offers, gated by the Image | Direct LUN radio
-// (webadmin NewDiskModel's DiskStorageType).
-export type DiskFormKind = 'image' | 'lun'
+const ALLOCATION_LABELS: AllocationLabelIds = {
+  group: 'diskForm.allocation',
+  thin: 'diskForm.allocation.thin',
+  managedBlock: 'diskForm.allocation.managedBlock',
+  blockDefault: 'diskForm.allocation.blockDefault',
+  format: 'diskForm.format.label',
+  qcow2: 'diskForm.format.qcow2',
+  raw: 'diskForm.format.raw',
+}
 
 // The Create/Edit disk modal. One component, a `disk` prop discriminates the two
 // modes (present ⇒ edit) — same shape as DataCenterFormModal. Create POSTs
@@ -232,7 +156,6 @@ function CreateDiskForm({
   const [lunStorageType, setLunStorageType] = useState<'iscsi' | 'fcp'>('iscsi')
   const [selectedLunIds, setSelectedLunIds] = useState<string[]>([])
   const [selectedLuns, setSelectedLuns] = useState<DiscoveredLun[]>([])
-  const upHosts = (hosts.data ?? []).filter((host) => host.status === 'up')
 
   const targets = dataDomains(domains.data ?? [])
   const selectedDomain = targets.find((domain) => domain.id === storageDomainId)
@@ -240,21 +163,16 @@ function CreateDiskForm({
   // block SD (iscsi/fcp) only DEFAULTS to Preallocated — the radio stays
   // changeable, so an untouched selection shows Preallocated but the user may
   // switch back to Thin (which the engine and webadmin both accept).
-  const managedBlockDomain = isManagedBlockDomain(selectedDomain)
-  const blockDefaultPreallocated = isBlockDomain(selectedDomain) || managedBlockDomain
-  const effectiveAllocation: Allocation = managedBlockDomain
-    ? 'preallocated'
-    : allocationTouched
-      ? allocation
-      : blockDefaultPreallocated
-        ? 'preallocated'
-        : 'thin'
-  const derived = deriveAllocation(effectiveAllocation)
+  const resolved = resolveAllocation({
+    domain: selectedDomain,
+    allocation,
+    touched: allocationTouched,
+  })
   // wipe default follows the SD policy until the user touches the switch
   const effectiveWipe = wipeTouched ? wipeAfterDelete : selectedDomain?.wipe_after_delete === true
 
   const aliasValid = alias.trim() !== ''
-  const sizeValid = typeof sizeGib === 'number' && sizeGib >= MIN_DISK_SIZE_GIB
+  const sizeValid = isDiskSizeValid(sizeGib)
   const aliasError = aliasTouched && !aliasValid
   // exactly one LUN backs a direct-LUN disk; the section's radio mode enforces
   // the "at most one" half, this gate the "at least one"
@@ -265,22 +183,6 @@ function CreateDiskForm({
       ? aliasValid && sizeValid && storageDomainId !== '' && !pending
       : aliasValid && lunSelected && !pending
 
-  const stepSize = (delta: number) => {
-    const current = typeof sizeGib === 'number' && !Number.isNaN(sizeGib) ? sizeGib : 0
-    setSizeGib(Math.max(MIN_DISK_SIZE_GIB, current + delta))
-  }
-  const onSizeChange = (event: FormEvent<HTMLInputElement>) => {
-    const raw = (event.target as HTMLInputElement).value
-    setSizeGib(raw === '' ? '' : Number(raw))
-  }
-  const onSizeBlur = () => {
-    if (typeof sizeGib !== 'number' || Number.isNaN(sizeGib)) {
-      setSizeGib(DEFAULT_DISK_SIZE_GIB)
-    } else if (sizeGib < MIN_DISK_SIZE_GIB) {
-      setSizeGib(MIN_DISK_SIZE_GIB)
-    }
-  }
-
   const submitImage = () => {
     if (!aliasValid || typeof sizeGib !== 'number' || !sizeValid || storageDomainId === '') return
     const spec: NewImageDiskSpec = {
@@ -288,8 +190,8 @@ function CreateDiskForm({
       description: description.trim() === '' ? undefined : description.trim(),
       provisionedSize: sizeGib * GiB,
       storageDomainId,
-      format: derived.format,
-      sparse: derived.sparse,
+      format: resolved.derived.format,
+      sparse: resolved.derived.sparse,
       bootable,
       shareable,
       wipeAfterDelete: effectiveWipe,
@@ -343,29 +245,7 @@ function CreateDiskForm({
           }}
         >
           {/* Image | Direct LUN branch switch (webadmin DiskStorageType radio). */}
-          <FormGroup
-            label={t('disk.lun.diskType.label')}
-            role="radiogroup"
-            isInline
-            fieldId="disk-type"
-          >
-            <Radio
-              id="disk-type-image"
-              name="disk-type"
-              label={t('disk.lun.diskType.image')}
-              aria-label={t('disk.lun.diskType.image')}
-              isChecked={diskType === 'image'}
-              onChange={() => setDiskType('image')}
-            />
-            <Radio
-              id="disk-type-lun"
-              name="disk-type"
-              label={t('disk.lun.diskType.directLun')}
-              aria-label={t('disk.lun.diskType.directLun')}
-              isChecked={diskType === 'lun'}
-              onChange={() => setDiskType('lun')}
-            />
-          </FormGroup>
+          <DiskTypeField idPrefix="disk" value={diskType} onChange={setDiskType} />
 
           <FormGroup label={t('diskForm.alias')} isRequired fieldId="disk-alias">
             <TextInput
@@ -396,289 +276,85 @@ function CreateDiskForm({
           </FormGroup>
 
           {diskType === 'image' && (
-            <FormGroup label={t('vmDisks.addModal.size')} isRequired fieldId="disk-size">
-              <NumberInput
-                value={sizeGib}
-                min={MIN_DISK_SIZE_GIB}
-                onMinus={() => stepSize(-1)}
-                onPlus={() => stepSize(1)}
-                onChange={onSizeChange}
-                onBlur={onSizeBlur}
-                inputName="disk-size"
-                inputAriaLabel={t('vmDisks.addModal.sizeAria')}
-                minusBtnAriaLabel={t('vmDisks.addModal.decrease')}
-                plusBtnAriaLabel={t('vmDisks.addModal.increase')}
-                unit="GiB"
-                widthChars={6}
-                validated={sizeValid ? 'default' : 'error'}
-              />
-              <FormHelperText>
-                <HelperText>
-                  <HelperTextItem variant={sizeValid ? 'default' : 'error'}>
-                    {t('vmDisks.addModal.atLeast', { min: MIN_DISK_SIZE_GIB })}
-                  </HelperTextItem>
-                </HelperText>
-              </FormHelperText>
-            </FormGroup>
+            <DiskSizeField idPrefix="disk" value={sizeGib} onChange={setSizeGib} />
           )}
 
           {/* Direct LUN branch: host picker (discovery is host-scoped), SAN
               fabric kind, then the reused discover/login/LUN-pick flow in
               single-select mode — one LUN per disk. */}
           {diskType === 'lun' && (
-            <>
-              <FormGroup label={t('disk.lun.host.label')} isRequired fieldId="disk-lun-host">
-                {hosts.isPending && (
-                  <Skeleton height="2.25rem" screenreaderText={t('disk.lun.host.loading')} />
-                )}
-                {hosts.isError && (
-                  <>
-                    <HelperText>
-                      <HelperTextItem variant="error">
-                        {t('disk.lun.host.error', {
-                          message:
-                            hosts.error instanceof Error
-                              ? hosts.error.message
-                              : t('common.error.unknown'),
-                        })}
-                      </HelperTextItem>
-                    </HelperText>
-                    <Button variant="link" isInline onClick={() => void hosts.refetch()}>
-                      {t('common.action.retry')}
-                    </Button>
-                  </>
-                )}
-                {hosts.isSuccess && (
-                  <FormSelect
-                    id="disk-lun-host"
-                    aria-label={t('disk.lun.host.label')}
-                    value={lunHostId}
-                    onChange={(_event, value) => setLunHostId(value)}
-                  >
-                    <FormSelectOption
-                      value=""
-                      label={
-                        upHosts.length === 0 ? t('disk.lun.host.none') : t('disk.lun.host.select')
-                      }
-                      isPlaceholder
-                      isDisabled
-                    />
-                    {upHosts.map((host) => (
-                      <FormSelectOption
-                        key={host.id}
-                        value={host.id}
-                        label={host.name ?? host.id}
-                      />
-                    ))}
-                  </FormSelect>
-                )}
-                <FormHelperText>
-                  <HelperText>
-                    <HelperTextItem>{t('disk.lun.host.help')}</HelperTextItem>
-                  </HelperText>
-                </FormHelperText>
-              </FormGroup>
-
-              <FormGroup
-                label={t('disk.lun.storageType.label')}
-                role="radiogroup"
-                isInline
-                fieldId="disk-lun-storage-type"
-              >
-                <Radio
-                  id="disk-lun-type-iscsi"
-                  name="disk-lun-storage-type"
-                  label={t('disk.lun.storageType.iscsi')}
-                  aria-label={t('disk.lun.storageType.iscsi')}
-                  isChecked={lunStorageType === 'iscsi'}
-                  onChange={() => setLunStorageType('iscsi')}
-                />
-                <Radio
-                  id="disk-lun-type-fcp"
-                  name="disk-lun-storage-type"
-                  label={t('disk.lun.storageType.fcp')}
-                  aria-label={t('disk.lun.storageType.fcp')}
-                  isChecked={lunStorageType === 'fcp'}
-                  onChange={() => setLunStorageType('fcp')}
-                />
-              </FormGroup>
-
-              <FormGroup
-                label={
-                  lunStorageType === 'iscsi'
-                    ? t('disk.lun.section.iscsi')
-                    : t('disk.lun.section.fcp')
-                }
-                isRequired
-                fieldId="disk-lun-san"
-              >
-                <SanStorageSection
-                  storageType={lunStorageType}
-                  hostId={lunHostId}
-                  selectedLunIds={selectedLunIds}
-                  onSelectedLunIdsChange={setSelectedLunIds}
-                  onSelectedLunsChange={setSelectedLuns}
-                  selectionVariant="radio"
-                />
-                <FormHelperText>
-                  <HelperText>
-                    <HelperTextItem>
-                      {lunSelected
-                        ? t('disk.lun.selected', {
-                            id: selectedLuns[0].id,
-                            size: formatBytes(selectedLuns[0].size),
-                          })
-                        : t('disk.lun.selectOne')}
-                    </HelperTextItem>
-                  </HelperText>
-                </FormHelperText>
-              </FormGroup>
-            </>
-          )}
-
-          {diskType === 'image' && (
-            <FormGroup
-              label={t('vmDisks.addModal.storageDomain')}
-              isRequired
-              fieldId="disk-storage-domain"
-            >
-              {domains.isPending && (
-                <Skeleton
-                  height="2.25rem"
-                  screenreaderText={t('vmDisks.addModal.storageDomain.loading')}
-                />
-              )}
-              {domains.isError && (
-                <>
-                  <HelperText>
-                    <HelperTextItem variant="error">
-                      {t('vmDisks.addModal.storageDomain.error', {
-                        message:
-                          domains.error instanceof Error
-                            ? domains.error.message
-                            : t('common.error.unknown'),
-                      })}
-                    </HelperTextItem>
-                  </HelperText>
-                  <Button variant="link" isInline onClick={() => void domains.refetch()}>
-                    {t('common.action.retry')}
-                  </Button>
-                </>
-              )}
-              {domains.isSuccess && (
-                <FormSelect
-                  id="disk-storage-domain"
-                  aria-label={t('vmDisks.addModal.storageDomain')}
-                  value={storageDomainId}
-                  onChange={(_event, value) => {
-                    setStorageDomainId(value)
-                    // profiles are SD-scoped; drop any prior pick when the SD changes
-                    setDiskProfileId(DEFAULT_PROFILE)
-                  }}
-                >
-                  <FormSelectOption
-                    value=""
-                    label={
-                      targets.length === 0
-                        ? t('diskForm.storageDomain.none')
-                        : t('vmDisks.addModal.storageDomain.select')
-                    }
-                    isPlaceholder
-                    isDisabled
-                  />
-                  {targets.map((domain) => (
-                    <FormSelectOption key={domain.id} value={domain.id} label={domain.name} />
-                  ))}
-                </FormSelect>
-              )}
-            </FormGroup>
-          )}
-
-          {diskType === 'image' && (
-            <FormGroup
-              label={t('diskForm.allocation')}
-              role="radiogroup"
-              isStack
-              fieldId="disk-allocation"
-            >
-              <Radio
-                id="disk-allocation-thin"
-                name="disk-allocation"
-                label={t('diskForm.allocation.thin')}
-                aria-label={t('diskForm.allocation.thin')}
-                isChecked={effectiveAllocation === 'thin'}
-                isDisabled={managedBlockDomain}
-                onChange={() => {
-                  setAllocationTouched(true)
-                  setAllocation('thin')
-                }}
-              />
-              <Radio
-                id="disk-allocation-preallocated"
-                name="disk-allocation"
-                label={t('disks.alloc.preallocated')}
-                aria-label={t('disks.alloc.preallocated')}
-                isChecked={effectiveAllocation === 'preallocated'}
-                isDisabled={managedBlockDomain}
-                onChange={() => {
-                  setAllocationTouched(true)
-                  setAllocation('preallocated')
-                }}
-              />
-              <FormHelperText>
-                <HelperText>
-                  <HelperTextItem>
-                    {managedBlockDomain
-                      ? t('diskForm.allocation.managedBlock')
-                      : blockDefaultPreallocated && !allocationTouched
-                        ? t('diskForm.allocation.blockDefault')
-                        : t('diskForm.format.label', {
-                            format: t(
-                              derived.format === 'cow'
-                                ? 'diskForm.format.qcow2'
-                                : 'diskForm.format.raw',
-                            ),
-                          })}
-                  </HelperTextItem>
-                </HelperText>
-              </FormHelperText>
-            </FormGroup>
-          )}
-
-          {diskType === 'image' && (
-            <FormGroup fieldId="disk-bootable">
-              <Switch
-                id="disk-bootable"
-                label={t('vmDisks.addModal.bootable')}
-                isChecked={bootable}
-                onChange={(_event, checked) => setBootable(checked)}
-              />
-            </FormGroup>
-          )}
-
-          <FormGroup fieldId="disk-shareable">
-            <Switch
-              id="disk-shareable"
-              label={t('diskGeneral.term.shareable')}
-              isChecked={shareable}
-              onChange={(_event, checked) => setShareable(checked)}
+            <DirectLunFields
+              idPrefix="disk"
+              hosts={hosts}
+              hostId={lunHostId}
+              onHostChange={setLunHostId}
+              storageType={lunStorageType}
+              onStorageTypeChange={setLunStorageType}
+              selectedLunIds={selectedLunIds}
+              onSelectedLunIdsChange={setSelectedLunIds}
+              selectedLuns={selectedLuns}
+              onSelectedLunsChange={setSelectedLuns}
             />
-          </FormGroup>
+          )}
 
-          <FormGroup fieldId="disk-wipe">
-            <Switch
-              id="disk-wipe"
-              label={t('diskGeneral.term.wipeAfterDelete')}
-              isChecked={diskType === 'image' ? effectiveWipe : wipeAfterDelete}
-              onChange={(_event, checked) => {
-                setWipeTouched(true)
-                setWipeAfterDelete(checked)
+          {diskType === 'image' && (
+            <StorageDomainField
+              idPrefix="disk"
+              domains={domains}
+              targets={targets}
+              value={storageDomainId}
+              onChange={(value) => {
+                setStorageDomainId(value)
+                // profiles are SD-scoped; drop any prior pick when the SD changes
+                setDiskProfileId(DEFAULT_PROFILE)
+              }}
+              noneLabelId="diskForm.storageDomain.none"
+            />
+          )}
+
+          {diskType === 'image' && (
+            <AllocationField
+              idPrefix="disk"
+              labelIds={ALLOCATION_LABELS}
+              resolved={resolved}
+              touched={allocationTouched}
+              onChange={(next) => {
+                setAllocationTouched(true)
+                setAllocation(next)
               }}
             />
-          </FormGroup>
+          )}
+
+          {diskType === 'image' && (
+            <DiskSwitchField
+              id="disk-bootable"
+              label={t('vmDisks.addModal.bootable')}
+              isChecked={bootable}
+              onChange={setBootable}
+            />
+          )}
+
+          <DiskSwitchField
+            id="disk-shareable"
+            label={t('diskGeneral.term.shareable')}
+            isChecked={shareable}
+            onChange={setShareable}
+          />
+
+          <DiskSwitchField
+            id="disk-wipe"
+            label={t('diskGeneral.term.wipeAfterDelete')}
+            isChecked={diskType === 'image' ? effectiveWipe : wipeAfterDelete}
+            onChange={(checked) => {
+              setWipeTouched(true)
+              setWipeAfterDelete(checked)
+            }}
+          />
 
           {diskType === 'image' && (
             <DiskProfileField
+              idPrefix="disk"
+              labelIds={PROFILE_LABELS}
               storageDomainId={storageDomainId || undefined}
               value={diskProfileId}
               onChange={setDiskProfileId}
@@ -889,28 +565,26 @@ function EditDiskForm({ disk, onClose }: { disk: Disk; onClose: () => void }) {
             </FormGroup>
           )}
 
-          <FormGroup fieldId="disk-shareable">
-            <Switch
-              id="disk-shareable"
-              label={t('diskGeneral.term.shareable')}
-              isChecked={shareable}
-              onChange={(_event, checked) => setShareable(checked)}
-            />
-          </FormGroup>
+          <DiskSwitchField
+            id="disk-shareable"
+            label={t('diskGeneral.term.shareable')}
+            isChecked={shareable}
+            onChange={setShareable}
+          />
 
-          <FormGroup fieldId="disk-wipe">
-            <Switch
-              id="disk-wipe"
-              label={t('diskGeneral.term.wipeAfterDelete')}
-              isChecked={wipeAfterDelete}
-              onChange={(_event, checked) => setWipeAfterDelete(checked)}
-            />
-          </FormGroup>
+          <DiskSwitchField
+            id="disk-wipe"
+            label={t('diskGeneral.term.wipeAfterDelete')}
+            isChecked={wipeAfterDelete}
+            onChange={setWipeAfterDelete}
+          />
 
           {/* Disk profiles are storage-domain-scoped — a direct-LUN disk has
               no storage domain, so the field disappears with it. */}
           {!isLun && (
             <DiskProfileField
+              idPrefix="disk"
+              labelIds={PROFILE_LABELS}
               storageDomainId={storageDomainId}
               value={diskProfileId}
               onChange={setDiskProfileId}

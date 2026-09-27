@@ -9,6 +9,7 @@ import {
   listUnregisteredStorageDomainVms,
 } from '../api/resources/storageDomains'
 import { useSettings } from '../settings/SettingsProvider'
+import { storageDomainKeys } from './useStorageDomains'
 
 // Storage domain subcollections drift slowly and only load while the detail
 // page is mounted; 60s matches the other admin/parity collections. The
@@ -23,7 +24,7 @@ export const STORAGE_DOMAIN_DETAIL_POLL_INTERVAL_MS = 60_000
 export function useStorageDomain(id: string) {
   const { refreshIntervalMs } = useSettings()
   return useQuery({
-    queryKey: ['storagedomain', id],
+    queryKey: storageDomainKeys.detail(id),
     queryFn: () => getStorageDomain(id),
     refetchInterval: Math.max(refreshIntervalMs, STORAGE_DOMAIN_DETAIL_POLL_INTERVAL_MS),
   })
@@ -32,7 +33,7 @@ export function useStorageDomain(id: string) {
 export function useStorageDomainDisks(id: string) {
   const { refreshIntervalMs } = useSettings()
   return useQuery({
-    queryKey: ['storagedomain', id, 'disks'],
+    queryKey: storageDomainKeys.disks(id),
     queryFn: () => listStorageDomainDisks(id),
     refetchInterval: Math.max(refreshIntervalMs, STORAGE_DOMAIN_DETAIL_POLL_INTERVAL_MS),
   })
@@ -41,7 +42,7 @@ export function useStorageDomainDisks(id: string) {
 export function useStorageDomainVms(id: string) {
   const { refreshIntervalMs } = useSettings()
   return useQuery({
-    queryKey: ['storagedomain', id, 'vms'],
+    queryKey: storageDomainKeys.vms(id),
     queryFn: () => listStorageDomainVms(id),
     refetchInterval: Math.max(refreshIntervalMs, STORAGE_DOMAIN_DETAIL_POLL_INTERVAL_MS),
   })
@@ -50,7 +51,7 @@ export function useStorageDomainVms(id: string) {
 export function useStorageDomainTemplates(id: string) {
   const { refreshIntervalMs } = useSettings()
   return useQuery({
-    queryKey: ['storagedomain', id, 'templates'],
+    queryKey: storageDomainKeys.templates(id),
     queryFn: () => listStorageDomainTemplates(id),
     refetchInterval: Math.max(refreshIntervalMs, STORAGE_DOMAIN_DETAIL_POLL_INTERVAL_MS),
   })
@@ -59,7 +60,7 @@ export function useStorageDomainTemplates(id: string) {
 export function useStorageDomainPermissions(id: string) {
   const { refreshIntervalMs } = useSettings()
   return useQuery({
-    queryKey: ['storagedomain', id, 'permissions'],
+    queryKey: storageDomainKeys.permissions(id),
     queryFn: () => listStorageDomainPermissions(id),
     refetchInterval: Math.max(refreshIntervalMs, STORAGE_DOMAIN_DETAIL_POLL_INTERVAL_MS),
   })
@@ -73,7 +74,7 @@ export function useStorageDomainPermissions(id: string) {
 export function useUnregisteredStorageDomainVms(id: string) {
   const { refreshIntervalMs } = useSettings()
   return useQuery({
-    queryKey: ['storagedomain', id, 'unregistered-vms'],
+    queryKey: storageDomainKeys.unregisteredVms(id),
     queryFn: () => listUnregisteredStorageDomainVms(id),
     refetchInterval: Math.max(refreshIntervalMs, STORAGE_DOMAIN_DETAIL_POLL_INTERVAL_MS),
   })
@@ -84,7 +85,7 @@ export function useUnregisteredStorageDomainVms(id: string) {
 export function useUnregisteredStorageDomainTemplates(id: string) {
   const { refreshIntervalMs } = useSettings()
   return useQuery({
-    queryKey: ['storagedomain', id, 'unregistered-templates'],
+    queryKey: storageDomainKeys.unregisteredTemplates(id),
     queryFn: () => listUnregisteredStorageDomainTemplates(id),
     refetchInterval: Math.max(refreshIntervalMs, STORAGE_DOMAIN_DETAIL_POLL_INTERVAL_MS),
   })

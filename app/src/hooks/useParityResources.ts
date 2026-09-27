@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { listErrata } from '../api/resources/errata'
+import { getErratum, listErrata } from '../api/resources/errata'
 import {
   createProvider,
   deleteProvider,
@@ -22,13 +22,52 @@ import { useAdminResourcePollInterval } from './useAdminResources'
 // Gating on isAdmin alone is safe: it stays false until the profile has
 // loaded.
 
+// Query-key builders for the parity collections this module owns. `all` is
+// the list entry AND the prefix the provider mutations invalidate; the errata
+// detail read nests under the list prefix so an errata invalidation covers it.
+export const providerKeys = {
+  all: ['providers'] as const,
+  // the external networks a provider exposes (ProviderNetworksTab + the two
+  // import modals); NOT under the ['providers'] prefix — a provider-list
+  // invalidation deliberately leaves the fetched network catalog alone
+  networks: (id: string) => ['provider', id, 'networks'] as const,
+}
+
+export const errataKeys = {
+  all: ['errata'] as const,
+  detail: (id: string) => ['errata', id] as const,
+}
+
+// Quotas: `all` is the flat list entry useQuotas registers AND the prefix the
+// quota mutations invalidate; `detail` and the per-quota slices are what
+// useQuotaMutations' reads and the quota tabs register.
+export const quotaKeys = {
+  all: ['quotas'] as const,
+  detail: (id: string) => ['quota', id] as const,
+  clusterLimits: (id: string) => ['quota', id, 'clusterLimits'] as const,
+  storageLimits: (id: string) => ['quota', id, 'storageLimits'] as const,
+  templates: (id: string) => ['quota', id, 'templates'] as const,
+  permissions: (id: string) => ['quota', id, 'permissions'] as const,
+}
+
+// Gluster volumes: `all` is the flat list entry useGlusterVolumes registers
+// (and every volume write invalidates); bricks and tunable options cache under
+// their own per-volume keys so a volume's modals refetch independently of the
+// flat list (components/volume-form/useVolumeMutations).
+export const glusterVolumeKeys = {
+  all: ['glustervolumes'] as const,
+  bricks: (clusterId: string, volumeId: string) => ['glusterbricks', clusterId, volumeId] as const,
+  options: (clusterId: string, volumeId: string) =>
+    ['glustervolumeoptions', clusterId, volumeId] as const,
+}
+
 // listQuotas fans out GET /datacenters/{id}/quotas per data center and
 // flattens the results.
 export function useQuotas() {
   const { isAdmin } = useCapabilities()
   const refetchInterval = useAdminResourcePollInterval()
   return useQuery({
-    queryKey: ['quotas'],
+    queryKey: quotaKeys.all,
     queryFn: () => listQuotas(),
     refetchInterval,
     enabled: isAdmin,
@@ -43,7 +82,7 @@ export function useProviders() {
   const { isAdmin } = useCapabilities()
   const refetchInterval = useAdminResourcePollInterval()
   return useQuery({
-    queryKey: ['providers'],
+    queryKey: providerKeys.all,
     queryFn: () => listProviders(),
     refetchInterval,
     enabled: isAdmin,
@@ -77,7 +116,7 @@ export function useCreateProvider() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['providers'] })
+      void queryClient.invalidateQueries({ queryKey: providerKeys.all })
     },
   })
 }
@@ -107,7 +146,7 @@ export function useUpdateProvider() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['providers'] })
+      void queryClient.invalidateQueries({ queryKey: providerKeys.all })
     },
   })
 }
@@ -128,7 +167,7 @@ export function useDeleteProvider() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['providers'] })
+      void queryClient.invalidateQueries({ queryKey: providerKeys.all })
     },
   })
 }
@@ -154,8 +193,25 @@ export function useErrata() {
   const { isAdmin } = useCapabilities()
   const refetchInterval = useAdminResourcePollInterval()
   return useQuery({
-    queryKey: ['errata'],
+    queryKey: errataKeys.all,
     queryFn: () => listErrata(),
+    refetchInterval,
+    enabled: isAdmin,
+  })
+}
+
+// GET /katelloerrata/{id} — one erratum for ErratumDetailPage, keyed under the
+// list's ['errata'] prefix. Admin-gated like useErrata: the page renders
+// <NotPermitted> for user-tier accounts, so the doomed request is skipped
+// (isAdmin stays false until the capability profile loads, so the gate is
+// safe). A 404 is a genuine "this erratum is gone" the page surfaces as its
+// error state — getErratum does not swallow it the way listErrata does.
+export function useErratum(id: string) {
+  const { isAdmin } = useCapabilities()
+  const refetchInterval = useAdminResourcePollInterval()
+  return useQuery({
+    queryKey: errataKeys.detail(id),
+    queryFn: () => getErratum(id),
     refetchInterval,
     enabled: isAdmin,
   })
@@ -173,7 +229,7 @@ export function useGlusterVolumes({ poll = true }: { poll?: boolean } = {}) {
   const { isAdmin } = useCapabilities()
   const pollInterval = useAdminResourcePollInterval()
   return useQuery({
-    queryKey: ['glustervolumes'],
+    queryKey: glusterVolumeKeys.all,
     queryFn: () => listGlusterVolumes(),
     refetchInterval: poll ? pollInterval : false,
     staleTime: poll ? 0 : Infinity,

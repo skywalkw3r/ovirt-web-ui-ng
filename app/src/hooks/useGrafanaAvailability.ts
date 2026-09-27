@@ -7,6 +7,12 @@ import { ADMIN_RESOURCE_POLL_INTERVAL_MS } from './useAdminResources'
 
 export type GrafanaStatus = 'checking' | 'available' | 'unavailable'
 
+// The liveness probe's key, per Grafana base URL so a multi-engine session's
+// same-origin Grafana path caches per active engine.
+export const grafanaKeys = {
+  health: (baseUrl: string) => ['grafana', 'health', baseUrl] as const,
+}
+
 // Same-origin, unauthenticated liveness probe of the oVirt Grafana. Verified
 // against a live 4.5 engine: GET /ovirt-engine-grafana/api/health -> 200 JSON
 // { commit, database, version }. connect-src 'self' already permits it, so no
@@ -53,7 +59,7 @@ export function useGrafanaAvailability(): GrafanaAvailability {
   // session is signed in to. A deployer-pinned absolute URL passes through.
   const grafanaBaseUrl = rebase(monitoring.grafanaBaseUrl)
   const query = useQuery({
-    queryKey: ['grafana', 'health', grafanaBaseUrl],
+    queryKey: grafanaKeys.health(grafanaBaseUrl),
     queryFn: ({ signal }) => probe(grafanaBaseUrl, signal),
     enabled: gate,
     // A liveness check never needs the VM 10s cadence; floor it at the admin

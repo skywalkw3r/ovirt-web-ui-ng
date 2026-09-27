@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { fetchVmStatistics } from '../api/resources/vms'
 import type { VmStat } from '../api/schemas/statistic'
 import { useSettings } from '../settings/SettingsProvider'
+import { vmKeys } from './useVms'
 
 // ~30 samples at the default 10s poll cadence ≈ the last five minutes of
 // history; a user-tuned interval (Preferences) stretches or shrinks the
@@ -85,7 +86,7 @@ function diskPercent(stats: VmStat[]): number | undefined {
 export function useVmStatistics(vmId: string) {
   const { refreshIntervalMs } = useSettings()
   const query = useQuery({
-    queryKey: ['vm', vmId, 'statistics'],
+    queryKey: vmKeys.statistics(vmId),
     queryFn: () => fetchVmStatistics(vmId),
     refetchInterval: refreshIntervalMs,
   })

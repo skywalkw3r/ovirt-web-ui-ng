@@ -5,6 +5,7 @@ import {
   buildVvFile,
   clearConsoleOptions,
   DEFAULT_CONSOLE_OPTIONS,
+  isValidRdpAddress,
   isWindowsOs,
   loadConsoleOptions,
   saveConsoleOptions,
@@ -223,6 +224,33 @@ describe('buildRdpFile', () => {
   it('appends username@domain, stripping an existing @realm from the login', () => {
     const rdp = buildRdpFile({ address: 'host', username: 'jdoe@internal', domain: 'CORP' })
     expect(rdp).toContain('username:s:jdoe@CORP')
+  })
+
+  // vm.fqdn is reported by the guest agent — the guest owner picks it — so a
+  // CR/LF in it would splice directives into the .rdp an admin double-clicks.
+  it('accepts host[:port] addresses and rejects everything else', () => {
+    expect(isValidRdpAddress('win-01.corp.example')).toBe(true)
+    expect(isValidRdpAddress('win-01.corp.example.')).toBe(true)
+    expect(isValidRdpAddress('10.0.0.5:3390')).toBe(true)
+    expect(isValidRdpAddress('evil.example\nauthentication level:i:0')).toBe(false)
+    expect(isValidRdpAddress('evil.example\r\ndrivestoredirect:s:*')).toBe(false)
+    expect(isValidRdpAddress('my vm')).toBe(false)
+    expect(isValidRdpAddress('')).toBe(false)
+    expect(isValidRdpAddress('-leading.dash')).toBe(false)
+  })
+
+  it('refuses to build a file for an invalid address', () => {
+    expect(() => buildRdpFile({ address: 'evil.example\ndrivestoredirect:s:*' })).toThrow()
+  })
+
+  it('strips control characters from username and domain', () => {
+    const rdp = buildRdpFile({
+      address: 'host',
+      username: 'jdoe\r\nredirectdrives:i:1',
+      domain: 'CORP\n',
+    })
+    expect(rdp).toContain('username:s:jdoeredirectdrives:i:1@CORP')
+    expect(rdp.split('\n').some((line) => line.startsWith('redirectdrives'))).toBe(false)
   })
 })
 

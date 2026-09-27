@@ -8,6 +8,7 @@ import {
 } from '../api/resources/nics'
 import type { Nic } from '../api/schemas/nic'
 import { useNotify } from '../notifications/context'
+import { vmKeys } from './useVms'
 
 // NIC names are optional on the wire — toasts and modal titles fall back to
 // the id so the user always sees something identifying.
@@ -30,7 +31,7 @@ export function useAddVmNic(vmId: string) {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['vm', vmId, 'nics'] })
+      void queryClient.invalidateQueries({ queryKey: vmKeys.nics(vmId) })
     },
   })
 }
@@ -54,7 +55,7 @@ export function useUpdateVmNic(vmId: string) {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['vm', vmId, 'nics'] })
+      void queryClient.invalidateQueries({ queryKey: vmKeys.nics(vmId) })
     },
   })
 }
@@ -72,7 +73,7 @@ export function useRemoveVmNic(vmId: string) {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['vm', vmId, 'nics'] })
+      void queryClient.invalidateQueries({ queryKey: vmKeys.nics(vmId) })
     },
   })
 }

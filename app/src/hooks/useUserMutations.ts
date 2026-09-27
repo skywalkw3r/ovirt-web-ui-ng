@@ -5,11 +5,13 @@ import {
   listDirectoryGroups,
   listDirectoryUsers,
   listDomains,
+  removeGroup,
   removeUser,
   type AddGroupSpec,
   type AddUserSpec,
 } from '../api/resources/users'
 import { useNotify } from '../notifications/context'
+import { groupKeys, userKeys } from './useAdminResources'
 
 // The data layer for the Users page's add-from-directory + remove flow. The
 // DB list the page renders is owned by useUsers (key ['users', search]); the
@@ -23,11 +25,22 @@ import { useNotify } from '../notifications/context'
 // usePermissionMutations.
 export const DOMAINS_STALE_MS = 5 * 60_000
 
+// Query-key builders for the directory (authz) reads this module owns. The
+// directory pickers key under their own ['directory-users' | 'directory-groups',
+// domainId, search] namespaces — DISTINCT from the DB-list ['users' | 'groups',
+// search] caches (userKeys / groupKeys) — so materializing a principal never
+// collides with, or is invalidated as, the inventory it is about to join.
+export const directoryKeys = {
+  domains: ['domains'] as const,
+  users: (domainId: string, search = '') => ['directory-users', domainId, search] as const,
+  groups: (domainId: string, search = '') => ['directory-groups', domainId, search] as const,
+}
+
 // GET /domains — the Add-User modal's domain select source. Default the
 // selection to the first entry (or 'internal'), webadmin AddUserModel-style.
 export function useDomains() {
   return useQuery({
-    queryKey: ['domains'],
+    queryKey: directoryKeys.domains,
     queryFn: () => listDomains(),
     staleTime: DOMAINS_STALE_MS,
   })
@@ -41,7 +54,7 @@ export function useDomains() {
 // the DB-list ['users', …] cache.
 export function useDirectoryUsers(domainId: string, search = '') {
   return useQuery({
-    queryKey: ['directory-users', domainId, search],
+    queryKey: directoryKeys.users(domainId, search),
     queryFn: () => listDirectoryUsers(domainId, { search: search || undefined }),
     enabled: !!domainId,
   })
@@ -54,7 +67,7 @@ export function useDirectoryUsers(domainId: string, search = '') {
 // cache (usePermissionMutations) and the directory-user cache above.
 export function useDirectoryGroups(domainId: string, search = '') {
   return useQuery({
-    queryKey: ['directory-groups', domainId, search],
+    queryKey: directoryKeys.groups(domainId, search),
     queryFn: () => listDirectoryGroups(domainId, { search: search || undefined }),
     enabled: !!domainId,
   })
@@ -88,7 +101,7 @@ export function useAddUser() {
     },
     onSettled: () => {
       // prefix match covers every ['users', search] entry useUsers registers
-      void queryClient.invalidateQueries({ queryKey: ['users'] })
+      void queryClient.invalidateQueries({ queryKey: userKeys.all })
     },
   })
 }
@@ -119,7 +132,7 @@ export function useAddGroup() {
     },
     onSettled: () => {
       // prefix match covers every ['groups', search] entry useGroups registers
-      void queryClient.invalidateQueries({ queryKey: ['groups'] })
+      void queryClient.invalidateQueries({ queryKey: groupKeys.all })
     },
   })
 }
@@ -145,7 +158,37 @@ export function useRemoveUser() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['users'] })
+      void queryClient.invalidateQueries({ queryKey: userKeys.all })
+    },
+  })
+}
+
+// Group analogue of RemoveUserVars — displayName rides through purely for the
+// toast, resolved from the group row.
+export interface RemoveGroupVars {
+  groupId: string
+  displayName: string
+}
+
+// DELETE /groups/{id} — GroupService.remove unmaterializes the directory group.
+// Engine faults (e.g. the group still grants access) surface via error.message
+// verbatim; the prefix invalidation refreshes both the Groups tab and the
+// Add-Permission group picker that reads the same ['groups', …] cache.
+export function useRemoveGroup() {
+  const queryClient = useQueryClient()
+  const { notify } = useNotify()
+
+  return useMutation({
+    mutationFn: ({ groupId }: RemoveGroupVars) => removeGroup(groupId),
+    onSuccess: (_data, { displayName }) => {
+      notify({ title: `Group ${displayName} removed`, variant: 'success' })
+    },
+    onError: (error) => {
+      // ApiError.message carries the engine fault detail verbatim
+      notify({ title: error.message, variant: 'danger' })
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: groupKeys.all })
     },
   })
 }

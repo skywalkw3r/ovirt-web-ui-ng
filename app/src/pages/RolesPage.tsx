@@ -18,7 +18,6 @@ import {
 } from '@patternfly/react-core'
 import { ActionsColumn, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table'
 import { FormattedMessage } from 'react-intl'
-import { isAdministrativeRole, isMutableRole, type Role } from '../api/resources/roles'
 import { useCapabilities } from '../auth/capabilities'
 import { ConfirmModal } from '../components/ConfirmModal'
 import { NotPermitted } from '../components/NotPermitted'
@@ -26,7 +25,13 @@ import { ListPageHeader } from '../components/ListPageHeader'
 import { RefreshControl } from '../components/RefreshControl'
 import { SearchInput } from '../components/list-toolbar/SearchInput'
 import { RoleFormModal, type RoleEditorMode } from '../components/role-form/RoleFormModal'
-import { useDeleteRole, useManagedRoles } from '../hooks/useRoles'
+import {
+  isAdministrativeRole,
+  isMutableRole,
+  useDeleteRole,
+  useManagedRoles,
+  type Role,
+} from '../hooks/useRoles'
 import { sortRows, useColumnSort } from '../hooks/useColumnSort'
 import { useT } from '../i18n/useT'
 

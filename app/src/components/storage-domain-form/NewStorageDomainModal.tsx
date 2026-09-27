@@ -27,6 +27,8 @@ import { useT } from '../../i18n/useT'
 import { FieldHelp } from '../forms/FieldHelp'
 import { ConfirmModal } from '../ConfirmModal'
 import { SanStorageSection, type LunVgDataLoss } from './SanStorageSection'
+import { dataCenterKeys } from '../../hooks/useAdminResources'
+import { hostKeys } from '../../hooks/useHosts'
 
 // The flat, always-defined draft the modal owns — every input stays controlled.
 // exportPath rides as the raw 'address:/path' string the user types and is
@@ -220,12 +222,12 @@ export function NewStorageDomainModal({
   // Select options only matter while the modal is up — mirror
   // NetworkFormModal's create-mode data center query.
   const dataCenters = useQuery({
-    queryKey: ['datacenters'],
+    queryKey: dataCenterKeys.all,
     queryFn: () => listDataCenters(),
     enabled: isOpen,
   })
   const hosts = useQuery({
-    queryKey: ['hosts'],
+    queryKey: hostKeys.all,
     queryFn: () => listHosts(),
     enabled: isOpen,
   })

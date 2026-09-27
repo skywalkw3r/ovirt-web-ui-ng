@@ -1,13 +1,13 @@
-// Flat id → default English string catalog for the i18n *reference slice*
-// only. This is deliberately small: it proves the react-intl pattern
-// (I18nProvider + <FormattedMessage>/useIntl) against real UI in AppShell and
-// LoginPage. The rest of the app is mechanical follow-up — see the i18n
-// section in ../../CONTRIBUTING.md — so do NOT treat this as the full string
-// inventory.
+// Flat id → English string catalog: the exhaustive source of truth for every
+// user-facing string in the app (react-intl via I18nProvider +
+// <FormattedMessage>/useT). It defines MessageId, so a typo in a component
+// fails typecheck, and the 10 translated catalogs mirror its id set 1:1 —
+// src/i18n/coverage.test.ts fails on dead keys and on any locale below 100%.
+// See the i18n section in ../../CONTRIBUTING.md for the sync rule and conventions.
 //
-// Ids are dotted namespaces (nav.*, login.*, action.*, viewState.*) so
-// follow-up slices can grow without colliding. Every id here is exercised by
-// the converted AppShell/LoginPage, keeping the catalog honest (no dead keys).
+// Ids are dotted namespaces (nav.*, login.*, common.*, runOnce.*, …) grouped by
+// the surface that owns them. Product tokens (oVirt, vNIC, SPICE/VNC, Sysprep,
+// cloud-init) and ICU placeholders stay verbatim in every locale.
 //
 // The map is `Record<string, string>` — react-intl's IntlProvider takes a flat
 // record — and `as const` so ids stay literal for downstream tooling.
@@ -101,6 +101,10 @@ export const en = {
   'login.signingInAs': 'Signing in as {principal}',
   'login.submit': 'Sign in',
   'login.failed': 'Login failed',
+  'login.signOutUnconfirmed.title': 'Signed out of this console only',
+  'login.signOutUnconfirmed.body':
+    'The engine did not confirm the sign-out, so that session may stay valid there until it expires. If this keeps happening, tell an administrator.',
+  'login.tooManyAttempts': 'Too many sign-in attempts. Wait a minute and try again.',
   'login.server': 'Server',
 
   // Common action verbs (VM lifecycle) — reference slice --------------------
@@ -120,6 +124,8 @@ export const en = {
   'action.retry': 'Retry',
   'action.exportCsv': 'Export CSV',
   'common.filter.all': 'All',
+  'common.filter.clearAll': 'Clear all filters',
+  'common.filter.appliedCount': '{count, plural, one {# filter} other {# filters}} applied',
 
   // Folder tree, breadcrumb, move-to-folder (components/tags/*, VmsPage) ----
   'folders.tree.ariaLabel': 'Virtual machine folders',
@@ -243,6 +249,8 @@ export const en = {
   'inventory.error.title': 'Could not load VMs and templates',
   'inventory.empty.title': 'No VMs or templates',
   'inventory.empty.body': 'VMs and templates you have permission to see will appear here.',
+  'inventory.filterEmpty.title': 'No matching VMs or templates',
+  'inventory.filterEmpty.body': 'Nothing matches the applied filters.',
   'inventory.emptyFolder.title': 'No matching VMs or templates',
   'inventory.emptyFolder.body': 'Nothing is tagged into the selected folder.',
   'inventory.searchEmpty.title': 'Nothing matches the filter',
@@ -1073,6 +1081,7 @@ export const en = {
   'disks.filter.directLun': 'Direct LUN',
   'disks.filter.images': 'Images',
   'disks.filter.diskType': 'Disk type',
+  'disks.filter.hideOvfStore': 'Hide OVF_STORE disks',
   'disks.search.ariaLabel': 'Search disks',
   'disks.pagination.ariaLabel': 'Disks pagination',
   'disks.new': 'New disk',
@@ -3255,7 +3264,8 @@ export const en = {
   'bulk.migrate.auto.label': 'Automatically choose a host',
   'bulk.migrate.noHosts': 'No available hosts',
   'bulk.migrate.pinned.label': 'Select a destination host',
-  'bulk.migrate.title': 'Migrate {length} virtual machines',
+  'bulk.migrate.title':
+    '{count, plural, one {Migrate # virtual machine} other {Migrate # virtual machines}}',
   // cloneVm.* -----------------------------------------------------
   'cloneVm.collapseSnapshots.help':
     "The clone's disks are flattened into a single volume; turn off to keep the source VM's snapshot chain on the clone.",
@@ -5018,6 +5028,22 @@ export const en = {
     'The exact number of VirtIO-SCSI queues. Leave empty (Auto) to derive it from the VM’s vCPUs and disks.',
   'fieldHelp.vm.multiQueues':
     'Give each virtual NIC an optimal number of queues based on the VM’s vCPUs, improving network throughput for multi-vCPU VMs.',
+  // Run Once depth, CPU profile form, bulk migrate, RDP download, DWH history ---
+  'common.field.value': 'Value',
+  'runOnce.initialRun.enable': 'Configure Initial Run',
+  'runOnce.sysprep.title': 'Sysprep',
+  'runOnce.sysprep.domain': 'Domain',
+  'runOnce.cloudInit.title': 'Cloud-init',
+  'runOnce.cloudInit.network.title': 'Network',
+  'runOnce.cloudInit.nic.netmask': 'Netmask',
+  'runOnce.cloudInit.nic.gateway': 'Gateway',
+  'runOnce.kernel.path': 'Kernel path',
+  'runOnce.kernel.params': 'Kernel command line',
+  'runOnce.customProps.add': 'Add custom property',
+  'cpuProfiles.name.required': 'A name is required.',
+  'console.rdp.download': 'Download RDP file (.rdp)',
+  'console.rdp.description': 'Remote Desktop to the Windows guest',
+  'monitoring.history.noData': 'No data in range',
 } as const
 
 // The id union — source of truth for every typed i18n surface (useT, the

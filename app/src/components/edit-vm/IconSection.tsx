@@ -24,6 +24,7 @@ import {
 import { useT } from '../../i18n/useT'
 import { FieldHelp } from '../forms/FieldHelp'
 import type { EditVmDraft } from './editVmDraft'
+import { iconKeys } from '../../hooks/useCatalog'
 
 // Read a File into { data (base64, no prefix), mediaType } for the large_icon
 // upload. Rejects on a read error; the caller has already gated type + size.
@@ -56,7 +57,7 @@ export function IconSection({
   const [uploadError, setUploadError] = useState<string | undefined>(undefined)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const icons = useQuery({ queryKey: ['icons'], queryFn: listIcons })
+  const icons = useQuery({ queryKey: iconKeys.all, queryFn: listIcons })
 
   const catalog = icons.data ?? []
   const hasUpload = draft.iconUploadData !== ''
@@ -69,7 +70,7 @@ export function IconSection({
     draft.iconId !== '' &&
     (icons.isSuccess ? iconDataUrl(catalogCurrent) === undefined : false)
   const currentIcon = useQuery({
-    queryKey: ['icon', draft.iconId],
+    queryKey: iconKeys.detail(draft.iconId),
     queryFn: () => getIcon(draft.iconId),
     enabled: needsDirectPreview,
   })

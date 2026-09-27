@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { listPoolPermissions } from '../../api/resources/pools'
 import { useCapabilities } from '../../auth/capabilities'
-import { useAdminResourcePollInterval } from '../../hooks/useAdminResources'
+import { poolKeys, useAdminResourcePollInterval } from '../../hooks/useAdminResources'
 import { useT } from '../../i18n/useT'
 import { NotPermitted } from '../NotPermitted'
 import { PermissionsPanel } from '../permissions/PermissionsPanel'
@@ -20,7 +20,7 @@ export function PoolPermissionsTab({ poolId }: { poolId: string }) {
   const { loaded, isAdmin } = useCapabilities()
   const refetchInterval = useAdminResourcePollInterval()
   const permissions = useQuery({
-    queryKey: ['vmpool', poolId, 'permissions'],
+    queryKey: poolKeys.permissions(poolId),
     queryFn: () => listPoolPermissions(poolId),
     enabled: loaded && isAdmin,
     refetchInterval,

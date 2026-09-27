@@ -16,11 +16,15 @@ import { useAdminResourcePollInterval } from './useAdminResources'
 // isAdmin alone is safe: it stays false until the profile has loaded. The list
 // key is ['macpools'] — the same key the cluster form's MAC Pool select query
 // already registers, so a pool created here also refreshes that select.
+export const macPoolKeys = {
+  all: ['macpools'] as const,
+}
+
 export function useMacPools() {
   const { isAdmin } = useCapabilities()
   const refetchInterval = useAdminResourcePollInterval()
   return useQuery({
-    queryKey: ['macpools'],
+    queryKey: macPoolKeys.all,
     queryFn: () => listMacPools(),
     refetchInterval,
     enabled: isAdmin,
@@ -47,7 +51,7 @@ export function useCreateMacPool() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['macpools'] })
+      void queryClient.invalidateQueries({ queryKey: macPoolKeys.all })
     },
   })
 }
@@ -67,7 +71,7 @@ export function useUpdateMacPool() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['macpools'] })
+      void queryClient.invalidateQueries({ queryKey: macPoolKeys.all })
     },
   })
 }
@@ -89,7 +93,7 @@ export function useDeleteMacPool() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['macpools'] })
+      void queryClient.invalidateQueries({ queryKey: macPoolKeys.all })
     },
   })
 }

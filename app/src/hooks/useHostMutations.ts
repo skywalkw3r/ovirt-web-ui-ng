@@ -11,6 +11,7 @@ import {
   type SetupNetworksSpec,
 } from '../api/resources/hosts'
 import { useNotify } from '../notifications/context'
+import { hostKeys } from './useHosts'
 
 // The New Host modal's create mutation. POST /hosts only kicks off the
 // engine's async install pipeline — the host comes back at status
@@ -37,7 +38,7 @@ export function useAddHost() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['hosts'] })
+      void queryClient.invalidateQueries({ queryKey: hostKeys.all })
     },
   })
 }
@@ -63,8 +64,8 @@ export function useUpdateHost() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: (_data, _error, { id }) => {
-      void queryClient.invalidateQueries({ queryKey: ['host', id] })
-      void queryClient.invalidateQueries({ queryKey: ['hosts'] })
+      void queryClient.invalidateQueries({ queryKey: hostKeys.detail(id) })
+      void queryClient.invalidateQueries({ queryKey: hostKeys.all })
     },
   })
 }
@@ -91,7 +92,7 @@ export function useSetupHostNetworks() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: (_data, _error, { id }) => {
-      void queryClient.invalidateQueries({ queryKey: ['host', id] })
+      void queryClient.invalidateQueries({ queryKey: hostKeys.detail(id) })
     },
   })
 }
@@ -115,7 +116,7 @@ export function useDeleteHost() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['hosts'] })
+      void queryClient.invalidateQueries({ queryKey: hostKeys.all })
     },
   })
 }
@@ -147,7 +148,7 @@ export function useCreateFenceAgent() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: (_data, _error, { hostId }) => {
-      void queryClient.invalidateQueries({ queryKey: ['host', hostId, 'fenceAgents'] })
+      void queryClient.invalidateQueries({ queryKey: hostKeys.fenceAgents(hostId) })
     },
   })
 }
@@ -177,7 +178,7 @@ export function useUpdateFenceAgent() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: (_data, _error, { hostId }) => {
-      void queryClient.invalidateQueries({ queryKey: ['host', hostId, 'fenceAgents'] })
+      void queryClient.invalidateQueries({ queryKey: hostKeys.fenceAgents(hostId) })
     },
   })
 }
@@ -197,7 +198,7 @@ export function useDeleteFenceAgent() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: (_data, _error, { hostId }) => {
-      void queryClient.invalidateQueries({ queryKey: ['host', hostId, 'fenceAgents'] })
+      void queryClient.invalidateQueries({ queryKey: hostKeys.fenceAgents(hostId) })
     },
   })
 }

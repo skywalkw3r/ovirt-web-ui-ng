@@ -1,12 +1,25 @@
 import { useQuery } from '@tanstack/react-query'
 import { fetchDashboard, queryDwhPanels, type DwhDashboard } from '../api/grafana-query'
 import { useCapabilities } from '../auth/capabilities'
-import { useRuntimeConfig, type QueryEntity } from '../config/runtime'
+import { useRuntimeConfig, type QueryEntity, type QuerySpec } from '../config/runtime'
 import { rebase } from '../servers/registry'
 import { useSettings } from '../settings/SettingsProvider'
 import { ADMIN_RESOURCE_POLL_INTERVAL_MS } from './useAdminResources'
 
 export type HistoryRange = '6h' | '24h' | '7d'
+
+// One entry per (entity, id, range) AND per configured dashboard/panel set, so
+// a range flip or a config.js change never serves another spec's charts; the
+// spec's uid and panel ids ride verbatim (undefined when the entity has no
+// configured query — the read is disabled then).
+export const dwhKeys = {
+  history: (
+    entity: QueryEntity,
+    entityId: string,
+    range: HistoryRange,
+    spec: Pick<QuerySpec, 'dashboardUid' | 'panelIds'> | undefined,
+  ) => ['dwh', entity, entityId, range, spec?.dashboardUid, spec?.panelIds] as const,
+}
 
 // The datasource uid oVirt provisions for the DWH — the fallback when the
 // dashboard definition doesn't resolve one (see parseDashboard).
@@ -41,7 +54,7 @@ export function useDwhHistory(entity: QueryEntity, entityId: string, range: Hist
     ENGINE_GUID.test(entityId)
 
   const query = useQuery({
-    queryKey: ['dwh', entity, entityId, range, spec?.dashboardUid, spec?.panelIds],
+    queryKey: dwhKeys.history(entity, entityId, range, spec),
     enabled,
     refetchInterval: Math.max(refreshIntervalMs, ADMIN_RESOURCE_POLL_INTERVAL_MS),
     // A 401 here means "no grafana_session yet" — the user signs in to Grafana

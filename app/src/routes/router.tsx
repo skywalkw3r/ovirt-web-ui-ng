@@ -6,16 +6,19 @@ import {
   createRouter,
   lazyRouteComponent,
 } from '@tanstack/react-router'
-import { DashboardPage } from '../pages/DashboardPage'
 import { LoginPage } from '../pages/LoginPage'
 import { RouteErrorBoundary } from '../components/RouteErrorBoundary'
 import { NotFoundRoute } from './NotFoundRoute'
 import { Protected } from './Protected'
 
-// Route-level code splitting: LoginPage (first paint) and DashboardPage
-// (post-login landing) stay eager; every other page component is wrapped in
-// lazyRouteComponent(importer, namedExport) so it — and anything only it
-// imports — is split into its own chunk, fetched on first navigation.
+// Route-level code splitting: only LoginPage (first paint) stays eager; every
+// other page component — the dashboard included — is wrapped in
+// lazyRouteComponent(importer, namedExport) so it, and anything only it
+// imports, is split into its own chunk fetched on first navigation. The
+// dashboard used to be eager as the post-login landing, which dragged Victory
+// (~280 KB raw for one donut) into every first paint; LoginPage now preloads
+// the '/' route while the user types, so the landing still costs no extra
+// round trip after sign-in.
 // New routes should follow the same pattern:
 //   component: lazyRouteComponent(() => import('../pages/FooPage'), 'FooPage')
 //
@@ -52,7 +55,7 @@ const protectedRoute = createRoute({
 const indexRoute = createRoute({
   getParentRoute: () => protectedRoute,
   path: '/',
-  component: DashboardPage,
+  component: lazyRouteComponent(() => import('../pages/DashboardPage'), 'DashboardPage'),
 })
 
 const vmsRoute = createRoute({

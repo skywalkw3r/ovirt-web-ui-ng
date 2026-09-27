@@ -7,6 +7,7 @@ import {
 } from '../api/resources/templates'
 import { listVms } from '../api/resources/vms'
 import { useSettings } from '../settings/SettingsProvider'
+import { templateKeys } from './useCatalog'
 
 // Templates are catalog entities that drift slowly and only load while the
 // detail page is mounted; 60s matches the other admin/parity collections. The
@@ -21,7 +22,7 @@ export const TEMPLATE_DETAIL_POLL_INTERVAL_MS = 60_000
 export function useTemplate(id: string) {
   const { refreshIntervalMs } = useSettings()
   return useQuery({
-    queryKey: ['template', id],
+    queryKey: templateKeys.detail(id),
     queryFn: () => getTemplate(id),
     refetchInterval: Math.max(refreshIntervalMs, TEMPLATE_DETAIL_POLL_INTERVAL_MS),
   })
@@ -30,7 +31,7 @@ export function useTemplate(id: string) {
 export function useTemplateNics(id: string) {
   const { refreshIntervalMs } = useSettings()
   return useQuery({
-    queryKey: ['template', id, 'nics'],
+    queryKey: templateKeys.nics(id),
     queryFn: () => listTemplateNics(id),
     refetchInterval: Math.max(refreshIntervalMs, TEMPLATE_DETAIL_POLL_INTERVAL_MS),
   })
@@ -39,7 +40,7 @@ export function useTemplateNics(id: string) {
 export function useTemplateDiskAttachments(id: string) {
   const { refreshIntervalMs } = useSettings()
   return useQuery({
-    queryKey: ['template', id, 'diskAttachments'],
+    queryKey: templateKeys.diskAttachments(id),
     queryFn: () => listTemplateDiskAttachments(id),
     refetchInterval: Math.max(refreshIntervalMs, TEMPLATE_DETAIL_POLL_INTERVAL_MS),
   })
@@ -48,7 +49,7 @@ export function useTemplateDiskAttachments(id: string) {
 export function useTemplatePermissions(id: string) {
   const { refreshIntervalMs } = useSettings()
   return useQuery({
-    queryKey: ['template', id, 'permissions'],
+    queryKey: templateKeys.permissions(id),
     queryFn: () => listTemplatePermissions(id),
     refetchInterval: Math.max(refreshIntervalMs, TEMPLATE_DETAIL_POLL_INTERVAL_MS),
   })
@@ -63,7 +64,7 @@ export function useTemplatePermissions(id: string) {
 export function useTemplateVms(templateName: string) {
   const { refreshIntervalMs } = useSettings()
   return useQuery({
-    queryKey: ['template', templateName, 'vms'],
+    queryKey: templateKeys.vms(templateName),
     queryFn: () => listVms({ search: `template.name=${templateName}` }),
     refetchInterval: refreshIntervalMs,
   })

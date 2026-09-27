@@ -1,6 +1,14 @@
 import { useRef, useState } from 'react'
 import { useNavigate, useSearch } from '@tanstack/react-router'
 
+// GET /bookmarks — the engine's saved searches (webadmin's Bookmarks pane),
+// the server side of the list toolbar's BookmarkMenu, which applies one
+// through this hook. No hook module owns the collection yet (the menu reads
+// and writes it inline), so the key lives with the search state it feeds.
+export const bookmarkKeys = {
+  all: ['bookmarks'] as const,
+}
+
 // Search state for a list page, backed by a loose 'q' URL param so queries
 // are shareable/bookmarkable — useVmSearch's committed-query-in-URL pattern,
 // minus the debounce: the shared SearchInput commits explicitly (Enter, the

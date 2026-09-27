@@ -82,6 +82,10 @@ export const ru: LocaleCatalog = {
   'login.signingInAs': 'Выполняется вход под именем {principal}',
   'login.submit': 'Войти',
   'login.failed': 'Вход не удался',
+  'login.signOutUnconfirmed.title': 'Выход выполнен только из этой консоли',
+  'login.signOutUnconfirmed.body':
+    'Движок не подтвердил выход, поэтому этот сеанс может оставаться действительным до истечения срока. Если это повторяется, сообщите администратору.',
+  'login.tooManyAttempts': 'Слишком много попыток входа. Подождите минуту и повторите попытку.',
   'login.server': 'Сервер',
   'action.start': 'Запуск',
   'action.stop': 'Остановить',
@@ -95,6 +99,9 @@ export const ru: LocaleCatalog = {
   'action.retry': 'Повторить попытку',
   'action.exportCsv': 'Экспорт в CSV',
   'common.filter.all': 'Все',
+  'common.filter.clearAll': 'Очистить все фильтры',
+  'common.filter.appliedCount':
+    '{count, plural, one {# фильтр применён} few {# фильтра применено} many {# фильтров применено} other {# фильтра применено}}',
   'folders.tree.ariaLabel': 'Папки виртуальных машин',
   'folders.tree.allVms': 'Все виртуальные машины',
   'folders.tree.loading': 'Загрузка папок',
@@ -211,6 +218,8 @@ export const ru: LocaleCatalog = {
   'inventory.empty.title': 'Нет виртуальных машин или шаблонов',
   'inventory.empty.body':
     'Здесь появятся виртуальные машины и шаблоны, на просмотр которых у вас есть разрешение.',
+  'inventory.filterEmpty.title': 'Нет подходящих виртуальных машин или шаблонов',
+  'inventory.filterEmpty.body': 'Нет совпадений с применёнными фильтрами.',
   'inventory.emptyFolder.title': 'Нет подходящих виртуальных машин или шаблонов',
   'inventory.emptyFolder.body': 'Ничего не помечено в выбранной папке.',
   'inventory.searchEmpty.title': 'Нет совпадений текстовому фильтру',
@@ -817,6 +826,7 @@ export const ru: LocaleCatalog = {
   'disks.filter.directLun': 'Прямой LUN',
   'disks.filter.images': 'Образы',
   'disks.filter.diskType': 'Тип диска',
+  'disks.filter.hideOvfStore': 'Скрыть диски OVF_STORE',
   'disks.search.ariaLabel': 'Поиск дисков',
   'disks.pagination.ariaLabel': 'Пагинация дисков',
   'disks.new': 'Новый диск',
@@ -2824,7 +2834,8 @@ export const ru: LocaleCatalog = {
   'bulk.migrate.auto.label': 'Автоматически выбрать хост',
   'bulk.migrate.noHosts': 'Нет доступных хостов',
   'bulk.migrate.pinned.label': 'Выберите целевой хост',
-  'bulk.migrate.title': 'Миграция {length} виртуальных машин',
+  'bulk.migrate.title':
+    '{count, plural, one {Миграция # виртуальной машины} few {Миграция # виртуальных машин} many {Миграция # виртуальных машин} other {Миграция # виртуальных машин}}',
 
   // cloneVm
   'cloneVm.collapseSnapshots.help':
@@ -4689,4 +4700,19 @@ export const ru: LocaleCatalog = {
     'Точное число очередей VirtIO-SCSI. Оставьте пустым («Автоматически»), чтобы вывести его из vCPU и дисков ВМ.',
   'fieldHelp.vm.multiQueues':
     'Даёт каждой виртуальной сетевой карте оптимальное число очередей исходя из vCPU ВМ, повышая пропускную способность сети для ВМ с многими vCPU.',
+  'common.field.value': 'Значение',
+  'runOnce.initialRun.enable': 'Настроить первичный запуск',
+  'runOnce.sysprep.title': 'Sysprep',
+  'runOnce.sysprep.domain': 'Домен',
+  'runOnce.cloudInit.title': 'Cloud-init',
+  'runOnce.cloudInit.network.title': 'Сеть',
+  'runOnce.cloudInit.nic.netmask': 'Маска сети',
+  'runOnce.cloudInit.nic.gateway': 'Шлюз',
+  'runOnce.kernel.path': 'Путь к ядру',
+  'runOnce.kernel.params': 'Командная строка ядра',
+  'runOnce.customProps.add': 'Добавить пользовательское свойство',
+  'cpuProfiles.name.required': 'Требуется имя.',
+  'console.rdp.download': 'Скачать файл RDP (.rdp)',
+  'console.rdp.description': 'Удалённый рабочий стол к гостевой системе Windows',
+  'monitoring.history.noData': 'Нет данных за период',
 }

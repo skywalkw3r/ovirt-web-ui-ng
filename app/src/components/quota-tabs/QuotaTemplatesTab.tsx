@@ -15,6 +15,7 @@ import { useClustersInventory } from '../../hooks/useAdminResources'
 import { CATALOG_STALE_MS } from '../../hooks/useCatalog'
 import { useT } from '../../i18n/useT'
 import { formatBytes, statusText } from '../../lib/format'
+import { quotaKeys } from '../../hooks/useParityResources'
 
 // The templates consuming this quota. Webadmin's QuotaTemplateListModel has no
 // REST subcollection — Template extends VmBase in the api-model so every
@@ -26,7 +27,7 @@ import { formatBytes, statusText } from '../../lib/format'
 export function QuotaTemplatesTab({ quotaId }: { quotaId: string }) {
   const t = useT()
   const templates = useQuery({
-    queryKey: ['quota', quotaId, 'templates'],
+    queryKey: quotaKeys.templates(quotaId),
     queryFn: () => listTemplates(),
     select: (data) => data.filter((template) => template.quota?.id === quotaId),
     staleTime: CATALOG_STALE_MS,

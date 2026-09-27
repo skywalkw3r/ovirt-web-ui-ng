@@ -3,24 +3,23 @@
 How the production build gets onto (or in front of) an oVirt engine. The
 detailed recipes live in [`packaging/README.md`](../packaging/README.md); this
 page is the top-level story plus the honest list of what is _not_ done yet.
-The pre-flight items for a real engine are in
-[`LIVE-ENGINE-CHECKLIST.md`](LIVE-ENGINE-CHECKLIST.md).
+Before cutting over to a real engine, run the live-engine probe against it —
+`npm run verify:engine` (`scripts/verify-live-engine.mjs`) re-checks every
+assumption the mock fixtures bake in and exits non-zero on a mismatch.
 
 ## Same-origin, by design
 
-The app is pure static assets (Vite build — no WAR, no servlet, unlike
-`legacy/ovirt-web-ui.spec.in`). In production it is served **same-origin**
-behind the engine's Apache at the sub-path **`/ovirt-engine/web-ui-ng/`**, so
-it coexists with the legacy portal at `/ovirt-engine/web-ui` during cutover.
+The app is pure static assets (Vite build — no WAR, no servlet, unlike the
+original ovirt-web-ui's `ovirt-web-ui.spec.in`). In production it is served
+**same-origin** behind the engine's Apache at the sub-path
+**`/ovirt-engine/web-ui-ng/`**, so it coexists with the legacy portal at
+`/ovirt-engine/web-ui` during cutover.
 
 Same-origin delivery is a security decision, not a convenience: every REST
 call (`/ovirt-engine/api/*`), the SSO endpoints, and the console
 websocket-proxy share the page origin — no CORS surface, no cross-origin
 cookie questions, and the CSP keeps `default-src 'self'` (the authoritative
 header set is [`SECURITY-HEADERS.md`](SECURITY-HEADERS.md)).
-
-> `docs/PLAN.md` Phase 4 mentions `/ovirt-engine/new-ui/` — that wording is
-> superseded; the implemented and pinned path is `/ovirt-engine/web-ui-ng/`.
 
 ## 1. Build
 
@@ -37,8 +36,7 @@ a different sub-path — not for a normal build. Dev (`npm run dev`,
 
 The router already consumes the base — `app/src/routes/router.tsx` passes
 `basepath: import.meta.env.BASE_URL` to `createRouter` — so there is **no
-remaining src wiring step** for the sub-path. (A stale comment in
-`app/vite.config.ts` claims otherwise; the wiring landed.)
+remaining src wiring step** for the sub-path.
 
 ### Where the base path is pinned
 
@@ -86,10 +84,11 @@ podman run --rm -p 8080:8080 \
     ovirt-web-ui-ng:latest
 ```
 
-nginx serves the static build at the same sub-path **and** proxies everything
-else under `/ovirt-engine/` (REST, SSO, websocket-proxy with WS upgrade) to
-`ENGINE_ORIGIN`, so the browser still sees one origin. TLS verification on the
-nginx→engine hop is **on** by default and expects the engine CA at
+nginx serves the static build at the same sub-path **and** proxies an
+allowlist of engine API paths (REST, SSO token grant, sign-out, Grafana query
+API) to `ENGINE_ORIGIN`, so the browser still sees one origin; engine HTML is
+never served from the console origin. TLS verification on the nginx→engine hop
+is **on** by default and expects the engine CA at
 `/etc/pki/ovirt-engine/ca.pem` — mount it, or (labs only) flip
 `proxy_ssl_verify off` in `nginx-sample.conf`.
 
@@ -97,11 +96,42 @@ nginx→engine hop is **on** by default and expects the engine CA at
 
 The container image from §2b, deployed via the Kustomize base in
 [`packaging/openshift/`](../packaging/openshift/) (Deployment + Service +
-edge-TLS Route + a ConfigMap-mounted `config.js`). Environment specifics —
-image tag, `ENGINE_ORIGIN`, `CSP_CONNECT_EXTRA`, the engine list — live in a
-Git overlay that ArgoCD syncs; editing the engine list in Git rolls the pods
-(hashed configMapGenerator). Full recipe and an ArgoCD `Application` example:
+edge-TLS Route + a ConfigMap-mounted `config.js`). The recommended
+multi-engine shape there is the **same-origin path proxy**: `config.js` lists
+each engine as a `/e/<slug>` entry and a ConfigMap-mounted nginx
+`default.conf` carries one `location /e/<slug>/` block per engine, proxying
+to it over verified TLS — no CORS, no `CSP_CONNECT_EXTRA`. Environment
+specifics — image tag, the engine list, the nginx engine map, the Route host —
+live in a Git overlay that ArgoCD syncs; editing `config.js` in Git rolls the
+pods (hashed configMapGenerator). Full recipe and an ArgoCD `Application` example:
 [`packaging/openshift/README.md`](../packaging/openshift/README.md).
+
+## Environments and the delivery pipeline (OpenShift)
+
+Environments build from **git branches**, in-cluster, with GitOps-managed
+manifests — the same workflow as our other OpenShift services (a private
+Bitbucket repo as the build source, Bitbucket webhooks into the BuildConfig,
+Kustomize `base/` + `overlays/<env>/<cluster>/`, one ArgoCD Application per
+environment, SealedSecrets for the webhook token). The live manifests carry
+internal hostnames and live in a private deploy repo; `packaging/openshift/` is
+the sanitized template.
+
+| Branch | Environment | How it moves |
+| --- | --- | --- |
+| `development` | dev console | every push. The Bitbucket webhook starts the Git-source `BuildConfig` (`packaging/Containerfile`) within seconds; the Deployment's image trigger rolls the pods. |
+| `production` | prod console | **only** via `make promote-prod` (`scripts/promote-prod.sh`): a `--no-ff` merge of `development` after a trial merge and a "no hotfix left behind" check. The prod webhook builds the result. |
+| `main` | public GitHub default | fast-forwarded to `production` by the same script so the mirror shows released code. |
+
+The repo has one fetch URL (GitHub) and two push URLs (Bitbucket, which the
+cluster clones with a read-only access key, and GitHub, which runs the Actions
+gates: lint, typecheck, unit tests, e2e, container and RPM builds). Config
+(`config.js`, the nginx engine map) and manifests change through the deploy
+repo and are synced by ArgoCD; image rollback is `oc tag` to a previous
+ImageStream digest. `make deploy-status ENV=dev|prod` shows builds, the
+webhook URL, the rollout and the ArgoCD state. Each environment registers its
+own Bitbucket webhook (Repository settings → Webhooks, event "Repository
+push") pointing at that cluster's BuildConfig webhook URL; the token in the
+URL is the `WebHookSecretKey` of a SealedSecret in the environment's overlay.
 
 ## Connecting to multiple engines (proxy/external deployments only)
 
@@ -122,7 +152,7 @@ cannot be enabled there.
 | ------------------- | ------------ | ---------------------------------- | -------------------------------------- |
 | RPM on engine host  | not available (by design) | —                     | —                                      |
 | Container (podman)  | yes          | mount/edit `config.js`             | `-e CSP_CONNECT_EXTRA='https://…'`     |
-| OpenShift / ArgoCD  | yes          | ConfigMap (`packaging/openshift/`) | `CSP_CONNECT_EXTRA` env in the overlay |
+| OpenShift / ArgoCD  | yes          | ConfigMap (`packaging/openshift/`) | none for `/e/<slug>` proxy entries; `CSP_CONNECT_EXTRA` env only for direct-connect entries |
 
 Each listed engine is reached one of two ways. The shipped model is a
 **same-origin path proxy**: give the engine a `/e/<slug>` `url` in `config.js`
@@ -145,7 +175,10 @@ the login page.
 → production build → `npm audit --audit-level=high`, then Playwright e2e. Two
 packaging-validation jobs consume that build: `container` runs the full
 two-stage `docker build` of `packaging/Containerfile`, and `rpm` runs a real
-`rpmbuild -ta` on AlmaLinux 9 against the pre-bundled dist artifact.
+`rpmbuild -ta` on AlmaLinux 9 against the pre-bundled dist artifact. Actions are SHA-pinned; Dependabot
+(`.github/dependabot.yml`) keeps the pins and the npm tree current. Promotion
+to production is a git merge (`make promote-prod`), not a CI job — see the
+pipeline section above.
 
 ## Releasing (signing & publishing)
 

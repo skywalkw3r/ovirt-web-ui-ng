@@ -5,7 +5,6 @@ import {
   Form,
   FormGroup,
   FormHelperText,
-  FormSelect,
   FormSelectOption,
   HelperText,
   HelperTextItem,
@@ -13,7 +12,6 @@ import {
   ModalBody,
   ModalFooter,
   ModalHeader,
-  Skeleton,
   TextInput,
 } from '@patternfly/react-core'
 import {
@@ -21,11 +19,14 @@ import {
   type ClusterCpuProfile,
   type CpuProfileDraft,
 } from '../../api/resources/clusters'
-import { listDataCenterQoss } from '../../api/resources/datacenters'
+import { listDataCenterQoss, type DataCenterQos } from '../../api/resources/datacenters'
 import {
   useCreateClusterCpuProfile,
   useUpdateCpuProfile,
 } from '../../hooks/useClusterCpuProfileMutations'
+import { dataCenterKeys } from '../../hooks/useAdminResources'
+import { useT } from '../../i18n/useT'
+import { OptionsSelect, type OptionsQuery } from '../forms/OptionsSelect'
 
 // The Create/Edit CPU profile modal. Owns a single flat draft — seeded from the
 // profile's read model in edit mode, blank defaults in create mode. Save POSTs
@@ -35,9 +36,13 @@ import {
 // shape, pared down to the CPU profile's name / description / QoS.
 //
 // The QoS select offers the data center's CPU-kind QoS profiles (the same
-// 404-tolerant listDataCenterQoss the vNIC form reads, filtered to type 'cpu').
-// dcId is resolved by the tab from the cluster's data center; while it is empty
-// the select stays disabled with a hint.
+// 404-tolerant listDataCenterQoss the vNIC form reads, filtered to type 'cpu')
+// through the shared OptionsSelect, so the read's four states are designed in:
+// disabled with a loading hint while pending, an error line + Retry when it
+// failed (never a select that merely looks empty), an empty hint when the DC
+// defines no CPU QoS, and the options once loaded. dcId is resolved by the tab
+// from the cluster's data center; while it is empty the read stays disabled and
+// the select carries the "data center still loading" hint instead.
 export function CpuProfileFormModal({
   clusterId,
   dcId,
@@ -51,6 +56,7 @@ export function CpuProfileFormModal({
   isOpen: boolean
   onClose: () => void
 }) {
+  const t = useT()
   const isEdit = profile !== undefined
   const blank: CpuProfileDraft = { name: '', description: '', qosId: '' }
   const [draft, setDraft] = useState<CpuProfileDraft>(() =>
@@ -85,21 +91,32 @@ export function CpuProfileFormModal({
 
   // The data center's CPU-kind QoS profiles power the QoS select. Shares the
   // ['datacenter-qoss', dcId] key with any sibling reader (the tab's column), so
-  // both dedupe to one request. Only fetched while the modal is open and a DC is
-  // in hand.
+  // both dedupe to one request — hand-typed until a key builder exists for it.
+  // Only fetched while the modal is open and a DC is in hand.
   const qoss = useQuery({
-    queryKey: ['datacenter-qoss', dcId],
+    queryKey: dataCenterKeys.qosPicker(dcId),
     queryFn: () => listDataCenterQoss(dcId),
     enabled: isOpen && dcId !== '',
   })
-  const cpuQoss = (qoss.data ?? []).filter((qos) => qos.type === 'cpu')
+  // OptionsSelect derives its four states from `data`, so it reads a view that
+  // is already narrowed to CPU-kind QoS: a DC that defines only network/storage
+  // QoS shows the empty hint rather than a select that merely looks empty.
+  const cpuQoss: OptionsQuery<DataCenterQos> = {
+    data: qoss.data?.filter((qos) => qos.type === 'cpu'),
+    isPending: qoss.isPending,
+    isError: qoss.isError,
+    error: qoss.error,
+    refetch: qoss.refetch,
+  }
 
   const create = useCreateClusterCpuProfile()
   const update = useUpdateCpuProfile()
   const pending = create.isPending || update.isPending
 
   const nameEmpty = draft.name.trim() === ''
-  const title = isEdit ? `Edit CPU profile — ${profile.name ?? profile.id}` : 'New CPU profile'
+  const title = isEdit
+    ? t('cpuProfiles.editTitle', { name: profile.name ?? profile.id })
+    : t('cpuProfiles.new')
 
   const save = () => {
     const body = buildCpuProfilePayload(draft, { isEdit })
@@ -121,11 +138,11 @@ export function CpuProfileFormModal({
       <ModalHeader title={title} labelId="cpu-profile-form-title" />
       <ModalBody id="cpu-profile-form-body">
         <Form onSubmit={(event) => event.preventDefault()}>
-          <FormGroup label="Name" isRequired fieldId="cpu-profile-name">
+          <FormGroup label={t('common.field.name')} isRequired fieldId="cpu-profile-name">
             <TextInput
               id="cpu-profile-name"
               isRequired
-              aria-label="CPU profile name"
+              aria-label={t('cpuProfiles.name.aria')}
               value={draft.name}
               validated={nameEmpty ? 'error' : 'default'}
               onChange={(_event, value) => set('name', value)}
@@ -133,51 +150,44 @@ export function CpuProfileFormModal({
             {nameEmpty && (
               <FormHelperText>
                 <HelperText>
-                  <HelperTextItem variant="error">A name is required.</HelperTextItem>
+                  <HelperTextItem variant="error">{t('cpuProfiles.name.required')}</HelperTextItem>
                 </HelperText>
               </FormHelperText>
             )}
           </FormGroup>
 
-          <FormGroup label="Description" fieldId="cpu-profile-description">
+          <FormGroup label={t('common.field.description')} fieldId="cpu-profile-description">
             <TextInput
               id="cpu-profile-description"
-              aria-label="CPU profile description"
+              aria-label={t('cpuProfiles.description.aria')}
               value={draft.description}
               onChange={(_event, value) => set('description', value)}
             />
           </FormGroup>
 
-          <FormGroup label="QoS" fieldId="cpu-profile-qos">
-            {qoss.isPending && isOpen && dcId !== '' ? (
-              <Skeleton width="100%" height="36px" screenreaderText="Loading QoS profiles" />
-            ) : (
-              <FormSelect
-                id="cpu-profile-qos"
-                aria-label="QoS"
-                value={draft.qosId}
-                isDisabled={dcId === ''}
-                onChange={(_event, value) => set('qosId', value)}
-              >
-                <FormSelectOption value="" label="No QoS" />
-                {cpuQoss.map((qos) => (
+          <FormGroup label={t('cpuProfiles.column.qos')} fieldId="cpu-profile-qos">
+            {/* A read disabled for want of a DC is pending too, so the loading
+                hint doubles as the "data center still loading" line. */}
+            <OptionsSelect
+              id="cpu-profile-qos"
+              ariaLabel={t('cpuProfiles.column.qos')}
+              value={draft.qosId}
+              onChange={(value) => set('qosId', value)}
+              query={cpuQoss}
+              placeholder={{ label: t('cpuProfiles.qos.none') }}
+              loadingLabel={dcId === '' ? t('cpuProfiles.qos.dcLoading') : t('qos.loading')}
+              isDisabled={dcId === ''}
+            >
+              {(items) =>
+                items.map((qos) => (
                   <FormSelectOption
                     key={qos.id}
                     value={qos.id ?? ''}
                     label={qos.name ?? qos.id ?? ''}
                   />
-                ))}
-              </FormSelect>
-            )}
-            {dcId === '' && (
-              <FormHelperText>
-                <HelperText>
-                  <HelperTextItem>
-                    The data center is still loading its QoS profiles.
-                  </HelperTextItem>
-                </HelperText>
-              </FormHelperText>
-            )}
+                ))
+              }
+            </OptionsSelect>
           </FormGroup>
         </Form>
       </ModalBody>
@@ -188,10 +198,10 @@ export function CpuProfileFormModal({
           isLoading={pending}
           isDisabled={pending || nameEmpty}
         >
-          Save
+          {t('common.action.save')}
         </Button>
         <Button variant="secondary" onClick={onClose} isDisabled={pending}>
-          Cancel
+          {t('common.action.cancel')}
         </Button>
       </ModalFooter>
     </Modal>

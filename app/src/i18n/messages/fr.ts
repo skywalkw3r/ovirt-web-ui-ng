@@ -81,6 +81,10 @@ export const fr: LocaleCatalog = {
   'login.signingInAs': 'Connexion en tant que {principal}',
   'login.submit': 'Se connecter',
   'login.failed': 'La connexion a échoué',
+  'login.signOutUnconfirmed.title': 'Déconnexion de cette console uniquement',
+  'login.signOutUnconfirmed.body':
+    'Le moteur n’a pas confirmé la déconnexion : cette session peut donc y rester valide jusqu’à son expiration. Si cela se reproduit, prévenez un administrateur.',
+  'login.tooManyAttempts': 'Trop de tentatives de connexion. Patientez une minute puis réessayez.',
   'login.server': 'Serveur',
   'action.start': 'Démarrer',
   'action.stop': 'Arrêter',
@@ -94,6 +98,9 @@ export const fr: LocaleCatalog = {
   'action.retry': 'Réessayer',
   'action.exportCsv': 'Exporter en CSV',
   'common.filter.all': 'Tous',
+  'common.filter.clearAll': 'Effacer tous les filtres',
+  'common.filter.appliedCount':
+    '{count, plural, one {# filtre appliqué} other {# filtres appliqués}}',
   'folders.tree.ariaLabel': 'Dossiers de machines virtuelles',
   'folders.tree.allVms': 'Toutes les machines virtuelles',
   'folders.tree.loading': 'Chargement des dossiers',
@@ -211,6 +218,8 @@ export const fr: LocaleCatalog = {
   'inventory.empty.title': 'Pas de VMs ou de modèles',
   'inventory.empty.body':
     "Les machines virtuelles et les modèles que vous avez l'autorisation de voir apparaîtront ici.",
+  'inventory.filterEmpty.title': 'Aucune VM ou modèle correspondant',
+  'inventory.filterEmpty.body': 'Rien ne correspond aux filtres appliqués.',
   'inventory.emptyFolder.title': 'Aucune VM ou modèle correspondant',
   'inventory.emptyFolder.body': "Rien n'est marqué dans le dossier sélectionné.",
   'inventory.searchEmpty.title': 'Rien ne correspond au filtre de texte',
@@ -817,6 +826,7 @@ export const fr: LocaleCatalog = {
   'disks.filter.directLun': 'LUN direct',
   'disks.filter.images': 'Images',
   'disks.filter.diskType': 'Type de disque',
+  'disks.filter.hideOvfStore': 'Masquer les disques OVF_STORE',
   'disks.search.ariaLabel': 'Rechercher des disques',
   'disks.pagination.ariaLabel': 'Pagination des disques',
   'disks.new': 'Nouveau disque',
@@ -2831,7 +2841,8 @@ export const fr: LocaleCatalog = {
   'bulk.migrate.auto.label': 'Choisir automatiquement un hôte',
   'bulk.migrate.noHosts': 'Aucun hôte disponible',
   'bulk.migrate.pinned.label': 'Sélectionner un hôte de destination',
-  'bulk.migrate.title': 'Migrer {length} machines virtuelles',
+  'bulk.migrate.title':
+    '{count, plural, one {Migrer # machine virtuelle} other {Migrer # machines virtuelles}}',
   'cloneVm.collapseSnapshots.help':
     "Les disques du clone sont aplatis en un seul volume ; désactivez pour conserver la chaîne d'instantanés de la VM source sur le clone.",
   'cloneVm.collapseSnapshots.label': 'Fusionner les instantanés',
@@ -4528,4 +4539,19 @@ export const fr: LocaleCatalog = {
     'Le nombre exact de files VirtIO-SCSI. Laissez vide (Automatique) pour le déduire des vCPU et des disques de la VM.',
   'fieldHelp.vm.multiQueues':
     'Donne à chaque carte réseau virtuelle un nombre optimal de files selon les vCPU de la VM, améliorant le débit réseau des VM multi-vCPU.',
+  'common.field.value': 'Valeur',
+  'runOnce.initialRun.enable': 'Configurer la première exécution',
+  'runOnce.sysprep.title': 'Sysprep',
+  'runOnce.sysprep.domain': 'Domaine',
+  'runOnce.cloudInit.title': 'Cloud-init',
+  'runOnce.cloudInit.network.title': 'Réseau',
+  'runOnce.cloudInit.nic.netmask': 'Masque de réseau',
+  'runOnce.cloudInit.nic.gateway': 'Passerelle',
+  'runOnce.kernel.path': 'Chemin du noyau',
+  'runOnce.kernel.params': 'Ligne de commande du noyau',
+  'runOnce.customProps.add': 'Ajouter une propriété personnalisée',
+  'cpuProfiles.name.required': 'Un nom est requis.',
+  'console.rdp.download': 'Télécharger le fichier RDP (.rdp)',
+  'console.rdp.description': "Bureau à distance vers l'invité Windows",
+  'monitoring.history.noData': 'Aucune donnée dans la plage',
 }

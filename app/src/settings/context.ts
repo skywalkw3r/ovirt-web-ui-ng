@@ -2,7 +2,7 @@ import { createContext, useContext } from 'react'
 
 export type PreferredConsole = 'vnc' | 'spice'
 
-// Locales with a shipped catalog (see i18n/I18nProvider.tsx CATALOGS and
+// Locales with a shipped catalog (see i18n/catalogs.ts CATALOG_LOADERS and
 // i18n/locales.ts labels). 'en' is the source; the rest are translated. This
 // array is the single source of truth — the type, the runtime guard
 // (isLocale), and the Preferences language picker all derive from it.

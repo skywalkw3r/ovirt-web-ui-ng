@@ -7,11 +7,6 @@
 // users get the checklist picker.
 export type TaggableKind = 'host' | 'user'
 
-// The tag-assignment query key an entity's read and mutations share, so a
-// successful attach/detach refreshes any Tags tab or chip list mounted for it.
-export function entityTagsKey(
-  kind: TaggableKind,
-  entityId: string,
-): [TaggableKind, string, 'tags'] {
-  return [kind, entityId, 'tags']
-}
+// The tag-assignment query key an entity's read and mutations share is
+// tagKeys.entity(kind, id) (hooks/useTags) — the kind-parametrized form of the
+// [kind, id, 'tags'] entry every Tags tab and chip list registers.

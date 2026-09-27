@@ -22,9 +22,9 @@ import {
 import { ChartLineIcon, ExternalLinkAltIcon, LockIcon } from '@patternfly/react-icons'
 import { FormattedMessage } from 'react-intl'
 import { GrafanaAuthError, type DwhChart } from '../../api/grafana-query'
-import { useRuntimeConfig, type QueryEntity } from '../../config/runtime'
+import type { QueryEntity } from '../../config/runtime'
 import { useDwhHistory, type HistoryRange } from '../../hooks/useDwhHistory'
-import { rebase } from '../../servers/registry'
+import { monitoringPortalUrl } from '../../lib/monitoringPortal'
 import { useT } from '../../i18n/useT'
 
 const CHART_HEIGHT = 230
@@ -59,7 +59,9 @@ function HistoryChart({ chart }: { chart: DwhChart }) {
       <CardTitle component="h3">{chart.title}</CardTitle>
       <CardBody>
         {series.length === 0 ? (
-          <div style={{ color: 'var(--pf-t--global--text--color--subtle)' }}>no data in range</div>
+          <div style={{ color: 'var(--pf-t--global--text--color--subtle)' }}>
+            <FormattedMessage id="monitoring.history.noData" />
+          </div>
         ) : (
           <div style={{ height: `${CHART_HEIGHT}px`, maxWidth: '100%' }}>
             <Chart
@@ -136,7 +138,6 @@ export function HistoryCharts({
   range: HistoryRange
 }) {
   const t = useT()
-  const { monitoring } = useRuntimeConfig()
   const { query } = useDwhHistory(entity, entityId, range)
 
   if (query.isPending) {
@@ -160,7 +161,9 @@ export function HistoryCharts({
             <Button
               variant="primary"
               component="a"
-              href={rebase(monitoring.grafanaBaseUrl)}
+              // fqdn-aware: on a proxy deploy the Grafana UI lives on the
+              // ENGINE host, not under the console's /e/<slug> API proxy.
+              href={monitoringPortalUrl()}
               target="_blank"
               rel="noopener noreferrer"
               icon={<ExternalLinkAltIcon />}

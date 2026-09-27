@@ -28,6 +28,7 @@ import { useVmAffinityLabels } from '../../hooks/useVmDetail'
 import { useT } from '../../i18n/useT'
 import { useNotify } from '../../notifications/context'
 import { ConfirmModal } from '../ConfirmModal'
+import { vmKeys } from '../../hooks/useVms'
 
 // Affinity labels attached to this VM (GET /vms/{id}/affinitylabels; the read
 // hook tolerates a 404 → []). Rendered as chips like the host detail's labels
@@ -46,7 +47,7 @@ export function AffinityLabelsTab({ vmId }: { vmId: string }) {
   const [adding, setAdding] = useState(false)
   const [removing, setRemoving] = useState<VmAffinityLabel | null>(null)
 
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['vm', vmId] })
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: vmKeys.detail(vmId) })
 
   const add = useMutation({
     mutationFn: (labelId: string) => addVmToAffinityLabel(labelId, vmId),
@@ -172,7 +173,7 @@ function AddLabelModal({
   const [labelId, setLabelId] = useState('')
 
   const allLabels = useQuery({
-    queryKey: ['vm', vmId, 'affinityLabelPicker'],
+    queryKey: vmKeys.affinityLabelPicker(vmId),
     queryFn: () => listAffinityLabels(),
   })
   const eligible = (allLabels.data ?? []).filter((label) => !attachedIds.has(label.id))

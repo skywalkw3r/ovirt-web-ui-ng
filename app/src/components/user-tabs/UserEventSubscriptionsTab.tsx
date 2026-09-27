@@ -30,7 +30,7 @@ import {
   removeUserEventSubscription,
 } from '../../api/resources/users'
 import { useCapabilities } from '../../auth/capabilities'
-import { useAdminResourcePollInterval } from '../../hooks/useAdminResources'
+import { useAdminResourcePollInterval, userKeys } from '../../hooks/useAdminResources'
 import { useNotify } from '../../notifications/context'
 import type { MessageId } from '../../i18n/messages/en'
 import { useT } from '../../i18n/useT'
@@ -250,8 +250,6 @@ function humanizeEvent(event: string): string {
   return spaced.charAt(0).toUpperCase() + spaced.slice(1)
 }
 
-const SUBSCRIPTIONS_QUERY_KEY = (userId: string) => ['user', userId, 'eventSubscriptions']
-
 // Add-subscriptions modal: a searchable, grouped multi-select over the static
 // NotifiableEvent catalog plus one optional address applied to every selected
 // event. The REST surface is one subscription per POST, so saving fans out one
@@ -340,7 +338,7 @@ function AddEventSubscriptionsModal({
       }
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: SUBSCRIPTIONS_QUERY_KEY(userId) })
+      void queryClient.invalidateQueries({ queryKey: userKeys.eventSubscriptions(userId) })
     },
   })
 
@@ -453,7 +451,7 @@ export function UserEventSubscriptionsTab({ userId }: { userId: string }) {
   const [removing, setRemoving] = useState<string | null>(null)
 
   const subscriptions = useQuery({
-    queryKey: SUBSCRIPTIONS_QUERY_KEY(userId),
+    queryKey: userKeys.eventSubscriptions(userId),
     queryFn: () => listUserEventSubscriptions(userId),
     refetchInterval,
     enabled: isAdmin,
@@ -468,7 +466,7 @@ export function UserEventSubscriptionsTab({ userId }: { userId: string }) {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: SUBSCRIPTIONS_QUERY_KEY(userId) })
+      void queryClient.invalidateQueries({ queryKey: userKeys.eventSubscriptions(userId) })
     },
   })
 

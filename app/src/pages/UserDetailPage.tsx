@@ -15,8 +15,6 @@ import {
   TabTitleText,
 } from '@patternfly/react-core'
 import { Link, useNavigate } from '@tanstack/react-router'
-import { useQuery } from '@tanstack/react-query'
-import { getUser } from '../api/resources/users'
 import { ApiError } from '../api/transport'
 import { useCapabilities } from '../auth/capabilities'
 import { ListPageHeader } from '../components/ListPageHeader'
@@ -28,7 +26,7 @@ import { UserGeneralTab } from '../components/user-tabs/UserGeneralTab'
 import { UserGroupsTab } from '../components/user-tabs/UserGroupsTab'
 import { UserPermissionsTab } from '../components/user-tabs/UserPermissionsTab'
 import { UserQuotaTab } from '../components/user-tabs/UserQuotaTab'
-import { useAdminResourcePollInterval } from '../hooks/useAdminResources'
+import { useUser } from '../hooks/useUserDetail'
 import { useT } from '../i18n/useT'
 import { userDetailRoute } from '../routes/router'
 
@@ -41,15 +39,11 @@ export function UserDetailPage() {
   const t = useT()
   const { loaded, isAdmin } = useCapabilities()
   const navigate = useNavigate()
-  const refetchInterval = useAdminResourcePollInterval()
   const [activeKey, setActiveKey] = useState<string | number>('general')
 
-  const user = useQuery({
-    queryKey: ['user', userId],
-    queryFn: () => getUser(userId),
-    refetchInterval,
-    enabled: isAdmin,
-  })
+  // Admin-gated inside the hook (enabled: isAdmin) — see the deep-link note
+  // below.
+  const user = useUser(userId)
 
   const notFound = user.error instanceof ApiError && user.error.status === 404
 

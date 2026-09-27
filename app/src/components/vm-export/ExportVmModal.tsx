@@ -25,6 +25,9 @@ import { exportVm } from '../../api/resources/vms'
 import type { Vm } from '../../api/schemas/vm'
 import { useT } from '../../i18n/useT'
 import { useNotify } from '../../notifications/context'
+import { vmKeys } from '../../hooks/useVms'
+import { clusterKeys, dataCenterKeys } from '../../hooks/useAdminResources'
+import { jobKeys } from '../../hooks/useJobs'
 
 // Marker class the click shield below uses to recognize its own modal.
 const MODAL_CLASS = 'export-vm-modal'
@@ -103,8 +106,8 @@ function useExportVm() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['jobs'] })
-      void queryClient.invalidateQueries({ queryKey: ['vms'] })
+      void queryClient.invalidateQueries({ queryKey: jobKeys.all })
+      void queryClient.invalidateQueries({ queryKey: vmKeys.all })
     },
   })
 }
@@ -126,13 +129,13 @@ function ExportVmModal({ vm, onClose }: { vm: Vm; onClose: () => void }) {
   // the VM's own data center for the export to have a target, so the options are
   // scoped there (same chained-query shape as CloneVmModal's disk placement).
   const cluster = useQuery({
-    queryKey: ['cluster', vm.cluster?.id],
+    queryKey: clusterKeys.detail(vm.cluster?.id),
     queryFn: () => getCluster(vm.cluster?.id ?? ''),
     enabled: vm.cluster?.id !== undefined,
   })
   const dataCenterId = cluster.data?.data_center?.id
   const storageDomains = useQuery({
-    queryKey: ['datacenter', dataCenterId, 'storageDomains'],
+    queryKey: dataCenterKeys.storageDomains(dataCenterId),
     queryFn: () => listDataCenterStorageDomains(dataCenterId ?? ''),
     enabled: dataCenterId !== undefined,
   })

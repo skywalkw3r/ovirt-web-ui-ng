@@ -81,6 +81,7 @@ import {
   type NetworkRowPatch,
   type SetupNetworksDraft,
 } from './setupNetworksDraft'
+import { hostKeys } from '../../hooks/useHosts'
 
 function labelText(row: NetworkRow, t: ReturnType<typeof useT>): string {
   return row.vlan !== undefined
@@ -1059,7 +1060,7 @@ export function SetupNetworksModal({
   // inlined. Inlined useQuery rather than a hooks/ hook because this wave owns
   // only host-network/**; it degrades to empty via listHostNicDetails on error.
   const nicDetails = useQuery({
-    queryKey: ['host', hostId, 'nicDetails'],
+    queryKey: hostKeys.nicDetails(hostId),
     queryFn: () => listHostNicDetails(hostId),
     enabled: isOpen,
   })

@@ -8,7 +8,7 @@ import { enMessages } from '../../i18n/messages/en'
 
 // Node test env + PF CSS imports → stub PF with semantic passthroughs (the
 // ClusterAffinityGroupsTab.test.tsx pattern). Assertions target the shell's
-// composition — the four states, per-column widths/truncation, the toolbar
+// composition — the five states, per-column widths/truncation, the toolbar
 // slot — not PF markup.
 vi.mock('@patternfly/react-core', () => ({
   Button: ({ children }: { children?: ReactNode }) => <button>{children}</button>,
@@ -23,6 +23,19 @@ vi.mock('@patternfly/react-core', () => ({
   EmptyStateActions: ({ children }: { children?: ReactNode }) => <div>{children}</div>,
   Skeleton: ({ screenreaderText }: { screenreaderText?: string }) => (
     <span>{screenreaderText ?? 'skeleton'}</span>
+  ),
+  Pagination: ({ itemCount, perPage }: { itemCount?: number; perPage?: number }) => (
+    <nav data-item-count={itemCount} data-per-page={perPage} />
+  ),
+  Toolbar: ({ children }: { children?: ReactNode }) => <div data-toolbar>{children}</div>,
+  ToolbarContent: ({ children }: { children?: ReactNode }) => <div>{children}</div>,
+  ToolbarGroup: ({ children }: { children?: ReactNode }) => <div>{children}</div>,
+  ToolbarItem: ({ children }: { children?: ReactNode }) => <div>{children}</div>,
+}))
+
+vi.mock('../list-toolbar/SearchInput', () => ({
+  SearchInput: ({ value, ariaLabel }: { value?: string; ariaLabel?: string }) => (
+    <input aria-label={ariaLabel} defaultValue={value} />
   ),
 }))
 
@@ -111,7 +124,7 @@ const COLUMNS: VmMembershipColumn[] = [
   },
 ]
 
-function render(query: UseQueryResult<Vm[], Error>, toolbar?: ReactNode) {
+function render(query: UseQueryResult<Vm[], Error>, toolbarItems?: ReactNode) {
   return renderToStaticMarkup(
     <IntlProvider locale="en" messages={enMessages}>
       <VmMembershipTable
@@ -119,7 +132,7 @@ function render(query: UseQueryResult<Vm[], Error>, toolbar?: ReactNode) {
         columns={COLUMNS}
         ariaLabel="Virtual machines in this cluster"
         emptyBody="No virtual machines are running in this cluster."
-        toolbar={toolbar}
+        toolbarItems={toolbarItems}
       />
     </IntlProvider>,
   )
@@ -147,6 +160,10 @@ describe('VmMembershipTable', () => {
   it('renders the populated table from the column defs, toolbar above', () => {
     const html = render(asQuery({ isSuccess: true, data: VMS }), <div>toolbar-marker</div>)
     expect(html).toContain('toolbar-marker')
+    // the shell's own toolbar: filter box + pagination over the matched rows,
+    // caller items alongside
+    expect(html).toContain('aria-label="Search virtual machines"')
+    expect(html).toContain('data-item-count="2"')
     expect(html).toContain('aria-label="Virtual machines in this cluster"')
     // header cells carry the per-column widths
     expect(html).toContain('<th data-width="30">Name</th>')
@@ -158,6 +175,22 @@ describe('VmMembershipTable', () => {
     expect(html).toContain('data-modifier="truncate" title="front tier"')
     expect(html).toContain('title="standby"')
     expect(html).toContain('>standby</td>')
+  })
+
+  it('pages the rows, counting every match but rendering one page of them', () => {
+    const many = Array.from({ length: 60 }, (_, index) => ({
+      id: `vm-${index}`,
+      name: `web-${String(index).padStart(2, '0')}`,
+      status: 'up',
+    })) as unknown as Vm[]
+    const html = render(asQuery({ isSuccess: true, data: many }))
+    // pagination reports the full match count at the default page size…
+    expect(html).toContain('data-item-count="60"')
+    expect(html).toContain('data-per-page="50"')
+    // …while the table body holds only the first page
+    expect(html).toContain('<a>web-49</a>')
+    expect(html).not.toContain('<a>web-50</a>')
+    expect(html.match(/<tr>/g)).toHaveLength(51) // 50 rows + the header row
   })
 
   it('switches to resizable headers inside a scroll viewport when resizePrefs is set', () => {

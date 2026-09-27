@@ -5,6 +5,7 @@ import {
   updateCpuProfile,
 } from '../api/resources/clusters'
 import { useNotify } from '../notifications/context'
+import { clusterKeys } from './useAdminResources'
 
 // The three CPU-profile mutations all invalidate ['cluster', clusterId,
 // 'cpuProfiles'] — the key useClusterCpuProfiles registers — so the cluster's
@@ -29,7 +30,7 @@ export function useCreateClusterCpuProfile() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: (_data, _error, { clusterId }) => {
-      void queryClient.invalidateQueries({ queryKey: ['cluster', clusterId, 'cpuProfiles'] })
+      void queryClient.invalidateQueries({ queryKey: clusterKeys.cpuProfiles(clusterId) })
     },
   })
 }
@@ -57,7 +58,7 @@ export function useUpdateCpuProfile() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: (_data, _error, { clusterId }) => {
-      void queryClient.invalidateQueries({ queryKey: ['cluster', clusterId, 'cpuProfiles'] })
+      void queryClient.invalidateQueries({ queryKey: clusterKeys.cpuProfiles(clusterId) })
     },
   })
 }
@@ -84,7 +85,7 @@ export function useDeleteClusterCpuProfile() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: (_data, _error, { clusterId }) => {
-      void queryClient.invalidateQueries({ queryKey: ['cluster', clusterId, 'cpuProfiles'] })
+      void queryClient.invalidateQueries({ queryKey: clusterKeys.cpuProfiles(clusterId) })
     },
   })
 }

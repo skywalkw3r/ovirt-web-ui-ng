@@ -26,8 +26,10 @@ npm-debug.log
 .vscode/
 .env*
 
-# automake.sh / automake / autoconfig generated files
+# automake.sh / automake / autoconfig generated files (the hand-written root
+# Makefile with the developer entry points is NOT one of them)
 Makefile
+!/Makefile
 Makefile.in
 aclocal.m4
 autom4te.cache/
@@ -59,3 +61,7 @@ configure~
 
 # Playwright e2e artifacts
 test-results/
+
+# Local editor/tool state (never commit local settings or worktrees)
+.claude/settings.local.json
+.claude/worktrees/

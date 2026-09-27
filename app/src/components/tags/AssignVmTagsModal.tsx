@@ -22,10 +22,11 @@ import { FormattedMessage } from 'react-intl'
 import { assignTag, listVmTags, unassignTag } from '../../api/resources/tags'
 import type { Tag } from '../../api/schemas/tag'
 import type { Vm } from '../../api/schemas/vm'
-import { labelTagsOf, tagColor, useTags } from '../../hooks/useTags'
+import { labelTagsOf, tagColor, tagKeys, useTags } from '../../hooks/useTags'
 import { useT } from '../../i18n/useT'
 import { useNotify } from '../../notifications/context'
 import { pfLabelColor } from './label-palette'
+import { vmKeys } from '../../hooks/useVms'
 
 const MODAL_CLASS = 'assign-vm-tags-modal'
 
@@ -64,7 +65,7 @@ export function AssignVmTagsModal({ vms, onClose }: { vms: readonly Vm[]; onClos
   const t = useT()
   const allTags = useTags()
   const current = useQuery({
-    queryKey: ['vm-tags-assign', vms.map((vm) => vm.id).sort()],
+    queryKey: tagKeys.vmAssignPicker(vms.map((vm) => vm.id).sort()),
     queryFn: async () => Promise.all(vms.map((vm) => listVmTags(vm.id))),
   })
   const queryClient = useQueryClient()
@@ -134,10 +135,10 @@ export function AssignVmTagsModal({ vms, onClose }: { vms: readonly Vm[]; onClos
     },
     onSettled: () => {
       // list rows embed tags (?follow=tags), so the VM collections refresh too
-      void queryClient.invalidateQueries({ queryKey: ['vms'] })
-      void queryClient.invalidateQueries({ queryKey: ['tags'] })
+      void queryClient.invalidateQueries({ queryKey: vmKeys.all })
+      void queryClient.invalidateQueries({ queryKey: tagKeys.all })
       for (const vm of vms) {
-        void queryClient.invalidateQueries({ queryKey: ['vm', vm.id, 'tags'] })
+        void queryClient.invalidateQueries({ queryKey: vmKeys.tags(vm.id) })
       }
     },
   })

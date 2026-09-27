@@ -2,14 +2,17 @@ import { useCallback, useState } from 'react'
 import { Button, Modal, ModalBody, ModalFooter, ModalHeader } from '@patternfly/react-core'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { listClusterCpuProfiles } from '../../api/resources/clusters'
-import { changeVmCd, listOperatingSystems } from '../../api/resources/vms'
+import { changeVmCd } from '../../api/resources/vms'
 import type { Vm } from '../../api/schemas/vm'
 import { useCapabilities } from '../../auth/capabilities'
-import { useClusters } from '../../hooks/useCatalog'
+import { clusterKeys } from '../../hooks/useAdminResources'
+import { useClusters, useOperatingSystems } from '../../hooks/useCatalog'
 import { useHosts } from '../../hooks/useHosts'
 import { useUpdateVm } from '../../hooks/useUpdateVm'
+import { vmKeys } from '../../hooks/useVms'
 import { useT } from '../../i18n/useT'
 import { ModalVerticalTabs } from '../forms/ModalVerticalTabs'
+import { OptionsHelper } from '../forms/OptionsSelect'
 import { BootOptionsSection } from './BootOptionsSection'
 import { ConsoleSection } from './ConsoleSection'
 import { CustomPropertiesSection } from './CustomPropertiesSection'
@@ -68,17 +71,23 @@ export function EditVmModal({
     setDraft((current) => ({ ...current, [key]: value }))
   }, [])
 
-  // Option sources for the General section. Both default to [] while loading —
-  // the selects just show fewer options, so no blocking spinner is needed.
-  // useClusters is the shared catalog consumer: its ['clusters', ''] key + fn
-  // (and 60s staleTime) match every other reader, so the modal reuses that one
-  // cache entry instead of a bare ['clusters'] key that would fire a redundant
-  // full-clusters fetch and get double-hit by prefix invalidations.
+  // Option sources for the General section. useClusters is the shared catalog
+  // consumer: its ['clusters', ''] key + fn (and 60s staleTime) match every
+  // other reader, so the modal reuses that one cache entry instead of a bare
+  // ['clusters'] key that would fire a redundant full-clusters fetch and get
+  // double-hit by prefix invalidations. GeneralSection is presentational and
+  // takes plain arrays, so the two reads' loading/error states surface through
+  // OptionsHelper lines above it (below), and until a list has loaded — or when
+  // its read failed — the VM's OWN cluster / OS stands in as the sole option so
+  // the select keeps showing the current value instead of going blank.
   const clusters = useClusters()
-  const operatingSystems = useQuery({
-    queryKey: ['operatingSystems'],
-    queryFn: listOperatingSystems,
-  })
+  const operatingSystems = useOperatingSystems()
+  const currentCluster = vm.cluster
+  const clusterOptions =
+    clusters.data ??
+    (currentCluster?.id !== undefined ? [{ id: currentCluster.id, name: currentCluster.name }] : [])
+  const operatingSystemOptions =
+    operatingSystems.data ?? (draft.osType !== '' ? [{ name: draft.osType }] : [])
 
   // Host placement needs the host inventory — an admin-only read on the engine
   // (same gate as useHosts/RunOnceModal), so the whole Host section is
@@ -90,9 +99,10 @@ export function EditVmModal({
   const hosts = useHosts()
 
   // The Resource Allocation CPU-profile select — keyed like useClusterCpuProfiles
-  // so the cluster detail page and this modal share the cache.
+  // (clusterKeys.cpuProfiles) so the cluster detail page and this modal share
+  // the cache; no poll and gated on a chosen cluster, unlike the detail hook.
   const cpuProfiles = useQuery({
-    queryKey: ['cluster', draft.clusterId, 'cpuProfiles'],
+    queryKey: clusterKeys.cpuProfiles(draft.clusterId),
     queryFn: () => listClusterCpuProfiles(draft.clusterId),
     enabled: draft.clusterId !== '',
   })
@@ -114,7 +124,7 @@ export function EditVmModal({
         onSuccess: async () => {
           if (cdFileId !== undefined) {
             await changeVmCd(vm.id, cdFileId, { current: false })
-            void queryClient.invalidateQueries({ queryKey: ['vm', vm.id] })
+            void queryClient.invalidateQueries({ queryKey: vmKeys.detail(vm.id) })
           }
           setConfirmingNextRun(false)
           onClose()
@@ -161,13 +171,24 @@ export function EditVmModal({
               key: 'general',
               title: t('vm.edit.section.general'),
               content: (
-                <GeneralSection
-                  draft={draft}
-                  set={set}
-                  clusters={clusters.data ?? []}
-                  operatingSystems={operatingSystems.data ?? []}
-                  templateName={vm.template?.name}
-                />
+                <>
+                  {/* Loading / error / empty lines for the two catalog reads
+                      that feed the section's Cluster and Operating System
+                      selects — a failed read shows an error with Retry here
+                      instead of an empty select passing for "no options". */}
+                  <OptionsHelper query={clusters} label={t('common.field.cluster')} />
+                  <OptionsHelper
+                    query={operatingSystems}
+                    label={t('vmGeneral.term.operatingSystem')}
+                  />
+                  <GeneralSection
+                    draft={draft}
+                    set={set}
+                    clusters={clusterOptions}
+                    operatingSystems={operatingSystemOptions}
+                    templateName={vm.template?.name}
+                  />
+                </>
               ),
             },
             {

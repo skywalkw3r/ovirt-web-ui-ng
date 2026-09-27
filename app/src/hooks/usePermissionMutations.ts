@@ -8,6 +8,8 @@ import {
 import { listRoles } from '../api/resources/roles'
 import { listGroups, listUsers } from '../api/resources/users'
 import { useNotify } from '../notifications/context'
+import { groupKeys, userKeys } from './useAdminResources'
+import { roleKeys } from './useRoles'
 
 // The permissions data layer for the eight entity Permissions tabs: the Add
 // Permission modal's picker queries (roles/users/groups) plus the add/remove
@@ -20,12 +22,22 @@ import { useNotify } from '../notifications/context'
 // within the window costs nothing.
 export const ROLES_STALE_MS = 5 * 60_000
 
+// The kind-parametrized form of the per-entity permissions key: exactly the
+// [kind, id, 'permissions'] entry each entity builder's `permissions` slice
+// produces (vmKeys.permissions, clusterKeys.permissions, poolKeys.permissions
+// → ['vmpool', …], …; pinned equal for every PermissionEntityKind in
+// queryKeys.test.ts). The add/remove mutations below invalidate it, so a grant
+// change refetches whichever entity's Permissions tab is mounted.
+export const permissionKeys = {
+  entity: (kind: PermissionEntityKind, id: string) => [kind, id, 'permissions'] as const,
+}
+
 // GET /roles — the Add Permission modal's role select source. Render it
 // through assignableRoles() (resources/roles.ts) to drop QuotaConsumer and
 // sort; default the selection to USER_ROLE_ID.
 export function useRoles() {
   return useQuery({
-    queryKey: ['roles'],
+    queryKey: roleKeys.all,
     queryFn: () => listRoles(),
     staleTime: ROLES_STALE_MS,
   })
@@ -49,7 +61,7 @@ export const PRINCIPALS_STALE_MS = 5 * 60_000
 export function usePermissionUsers(search = '') {
   return useQuery({
     // shares the ['users', search] cache entries useUsers registers
-    queryKey: ['users', search],
+    queryKey: userKeys.list(search),
     queryFn: () => listUsers({ search: search || undefined }),
     staleTime: PRINCIPALS_STALE_MS,
   })
@@ -57,7 +69,7 @@ export function usePermissionUsers(search = '') {
 
 export function useGroups(search = '') {
   return useQuery({
-    queryKey: ['groups', search],
+    queryKey: groupKeys.list(search),
     queryFn: () => listGroups({ search: search || undefined }),
     staleTime: PRINCIPALS_STALE_MS,
   })
@@ -89,7 +101,7 @@ export function useAddPermission(entityKind: PermissionEntityKind, entityId: str
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: [entityKind, entityId, 'permissions'] })
+      void queryClient.invalidateQueries({ queryKey: permissionKeys.entity(entityKind, entityId) })
     },
   })
 }
@@ -121,7 +133,7 @@ export function useRemovePermission(entityKind: PermissionEntityKind, entityId: 
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: [entityKind, entityId, 'permissions'] })
+      void queryClient.invalidateQueries({ queryKey: permissionKeys.entity(entityKind, entityId) })
     },
   })
 }

@@ -11,3 +11,11 @@
 lab
 docs
 *.log
+
+# Never ship deploy config or local env files into a build context.
+# deploy/ holds the live OpenShift manifests plus (git-ignored) key material;
+# app/.env is a developer's dev-proxy target.
+deploy
+**/.env
+**/.env.*
+!**/.env.example

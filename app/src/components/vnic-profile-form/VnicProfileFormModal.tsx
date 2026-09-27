@@ -23,8 +23,8 @@ import type { VnicProfile } from '../../api/schemas/vnic-profile'
 import { listDataCenterQoss } from '../../api/resources/datacenters'
 import { getNetwork } from '../../api/resources/networks'
 import { listNetworkFilters } from '../../api/resources/vnicProfiles'
-import { useNetworks } from '../../hooks/useNetworks'
-import { useDataCenters } from '../../hooks/useAdminResources'
+import { networkFilterKeys, networkKeys, useNetworks } from '../../hooks/useNetworks'
+import { dataCenterKeys, useDataCenters } from '../../hooks/useAdminResources'
 import { useVnicProfiles } from '../../hooks/useCatalogPages'
 import {
   useCreateVnicProfile,
@@ -152,7 +152,7 @@ export function VnicProfileFormModal({
   const dataCenters = useDataCenters()
   const profiles = useVnicProfiles()
   const filters = useQuery({
-    queryKey: ['networkfilters'],
+    queryKey: networkFilterKeys.all,
     queryFn: () => listNetworkFilters(),
     enabled: isOpen,
   })
@@ -166,7 +166,7 @@ export function VnicProfileFormModal({
   // from the list, so only the cache applies.
   const selectedNetwork = networks.data?.find((network) => network.id === draft.networkId)
   const ownNetwork = useQuery({
-    queryKey: ['network', draft.networkId],
+    queryKey: networkKeys.detail(draft.networkId),
     queryFn: () => getNetwork(draft.networkId),
     enabled: isOpen && networkLocked && draft.networkId !== '',
   })
@@ -175,7 +175,7 @@ export function VnicProfileFormModal({
     selectedNetwork,
   )
   const qoss = useQuery({
-    queryKey: ['datacenter-qoss', networkDcId],
+    queryKey: dataCenterKeys.qosPicker(networkDcId),
     queryFn: () => listDataCenterQoss(networkDcId as string),
     enabled: isOpen && !draft.passthrough && networkDcId !== undefined,
   })

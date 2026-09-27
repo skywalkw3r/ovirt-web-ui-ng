@@ -19,6 +19,7 @@ import { useNetworks } from '../../hooks/useNetworks'
 import { useT } from '../../i18n/useT'
 import { StatusBadge } from '../StatusBadge'
 import { ProviderNetworkImportModal } from './ProviderNetworkImportModal'
+import { providerKeys } from '../../hooks/useParityResources'
 
 // The provider-detail Networks subtab (network-kind providers only). It lists
 // the external/OVN networks the provider itself holds — the same source list
@@ -37,7 +38,7 @@ export function ProviderNetworksTab({ providerId }: { providerId: string }) {
 
   const refetchInterval = useAdminResourcePollInterval()
   const providerNetworks = useQuery({
-    queryKey: ['provider', providerId, 'networks'],
+    queryKey: providerKeys.networks(providerId),
     queryFn: () => listProviderNetworks(providerId),
     refetchInterval,
   })

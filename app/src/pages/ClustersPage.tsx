@@ -19,7 +19,6 @@ import {
 } from '@patternfly/react-core'
 import { ActionsColumn, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table'
 import { Link } from '@tanstack/react-router'
-import { isClusterUpgradeRunning } from '../api/resources/clusters'
 import type { Cluster } from '../api/schemas/cluster'
 import { useCapabilities } from '../auth/capabilities'
 import { useT } from '../i18n/useT'
@@ -36,18 +35,13 @@ import { BookmarkMenu } from '../components/list-toolbar/BookmarkMenu'
 import { ColumnPicker } from '../components/list-toolbar/ColumnPicker'
 import { ResizableTh, resizableTableProps } from '../components/list-toolbar/ResizableTh'
 import { SearchInput } from '../components/list-toolbar/SearchInput'
-import { useClustersInventory } from '../hooks/useAdminResources'
+import { isClusterUpgradeRunning, useClustersInventory } from '../hooks/useAdminResources'
 import { useColumnPrefs } from '../hooks/useColumnPrefs'
 import { sortRows, useColumnSort } from '../hooks/useColumnSort'
 import { useHosts } from '../hooks/useHosts'
 import { useListSearch } from '../hooks/useListSearch'
 import { useVms } from '../hooks/useVms'
-
-const PER_PAGE_OPTIONS = [
-  { title: '20', value: 20 },
-  { title: '50', value: 50 },
-  { title: '100', value: 100 },
-]
+import { PER_PAGE_OPTIONS } from '../hooks/usePagination'
 
 // e.g. { major: 4, minor: 7 } → '4.7'; a bare major still renders.
 function CompatVersionCell({ version }: { version: Cluster['version'] }) {

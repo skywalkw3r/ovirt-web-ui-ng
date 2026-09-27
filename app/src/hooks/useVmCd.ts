@@ -3,6 +3,12 @@ import { changeVmCd, getVmCdromFileId } from '../api/resources/vms'
 import { listIsoImages } from '../api/resources/storageDomains'
 import type { Vm } from '../api/schemas/vm'
 import { useNotify } from '../notifications/context'
+import { vmKeys } from './useVms'
+
+// The assembled ISO catalog the Change CD / Run Once pickers share (useIsoImages).
+export const isoImageKeys = {
+  all: ['isoImages'] as const,
+}
 
 // The ISO picker assembles its dropdown from full /disks + full /storagedomains
 // plus a per-ISO-domain /files read on every Change-CD / Run-Once open —
@@ -11,7 +17,7 @@ import { useNotify } from '../notifications/context'
 // reuse it instead of reassembling; a hard reload still shows a fresh list.
 export function useIsoImages(enabled: boolean) {
   return useQuery({
-    queryKey: ['isoImages'],
+    queryKey: isoImageKeys.all,
     queryFn: () => listIsoImages(),
     enabled,
     staleTime: 5 * 60_000,
@@ -23,7 +29,7 @@ export function useIsoImages(enabled: boolean) {
 // reads the running guest's view; when false it's the persisted next-boot CD.
 export function useVmCdrom(vmId: string, current: boolean, enabled: boolean) {
   return useQuery({
-    queryKey: ['vm', vmId, 'cdrom', current],
+    queryKey: vmKeys.cdrom(vmId, current),
     queryFn: () => getVmCdromFileId(vmId, { current }),
     enabled,
   })
@@ -50,7 +56,7 @@ export function useChangeVmCd() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: (_data, _error, { vm }) => {
-      void queryClient.invalidateQueries({ queryKey: ['vm', vm.id] })
+      void queryClient.invalidateQueries({ queryKey: vmKeys.detail(vm.id) })
     },
   })
 }

@@ -11,18 +11,40 @@ import {
   updateSchedulingPolicy,
   type CurrentAssignments,
   type SchedulingPolicyDraft,
-} from '../../api/resources/schedulingPolicies'
-import { useCapabilities } from '../../auth/capabilities'
-import { useNotify } from '../../notifications/context'
-import { useAdminResourcePollInterval } from '../../hooks/useAdminResources'
+} from '../api/resources/schedulingPolicies'
+import { useCapabilities } from '../auth/capabilities'
+import { useNotify } from '../notifications/context'
+import { useAdminResourcePollInterval } from './useAdminResources'
 
-// TanStack Query hooks for the Scheduling Policies admin surface. They live
-// beside the form (not in hooks/) because the page + editor are their only
-// consumers. The list shares the ['schedulingPolicies'] cache key the cluster
-// form's Scheduling Policy select already registers (ClusterFormModal), so a
-// policy created/renamed/removed here also refreshes that select — both
-// queryFns parse the same wire data through looseObject schemas, this one just
-// types the richer read model.
+// TanStack Query hooks for the Scheduling Policies admin surface
+// (SchedulingPoliciesPage + SchedulingPolicyFormModal). The list shares the
+// ['schedulingPolicies'] cache key the cluster form's Scheduling Policy select
+// already registers (ClusterFormModal), so a policy created/renamed/removed
+// here also refreshes that select — both queryFns parse the same wire data
+// through looseObject schemas, this one just types the richer read model.
+
+// The SchedulingPolicy read model and the two flag predicates the page renders
+// its rows with (engine-shipped locked built-ins vs custom; the cluster
+// default), surfaced here so the page consumes them through the hooks layer
+// instead of importing api/resources (CONTRIBUTING.md: transport → schemas →
+// resources → hooks → pages). The schema lives beside its resource fns, not
+// in api/schemas, so the type re-exports from here too.
+export {
+  isDefaultPolicy,
+  isLockedPolicy,
+  type SchedulingPolicy,
+} from '../api/resources/schedulingPolicies'
+
+// Query-key builders for the scheduling-policy catalog. `all` is the list
+// entry (shared with ClusterFormModal's select) and the prefix every policy
+// mutation invalidates; per-policy assignments nest under it; the unit catalog
+// is its own engine-static collection.
+export const schedulingPolicyKeys = {
+  all: ['schedulingPolicies'] as const,
+  units: ['schedulingPolicyUnits'] as const,
+  assignments: (policyId: string | undefined) =>
+    ['schedulingPolicies', policyId, 'assignments'] as const,
+}
 
 // Near-static admin inventory → the 60s admin poll floor; gated on isAdmin
 // (the page renders <NotPermitted> for user-tier accounts, mirror useRoles).
@@ -30,7 +52,7 @@ export function useSchedulingPoliciesAdmin() {
   const { isAdmin } = useCapabilities()
   const refetchInterval = useAdminResourcePollInterval()
   return useQuery({
-    queryKey: ['schedulingPolicies'],
+    queryKey: schedulingPolicyKeys.all,
     queryFn: () => listSchedulingPolicies(),
     refetchInterval,
     enabled: isAdmin,
@@ -42,7 +64,7 @@ export function useSchedulingPoliciesAdmin() {
 // unit catalog is fixed for a given engine version (mirror usePermitCatalog).
 export function usePolicyUnitCatalog(enabled: boolean) {
   return useQuery({
-    queryKey: ['schedulingPolicyUnits'],
+    queryKey: schedulingPolicyKeys.units,
     queryFn: () => listSchedulingPolicyUnits(),
     enabled,
     staleTime: Infinity,
@@ -54,7 +76,7 @@ export function usePolicyUnitCatalog(enabled: boolean) {
 // enabled only while that editor is open.
 export function usePolicyAssignments(policyId: string | undefined, enabled: boolean) {
   return useQuery({
-    queryKey: ['schedulingPolicies', policyId, 'assignments'],
+    queryKey: schedulingPolicyKeys.assignments(policyId),
     queryFn: () => listPolicyAssignments(policyId as string),
     enabled: enabled && policyId !== undefined,
     staleTime: Infinity,
@@ -86,7 +108,7 @@ export function useCreateSchedulingPolicy() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['schedulingPolicies'] })
+      void queryClient.invalidateQueries({ queryKey: schedulingPolicyKeys.all })
     },
   })
 }
@@ -118,8 +140,8 @@ export function useUpdateSchedulingPolicy() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: (_policy, _error, { id }) => {
-      void queryClient.invalidateQueries({ queryKey: ['schedulingPolicies'] })
-      void queryClient.invalidateQueries({ queryKey: ['schedulingPolicies', id, 'assignments'] })
+      void queryClient.invalidateQueries({ queryKey: schedulingPolicyKeys.all })
+      void queryClient.invalidateQueries({ queryKey: schedulingPolicyKeys.assignments(id) })
     },
   })
 }
@@ -139,7 +161,7 @@ export function useDeleteSchedulingPolicy() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['schedulingPolicies'] })
+      void queryClient.invalidateQueries({ queryKey: schedulingPolicyKeys.all })
     },
   })
 }
