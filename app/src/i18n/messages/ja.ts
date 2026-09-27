@@ -813,6 +813,7 @@ export const ja: LocaleCatalog = {
   'disks.filter.directLun': 'ダイレクトLUN',
   'disks.filter.images': 'イメージ',
   'disks.filter.diskType': 'ディスクタイプ',
+  'disks.filter.hideOvfStore': 'OVF_STORE ディスクを非表示',
   'disks.search.ariaLabel': 'ディスクを検索',
   'disks.pagination.ariaLabel': 'ディスクのページネーション',
   'disks.new': '新しいディスク',

@@ -826,6 +826,7 @@ export const ru: LocaleCatalog = {
   'disks.filter.directLun': 'Прямой LUN',
   'disks.filter.images': 'Образы',
   'disks.filter.diskType': 'Тип диска',
+  'disks.filter.hideOvfStore': 'Скрыть диски OVF_STORE',
   'disks.search.ariaLabel': 'Поиск дисков',
   'disks.pagination.ariaLabel': 'Пагинация дисков',
   'disks.new': 'Новый диск',

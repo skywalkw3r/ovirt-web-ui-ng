@@ -827,6 +827,7 @@ export const de: LocaleCatalog = {
   'disks.filter.directLun': 'Direkte LUN',
   'disks.filter.images': 'Abbilder',
   'disks.filter.diskType': 'Datenträgertyp',
+  'disks.filter.hideOvfStore': 'OVF_STORE-Datenträger ausblenden',
   'disks.search.ariaLabel': 'Datenträger durchsuchen',
   'disks.pagination.ariaLabel': 'Seitennummerierung auf Datenträgern',
   'disks.new': 'Neue Festplatte',

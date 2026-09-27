@@ -823,6 +823,7 @@ export const ptBR: LocaleCatalog = {
   'disks.filter.directLun': 'LUN direto',
   'disks.filter.images': 'Imagens',
   'disks.filter.diskType': 'Tipo de disco',
+  'disks.filter.hideOvfStore': 'Ocultar discos OVF_STORE',
   'disks.search.ariaLabel': 'Pesquisar discos',
   'disks.pagination.ariaLabel': 'Paginação de discos',
   'disks.new': 'Novo disco',

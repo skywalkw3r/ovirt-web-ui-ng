@@ -806,6 +806,7 @@ export const ko: LocaleCatalog = {
   'disks.filter.directLun': '직접 LUN',
   'disks.filter.images': '이미지',
   'disks.filter.diskType': '디스크 유형',
+  'disks.filter.hideOvfStore': 'OVF_STORE 디스크 숨기기',
   'disks.search.ariaLabel': '디스크 검색',
   'disks.pagination.ariaLabel': '디스크 페이지 매김',
   'disks.new': '새 디스크',

@@ -825,6 +825,7 @@ export const it: LocaleCatalog = {
   'disks.filter.directLun': 'LUN diretto',
   'disks.filter.images': 'Immagini',
   'disks.filter.diskType': 'Tipo di disco',
+  'disks.filter.hideOvfStore': 'Nascondi dischi OVF_STORE',
   'disks.search.ariaLabel': 'Cerca dischi',
   'disks.pagination.ariaLabel': 'Impaginazione dischi',
   'disks.new': 'Nuovo disco',

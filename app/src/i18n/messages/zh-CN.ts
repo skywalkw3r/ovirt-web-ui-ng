@@ -791,6 +791,7 @@ export const zhCN: LocaleCatalog = {
   'disks.filter.directLun': '直接 LUN',
   'disks.filter.images': '镜像',
   'disks.filter.diskType': '磁盘类型',
+  'disks.filter.hideOvfStore': '隐藏 OVF_STORE 磁盘',
   'disks.search.ariaLabel': '搜索磁盘',
   'disks.pagination.ariaLabel': '磁盘分页',
   'disks.new': '新磁盘',

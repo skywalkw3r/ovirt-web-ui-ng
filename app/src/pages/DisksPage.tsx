@@ -13,6 +13,7 @@ import {
   Skeleton,
   Flex,
   FlexItem,
+  Checkbox,
   FormSelect,
   FormSelectOption,
   ToggleGroup,
@@ -58,6 +59,7 @@ import {
 } from '../hooks/useDiskMutations'
 import { useListSearch } from '../hooks/useListSearch'
 import { usePagination } from '../hooks/usePagination'
+import { isOvfStoreDisk, readHideOvfStore, writeHideOvfStore } from '../lib/diskListPrefs'
 import { useStorageDomains } from '../hooks/useStorageDomains'
 import {
   diskContentTypeText,
@@ -310,6 +312,11 @@ function DisksTable() {
   // like the old admin portal's disk tab.
   const [diskType, setDiskType] = useState<'all' | 'image' | 'lun' | 'managed_block_storage'>('all')
   const [contentType, setContentType] = useState('all')
+  // Hide the engine's OVF_STORE disks (two per storage domain — pure noise in
+  // a fleet with many domains). Durable per browser (lib/diskListPrefs);
+  // explicitly asking for the ovf_store content type shows them regardless.
+  const [hideOvfStore, setHideOvfStore] = useState(readHideOvfStore)
+  const ovfHidden = hideOvfStore && contentType !== 'ovf_store'
   // dropdown options follow the data (plus All), so oddball engine values
   // still filter correctly
   const contentTypes = [
@@ -323,7 +330,8 @@ function DisksTable() {
     (disk) =>
       // a disk without storage_type is an image (the engine default)
       (diskType === 'all' || (disk.storage_type ?? 'image') === diskType) &&
-      (contentType === 'all' || disk.content_type === contentType),
+      (contentType === 'all' || disk.content_type === contentType) &&
+      (!ovfHidden || !isOvfStoreDisk(disk)),
   )
 
   const visible = sortRows(filtered, sort, (row, key) =>
@@ -333,7 +341,10 @@ function DisksTable() {
   // clamp rather than effect-reset: polling refetches can shrink the list
   // underneath the current page; a new committed search or filter
   // re-scopes the whole list, so it starts back at page 1
-  const paging = usePagination({ total: visible.length, resetKeys: [query, diskType, contentType] })
+  const paging = usePagination({
+    total: visible.length,
+    resetKeys: [query, diskType, contentType, ovfHidden],
+  })
   const paged = paging.pageSlice(visible)
 
   const visibleColumns = columns.filter((column) => prefs.isVisible(column.key))
@@ -423,6 +434,19 @@ function DisksTable() {
                     ))}
                   </FormSelect>
                 </Flex>
+              </FlexItem>
+              <FlexItem>
+                <Checkbox
+                  id="disks-hide-ovf-store"
+                  label={t('disks.filter.hideOvfStore')}
+                  isChecked={hideOvfStore}
+                  // greyed while the content-type filter already asks for them
+                  isDisabled={contentType === 'ovf_store'}
+                  onChange={(_event, checked) => {
+                    setHideOvfStore(checked)
+                    writeHideOvfStore(checked)
+                  }}
+                />
               </FlexItem>
             </Flex>
           </ToolbarItem>

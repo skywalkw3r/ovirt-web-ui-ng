@@ -3087,6 +3087,32 @@ const initialUnattachedDisks: MockDisk[] = [
     storage_type: 'image',
     content_type: 'data',
   },
+  // The engine keeps two OVF_STORE disks per storage domain (the OVF metadata
+  // of its VMs/templates). Real fleets show dozens in the flat list, which is
+  // why the Disks page hides them by default; tagged exactly as the engine
+  // does (content_type ovf_store, fixed name).
+  {
+    id: 'disk-ovf-store-sd-01',
+    name: 'OVF_STORE',
+    alias: 'OVF_STORE',
+    provisioned_size: 128 * 1024 * 1024,
+    actual_size: `${128 * 1024 * 1024}`,
+    status: 'ok',
+    format: 'raw',
+    storage_type: 'image',
+    content_type: 'ovf_store',
+  },
+  {
+    id: 'disk-ovf-store-sd-02',
+    name: 'OVF_STORE',
+    alias: 'OVF_STORE',
+    provisioned_size: `${128 * 1024 * 1024}`,
+    actual_size: 128 * 1024 * 1024,
+    status: 'ok',
+    format: 'raw',
+    storage_type: 'image',
+    content_type: 'ovf_store',
+  },
 ]
 
 // Rich per-disk detail bodies GET /disks/{id} opens against — the flat /disks

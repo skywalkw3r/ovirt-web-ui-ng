@@ -810,19 +810,22 @@ describe('mock global resources', () => {
     expect(networkIds).toEqual(new Set(['net-01', 'net-02', 'net-03']))
   })
 
-  it('serves every attached disk plus the two unattached ones', async () => {
+  it('serves every attached disk plus the unattached ones', async () => {
     const { disk } = (await call('/disks')) as {
       disk: Array<{ name?: string; actual_size?: number | string; content_type?: string }>
     }
     // 13 disks ride the per-VM attachment fixtures (including the shareable
-    // quorum disk and the direct LUN), 2 are unattached
-    expect(disk).toHaveLength(15)
+    // quorum disk and the direct LUN), 4 are unattached: iso-uploads,
+    // orphaned-backup and the two engine OVF_STORE disks added for the Disks
+    // page's hide-OVF_STORE filter (count updated to track that fixture growth).
+    expect(disk).toHaveLength(17)
     const names = disk.map((d) => d.name)
     expect(names).toContain('db-01_pgdata')
     expect(names).toContain('db-cluster_quorum')
     expect(names).toContain('legacy-erp_san')
     expect(names).toContain('iso-uploads')
     expect(names).toContain('orphaned-backup')
+    expect(disk.filter((d) => d.content_type === 'ovf_store')).toHaveLength(2)
     expect(disk.some((d) => typeof d.actual_size === 'string')).toBe(true)
     expect(disk.some((d) => d.content_type === 'iso')).toBe(true)
   })

@@ -1081,6 +1081,7 @@ export const en = {
   'disks.filter.directLun': 'Direct LUN',
   'disks.filter.images': 'Images',
   'disks.filter.diskType': 'Disk type',
+  'disks.filter.hideOvfStore': 'Hide OVF_STORE disks',
   'disks.search.ariaLabel': 'Search disks',
   'disks.pagination.ariaLabel': 'Disks pagination',
   'disks.new': 'New disk',

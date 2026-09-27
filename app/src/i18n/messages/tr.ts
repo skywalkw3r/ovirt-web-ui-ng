@@ -813,6 +813,7 @@ export const tr: LocaleCatalog = {
   'disks.filter.directLun': 'Doğrudan LUN',
   'disks.filter.images': 'İmajlar',
   'disks.filter.diskType': 'Disk türü',
+  'disks.filter.hideOvfStore': 'OVF_STORE disklerini gizle',
   'disks.search.ariaLabel': 'Diskleri ara',
   'disks.pagination.ariaLabel': 'Disklerin sayfalandırılması',
   'disks.new': 'Yeni disk',
