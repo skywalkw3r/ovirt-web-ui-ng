@@ -5,6 +5,7 @@ import {
   updateInstanceType,
 } from '../api/resources/instanceTypes'
 import { useNotify } from '../notifications/context'
+import { instanceTypeKeys } from './useCatalogPages'
 
 // The Create Instance Type modal's save mutation. Mirrors useCreateCluster:
 // notify on success/failure and invalidate the instance type list query so the
@@ -24,7 +25,7 @@ export function useCreateInstanceType() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['instancetypes'] })
+      void queryClient.invalidateQueries({ queryKey: instanceTypeKeys.all })
     },
   })
 }
@@ -47,8 +48,8 @@ export function useUpdateInstanceType() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: (_data, _error, { id }) => {
-      void queryClient.invalidateQueries({ queryKey: ['instancetype', id] })
-      void queryClient.invalidateQueries({ queryKey: ['instancetypes'] })
+      void queryClient.invalidateQueries({ queryKey: instanceTypeKeys.detail(id) })
+      void queryClient.invalidateQueries({ queryKey: instanceTypeKeys.all })
     },
   })
 }
@@ -72,7 +73,7 @@ export function useDeleteInstanceType() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['instancetypes'] })
+      void queryClient.invalidateQueries({ queryKey: instanceTypeKeys.all })
     },
   })
 }

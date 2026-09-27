@@ -27,10 +27,10 @@ import {
   listUserTags,
 } from '../../api/resources/tags'
 import type { Tag } from '../../api/schemas/tag'
-import { labelTagsOf, tagColor, useTags } from '../../hooks/useTags'
+import { labelTagsOf, tagColor, tagKeys, useTags } from '../../hooks/useTags'
 import { useT } from '../../i18n/useT'
 import { useNotify } from '../../notifications/context'
-import { entityTagsKey, type TaggableKind } from './entityTags'
+import type { TaggableKind } from './entityTags'
 import { pfLabelColor } from './label-palette'
 
 const RESOURCE: Record<
@@ -67,7 +67,7 @@ export function AssignTagsModal({
   const resource = RESOURCE[kind]
   const allTags = useTags()
   const current = useQuery({
-    queryKey: entityTagsKey(kind, entityId),
+    queryKey: tagKeys.entity(kind, entityId),
     queryFn: () => resource.list(entityId),
   })
   const queryClient = useQueryClient()
@@ -118,8 +118,8 @@ export function AssignTagsModal({
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: entityTagsKey(kind, entityId) })
-      void queryClient.invalidateQueries({ queryKey: ['tags'] })
+      void queryClient.invalidateQueries({ queryKey: tagKeys.entity(kind, entityId) })
+      void queryClient.invalidateQueries({ queryKey: tagKeys.all })
     },
   })
 

@@ -4,6 +4,7 @@ import {
   listNetworkTemplates,
   listNetworkVms,
 } from '../../api/resources/networks'
+import { networkKeys } from '../../hooks/useNetworks'
 
 // Membership reads for the Hosts / VMs / Templates subtabs. They live beside the
 // tabs (not in hooks/) because each is a client-side join the resource layer
@@ -25,7 +26,7 @@ const MEMBERSHIP_QUERY_OPTIONS = {
 
 export function useNetworkHosts(id: string) {
   return useQuery({
-    queryKey: ['network', id, 'hosts'],
+    queryKey: networkKeys.hosts(id),
     queryFn: () => listNetworkHosts(id),
     ...MEMBERSHIP_QUERY_OPTIONS,
   })
@@ -33,7 +34,7 @@ export function useNetworkHosts(id: string) {
 
 export function useNetworkVms(id: string) {
   return useQuery({
-    queryKey: ['network', id, 'vms'],
+    queryKey: networkKeys.vms(id),
     queryFn: () => listNetworkVms(id),
     ...MEMBERSHIP_QUERY_OPTIONS,
   })
@@ -41,7 +42,7 @@ export function useNetworkVms(id: string) {
 
 export function useNetworkTemplates(id: string) {
   return useQuery({
-    queryKey: ['network', id, 'templates'],
+    queryKey: networkKeys.templates(id),
     queryFn: () => listNetworkTemplates(id),
     ...MEMBERSHIP_QUERY_OPTIONS,
   })

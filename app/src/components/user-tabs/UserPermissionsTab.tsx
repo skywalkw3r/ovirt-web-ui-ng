@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { listUserPermissions } from '../../api/resources/users'
 import { useCapabilities } from '../../auth/capabilities'
-import { useAdminResourcePollInterval } from '../../hooks/useAdminResources'
+import { useAdminResourcePollInterval, userKeys } from '../../hooks/useAdminResources'
 import { useT } from '../../i18n/useT'
 import { NotPermitted } from '../NotPermitted'
 import { PermissionsPanel } from '../permissions/PermissionsPanel'
@@ -23,7 +23,7 @@ export function UserPermissionsTab({ userId }: { userId: string }) {
   const refetchInterval = useAdminResourcePollInterval()
 
   const permissions = useQuery({
-    queryKey: ['user', userId, 'permissions'],
+    queryKey: userKeys.permissions(userId),
     queryFn: () => listUserPermissions(userId),
     refetchInterval,
     enabled: isAdmin,

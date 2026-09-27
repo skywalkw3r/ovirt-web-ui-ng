@@ -2,6 +2,7 @@ import { useMutation, useQueryClient, type QueryClient } from '@tanstack/react-q
 import { commitSnapshot, previewSnapshot, undoSnapshot } from '../api/resources/snapshots'
 import type { Snapshot } from '../api/schemas/snapshot'
 import { useNotify } from '../notifications/context'
+import { vmKeys } from './useVms'
 
 // The engine's snapshot preview flow: preview a snapshot on a down VM,
 // optionally start it to inspect the previewed state, then commit (keep) or
@@ -13,9 +14,9 @@ import { useNotify } from '../notifications/context'
 // key, but the snapshots key is named explicitly to make the intent obvious;
 // ['vms'] refreshes the list rows the VM appears in.
 function invalidatePreviewQueries(queryClient: QueryClient, vmId: string): void {
-  void queryClient.invalidateQueries({ queryKey: ['vm', vmId, 'snapshots'] })
-  void queryClient.invalidateQueries({ queryKey: ['vm', vmId] })
-  void queryClient.invalidateQueries({ queryKey: ['vms'] })
+  void queryClient.invalidateQueries({ queryKey: vmKeys.snapshots(vmId) })
+  void queryClient.invalidateQueries({ queryKey: vmKeys.detail(vmId) })
+  void queryClient.invalidateQueries({ queryKey: vmKeys.all })
 }
 
 export function usePreviewSnapshot(vmId: string) {

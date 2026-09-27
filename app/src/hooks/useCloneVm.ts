@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { cloneVm } from '../api/resources/vms'
 import type { Vm } from '../api/schemas/vm'
 import { useNotify } from '../notifications/context'
+import { vmKeys } from './useVms'
 
 // The Clone VM modal's save mutation. POST /vms/{id}/clone copies the source
 // VM's disks into a new VM named `body.name` — the engine honors only the
@@ -37,7 +38,7 @@ export function useCloneVm() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['vms'] })
+      void queryClient.invalidateQueries({ queryKey: vmKeys.all })
     },
   })
 }

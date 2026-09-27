@@ -16,6 +16,7 @@ import {
 import { useCapabilities } from '../auth/capabilities'
 import { useNotify } from '../notifications/context'
 import { useAdminResourcePollInterval } from './useAdminResources'
+import { quotaKeys } from './useParityResources'
 
 // The three quota mutations invalidate ['quotas'] — the flat key useQuotas
 // registers on QuotasPage — so the list refetches after a write. Quotas are
@@ -40,7 +41,7 @@ export function useCreateQuota() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['quotas'] })
+      void queryClient.invalidateQueries({ queryKey: quotaKeys.all })
     },
   })
 }
@@ -64,8 +65,8 @@ export function useUpdateQuota() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: (_data, _error, { id }) => {
-      void queryClient.invalidateQueries({ queryKey: ['quotas'] })
-      void queryClient.invalidateQueries({ queryKey: ['quota', id] })
+      void queryClient.invalidateQueries({ queryKey: quotaKeys.all })
+      void queryClient.invalidateQueries({ queryKey: quotaKeys.detail(id) })
     },
   })
 }
@@ -80,7 +81,7 @@ export function useQuota(quotaId: string) {
   const { isAdmin } = useCapabilities()
   const refetchInterval = useAdminResourcePollInterval()
   return useQuery({
-    queryKey: ['quota', quotaId],
+    queryKey: quotaKeys.detail(quotaId),
     queryFn: () => getQuota(quotaId),
     refetchInterval,
     enabled: isAdmin && quotaId !== '',
@@ -102,7 +103,7 @@ export function useDeleteQuota() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['quotas'] })
+      void queryClient.invalidateQueries({ queryKey: quotaKeys.all })
     },
   })
 }
@@ -117,7 +118,7 @@ export function useQuotaClusterLimits(quotaId: string) {
   const { isAdmin } = useCapabilities()
   const refetchInterval = useAdminResourcePollInterval()
   return useQuery({
-    queryKey: ['quota', quotaId, 'clusterLimits'],
+    queryKey: quotaKeys.clusterLimits(quotaId),
     queryFn: () => listQuotaClusterLimits(quotaId),
     refetchInterval,
     enabled: isAdmin && quotaId !== '',
@@ -128,7 +129,7 @@ export function useQuotaStorageLimits(quotaId: string) {
   const { isAdmin } = useCapabilities()
   const refetchInterval = useAdminResourcePollInterval()
   return useQuery({
-    queryKey: ['quota', quotaId, 'storageLimits'],
+    queryKey: quotaKeys.storageLimits(quotaId),
     queryFn: () => listQuotaStorageLimits(quotaId),
     refetchInterval,
     enabled: isAdmin && quotaId !== '',
@@ -143,7 +144,7 @@ export function useCreateQuotaClusterLimit() {
       createQuotaClusterLimit(quotaId, body),
     onError: (error) => notify({ title: error.message, variant: 'danger' }),
     onSettled: (_data, _error, { quotaId }) => {
-      void queryClient.invalidateQueries({ queryKey: ['quota', quotaId, 'clusterLimits'] })
+      void queryClient.invalidateQueries({ queryKey: quotaKeys.clusterLimits(quotaId) })
     },
   })
 }
@@ -163,7 +164,7 @@ export function useUpdateQuotaClusterLimit() {
     }) => updateQuotaClusterLimit(quotaId, limitId, body),
     onError: (error) => notify({ title: error.message, variant: 'danger' }),
     onSettled: (_data, _error, { quotaId }) => {
-      void queryClient.invalidateQueries({ queryKey: ['quota', quotaId, 'clusterLimits'] })
+      void queryClient.invalidateQueries({ queryKey: quotaKeys.clusterLimits(quotaId) })
     },
   })
 }
@@ -176,7 +177,7 @@ export function useDeleteQuotaClusterLimit() {
       deleteQuotaClusterLimit(quotaId, limitId),
     onError: (error) => notify({ title: error.message, variant: 'danger' }),
     onSettled: (_data, _error, { quotaId }) => {
-      void queryClient.invalidateQueries({ queryKey: ['quota', quotaId, 'clusterLimits'] })
+      void queryClient.invalidateQueries({ queryKey: quotaKeys.clusterLimits(quotaId) })
     },
   })
 }
@@ -189,7 +190,7 @@ export function useCreateQuotaStorageLimit() {
       createQuotaStorageLimit(quotaId, body),
     onError: (error) => notify({ title: error.message, variant: 'danger' }),
     onSettled: (_data, _error, { quotaId }) => {
-      void queryClient.invalidateQueries({ queryKey: ['quota', quotaId, 'storageLimits'] })
+      void queryClient.invalidateQueries({ queryKey: quotaKeys.storageLimits(quotaId) })
     },
   })
 }
@@ -209,7 +210,7 @@ export function useUpdateQuotaStorageLimit() {
     }) => updateQuotaStorageLimit(quotaId, limitId, body),
     onError: (error) => notify({ title: error.message, variant: 'danger' }),
     onSettled: (_data, _error, { quotaId }) => {
-      void queryClient.invalidateQueries({ queryKey: ['quota', quotaId, 'storageLimits'] })
+      void queryClient.invalidateQueries({ queryKey: quotaKeys.storageLimits(quotaId) })
     },
   })
 }
@@ -222,7 +223,7 @@ export function useDeleteQuotaStorageLimit() {
       deleteQuotaStorageLimit(quotaId, limitId),
     onError: (error) => notify({ title: error.message, variant: 'danger' }),
     onSettled: (_data, _error, { quotaId }) => {
-      void queryClient.invalidateQueries({ queryKey: ['quota', quotaId, 'storageLimits'] })
+      void queryClient.invalidateQueries({ queryKey: quotaKeys.storageLimits(quotaId) })
     },
   })
 }

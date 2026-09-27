@@ -15,10 +15,10 @@ import { useQuery } from '@tanstack/react-query'
 import { FormattedMessage } from 'react-intl'
 import { listHostTags, listUserTags } from '../../api/resources/tags'
 import type { Tag } from '../../api/schemas/tag'
-import { tagColor, useTags } from '../../hooks/useTags'
+import { tagColor, tagKeys, useTags } from '../../hooks/useTags'
 import { useT } from '../../i18n/useT'
 import { AssignTagsModal } from './AssignTagsModal'
-import { entityTagsKey, type TaggableKind } from './entityTags'
+import type { TaggableKind } from './entityTags'
 import { pfLabelColor } from './label-palette'
 
 const RESOURCE_LIST: Record<TaggableKind, (id: string) => Promise<Tag[]>> = {
@@ -41,7 +41,7 @@ export function EntityTagsTab({
 }) {
   const t = useT()
   const tags = useQuery({
-    queryKey: entityTagsKey(kind, entityId),
+    queryKey: tagKeys.entity(kind, entityId),
     queryFn: () => RESOURCE_LIST[kind](entityId),
   })
   // The classification of a tag's color lives on the global vocabulary.

@@ -11,6 +11,7 @@ import { useQuery } from '@tanstack/react-query'
 import { listVmSessions, type Session } from '../../api/resources/vmSessions'
 import { useSettings } from '../../settings/SettingsProvider'
 import { useT } from '../../i18n/useT'
+import { vmKeys } from '../../hooks/useVms'
 
 // Console/guest-login sessions are as live as the VM's power state, so this
 // polls on the same VM cadence as the other VM-centric tabs (useSettings'
@@ -18,7 +19,7 @@ import { useT } from '../../i18n/useT'
 function useVmSessions(vmId: string) {
   const { refreshIntervalMs } = useSettings()
   return useQuery({
-    queryKey: ['vm', vmId, 'sessions'],
+    queryKey: vmKeys.sessions(vmId),
     queryFn: () => listVmSessions(vmId),
     refetchInterval: refreshIntervalMs,
   })

@@ -5,8 +5,8 @@ import {
   listVnicProfileTemplates,
   listVnicProfileVms,
 } from '../../api/resources/vnicProfiles'
-import { vnicProfilePermissionsKey } from '../../hooks/useVnicProfileMutations'
 import { useSettings } from '../../settings/SettingsProvider'
+import { vnicProfileKeys } from '../../hooks/useCatalogPages'
 
 // vNIC profiles are infrastructure entities that drift slowly and only load
 // while the detail page is mounted; 60s matches the other admin/parity
@@ -20,14 +20,14 @@ export const VNIC_PROFILE_DETAIL_POLL_INTERVAL_MS = 60_000
 export function useVnicProfile(id: string) {
   const { refreshIntervalMs } = useSettings()
   return useQuery({
-    queryKey: ['vnicprofile', id],
+    queryKey: vnicProfileKeys.detail(id),
     queryFn: () => getVnicProfile(id),
     refetchInterval: Math.max(refreshIntervalMs, VNIC_PROFILE_DETAIL_POLL_INTERVAL_MS),
   })
 }
 
 // The grants on the profile — the same read the Public Use toggle uses, so it
-// reuses vnicProfilePermissionsKey (['vnicprofile', id, 'permissions']). That
+// reuses vnicProfileKeys.permissions (['vnicprofile', id, 'permissions']). That
 // key is exactly what the PermissionsPanel's add/remove mutations invalidate, so
 // a grant change refetches this list, and the tab and the edit modal's toggle
 // never disagree. listPermissions tolerates the 404 an ungranted profile answers
@@ -35,7 +35,7 @@ export function useVnicProfile(id: string) {
 export function useVnicProfilePermissionsList(id: string) {
   const { refreshIntervalMs } = useSettings()
   return useQuery({
-    queryKey: vnicProfilePermissionsKey(id),
+    queryKey: vnicProfileKeys.permissions(id),
     queryFn: () => listPermissions('vnicprofile', id),
     refetchInterval: Math.max(refreshIntervalMs, VNIC_PROFILE_DETAIL_POLL_INTERVAL_MS),
   })
@@ -49,7 +49,7 @@ export function useVnicProfilePermissionsList(id: string) {
 // invalidates every query, so a manual refresh refetches on demand.
 export function useVnicProfileVms(id: string) {
   return useQuery({
-    queryKey: ['vnicprofile', id, 'vms'],
+    queryKey: vnicProfileKeys.vms(id),
     queryFn: () => listVnicProfileVms(id),
     refetchInterval: false,
     staleTime: 5 * 60_000,
@@ -61,7 +61,7 @@ export function useVnicProfileVms(id: string) {
 // de-polled for the same reason.
 export function useVnicProfileTemplates(id: string) {
   return useQuery({
-    queryKey: ['vnicprofile', id, 'templates'],
+    queryKey: vnicProfileKeys.templates(id),
     queryFn: () => listVnicProfileTemplates(id),
     refetchInterval: false,
     staleTime: 5 * 60_000,

@@ -26,6 +26,7 @@ import {
 import type { Vm } from '../../api/schemas/vm'
 import { useT } from '../../i18n/useT'
 import { useNotify } from '../../notifications/context'
+import { vmKeys } from '../../hooks/useVms'
 
 // secure-attention presets. '' leaves the key unset so virt-viewer uses its
 // default (Ctrl+Alt+End) — that option is rendered with a translated label. The
@@ -79,7 +80,7 @@ export function ConsoleOptionsModal({ vm, onClose }: { vm: Vm; onClose: () => vo
     // up) — keep the dialog open on error so the user can retry or cancel.
     displayMutation.mutate(fileTransfer, {
       onSuccess: () => {
-        void queryClient.invalidateQueries({ queryKey: ['vm', vm.id] })
+        void queryClient.invalidateQueries({ queryKey: vmKeys.detail(vm.id) })
         notifySaved()
         onClose()
       },

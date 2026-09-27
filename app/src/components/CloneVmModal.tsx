@@ -28,6 +28,8 @@ import { useCloneVm } from '../hooks/useCloneVm'
 import { useT } from '../i18n/useT'
 import { statusText } from '../lib/format'
 import { vmNameError } from './edit-vm/editVmDraft'
+import { vmKeys } from '../hooks/useVms'
+import { clusterKeys, dataCenterKeys } from '../hooks/useAdminResources'
 
 // Marker class the click shield below uses to recognize its own modal.
 const MODAL_CLASS = 'clone-vm-modal'
@@ -115,13 +117,13 @@ function CloneVmModal({ vm, onClose }: { vm: Vm; onClose: () => void }) {
   // data domain of the VM's own DC, so the target options are scoped there
   // (same doomed-request rationale as MakeTemplateModal's cluster scoping).
   const cluster = useQuery({
-    queryKey: ['cluster', vm.cluster?.id],
+    queryKey: clusterKeys.detail(vm.cluster?.id),
     queryFn: () => getCluster(vm.cluster?.id ?? ''),
     enabled: vm.cluster?.id !== undefined,
   })
   const dataCenterId = cluster.data?.data_center?.id
   const storageDomains = useQuery({
-    queryKey: ['datacenter', dataCenterId, 'storageDomains'],
+    queryKey: dataCenterKeys.storageDomains(dataCenterId),
     queryFn: () => listDataCenterStorageDomains(dataCenterId ?? ''),
     enabled: dataCenterId !== undefined,
   })
@@ -134,7 +136,7 @@ function CloneVmModal({ vm, onClose }: { vm: Vm; onClose: () => void }) {
   // entry as useVms, hence the follow=tags). If the list fails to load the
   // check degrades to nothing — the engine still enforces uniqueness.
   const vms = useQuery({
-    queryKey: ['vms', ''],
+    queryKey: vmKeys.list(),
     queryFn: () => listVms({ follow: 'tags' }),
   })
   const nameTaken = (vms.data ?? []).some((existing) => existing.name === name)
@@ -142,7 +144,7 @@ function CloneVmModal({ vm, onClose }: { vm: Vm; onClose: () => void }) {
   // Webadmin's clone dialog warns when the VM carries direct-LUN disks: the
   // engine clones image disks only, so the clone silently drops the LUNs.
   const disks = useQuery({
-    queryKey: ['vm', vm.id, 'disks'],
+    queryKey: vmKeys.disks(vm.id),
     queryFn: () => listVmDisks(vm.id),
   })
   const hasLunDisk = (disks.data ?? []).some(

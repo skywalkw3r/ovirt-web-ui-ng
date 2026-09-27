@@ -8,11 +8,44 @@ import { useSettings } from '../settings/SettingsProvider'
 // mutation invalidates (it covers each searched list entry); `list` the
 // per-search entry useVms polls ('' and undefined normalize to the same
 // entry — see useVms); `detail` the single-VM read useVm registers, which
-// the per-VM subcollection hooks nest under (['vm', id, <slice>]).
+// the per-VM subcollection slices nest under (['vm', id, <slice>]) so a
+// detail invalidation reaches them by prefix. Every entry mirrors the exact
+// shape its read and its invalidations were hand-typing before the builders
+// existed — the pins live in queryKeys.test.ts; changing one is a cache-
+// contract change.
 export const vmKeys = {
   all: ['vms'] as const,
   list: (search = '') => ['vms', search] as const,
+  // useHostedEngineHostId's bare (no-follow) probe — deliberately NOT a
+  // searched list entry, but still under the ['vms'] invalidation prefix
+  hostedEngineHost: ['vms', 'hosted-engine-host'] as const,
   detail: (id: string) => ['vm', id] as const,
+  disks: (id: string) => ['vm', id, 'disks'] as const,
+  nics: (id: string) => ['vm', id, 'nics'] as const,
+  nicStatistics: (id: string, nicId: string) => ['vm', id, 'nics', nicId, 'statistics'] as const,
+  snapshots: (id: string) => ['vm', id, 'snapshots'] as const,
+  statistics: (id: string) => ['vm', id, 'statistics'] as const,
+  consoles: (id: string) => ['vm', id, 'consoles'] as const,
+  cdrom: (id: string, current: boolean) => ['vm', id, 'cdrom', current] as const,
+  tags: (id: string) => ['vm', id, 'tags'] as const,
+  sessions: (id: string) => ['vm', id, 'sessions'] as const,
+  applications: (id: string) => ['vm', id, 'applications'] as const,
+  hostDevices: (id: string) => ['vm', id, 'hostDevices'] as const,
+  mediatedDevices: (id: string) => ['vm', id, 'mediatedDevices'] as const,
+  reportedDevices: (id: string) => ['vm', id, 'reportedDevices'] as const,
+  affinityLabels: (id: string) => ['vm', id, 'affinityLabels'] as const,
+  // the Affinity Labels tab's add-picker reads the GLOBAL label collection,
+  // cached per VM so its entry follows the tab's lifetime
+  affinityLabelPicker: (id: string) => ['vm', id, 'affinityLabelPicker'] as const,
+  // affinity groups live on the cluster; keyed by both ids (useVmAffinityGroups)
+  affinityGroups: (id: string, clusterId: string | undefined) =>
+    ['vm', id, 'affinityGroups', clusterId] as const,
+  affinityGroupPicker: (id: string, clusterId: string) =>
+    ['vm', id, 'affinityGroupPicker', clusterId] as const,
+  permissions: (id: string) => ['vm', id, 'permissions'] as const,
+  errata: (id: string) => ['vm', id, 'errata'] as const,
+  // the event feed is the global /events narrowed by vm.name= — keyed by NAME
+  events: (name: string) => ['vm', name, 'events'] as const,
 }
 
 // Poll cadence mirrors legacy background-refresh (10s); TanStack pauses

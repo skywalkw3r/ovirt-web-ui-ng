@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { listVms } from '../api/resources/vms'
 import { useSettings } from '../settings/SettingsProvider'
+import { vmKeys } from './useVms'
 
 // The hosted engine host only changes on an HE-VM migration (rare), so this
 // probe polls an order of magnitude slower than the VM list and reads are
@@ -31,7 +32,7 @@ const HE_HOST_POLL_INTERVAL_MS = 60_000
 export function useHostedEngineHostId(enabled = false): string | undefined {
   const { refreshIntervalMs } = useSettings()
   const { data } = useQuery({
-    queryKey: ['vms', 'hosted-engine-host'],
+    queryKey: vmKeys.hostedEngineHost,
     queryFn: () => listVms(),
     refetchInterval: Math.max(refreshIntervalMs, HE_HOST_POLL_INTERVAL_MS),
     staleTime: HE_HOST_POLL_INTERVAL_MS,

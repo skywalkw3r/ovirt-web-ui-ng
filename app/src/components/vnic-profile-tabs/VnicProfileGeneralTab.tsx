@@ -13,6 +13,7 @@ import type { VnicProfile } from '../../api/schemas/vnic-profile'
 import { listDataCenterQoss } from '../../api/resources/datacenters'
 import { useNetworks } from '../../hooks/useNetworks'
 import { useT } from '../../i18n/useT'
+import { dataCenterKeys } from '../../hooks/useAdminResources'
 
 const DASH = '—'
 
@@ -57,7 +58,7 @@ export function VnicProfileGeneralTab({ profile }: { profile: VnicProfile }) {
   // shows the em dash. 404 (a DC with no QoS profiles) is tolerated by the
   // resource fn as [].
   const qoss = useQuery({
-    queryKey: ['datacenter', dataCenterId ?? '', 'qoss'],
+    queryKey: dataCenterKeys.qoss(dataCenterId ?? ''),
     queryFn: () => listDataCenterQoss(dataCenterId as string),
     enabled: dataCenterId !== undefined && qosId !== undefined,
   })

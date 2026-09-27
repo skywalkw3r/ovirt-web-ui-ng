@@ -11,6 +11,7 @@ import { listHosts } from '../api/resources/hosts'
 import { listVms } from '../api/resources/vms'
 import { HOST_POLL_INTERVAL_MS } from './useHosts'
 import { useSettings } from '../settings/SettingsProvider'
+import { clusterKeys } from './useAdminResources'
 
 // Cluster subcollections drift slowly and only load while the detail page is
 // mounted; 60s matches the other admin/parity collections. The constant is a
@@ -26,7 +27,7 @@ export const CLUSTER_DETAIL_POLL_INTERVAL_MS = 60_000
 export function useCluster(id: string) {
   const { refreshIntervalMs } = useSettings()
   return useQuery({
-    queryKey: ['cluster', id],
+    queryKey: clusterKeys.detail(id),
     queryFn: () => getCluster(id),
     refetchInterval: Math.max(refreshIntervalMs, CLUSTER_DETAIL_POLL_INTERVAL_MS),
   })
@@ -35,7 +36,7 @@ export function useCluster(id: string) {
 export function useClusterNetworks(id: string) {
   const { refreshIntervalMs } = useSettings()
   return useQuery({
-    queryKey: ['cluster', id, 'networks'],
+    queryKey: clusterKeys.networks(id),
     queryFn: () => listClusterNetworks(id),
     refetchInterval: Math.max(refreshIntervalMs, CLUSTER_DETAIL_POLL_INTERVAL_MS),
   })
@@ -44,7 +45,7 @@ export function useClusterNetworks(id: string) {
 export function useClusterAffinityGroups(id: string) {
   const { refreshIntervalMs } = useSettings()
   return useQuery({
-    queryKey: ['cluster', id, 'affinityGroups'],
+    queryKey: clusterKeys.affinityGroups(id),
     queryFn: () => listClusterAffinityGroups(id),
     refetchInterval: Math.max(refreshIntervalMs, CLUSTER_DETAIL_POLL_INTERVAL_MS),
   })
@@ -53,7 +54,7 @@ export function useClusterAffinityGroups(id: string) {
 export function useClusterAffinityLabels(id: string) {
   const { refreshIntervalMs } = useSettings()
   return useQuery({
-    queryKey: ['cluster', id, 'affinityLabels'],
+    queryKey: clusterKeys.affinityLabels(id),
     queryFn: () => listClusterAffinityLabels(id),
     refetchInterval: Math.max(refreshIntervalMs, CLUSTER_DETAIL_POLL_INTERVAL_MS),
   })
@@ -62,7 +63,7 @@ export function useClusterAffinityLabels(id: string) {
 export function useClusterCpuProfiles(id: string) {
   const { refreshIntervalMs } = useSettings()
   return useQuery({
-    queryKey: ['cluster', id, 'cpuProfiles'],
+    queryKey: clusterKeys.cpuProfiles(id),
     queryFn: () => listClusterCpuProfiles(id),
     refetchInterval: Math.max(refreshIntervalMs, CLUSTER_DETAIL_POLL_INTERVAL_MS),
   })
@@ -71,7 +72,7 @@ export function useClusterCpuProfiles(id: string) {
 export function useClusterPermissions(id: string) {
   const { refreshIntervalMs } = useSettings()
   return useQuery({
-    queryKey: ['cluster', id, 'permissions'],
+    queryKey: clusterKeys.permissions(id),
     queryFn: () => listClusterPermissions(id),
     refetchInterval: Math.max(refreshIntervalMs, CLUSTER_DETAIL_POLL_INTERVAL_MS),
   })
@@ -88,7 +89,7 @@ export function useClusterPermissions(id: string) {
 export function useClusterHosts(id: string) {
   const { refreshIntervalMs } = useSettings()
   return useQuery({
-    queryKey: ['cluster', id, 'hosts'],
+    queryKey: clusterKeys.hosts(id),
     queryFn: async () => {
       // all_content populates the computed hosted_engine field the crown reads
       // (HostedEngineCrown on ClusterHostsTab) — the same shape useHosts fetches.
@@ -112,7 +113,7 @@ export function useClusterHosts(id: string) {
 export function useClusterVms(clusterName: string) {
   const { refreshIntervalMs } = useSettings()
   return useQuery({
-    queryKey: ['cluster', clusterName, 'vms'],
+    queryKey: clusterKeys.vms(clusterName),
     queryFn: () => listVms({ search: `cluster=${clusterName}` }),
     refetchInterval: refreshIntervalMs,
     // Empty name ⇒ genuinely idle. The picker consumers pass '' while their

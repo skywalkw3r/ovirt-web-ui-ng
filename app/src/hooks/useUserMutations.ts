@@ -25,11 +25,22 @@ import { groupKeys, userKeys } from './useAdminResources'
 // usePermissionMutations.
 export const DOMAINS_STALE_MS = 5 * 60_000
 
+// Query-key builders for the directory (authz) reads this module owns. The
+// directory pickers key under their own ['directory-users' | 'directory-groups',
+// domainId, search] namespaces — DISTINCT from the DB-list ['users' | 'groups',
+// search] caches (userKeys / groupKeys) — so materializing a principal never
+// collides with, or is invalidated as, the inventory it is about to join.
+export const directoryKeys = {
+  domains: ['domains'] as const,
+  users: (domainId: string, search = '') => ['directory-users', domainId, search] as const,
+  groups: (domainId: string, search = '') => ['directory-groups', domainId, search] as const,
+}
+
 // GET /domains — the Add-User modal's domain select source. Default the
 // selection to the first entry (or 'internal'), webadmin AddUserModel-style.
 export function useDomains() {
   return useQuery({
-    queryKey: ['domains'],
+    queryKey: directoryKeys.domains,
     queryFn: () => listDomains(),
     staleTime: DOMAINS_STALE_MS,
   })
@@ -43,7 +54,7 @@ export function useDomains() {
 // the DB-list ['users', …] cache.
 export function useDirectoryUsers(domainId: string, search = '') {
   return useQuery({
-    queryKey: ['directory-users', domainId, search],
+    queryKey: directoryKeys.users(domainId, search),
     queryFn: () => listDirectoryUsers(domainId, { search: search || undefined }),
     enabled: !!domainId,
   })
@@ -56,7 +67,7 @@ export function useDirectoryUsers(domainId: string, search = '') {
 // cache (usePermissionMutations) and the directory-user cache above.
 export function useDirectoryGroups(domainId: string, search = '') {
   return useQuery({
-    queryKey: ['directory-groups', domainId, search],
+    queryKey: directoryKeys.groups(domainId, search),
     queryFn: () => listDirectoryGroups(domainId, { search: search || undefined }),
     enabled: !!domainId,
   })

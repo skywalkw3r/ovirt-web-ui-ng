@@ -12,6 +12,31 @@ import {
 import type { Tag } from '../api/schemas/tag'
 import { useT } from '../i18n/useT'
 import { useNotify } from '../notifications/context'
+import { templateKeys } from './useCatalog'
+import { vmKeys } from './useVms'
+
+// The entity kinds whose assigned tags ride the AssignedTagsService: VMs and
+// templates get theirs through the folder UI, hosts and users through the
+// checklist picker (components/tags).
+export type TagEntityKind = 'vm' | 'template' | 'host' | 'user'
+
+// Query-key builders for the tag collection. `all` is the global list entry
+// useTags registers AND the prefix every tag mutation invalidates; `entity` is
+// the per-entity assignment read an entity's Tags tab / chip list and its
+// attach/detach mutations share — the same [kind, id, 'tags'] shape
+// vmKeys.tags / templateKeys.tags build for VMs and templates (pinned equal in
+// queryKeys.test.ts), parametrized here for the kind-agnostic folder-move and
+// checklist code. `taggedList` names the list whose rows EMBED an entity
+// kind's tags (the list reads follow tags), which a tag change must refresh
+// so folder counts, filter membership and label chips update.
+export const tagKeys = {
+  all: ['tags'] as const,
+  entity: (kind: TagEntityKind, id: string) => [kind, id, 'tags'] as const,
+  taggedList: (list: 'vms' | 'templates') => (list === 'vms' ? vmKeys.all : templateKeys.all),
+  // AssignVmTagsModal's per-selection read of every selected VM's tags,
+  // keyed by the sorted selection so reopening on the same set is a hit
+  vmAssignPicker: (sortedVmIds: readonly string[]) => ['vm-tags-assign', sortedVmIds] as const,
+}
 
 // FOLDER MODEL (docs/COMPONENTS.md): the reserved root tag 'ui.folders'
 // anchors the folder tree — its descendants (via parent links) are folders,
@@ -25,7 +50,7 @@ export const TAG_STALE_MS = 30_000
 
 export function useTags() {
   return useQuery({
-    queryKey: ['tags'],
+    queryKey: tagKeys.all,
     queryFn: () => listTags(),
     staleTime: TAG_STALE_MS,
   })
@@ -33,7 +58,7 @@ export function useTags() {
 
 export function useVmTags(vmId: string, opts: { enabled?: boolean } = {}) {
   return useQuery({
-    queryKey: ['vm', vmId, 'tags'],
+    queryKey: vmKeys.tags(vmId),
     queryFn: () => listVmTags(vmId),
     staleTime: TAG_STALE_MS,
     // VmLabels disables this when the caller already holds the tags embedded
@@ -44,7 +69,7 @@ export function useVmTags(vmId: string, opts: { enabled?: boolean } = {}) {
 
 export function useTemplateTags(templateId: string, opts: { enabled?: boolean } = {}) {
   return useQuery({
-    queryKey: ['template', templateId, 'tags'],
+    queryKey: templateKeys.tags(templateId),
     queryFn: () => listTemplateTags(templateId),
     staleTime: TAG_STALE_MS,
     // same fallback posture as useVmTags — list reads embed the tags
@@ -228,9 +253,9 @@ export function folderVmCounts(entities: TaggedEntity[], allTags: Tag[]): Map<st
 // tags), so folder counts, filter membership and label chips all ride on
 // ['vms'] / ['templates'].
 function invalidateTags(queryClient: QueryClient) {
-  void queryClient.invalidateQueries({ queryKey: ['tags'] })
-  void queryClient.invalidateQueries({ queryKey: ['vms'] })
-  void queryClient.invalidateQueries({ queryKey: ['templates'] })
+  void queryClient.invalidateQueries({ queryKey: tagKeys.all })
+  void queryClient.invalidateQueries({ queryKey: vmKeys.all })
+  void queryClient.invalidateQueries({ queryKey: templateKeys.all })
   void queryClient.invalidateQueries({
     predicate: (query) =>
       (query.queryKey[0] === 'vm' || query.queryKey[0] === 'template') &&

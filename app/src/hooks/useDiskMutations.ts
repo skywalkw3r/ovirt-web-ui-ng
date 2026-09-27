@@ -24,6 +24,8 @@ import {
 import type { ImageTransfer } from '../api/schemas/disk'
 import { useNotify } from '../notifications/context'
 import { useT } from '../i18n/useT'
+import { diskKeys } from './useCatalogPages'
+import { storageDomainKeys } from './useStorageDomains'
 
 // Dev-only mock gate — the imageio proxy byte PUT has no mock route (it isn't a
 // request() call), so under VITE_MOCK the upload machine skips the real PUT and
@@ -35,8 +37,8 @@ const IS_MOCK = import.meta.env.DEV && import.meta.env.VITE_MOCK === '1'
 // ['disks'] is the prefix every ['disks', search] entry useAllDisks registers;
 // ['disk', id] is the single-disk detail key.
 function invalidateDisks(queryClient: ReturnType<typeof useQueryClient>, id?: string): void {
-  void queryClient.invalidateQueries({ queryKey: ['disks'] })
-  if (id) void queryClient.invalidateQueries({ queryKey: ['disk', id] })
+  void queryClient.invalidateQueries({ queryKey: diskKeys.all })
+  if (id) void queryClient.invalidateQueries({ queryKey: diskKeys.detail(id) })
 }
 
 // Move — async on the engine (disk goes `locked`, settles to `ok`); the list
@@ -199,7 +201,7 @@ export function useDeleteDisk() {
 // and the picker degrades to the domain default.
 export function useStorageDomainDiskProfiles(sdId: string | undefined) {
   return useQuery({
-    queryKey: ['storage-domain-disk-profiles', sdId],
+    queryKey: storageDomainKeys.diskProfilePicker(sdId),
     queryFn: ({ signal }) => listStorageDomainDiskProfiles(sdId as string, signal),
     enabled: Boolean(sdId),
   })

@@ -14,6 +14,8 @@ import {
 import { useCapabilities } from '../auth/capabilities'
 import { useSettings } from '../settings/SettingsProvider'
 import { SYSTEM_PERMISSIONS_KEY } from './useSystemPermissions'
+import { vmKeys } from './useVms'
+import { clusterKeys } from './useAdminResources'
 
 // VM subcollections drift slowly and only load while the detail page is
 // mounted; 60s matches the other admin/parity collections. The constant is a
@@ -28,7 +30,7 @@ export const VM_DETAIL_POLL_INTERVAL_MS = 60_000
 export function useVmApplications(id: string) {
   const { refreshIntervalMs } = useSettings()
   return useQuery({
-    queryKey: ['vm', id, 'applications'],
+    queryKey: vmKeys.applications(id),
     queryFn: () => listVmApplications(id),
     refetchInterval: Math.max(refreshIntervalMs, VM_DETAIL_POLL_INTERVAL_MS),
   })
@@ -37,7 +39,7 @@ export function useVmApplications(id: string) {
 export function useVmHostDevices(id: string) {
   const { refreshIntervalMs } = useSettings()
   return useQuery({
-    queryKey: ['vm', id, 'hostDevices'],
+    queryKey: vmKeys.hostDevices(id),
     queryFn: () => listVmHostDevices(id),
     refetchInterval: Math.max(refreshIntervalMs, VM_DETAIL_POLL_INTERVAL_MS),
   })
@@ -48,7 +50,7 @@ export function useVmHostDevices(id: string) {
 export function useVmReportedDevices(id: string) {
   const { refreshIntervalMs } = useSettings()
   return useQuery({
-    queryKey: ['vm', id, 'reportedDevices'],
+    queryKey: vmKeys.reportedDevices(id),
     queryFn: () => listVmReportedDevices(id),
     refetchInterval: Math.max(refreshIntervalMs, VM_DETAIL_POLL_INTERVAL_MS),
   })
@@ -61,7 +63,7 @@ export const useVmDevices = useVmReportedDevices
 export function useVmAffinityLabels(id: string) {
   const { refreshIntervalMs } = useSettings()
   return useQuery({
-    queryKey: ['vm', id, 'affinityLabels'],
+    queryKey: vmKeys.affinityLabels(id),
     queryFn: () => listVmAffinityLabels(id),
     refetchInterval: Math.max(refreshIntervalMs, VM_DETAIL_POLL_INTERVAL_MS),
   })
@@ -70,7 +72,7 @@ export function useVmAffinityLabels(id: string) {
 export function useVmPermissions(id: string) {
   const { refreshIntervalMs } = useSettings()
   return useQuery({
-    queryKey: ['vm', id, 'permissions'],
+    queryKey: vmKeys.permissions(id),
     queryFn: () => listVmPermissions(id),
     refetchInterval: Math.max(refreshIntervalMs, VM_DETAIL_POLL_INTERVAL_MS),
   })
@@ -102,7 +104,7 @@ export function useVmInheritedPermissionIds(
     refetchInterval,
   })
   const cluster = useQuery({
-    queryKey: ['cluster', clusterId, 'permissions'],
+    queryKey: clusterKeys.permissions(clusterId),
     queryFn: () => listPermissions('cluster', clusterId as string),
     enabled: isAdmin && clusterId !== undefined,
     refetchInterval,
@@ -123,7 +125,7 @@ export function useVmInheritedPermissionIds(
 export function useVmErrata(id: string) {
   const { refreshIntervalMs } = useSettings()
   return useQuery({
-    queryKey: ['vm', id, 'errata'],
+    queryKey: vmKeys.errata(id),
     queryFn: () => listVmErrata(id),
     refetchInterval: Math.max(refreshIntervalMs, VM_DETAIL_POLL_INTERVAL_MS),
   })
@@ -137,7 +139,7 @@ export function useVmErrata(id: string) {
 export function useVmAffinityGroups(clusterId: string | undefined, vmId: string) {
   const { refreshIntervalMs } = useSettings()
   return useQuery({
-    queryKey: ['vm', vmId, 'affinityGroups', clusterId],
+    queryKey: vmKeys.affinityGroups(vmId, clusterId),
     queryFn: () => listVmAffinityGroups(clusterId ?? '', vmId),
     enabled: clusterId !== undefined,
     refetchInterval: Math.max(refreshIntervalMs, VM_DETAIL_POLL_INTERVAL_MS),
@@ -152,7 +154,7 @@ export function useVmAffinityGroups(clusterId: string | undefined, vmId: string)
 export function useVmEvents(vmName: string) {
   const { refreshIntervalMs } = useSettings()
   return useQuery({
-    queryKey: ['vm', vmName, 'events'],
+    queryKey: vmKeys.events(vmName),
     queryFn: () => listEvents({ search: `vm.name=${vmName}` }),
     refetchInterval: refreshIntervalMs,
   })

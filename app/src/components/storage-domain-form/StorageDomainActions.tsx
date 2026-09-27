@@ -42,6 +42,7 @@ import {
   canRemove,
   canUpdateOvfs,
 } from './lifecycle'
+import { storageDomainKeys } from '../../hooks/useStorageDomains'
 
 // Which dialog (if any) is currently open. Only one lifecycle dialog is up at a
 // time, so a single discriminant is clearer than a boolean per modal.
@@ -92,8 +93,8 @@ export function StorageDomainActions({
   // available/used, and either way a re-read costs nothing. Success text and the
   // engine-verbatim error ride the shared notify() toast, same as the hooks.
   const invalidateDomain = () => {
-    void queryClient.invalidateQueries({ queryKey: ['storagedomains'] })
-    void queryClient.invalidateQueries({ queryKey: ['storagedomain', domain.id] })
+    void queryClient.invalidateQueries({ queryKey: storageDomainKeys.all })
+    void queryClient.invalidateQueries({ queryKey: storageDomainKeys.detail(domain.id) })
   }
   const updateOvfs = useMutation({
     mutationFn: () => updateStorageDomainOvfStore(domain.id),

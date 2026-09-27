@@ -23,6 +23,7 @@ import { useT } from '../../i18n/useT'
 import type { MessageId } from '../../i18n/messages/en'
 import { OPTIMIZED_FOR_OPTIONS, vmNameError } from '../edit-vm/editVmDraft'
 import { useUpdateTemplate } from '../../hooks/useTemplateMutations'
+import { operatingSystemKeys } from '../../hooks/useCatalog'
 
 // Memory is stored in bytes on the wire (schemas/template.ts) but edited in MiB
 // in the modal — convert at the draft boundary, same MiB constant as
@@ -214,7 +215,7 @@ export function TemplateFormModal({
   // OS type options — defaults to [] while loading, so the select just shows
   // fewer options rather than blocking on a spinner.
   const operatingSystems = useQuery({
-    queryKey: ['operatingSystems'],
+    queryKey: operatingSystemKeys.all,
     queryFn: listOperatingSystems,
     enabled: isOpen,
   })

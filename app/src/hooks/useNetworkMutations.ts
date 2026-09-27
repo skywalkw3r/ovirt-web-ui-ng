@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { createNetwork, deleteNetwork, updateNetwork } from '../api/resources/networks'
 import { useNotify } from '../notifications/context'
+import { networkKeys } from './useNetworks'
 
 // The Create Network modal's save mutation. Mirrors useCreateDataCenter: notify
 // on success/failure and invalidate the network list query so the refetch shows
@@ -19,7 +20,7 @@ export function useCreateNetwork() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['networks'] })
+      void queryClient.invalidateQueries({ queryKey: networkKeys.all })
     },
   })
 }
@@ -43,8 +44,8 @@ export function useUpdateNetwork() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: (_data, _error, { id }) => {
-      void queryClient.invalidateQueries({ queryKey: ['network', id] })
-      void queryClient.invalidateQueries({ queryKey: ['networks'] })
+      void queryClient.invalidateQueries({ queryKey: networkKeys.detail(id) })
+      void queryClient.invalidateQueries({ queryKey: networkKeys.all })
     },
   })
 }
@@ -67,7 +68,7 @@ export function useDeleteNetwork() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['networks'] })
+      void queryClient.invalidateQueries({ queryKey: networkKeys.all })
     },
   })
 }

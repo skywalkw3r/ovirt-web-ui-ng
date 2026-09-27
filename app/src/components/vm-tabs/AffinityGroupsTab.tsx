@@ -28,6 +28,8 @@ import { useVmAffinityGroups } from '../../hooks/useVmDetail'
 import { useT } from '../../i18n/useT'
 import { useNotify } from '../../notifications/context'
 import { ConfirmModal } from '../ConfirmModal'
+import { vmKeys } from '../../hooks/useVms'
+import { clusterKeys } from '../../hooks/useAdminResources'
 
 // Affinity groups live on the cluster, not the VM: the read hook fetches the
 // cluster's groups (members followed) and filters to the ones this VM belongs
@@ -46,9 +48,9 @@ export function AffinityGroupsTab({ vm }: { vm: Vm }) {
   const [removing, setRemoving] = useState<VmAffinityGroup | null>(null)
 
   const invalidate = () => {
-    void queryClient.invalidateQueries({ queryKey: ['vm', vm.id] })
+    void queryClient.invalidateQueries({ queryKey: vmKeys.detail(vm.id) })
     if (clusterId !== undefined) {
-      void queryClient.invalidateQueries({ queryKey: ['cluster', clusterId] })
+      void queryClient.invalidateQueries({ queryKey: clusterKeys.detail(clusterId) })
     }
   }
 
@@ -210,7 +212,7 @@ function AddToGroupModal({
   const [groupId, setGroupId] = useState('')
 
   const clusterGroups = useQuery({
-    queryKey: ['vm', vmId, 'affinityGroupPicker', clusterId],
+    queryKey: vmKeys.affinityGroupPicker(vmId, clusterId),
     queryFn: () => listClusterAffinityGroups(clusterId),
   })
   const eligible = (clusterGroups.data ?? []).filter((group) => !memberIds.has(group.id))

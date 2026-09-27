@@ -25,6 +25,8 @@ import { ConfirmModal } from '../ConfirmModal'
 import { StatusBadge, type StatusBadgeColor } from '../StatusBadge'
 import { useClusterUpgrade } from './useClusterUpgrade'
 import type { HostUpgradeState } from './runClusterUpgrade'
+import { clusterKeys } from '../../hooks/useAdminResources'
+import { hostKeys } from '../../hooks/useHosts'
 
 // Same status coloring policy as ClusterHostsTab/HostsPage.
 function hostStatusColor(status: string | undefined): StatusBadgeColor {
@@ -90,8 +92,8 @@ export function ClusterUpgradeModal({
     },
     onError: (error) => notify({ title: error.message, variant: 'danger' }),
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['hosts'] })
-      void queryClient.invalidateQueries({ queryKey: ['cluster', clusterId, 'hosts'] })
+      void queryClient.invalidateQueries({ queryKey: hostKeys.all })
+      void queryClient.invalidateQueries({ queryKey: clusterKeys.hosts(clusterId) })
     },
   })
 

@@ -8,13 +8,14 @@ import {
 import type { Snapshot } from '../api/schemas/snapshot'
 import { useNotify } from '../notifications/context'
 import { useSettings } from '../settings/SettingsProvider'
+import { vmKeys } from './useVms'
 
 // Snapshot ops finish asynchronously on the engine ('locked' status); the
 // poll below is what lets the UI watch them settle.
 export function useSnapshots(vmId: string) {
   const { refreshIntervalMs } = useSettings()
   return useQuery({
-    queryKey: ['vm', vmId, 'snapshots'],
+    queryKey: vmKeys.snapshots(vmId),
     queryFn: () => listSnapshots(vmId),
     refetchInterval: refreshIntervalMs,
   })
@@ -46,7 +47,7 @@ export function useCreateSnapshot(vmId: string) {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['vm', vmId, 'snapshots'] })
+      void queryClient.invalidateQueries({ queryKey: vmKeys.snapshots(vmId) })
     },
   })
 }
@@ -69,8 +70,8 @@ export function useRestoreSnapshot(vmId: string) {
     onSettled: () => {
       // restore rewrites the VM itself, not just the snapshot list — the
       // ['vm', vmId] prefix also invalidates the snapshots key
-      void queryClient.invalidateQueries({ queryKey: ['vm', vmId] })
-      void queryClient.invalidateQueries({ queryKey: ['vms'] })
+      void queryClient.invalidateQueries({ queryKey: vmKeys.detail(vmId) })
+      void queryClient.invalidateQueries({ queryKey: vmKeys.all })
     },
   })
 }
@@ -91,7 +92,7 @@ export function useDeleteSnapshot(vmId: string) {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['vm', vmId, 'snapshots'] })
+      void queryClient.invalidateQueries({ queryKey: vmKeys.snapshots(vmId) })
     },
   })
 }

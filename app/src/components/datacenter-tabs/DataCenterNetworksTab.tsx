@@ -22,6 +22,7 @@ import { useDeleteNetwork } from '../../hooks/useNetworkMutations'
 import { useT } from '../../i18n/useT'
 import { ConfirmModal } from '../ConfirmModal'
 import { NetworkFormModal } from '../network-form/NetworkFormModal'
+import { dataCenterKeys } from '../../hooks/useAdminResources'
 
 const DASH = '—'
 
@@ -61,7 +62,7 @@ export function DataCenterNetworksTab({ dataCenterId }: { dataCenterId: string }
   )
 
   const invalidateDcNetworks = () => {
-    void queryClient.invalidateQueries({ queryKey: ['datacenter', dataCenterId, 'networks'] })
+    void queryClient.invalidateQueries({ queryKey: dataCenterKeys.networks(dataCenterId) })
   }
 
   // NetworkFormModal owns its own create/edit success toast + close; we only

@@ -10,6 +10,9 @@ import {
 } from '../api/resources/storageDomains'
 import { useT } from '../i18n/useT'
 import { useNotify } from '../notifications/context'
+import { vmKeys } from './useVms'
+import { storageDomainKeys } from './useStorageDomains'
+import { jobKeys } from './useJobs'
 
 // The VMs resident on the chosen export domain, feeding the wizard's
 // checkbox-list step. Shares useStorageDomainVms' ['storagedomain', id, 'vms']
@@ -19,7 +22,7 @@ import { useNotify } from '../notifications/context'
 // snapshot, not a monitoring surface.
 export function useExportDomainVms(exportDomainId: string) {
   return useQuery({
-    queryKey: ['storagedomain', exportDomainId, 'vms'],
+    queryKey: storageDomainKeys.vms(exportDomainId),
     queryFn: () => listStorageDomainVms(exportDomainId),
     enabled: exportDomainId !== '',
   })
@@ -97,8 +100,8 @@ export function useImportVmsFromExportDomain() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['jobs'] })
-      void queryClient.invalidateQueries({ queryKey: ['vms'] })
+      void queryClient.invalidateQueries({ queryKey: jobKeys.all })
+      void queryClient.invalidateQueries({ queryKey: vmKeys.all })
     },
   })
 }
@@ -124,8 +127,8 @@ export function useCreateExternalVmImport() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['jobs'] })
-      void queryClient.invalidateQueries({ queryKey: ['vms'] })
+      void queryClient.invalidateQueries({ queryKey: jobKeys.all })
+      void queryClient.invalidateQueries({ queryKey: vmKeys.all })
     },
   })
 }
