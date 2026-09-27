@@ -108,9 +108,11 @@ podman run --rm -p 8080:8080 \
 ```
 
 `nginx-sample.conf` serves the static build at the sub-path **and** reverse
-proxies everything else under `/ovirt-engine/` (REST, SSO, and the
-websocket-proxy with WebSocket upgrade) to `${ENGINE_ORIGIN}`, so the browser
-only ever talks to this one origin. The image listens on **8080** and runs
+proxies an allowlist of engine API paths (REST, the SSO token grant, the
+token-scoped sign-out, Grafana's query API) to `${ENGINE_ORIGIN}`, so the
+browser only ever talks to this one origin for data; the engine's own web UIs
+are deliberately not reachable through it, and the in-browser console opens
+`wss://` straight to the engine's websocket-proxy. The image listens on **8080** and runs
 unprivileged (no root, no `NET_BIND_SERVICE`).
 
 `proxy_ssl_verify` is **on** by default (secure-by-default): mount the engine

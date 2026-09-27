@@ -160,7 +160,6 @@ Vite bakes the `base` (`/ovirt-engine/web-ui-ng/`) into the built
 constant all resolve under the sub-path. Apache must (a) serve the built
 assets under that path, (b) SPA-fallback unknown sub-paths to `index.html`
 (TanStack Router handles client routing), and (c) attach the headers above.
-The RPM/Apache wiring cribs from `legacy/packaging/` +
-`legacy/ovirt-web-ui.spec.in` (which mount the legacy WAR at
-`/ovirt-engine/web-ui`); `web-ui-ng` is the parallel mount point so both can
-be installed during cutover.
+The RPM/Apache wiring (`packaging/ovirt-web-ui-ng.conf`) mounts the app at
+`/ovirt-engine/web-ui-ng` beside the legacy VM Portal's `/ovirt-engine/web-ui`,
+so both can be installed during cutover.

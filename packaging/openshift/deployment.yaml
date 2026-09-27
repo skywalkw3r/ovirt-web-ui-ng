@@ -14,6 +14,8 @@ spec:
       labels:
         app: ovirt-web-ui-ng
     spec:
+      # nginx never talks to the Kubernetes API; don't hand it a token.
+      automountServiceAccountToken: false
       containers:
         - name: web-ui-ng
           # Built from packaging/Containerfile — Red Hat UBI (ubi9/nodejs-24

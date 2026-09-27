@@ -84,10 +84,11 @@ podman run --rm -p 8080:8080 \
     ovirt-web-ui-ng:latest
 ```
 
-nginx serves the static build at the same sub-path **and** proxies everything
-else under `/ovirt-engine/` (REST, SSO, websocket-proxy with WS upgrade) to
-`ENGINE_ORIGIN`, so the browser still sees one origin. TLS verification on the
-nginx→engine hop is **on** by default and expects the engine CA at
+nginx serves the static build at the same sub-path **and** proxies an
+allowlist of engine API paths (REST, SSO token grant, sign-out, Grafana query
+API) to `ENGINE_ORIGIN`, so the browser still sees one origin; engine HTML is
+never served from the console origin. TLS verification on the nginx→engine hop
+is **on** by default and expects the engine CA at
 `/etc/pki/ovirt-engine/ca.pem` — mount it, or (labs only) flip
 `proxy_ssl_verify off` in `nginx-sample.conf`.
 

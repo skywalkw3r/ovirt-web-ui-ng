@@ -33,7 +33,10 @@ ENV VITE_BASE=${VITE_BASE}
 # Copy manifests first for layer caching, then install from the lockfile.
 COPY app/package.json app/package-lock.json ./app/
 WORKDIR /opt/app-root/src/app
-RUN npm ci
+# --ignore-scripts: no dependency needs an install hook on Linux (only the
+# darwin-only optional fsevents has one), so lifecycle scripts from the tree
+# never run inside the build.
+RUN npm ci --ignore-scripts
 
 # Copy the rest of the app and build. dist/ lands in app/dist.
 WORKDIR /opt/app-root/src
