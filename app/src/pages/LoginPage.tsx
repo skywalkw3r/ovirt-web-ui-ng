@@ -20,7 +20,9 @@ import { FormattedMessage, useIntl } from 'react-intl'
 import { Navigate, useNavigate, useSearch } from '@tanstack/react-router'
 import { brandAssets } from '../branding/logos'
 import { useBrandedTab } from '../branding/useBrandedTab'
+import { AuthenticationError } from '../api/auth'
 import { useAuth } from '../auth/context'
+import { consumeSignOutNotice } from '../auth/logoutNotice'
 import { useProductBrand } from '../hooks/useProductBrand'
 import { getActiveBase, getServers, setActiveBase, useActiveBase } from '../servers/registry'
 import { getRuntimeConfig } from '../config/runtime'
@@ -89,6 +91,9 @@ export function LoginPage() {
   const [customProfile, setCustomProfile] = useState(() => readStored(CUSTOM_PROFILE_KEY) ?? '')
   const [error, setError] = useState<string | null>(null)
   const [pending, setPending] = useState(false)
+  // The previous sign-out in this tab could not be confirmed by the engine
+  // (auth/logoutNotice.ts): say so once, here, where the user lands.
+  const [signOutUnconfirmed] = useState(() => consumeSignOutNotice())
 
   // Multi-engine (config.js `servers`, see servers/registry.ts): which engine
   // the sign-in goes to. The list is deploy-time-fixed; only the SELECTION is
@@ -151,7 +156,15 @@ export function LoginPage() {
     login(principal, password)
       .then(() => navigate({ href: target, replace: true }))
       .catch((e: unknown) =>
-        setError(e instanceof Error ? e.message : intl.formatMessage({ id: 'login.failed' })),
+        setError(
+          // 429 comes from the console's own login rate limit (nginx), not the
+          // engine — its body is not an SSO error envelope, so name it here.
+          e instanceof AuthenticationError && e.status === 429
+            ? intl.formatMessage({ id: 'login.tooManyAttempts' })
+            : e instanceof Error
+              ? e.message
+              : intl.formatMessage({ id: 'login.failed' }),
+        ),
       )
       .finally(() => setPending(false))
   }
@@ -192,6 +205,15 @@ export function LoginPage() {
         </CardTitle>
         <CardBody>
           <Form onSubmit={onSubmit}>
+            {signOutUnconfirmed && (
+              <Alert
+                variant="warning"
+                isInline
+                title={intl.formatMessage({ id: 'login.signOutUnconfirmed.title' })}
+              >
+                <FormattedMessage id="login.signOutUnconfirmed.body" />
+              </Alert>
+            )}
             {error && <Alert variant="danger" isInline title={error} />}
             {servers.length > 0 && (
               <FormGroup label={intl.formatMessage({ id: 'login.server' })} fieldId="server">
@@ -214,6 +236,7 @@ export function LoginPage() {
             >
               <TextInput
                 id="username"
+                autoComplete="username"
                 value={username}
                 onChange={(_event, value) => setUsername(value)}
                 placeholder={intl.formatMessage({ id: 'login.usernamePlaceholder' })}
@@ -287,6 +310,7 @@ export function LoginPage() {
               <TextInput
                 id="password"
                 type="password"
+                autoComplete="current-password"
                 value={password}
                 onChange={(_event, value) => setPassword(value)}
                 isRequired

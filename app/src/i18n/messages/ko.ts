@@ -81,6 +81,10 @@ export const ko: LocaleCatalog = {
   'login.signingInAs': '{principal}(으)로 로그인 중',
   'login.submit': '로그인',
   'login.failed': '로그인 실패',
+  'login.signOutUnconfirmed.title': '이 콘솔에서만 로그아웃되었습니다',
+  'login.signOutUnconfirmed.body':
+    '엔진이 로그아웃을 확인하지 않아 해당 세션이 만료될 때까지 유효하게 남아 있을 수 있습니다. 이 문제가 계속되면 관리자에게 알리십시오.',
+  'login.tooManyAttempts': '로그인 시도가 너무 많습니다. 1분 후에 다시 시도하십시오.',
   'login.server': '서버',
   'action.start': '시작',
   'action.stop': '정지',

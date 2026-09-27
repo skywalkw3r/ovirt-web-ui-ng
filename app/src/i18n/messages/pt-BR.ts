@@ -80,6 +80,10 @@ export const ptBR: LocaleCatalog = {
   'login.signingInAs': 'Iniciar sessão como {principal}',
   'login.submit': 'Iniciar sessão',
   'login.failed': 'Falha ao iniciar sessão',
+  'login.signOutUnconfirmed.title': 'Sessão encerrada apenas neste console',
+  'login.signOutUnconfirmed.body':
+    'O engine não confirmou o encerramento da sessão, portanto ela pode continuar válida lá até expirar. Se isso continuar acontecendo, avise um administrador.',
+  'login.tooManyAttempts': 'Muitas tentativas de login. Aguarde um minuto e tente novamente.',
   'login.server': 'Servidor',
   'action.start': 'Iniciar',
   'action.stop': 'Parar',

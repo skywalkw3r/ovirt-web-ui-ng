@@ -81,6 +81,10 @@ export const fr: LocaleCatalog = {
   'login.signingInAs': 'Connexion en tant que {principal}',
   'login.submit': 'Se connecter',
   'login.failed': 'La connexion a échoué',
+  'login.signOutUnconfirmed.title': 'Déconnexion de cette console uniquement',
+  'login.signOutUnconfirmed.body':
+    'Le moteur n’a pas confirmé la déconnexion : cette session peut donc y rester valide jusqu’à son expiration. Si cela se reproduit, prévenez un administrateur.',
+  'login.tooManyAttempts': 'Trop de tentatives de connexion. Patientez une minute puis réessayez.',
   'login.server': 'Serveur',
   'action.start': 'Démarrer',
   'action.stop': 'Arrêter',

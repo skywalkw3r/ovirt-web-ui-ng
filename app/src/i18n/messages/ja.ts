@@ -81,6 +81,10 @@ export const ja: LocaleCatalog = {
   'login.signingInAs': '{principal}としてサインイン中',
   'login.submit': 'サインイン',
   'login.failed': 'ログインに失敗しました',
+  'login.signOutUnconfirmed.title': 'このコンソールからのみサインアウトしました',
+  'login.signOutUnconfirmed.body':
+    'エンジンがサインアウトを確認しなかったため、そのセッションは期限切れまで有効なままになる可能性があります。繰り返し発生する場合は管理者に連絡してください。',
+  'login.tooManyAttempts': 'サインインの試行回数が多すぎます。1 分待ってからやり直してください。',
   'login.server': 'サーバー',
   'action.start': '開始',
   'action.stop': '停止',

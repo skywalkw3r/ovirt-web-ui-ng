@@ -101,6 +101,10 @@ export const en = {
   'login.signingInAs': 'Signing in as {principal}',
   'login.submit': 'Sign in',
   'login.failed': 'Login failed',
+  'login.signOutUnconfirmed.title': 'Signed out of this console only',
+  'login.signOutUnconfirmed.body':
+    'The engine did not confirm the sign-out, so that session may stay valid there until it expires. If this keeps happening, tell an administrator.',
+  'login.tooManyAttempts': 'Too many sign-in attempts. Wait a minute and try again.',
   'login.server': 'Server',
 
   // Common action verbs (VM lifecycle) — reference slice --------------------

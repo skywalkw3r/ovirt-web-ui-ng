@@ -104,8 +104,43 @@ hardening posture:
 | `X-Content-Type-Options`          | `nosniff`                             | Stop MIME sniffing — a `.js`/`.json` response is never re-interpreted as HTML.                                                                                              |
 | `Referrer-Policy`                 | `no-referrer`                         | The engine URL can carry sensitive path/query info; don't leak it on outbound navigation.                                                                                   |
 | `X-Frame-Options`                 | `DENY`                                | Legacy-browser fallback for `frame-ancestors 'none'`; harmless where CSP is honored.                                                                                        |
-| `Strict-Transport-Security`       | `max-age=31536000; includeSubDomains` | The engine is HTTPS-only; pin clients to TLS. Set only once you're confident every sub-path is HTTPS (it is, behind the engine).                                            |
+| `Strict-Transport-Security`       | `max-age=63072000; includeSubDomains` | The engine is HTTPS-only; pin clients to TLS for two years. Set only once you're confident every sub-path is HTTPS (it is, behind the engine).                                |
 | `Cache-Control` (on `index.html`) | `no-store`                            | The document is tiny and references content-hashed assets; never serve a stale shell that points at deleted chunks. Hashed `/assets/*` are separately long-cache-immutable. |
+| `Cache-Control` (on `/ovirt-engine/api/*` via the proxy) | `no-store` | Bearer-authenticated JSON must never rest in an intermediary cache. TanStack Query holds the only cache the app relies on. |
+| `Cross-Origin-Opener-Policy`      | `same-origin`                         | Severs any cross-origin window that opens the console (no `window.opener` tampering, no XS-Leaks through the opener). The in-browser console tab is same-origin, so its opener/`postMessage` handshake is unaffected. |
+| `Cross-Origin-Resource-Policy`    | `same-origin`                         | Our documents, scripts and styles may only be loaded by our own origin — nothing else embeds them.                                                                            |
+| `Permissions-Policy`              | `camera=(), microphone=(), geolocation=(), payment=(), usb=(), midi=(), magnetometer=(), gyroscope=(), accelerometer=(), display-capture=()` | The app uses none of these; an injected script cannot request them either. `fullscreen` is deliberately left at its default (`self`) — the console uses it. |
+
+## Tightening `wss:` per deployment
+
+The baked `<meta>` CSP allows scheme-wide `wss:` because the websocket-proxy
+host is not known at build time. A deployment that knows its engines (the
+same-origin proxy shape — `config.js` lists every engine's `fqdn`) should
+narrow the **header** instead: multiple policies intersect, so a header that
+says `connect-src 'self' wss://engine-a.example.com:6100 wss://engine-b.example.com:6100`
+wins over the looser meta with no rebuild. The proxy port is the engine's
+`WebSocketProxy` option (default 6100); the app reads it from the engine at
+console-open time (`api/resources/consoles.ts`), so the list in the header must
+match what the engines report.
+
+## Login rate limiting (nginx deployments)
+
+`packaging/nginx.conf.template` defines a `limit_req_zone` (`sso_login`,
+10 requests/minute per client address) whose key is non-empty ONLY for
+`/ovirt-engine/sso/oauth/token` requests, so a server block can add
+`limit_req zone=sso_login burst=5 nodelay;` to its engine proxy location and
+throttle password guessing without touching API traffic; excess returns 429,
+which the login form reports as "too many sign-in attempts". Behind a router
+that sets `X-Forwarded-For`, add `set_real_ip_from <router/pod CIDR>;` to the
+server block so the key is the real client, not the router.
+
+## Precompressed assets
+
+The container build gzips every content-hashed asset at `-9`
+(`packaging/Containerfile`); nginx serves those via `gzip_static on` and only
+compresses on the fly what has no `.gz` sibling (`index.html`, `config.js`,
+API responses). Same bytes to the browser, better ratio, no compression CPU per
+request.
 
 ## Cookies / CSRF
 

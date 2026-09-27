@@ -80,6 +80,10 @@ export const tr: LocaleCatalog = {
   'login.signingInAs': '{principal} olarak giriş yapılıyor',
   'login.submit': 'Oturum aç',
   'login.failed': 'Giriş başarısız',
+  'login.signOutUnconfirmed.title': 'Yalnızca bu konsoldan çıkış yapıldı',
+  'login.signOutUnconfirmed.body':
+    'Motor çıkışı onaylamadı; bu oturum süresi dolana kadar orada geçerli kalabilir. Bu durum tekrarlarsa bir yöneticiye bildirin.',
+  'login.tooManyAttempts': 'Çok fazla oturum açma denemesi. Bir dakika bekleyip yeniden deneyin.',
   'login.server': 'Sunucu',
   'action.start': 'Başlat',
   'action.stop': 'Durdur',

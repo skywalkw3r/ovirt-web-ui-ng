@@ -82,6 +82,10 @@ export const ru: LocaleCatalog = {
   'login.signingInAs': 'Выполняется вход под именем {principal}',
   'login.submit': 'Войти',
   'login.failed': 'Вход не удался',
+  'login.signOutUnconfirmed.title': 'Выход выполнен только из этой консоли',
+  'login.signOutUnconfirmed.body':
+    'Движок не подтвердил выход, поэтому этот сеанс может оставаться действительным до истечения срока. Если это повторяется, сообщите администратору.',
+  'login.tooManyAttempts': 'Слишком много попыток входа. Подождите минуту и повторите попытку.',
   'login.server': 'Сервер',
   'action.start': 'Запуск',
   'action.stop': 'Остановить',

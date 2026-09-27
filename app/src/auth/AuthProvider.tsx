@@ -20,6 +20,7 @@ import { readInjectedSession } from './bootstrap'
 import { CapabilitiesContext, DEFAULT_CAPABILITIES, type CapabilitiesValue } from './capabilities'
 import { AuthContext, type AuthContextValue } from './context'
 import { startKeepalive, type KeepaliveController } from './keepalive'
+import { markSignOutUnconfirmed } from './logoutNotice'
 import { broadcastLogout, onLogoutBroadcast } from './sessionChannel'
 import { useIdleLogout } from './useIdleLogout'
 
@@ -57,6 +58,12 @@ function seedInjectedSession(): string | null {
     // (multi-engine; see servers/registry.ts).
     setSessionServerBase('')
     setActiveBase('')
+    // The token now lives in the session store; drop the engine-injected
+    // global so the bearer token is not left readable on `window` for the
+    // page's lifetime (one less place for an injected script to find it).
+    // StrictMode's second initializer call takes the refresh-restore path
+    // below, which reads the store, so this stays idempotent.
+    delete window.userInfo
     return injected.username
   }
   // Refresh restore: the token + username survive in per-tab sessionStorage
@@ -160,8 +167,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         // Best-effort, but no longer blind: revokeToken reports (and warns)
         // when the engine does not confirm, so a token left alive server-side
-        // is visible instead of silent.
-        if (token) await revokeToken(token)
+        // is visible instead of silent — the login page tells the user
+        // (auth/logoutNotice.ts) that this console signed out but the engine
+        // did not confirm it.
+        if (token && !(await revokeToken(token))) markSignOutUnconfirmed()
       } finally {
         // Cached queries are per-session state: without this, a re-login
         // within gcTime hands the next session the previous user's data

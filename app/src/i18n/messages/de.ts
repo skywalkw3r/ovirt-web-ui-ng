@@ -81,6 +81,11 @@ export const de: LocaleCatalog = {
   'login.signingInAs': 'Anmeldung als {principal}',
   'login.submit': 'Anmelden',
   'login.failed': 'Login fehlgeschlagen',
+  'login.signOutUnconfirmed.title': 'Nur von dieser Konsole abgemeldet',
+  'login.signOutUnconfirmed.body':
+    'Die Engine hat die Abmeldung nicht bestätigt; die Sitzung kann dort bis zu ihrem Ablauf gültig bleiben. Tritt das wiederholt auf, informieren Sie einen Administrator.',
+  'login.tooManyAttempts':
+    'Zu viele Anmeldeversuche. Warten Sie eine Minute und versuchen Sie es erneut.',
   'login.server': 'Server',
   'action.start': 'Starten',
   'action.stop': 'Stoppen',

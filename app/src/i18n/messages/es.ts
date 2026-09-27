@@ -81,6 +81,11 @@ export const es: LocaleCatalog = {
   'login.signingInAs': 'Iniciando sesión como {principal}',
   'login.submit': 'Iniciar sesión',
   'login.failed': 'Error al iniciar sesión',
+  'login.signOutUnconfirmed.title': 'Sesión cerrada solo en esta consola',
+  'login.signOutUnconfirmed.body':
+    'El motor no confirmó el cierre de sesión, por lo que esa sesión puede seguir siendo válida allí hasta que expire. Si esto sigue ocurriendo, avise a un administrador.',
+  'login.tooManyAttempts':
+    'Demasiados intentos de inicio de sesión. Espere un minuto y vuelva a intentarlo.',
   'login.server': 'Servidor',
   'action.start': 'Iniciar',
   'action.stop': 'Detener',

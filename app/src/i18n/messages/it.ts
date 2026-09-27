@@ -81,6 +81,10 @@ export const it: LocaleCatalog = {
   'login.signingInAs': 'Accesso come {principal}',
   'login.submit': 'Accedi',
   'login.failed': 'Accesso non riuscito',
+  'login.signOutUnconfirmed.title': 'Disconnessione solo da questa console',
+  'login.signOutUnconfirmed.body':
+    'Il motore non ha confermato la disconnessione, quindi quella sessione potrebbe restare valida fino alla scadenza. Se il problema persiste, avvisa un amministratore.',
+  'login.tooManyAttempts': 'Troppi tentativi di accesso. Attendi un minuto e riprova.',
   'login.server': 'Server',
   'action.start': 'Avvia',
   'action.stop': 'Stop',

@@ -56,6 +56,16 @@ ARG VITE_CSP_CONNECT_EXTRA=__CSP_CONNECT_EXTRA__
 ENV VITE_CSP_CONNECT_EXTRA=${VITE_CSP_CONNECT_EXTRA}
 RUN npm run build
 
+# Precompress the content-hashed assets once, here, at gzip -9: nginx serves
+# them as-is via `gzip_static on` (nginx-sample.conf / the mounted server
+# config) instead of compressing every response at level 5 on the fly — better
+# ratio for the WAN users and zero compression CPU per request. index.html and
+# config.js are deliberately NOT precompressed: index.html goes through
+# sub_filter, config.js is mounted/edited at deploy time. `-k` keeps the
+# originals for clients without gzip support.
+RUN find dist/assets -type f \( -name '*.js' -o -name '*.css' -o -name '*.svg' -o -name '*.json' \) \
+      -exec gzip -k -9 {} +
+
 # ---- Stage 2: serve --------------------------------------------------------
 # ubi9-minimal + nginx from the UBI AppStream (ships the built-in sub_filter
 # module) + gettext for envsubst. No `user` directive and pid/temp under /tmp,

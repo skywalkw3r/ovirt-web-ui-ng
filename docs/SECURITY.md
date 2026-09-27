@@ -164,6 +164,16 @@ proxy topology being known):
 - [x] **Done — the nginx templates default to `proxy_ssl_verify on`** (engine
   CA at `/etc/pki/ovirt-engine/ca.pem`); the relaxed `off` is a commented
   lab-only opt-in, never the shipped default.
+- [x] **Done — sign-out revoke failures are visible to the user.**
+  `AuthProvider.logout` records an unconfirmed revoke (`auth/logoutNotice.ts`)
+  and the login page shows an inline warning that the console signed out but
+  the engine did not confirm it.
+- [x] **Done — the engine-injected `window.userInfo` is deleted right after
+  the token is seeded** (`seedInjectedSession`), so the bearer token is not
+  left readable on `window` for the page's lifetime.
+- [ ] **Session restore caveat.** Chrome and Firefox "continue where you left
+  off" restore `sessionStorage`, so a per-tab token can outlive a browser
+  restart; the engine's idle timeout bounds it. Documented, not mitigated.
 - [ ] **Defer the `.vv` blob revoke** — `URL.revokeObjectURL` fires
   synchronously right after the anchor click (`useConsoles.ts:33`), which can
   race the download; defer it. (The sibling transport header-ordering cleanup

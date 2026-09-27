@@ -81,6 +81,10 @@ export const zhCN: LocaleCatalog = {
   'login.signingInAs': '以{principal}身份登录',
   'login.submit': '登录',
   'login.failed': '登录失败',
+  'login.signOutUnconfirmed.title': '仅退出了此控制台',
+  'login.signOutUnconfirmed.body':
+    '引擎未确认退出，该会话在引擎上可能保持有效直到过期。如果此问题反复出现，请告知管理员。',
+  'login.tooManyAttempts': '登录尝试次数过多。请等待一分钟后重试。',
   'login.server': '服务器',
   'action.start': '启动',
   'action.stop': '停止',
