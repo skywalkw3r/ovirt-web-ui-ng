@@ -26,8 +26,10 @@ npm-debug.log
 .vscode/
 .env*
 
-# automake.sh / automake / autoconfig generated files
+# automake.sh / automake / autoconfig generated files (the hand-written root
+# Makefile with the developer entry points is NOT one of them)
 Makefile
+!/Makefile
 Makefile.in
 aclocal.m4
 autom4te.cache/

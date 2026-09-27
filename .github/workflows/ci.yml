@@ -77,7 +77,8 @@ jobs:
   # sub-path build inside ubi9/nodejs-24, stage 2 assembles the ubi-minimal
   # nginx image. The image is built, not pushed — this job only proves the
   # recipe works; the deployable image is built in-cluster by the OpenShift
-  # BuildConfig from the same Containerfile (see docs/DEPLOY.md §Pipeline).
+  # BuildConfig from the same Containerfile, cloned from the private Bitbucket
+  # mirror of this repo (see docs/DEPLOY.md §Pipeline).
   container:
     # Heavy job — gated to main pushes + PRs (see e2e).
     if: github.ref == 'refs/heads/main' || github.event_name == 'pull_request'
@@ -128,22 +129,3 @@ jobs:
             --define "_topdir ${PWD}/rpmbuild"
           # Surface the payload in the job log for eyeball review.
           rpm -qlp rpmbuild/RPMS/noarch/ovirt-web-ui-ng-*.noarch.rpm
-
-  # Deployment gate for production. The OpenShift environments build from git
-  # branches (docs/DEPLOY.md §Pipeline): dev tracks `development` directly,
-  # prod tracks `production`. This job fast-forwards `production` to the
-  # current main commit ONLY after every job above is green, so a red main can
-  # never become the prod image. Fast-forward only — a non-FF push is rejected,
-  # which is the point: production is always an ancestor-preserving copy of main.
-  production:
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    needs: [app, e2e, container, rpm]
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-        with:
-          # Full history so the push is a plain fast-forward, never a shallow update.
-          fetch-depth: 0
-      - run: git push origin HEAD:refs/heads/production

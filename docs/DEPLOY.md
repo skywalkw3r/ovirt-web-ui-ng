@@ -109,25 +109,26 @@ pods (hashed configMapGenerator). Full recipe and an ArgoCD `Application` exampl
 ## Environments and the delivery pipeline (OpenShift)
 
 Environments build from **git branches**, in-cluster, with GitOps-managed
-manifests — the same shape as our other OpenShift services (Kustomize
-`base/` + `overlays/<env>/<cluster>/`, one ArgoCD Application per
-environment). The live manifests are internal and live in a private deploy
-repo; `packaging/openshift/` is the sanitized template.
+manifests — the same workflow as our other OpenShift services (a private
+Bitbucket repo as the build source, Bitbucket webhooks into the BuildConfig,
+Kustomize `base/` + `overlays/<env>/<cluster>/`, one ArgoCD Application per
+environment, SealedSecrets for the webhook token). The live manifests carry
+internal hostnames and live in a private deploy repo; `packaging/openshift/` is
+the sanitized template.
 
 | Branch | Environment | How it moves |
 | --- | --- | --- |
-| `development` | dev console | every push. A Git-source `BuildConfig` (`packaging/Containerfile`) builds it in-cluster; the Deployment's image trigger rolls the pods. |
-| `main` | the release gate | `npm run promote:prod` (`scripts/promote-prod.sh`): `--no-ff` merge of `development`, with a trial merge + "no hotfix left behind" check first. |
-| `production` | prod console | **never pushed by hand.** The `production` CI job fast-forwards it to `main` once lint, typecheck, unit tests, e2e, the container build and the RPM build are all green. |
+| `development` | dev console | every push. The Bitbucket webhook starts the Git-source `BuildConfig` (`packaging/Containerfile`) within seconds; the Deployment's image trigger rolls the pods. |
+| `production` | prod console | **only** via `make promote-prod` (`scripts/promote-prod.sh`): a `--no-ff` merge of `development` after a trial merge and a "no hotfix left behind" check. The prod webhook builds the result. |
+| `main` | public GitHub default | fast-forwarded to `production` by the same script so the mirror shows released code. |
 
-Because the cluster API is internal-only, GitHub cannot deliver push webhooks
-to a `BuildConfig`. Instead a tiny in-cluster **build poller** (a CronJob
-running the cluster's own `oc` image every 2 minutes) checks whether the
-tracked branch head moved and starts one build pinned to that commit
-(`oc start-build --commit=<sha>`). No keys, no inbound path, ≤ 2 min lag; a
-failed build is not retried until a new commit lands. Config (`config.js`,
-the nginx engine map) and manifests change through the deploy repo and are
-synced by ArgoCD; image rollback is `oc tag` to a previous ImageStream digest.
+The repo has one fetch URL (GitHub) and two push URLs (Bitbucket, which the
+cluster clones with a read-only access key, and GitHub, which runs the Actions
+gates: lint, typecheck, unit tests, e2e, container and RPM builds). Config
+(`config.js`, the nginx engine map) and manifests change through the deploy
+repo and are synced by ArgoCD; image rollback is `oc tag` to a previous
+ImageStream digest. `make deploy-status ENV=dev|prod` shows builds, the
+webhook URL, the rollout and the ArgoCD state.
 
 ## Connecting to multiple engines (proxy/external deployments only)
 
@@ -171,10 +172,10 @@ the login page.
 → production build → `npm audit --audit-level=high`, then Playwright e2e. Two
 packaging-validation jobs consume that build: `container` runs the full
 two-stage `docker build` of `packaging/Containerfile`, and `rpm` runs a real
-`rpmbuild -ta` on AlmaLinux 9 against the pre-bundled dist artifact. On a
-green `main` push the `production` job fast-forwards the `production` branch
-(see the pipeline section above). Actions are SHA-pinned; Dependabot
-(`.github/dependabot.yml`) keeps the pins and the npm tree current.
+`rpmbuild -ta` on AlmaLinux 9 against the pre-bundled dist artifact. Actions are SHA-pinned; Dependabot
+(`.github/dependabot.yml`) keeps the pins and the npm tree current. Promotion
+to production is a git merge (`make promote-prod`), not a CI job — see the
+pipeline section above.
 
 ## Releasing (signing & publishing)
 
