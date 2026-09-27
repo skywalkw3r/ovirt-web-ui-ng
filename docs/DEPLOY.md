@@ -128,7 +128,10 @@ gates: lint, typecheck, unit tests, e2e, container and RPM builds). Config
 (`config.js`, the nginx engine map) and manifests change through the deploy
 repo and are synced by ArgoCD; image rollback is `oc tag` to a previous
 ImageStream digest. `make deploy-status ENV=dev|prod` shows builds, the
-webhook URL, the rollout and the ArgoCD state.
+webhook URL, the rollout and the ArgoCD state. Each environment registers its
+own Bitbucket webhook (Repository settings → Webhooks, event "Repository
+push") pointing at that cluster's BuildConfig webhook URL; the token in the
+URL is the `WebHookSecretKey` of a SealedSecret in the environment's overlay.
 
 ## Connecting to multiple engines (proxy/external deployments only)
 
