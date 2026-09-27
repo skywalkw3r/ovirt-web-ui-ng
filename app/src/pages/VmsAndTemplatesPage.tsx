@@ -197,52 +197,72 @@ export function VmsAndTemplatesPage() {
   const all = tags.data ?? []
   const entities = [...(vms.data ?? []), ...(templates.data ?? [])]
 
-  const rows: VmListRow[] = [
-    ...(vms.data ?? []).map((vm): VmListRow => ({ kind: 'vm', vm })),
-    ...(templates.data ?? []).map((template): VmListRow => ({ kind: 'template', template })),
-  ]
+  // Every derivation below is memoized on its inputs: with a thousand rows the
+  // scope → facet views (O(facets² · rows)) → sort pipeline is the expensive
+  // part of a render, and most renders (a selection click, a poll tick whose
+  // payload did not change) touch none of the inputs. Same discipline as
+  // hosts-clusters/usePaneTable.ts.
+  const rows = useMemo<VmListRow[]>(
+    () => [
+      ...(vms.data ?? []).map((vm): VmListRow => ({ kind: 'vm', vm })),
+      ...(templates.data ?? []).map((template): VmListRow => ({ kind: 'template', template })),
+    ],
+    [vms.data, templates.data],
+  )
 
   // id-keyed joins for the Host/Cluster/DC cells AND the matching sortValue
   // extractors, so sorting by a joined column follows what the cells show
-  const hostsById = new Map((hostsQuery.data ?? []).map((host) => [host.id, host.name]))
-  const clustersById = new Map((clustersQuery.data ?? []).map((c) => [c.id, c]))
-  const dcsById = new Map((dataCentersQuery.data ?? []).map((dc) => [dc.id, dc.name]))
-  const ctx: VmListCtx = {
-    hostName: (id) => (id !== undefined ? hostsById.get(id) : undefined),
-    clusterName: (id) => (id !== undefined ? clustersById.get(id)?.name : undefined),
-    dataCenter: (clusterId) => {
-      const dcId =
-        clusterId !== undefined ? clustersById.get(clusterId)?.data_center?.id : undefined
-      const name = dcId !== undefined ? dcsById.get(dcId) : undefined
-      return dcId !== undefined && name !== undefined ? { id: dcId, name } : undefined
-    },
-  }
-  // Same joins plus what the facet menus need to NAME an id they hold.
-  const facetCtx: VmListFacetCtx = { ...ctx, t, dataCenterName: (id) => dcsById.get(id) }
+  const { ctx, facetCtx } = useMemo(() => {
+    const hostsById = new Map((hostsQuery.data ?? []).map((host) => [host.id, host.name]))
+    const clustersById = new Map((clustersQuery.data ?? []).map((c) => [c.id, c]))
+    const dcsById = new Map((dataCentersQuery.data ?? []).map((dc) => [dc.id, dc.name]))
+    const ctx: VmListCtx = {
+      hostName: (id) => (id !== undefined ? hostsById.get(id) : undefined),
+      clusterName: (id) => (id !== undefined ? clustersById.get(id)?.name : undefined),
+      dataCenter: (clusterId) => {
+        const dcId =
+          clusterId !== undefined ? clustersById.get(clusterId)?.data_center?.id : undefined
+        const name = dcId !== undefined ? dcsById.get(dcId) : undefined
+        return dcId !== undefined && name !== undefined ? { id: dcId, name } : undefined
+      },
+    }
+    // Same joins plus what the facet menus need to NAME an id they hold.
+    const facetCtx: VmListFacetCtx = { ...ctx, t, dataCenterName: (id) => dcsById.get(id) }
+    return { ctx, facetCtx }
+  }, [hostsQuery.data, clustersQuery.data, dataCentersQuery.data, t])
 
   // Folder subtree filter (same semantics as VmsPage) composed with the name
   // filter; both are synchronous derivations over the followed tags. This is
   // the scope the facet menus describe — their option lists and counts come
   // from these rows, so a folder with no Windows VMs offers no Windows.
-  const folderIds = selectedFolderId === null ? null : folderSubtreeIds(all, selectedFolderId)
   const needle = filter.trim().toLowerCase()
-  const scoped = rows.filter((row) => {
-    const entity = rowEntity(row)
-    if (folderIds !== null) {
-      const entityTags = followedTagsOf(entity) ?? []
-      if (!entityTags.some((tag) => folderIds.has(tag.id))) return false
-    }
-    return needle === '' || entity.name.toLowerCase().includes(needle)
-  })
-  const visible = scoped.filter((row) =>
-    matchesFacets(row, facetCtx, VM_LIST_FACETS, facets.selection),
+  const scoped = useMemo(() => {
+    const folderIds =
+      selectedFolderId === null ? null : folderSubtreeIds(tags.data ?? [], selectedFolderId)
+    return rows.filter((row) => {
+      const entity = rowEntity(row)
+      if (folderIds !== null) {
+        const entityTags = followedTagsOf(entity) ?? []
+        if (!entityTags.some((tag) => folderIds.has(tag.id))) return false
+      }
+      return needle === '' || entity.name.toLowerCase().includes(needle)
+    })
+  }, [rows, tags.data, selectedFolderId, needle])
+  const visible = useMemo(
+    () => scoped.filter((row) => matchesFacets(row, facetCtx, VM_LIST_FACETS, facets.selection)),
+    [scoped, facetCtx, facets.selection],
   )
   // buildFacetViews preserves the catalog's order, so the localized name
   // zips on by index — the menus read Status, Type, Cluster, … left to right,
   // and each borrows its column's label rather than inventing a second name
   // for the same attribute.
-  const facetViews = buildFacetViews(VM_LIST_FACETS, scoped, facetCtx, facets.selection).map(
-    (view, index) => ({ ...view, label: t(VM_LIST_FACETS[index].labelId) }),
+  const facetViews = useMemo(
+    () =>
+      buildFacetViews(VM_LIST_FACETS, scoped, facetCtx, facets.selection).map((view, index) => ({
+        ...view,
+        label: t(VM_LIST_FACETS[index].labelId),
+      })),
+    [scoped, facetCtx, facets.selection, t],
   )
   const hasFacets = activeFacetCount(facets.selection) > 0
 
@@ -255,9 +275,10 @@ export function VmsAndTemplatesPage() {
   const error = vms.error
   const isFiltering = selectedFolderId !== null && tags.isPending
 
-  const sorted = sortRows(visible, sort, (row, key) =>
-    columns.find((column) => column.key === key)?.sortValue?.(row, ctx),
-  )
+  const sorted = useMemo(() => {
+    const byKey = new Map(columns.map((column) => [column.key, column]))
+    return sortRows(visible, sort, (row, key) => byKey.get(key)?.sortValue?.(row, ctx))
+  }, [visible, sort, columns, ctx])
 
   // Selection pruned to rows that survived filters/polls — the drag payload,
   // toolbar count and Clear all speak this live subset, so stale keys from a

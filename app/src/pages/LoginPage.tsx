@@ -17,7 +17,7 @@ import {
   TextInput,
 } from '@patternfly/react-core'
 import { FormattedMessage, useIntl } from 'react-intl'
-import { Navigate, useNavigate, useSearch } from '@tanstack/react-router'
+import { Navigate, useNavigate, useRouter, useSearch } from '@tanstack/react-router'
 import { brandAssets } from '../branding/logos'
 import { useBrandedTab } from '../branding/useBrandedTab'
 import { AuthenticationError } from '../api/auth'
@@ -78,6 +78,15 @@ export function LoginPage() {
   const navigate = useNavigate()
   const search = useSearch({ strict: false }) as { redirect?: unknown }
   const target = redirectTarget(search.redirect)
+  const router = useRouter()
+  // The dashboard is code-split (routes/router.tsx). Fetch its chunk while the
+  // user is still typing credentials so the post-login landing renders
+  // without a second round trip; a deep link's own target is preloaded the
+  // same way. Best-effort: a failed preload just means the router fetches on
+  // navigation as it would anyway.
+  useEffect(() => {
+    void router.preloadRoute({ to: target }).catch(() => undefined)
+  }, [router, target])
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   // Initial profile: the picked engine's configured default (config.js
