@@ -11,13 +11,7 @@ import {
   revokePublicUse,
 } from '../api/resources/permissions'
 import { useNotify } from '../notifications/context'
-
-// The TanStack Query key the Public Use read registers, shared by the read hook
-// and the mutation's invalidation. Matches the permissions convention
-// [kind, id, 'permissions'] so it never collides with the profile list key.
-export function vnicProfilePermissionsKey(profileId: string) {
-  return ['vnicprofile', profileId, 'permissions'] as const
-}
+import { vnicProfileKeys } from './useCatalogPages'
 
 // The Create vNIC Profile modal's save mutation. Mirrors useCreateNetwork:
 // notify on success/failure and invalidate the profile list query so the
@@ -37,7 +31,7 @@ export function useCreateVnicProfile() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['vnicprofiles'] })
+      void queryClient.invalidateQueries({ queryKey: vnicProfileKeys.all })
     },
   })
 }
@@ -60,7 +54,7 @@ export function useUpdateVnicProfile() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['vnicprofiles'] })
+      void queryClient.invalidateQueries({ queryKey: vnicProfileKeys.all })
     },
   })
 }
@@ -85,7 +79,7 @@ export function useDeleteVnicProfile() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['vnicprofiles'] })
+      void queryClient.invalidateQueries({ queryKey: vnicProfileKeys.all })
     },
   })
 }
@@ -99,7 +93,7 @@ export function useDeleteVnicProfile() {
 // so the modal can tell "not loaded yet" from a real "off".
 export function useVnicProfilePublicUse(profileId: string | undefined, enabled: boolean) {
   const query = useQuery({
-    queryKey: vnicProfilePermissionsKey(profileId ?? ''),
+    queryKey: vnicProfileKeys.permissions(profileId ?? ''),
     queryFn: () => listPermissions('vnicprofile', profileId as string),
     enabled: enabled && profileId !== undefined,
   })
@@ -143,7 +137,7 @@ export function useToggleVnicProfilePublicUse() {
     },
     onSettled: (_data, _error, { profileId }) => {
       void queryClient.invalidateQueries({
-        queryKey: vnicProfilePermissionsKey(profileId),
+        queryKey: vnicProfileKeys.permissions(profileId),
       })
     },
   })

@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { createVm, type NewVmSpec } from '../api/resources/vms'
 import { useNotify } from '../notifications/context'
+import { vmKeys } from './useVms'
 
 // The engine echoes the created VM back, so the mutation data carries the new
 // id — callers navigate to its details page from their own onSuccess.
@@ -18,7 +19,7 @@ export function useCreateVm() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['vms'] })
+      void queryClient.invalidateQueries({ queryKey: vmKeys.all })
     },
   })
 }

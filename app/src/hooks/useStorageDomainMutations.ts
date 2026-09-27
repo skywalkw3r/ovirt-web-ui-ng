@@ -16,6 +16,10 @@ import {
 } from '../api/resources/storageDomains'
 import { attachStorageDomain } from '../api/resources/datacenters'
 import { useNotify } from '../notifications/context'
+import { vmKeys } from './useVms'
+import { dataCenterKeys } from './useAdminResources'
+import { templateKeys } from './useCatalog'
+import { storageDomainKeys } from './useStorageDomains'
 
 // The invalidation fan every storage-domain mutation shares. ['storagedomains']
 // is the prefix every ['storagedomains', search] entry useStorageDomains
@@ -23,8 +27,8 @@ import { useNotify } from '../notifications/context'
 // (useStorageDomain and its sub-hooks), so one invalidate refreshes the domain
 // wholesale. Keep in sync with useCreateStorageDomain's onSettled keys.
 function invalidateStorageDomain(queryClient: QueryClient, id: string) {
-  void queryClient.invalidateQueries({ queryKey: ['storagedomains'] })
-  void queryClient.invalidateQueries({ queryKey: ['storagedomain', id] })
+  void queryClient.invalidateQueries({ queryKey: storageDomainKeys.all })
+  void queryClient.invalidateQueries({ queryKey: storageDomainKeys.detail(id) })
 }
 
 // The create step accepts either a pre-built body (the NFS path builds its own
@@ -85,10 +89,10 @@ export function useCreateStorageDomain() {
       // ['storagedomains'] is the prefix every ['storagedomains', search] entry
       // useStorageDomains registers; the datacenter slice key is the one
       // useDataCenterStorageDomains registers in useDataCenterDetail.
-      void queryClient.invalidateQueries({ queryKey: ['storagedomains'] })
+      void queryClient.invalidateQueries({ queryKey: storageDomainKeys.all })
       if (dataCenterId) {
         void queryClient.invalidateQueries({
-          queryKey: ['datacenter', dataCenterId, 'storageDomains'],
+          queryKey: dataCenterKeys.storageDomains(dataCenterId),
         })
       }
     },
@@ -122,7 +126,7 @@ export function useAttachStorageDomain() {
     onSettled: (_data, _error, { dataCenterId, storageDomainId }) => {
       invalidateStorageDomain(queryClient, storageDomainId)
       void queryClient.invalidateQueries({
-        queryKey: ['datacenter', dataCenterId, 'storageDomains'],
+        queryKey: dataCenterKeys.storageDomains(dataCenterId),
       })
     },
   })
@@ -153,7 +157,7 @@ export function useDetachStorageDomain() {
     onSettled: (_data, _error, { dataCenterId, storageDomainId }) => {
       invalidateStorageDomain(queryClient, storageDomainId)
       void queryClient.invalidateQueries({
-        queryKey: ['datacenter', dataCenterId, 'storageDomains'],
+        queryKey: dataCenterKeys.storageDomains(dataCenterId),
       })
     },
   })
@@ -183,7 +187,7 @@ export function useActivateStorageDomain() {
     onSettled: (_data, _error, { dataCenterId, storageDomainId }) => {
       invalidateStorageDomain(queryClient, storageDomainId)
       void queryClient.invalidateQueries({
-        queryKey: ['datacenter', dataCenterId, 'storageDomains'],
+        queryKey: dataCenterKeys.storageDomains(dataCenterId),
       })
     },
   })
@@ -216,7 +220,7 @@ export function useDeactivateStorageDomain() {
     onSettled: (_data, _error, { dataCenterId, storageDomainId }) => {
       invalidateStorageDomain(queryClient, storageDomainId)
       void queryClient.invalidateQueries({
-        queryKey: ['datacenter', dataCenterId, 'storageDomains'],
+        queryKey: dataCenterKeys.storageDomains(dataCenterId),
       })
     },
   })
@@ -313,7 +317,7 @@ export function useRegisterStorageDomainVm() {
     },
     onSettled: (_data, _error, { id }) => {
       invalidateStorageDomain(queryClient, id)
-      void queryClient.invalidateQueries({ queryKey: ['vms'] })
+      void queryClient.invalidateQueries({ queryKey: vmKeys.all })
     },
   })
 }
@@ -359,7 +363,7 @@ export function useRegisterStorageDomainTemplate() {
     },
     onSettled: (_data, _error, { id }) => {
       invalidateStorageDomain(queryClient, id)
-      void queryClient.invalidateQueries({ queryKey: ['templates'] })
+      void queryClient.invalidateQueries({ queryKey: templateKeys.all })
     },
   })
 }

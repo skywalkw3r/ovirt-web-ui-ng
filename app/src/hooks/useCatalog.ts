@@ -18,6 +18,15 @@ export const templateKeys = {
   all: ['templates'] as const,
   list: (search = '') => ['templates', search] as const,
   detail: (id: string) => ['template', id] as const,
+  // the per-template slices useTemplateDetail / useTemplateTags register,
+  // nested under the detail prefix so a template invalidation reaches them
+  nics: (id: string) => ['template', id, 'nics'] as const,
+  diskAttachments: (id: string) => ['template', id, 'diskAttachments'] as const,
+  permissions: (id: string) => ['template', id, 'permissions'] as const,
+  tags: (id: string) => ['template', id, 'tags'] as const,
+  // the template's VMs are the global /vms narrowed by template.name= — keyed
+  // by NAME (useTemplateVms)
+  vms: (name: string) => ['template', name, 'vms'] as const,
 }
 
 // GET /operatingsystems — the engine's OS catalog, fixed for a given engine
@@ -25,6 +34,14 @@ export const templateKeys = {
 // forms' Operating System selects share.
 export const operatingSystemKeys = {
   all: ['operatingSystems'] as const,
+}
+
+// GET /icons (+ /icons/{id}) — the VM icon catalog the Edit VM Icon section
+// reads; `detail` is its direct-preview fallback for an icon the catalog
+// listing carries without inline data.
+export const iconKeys = {
+  all: ['icons'] as const,
+  detail: (id: string) => ['icon', id] as const,
 }
 
 // The committed search rides in the query key so each engine-DSL query caches

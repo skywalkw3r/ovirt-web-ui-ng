@@ -25,6 +25,7 @@ import { useT } from '../../i18n/useT'
 import type { MessageId } from '../../i18n/messages/en'
 import { useExportTemplateOva, useExportTemplateToDomain } from '../../hooks/useTemplateMutations'
 import { useHosts } from '../../hooks/useHosts'
+import { clusterKeys, dataCenterKeys } from '../../hooks/useAdminResources'
 
 // An absolute POSIX path on the host — the OVA lands here. Mirrors
 // ExportOvaModal.directoryError: a plain directory (no host:/ prefix). Returns
@@ -72,13 +73,13 @@ export function TemplateExportModal({
   // so the options are scoped there (same chained-query shape as ExportVmModal).
   const clusterId = template.cluster?.id
   const cluster = useQuery({
-    queryKey: ['cluster', clusterId],
+    queryKey: clusterKeys.detail(clusterId),
     queryFn: () => getCluster(clusterId ?? ''),
     enabled: clusterId !== undefined,
   })
   const dataCenterId = cluster.data?.data_center?.id
   const storageDomains = useQuery({
-    queryKey: ['datacenter', dataCenterId, 'storageDomains'],
+    queryKey: dataCenterKeys.storageDomains(dataCenterId),
     queryFn: () => listDataCenterStorageDomains(dataCenterId ?? ''),
     enabled: dataCenterId !== undefined,
   })

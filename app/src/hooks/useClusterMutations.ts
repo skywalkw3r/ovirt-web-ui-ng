@@ -11,6 +11,7 @@ import {
   updateClusterAffinityGroup,
 } from '../api/resources/clusters'
 import { useNotify } from '../notifications/context'
+import { clusterKeys } from './useAdminResources'
 
 // The Create Cluster modal's save mutation. Mirrors useCreateNetwork: notify
 // on success/failure and invalidate the cluster list query so the refetch shows
@@ -29,7 +30,7 @@ export function useCreateCluster() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['clusters'] })
+      void queryClient.invalidateQueries({ queryKey: clusterKeys.all })
     },
   })
 }
@@ -53,8 +54,8 @@ export function useUpdateCluster() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: (_data, _error, { id }) => {
-      void queryClient.invalidateQueries({ queryKey: ['cluster', id] })
-      void queryClient.invalidateQueries({ queryKey: ['clusters'] })
+      void queryClient.invalidateQueries({ queryKey: clusterKeys.detail(id) })
+      void queryClient.invalidateQueries({ queryKey: clusterKeys.all })
     },
   })
 }
@@ -77,7 +78,7 @@ export function useDeleteCluster() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['clusters'] })
+      void queryClient.invalidateQueries({ queryKey: clusterKeys.all })
     },
   })
 }
@@ -104,7 +105,7 @@ export function useCreateAffinityGroup() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: (_data, _error, { clusterId }) => {
-      void queryClient.invalidateQueries({ queryKey: ['cluster', clusterId, 'affinityGroups'] })
+      void queryClient.invalidateQueries({ queryKey: clusterKeys.affinityGroups(clusterId) })
     },
   })
 }
@@ -131,7 +132,7 @@ export function useUpdateAffinityGroup() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: (_data, _error, { clusterId }) => {
-      void queryClient.invalidateQueries({ queryKey: ['cluster', clusterId, 'affinityGroups'] })
+      void queryClient.invalidateQueries({ queryKey: clusterKeys.affinityGroups(clusterId) })
     },
   })
 }
@@ -151,7 +152,7 @@ export function useDeleteAffinityGroup() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: (_data, _error, { clusterId }) => {
-      void queryClient.invalidateQueries({ queryKey: ['cluster', clusterId, 'affinityGroups'] })
+      void queryClient.invalidateQueries({ queryKey: clusterKeys.affinityGroups(clusterId) })
     },
   })
 }
@@ -162,6 +163,17 @@ export function useDeleteAffinityGroup() {
 // tab) AND the global ['affinityLabels'] key (the VM/host label tabs read the
 // global collection). clusterId is optional — the VM/host tabs may edit a label
 // without a cluster in hand, so only the global key is invalidated then.
+
+// The global /affinitylabels collection key the label mutations invalidate.
+// NOTE: no read currently registers this bare key — the VM/host Affinity
+// Labels tabs read the global catalog under their own per-entity picker
+// entries (vmKeys.affinityLabelPicker; the host tab through useHostDetail's
+// per-host slice) — so the invalidation is a no-op until a consumer adopts
+// it. Kept verbatim (see the builder follow-up list) rather than retargeted
+// here, which would be a cache-contract change.
+export const affinityLabelKeys = {
+  all: ['affinityLabels'] as const,
+}
 
 // The Create Affinity Label modal's save mutation.
 export function useCreateAffinityLabel() {
@@ -178,9 +190,9 @@ export function useCreateAffinityLabel() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: (_data, _error, { clusterId }) => {
-      void queryClient.invalidateQueries({ queryKey: ['affinityLabels'] })
+      void queryClient.invalidateQueries({ queryKey: affinityLabelKeys.all })
       if (clusterId) {
-        void queryClient.invalidateQueries({ queryKey: ['cluster', clusterId, 'affinityLabels'] })
+        void queryClient.invalidateQueries({ queryKey: clusterKeys.affinityLabels(clusterId) })
       }
     },
   })
@@ -207,9 +219,9 @@ export function useUpdateAffinityLabel() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: (_data, _error, { clusterId }) => {
-      void queryClient.invalidateQueries({ queryKey: ['affinityLabels'] })
+      void queryClient.invalidateQueries({ queryKey: affinityLabelKeys.all })
       if (clusterId) {
-        void queryClient.invalidateQueries({ queryKey: ['cluster', clusterId, 'affinityLabels'] })
+        void queryClient.invalidateQueries({ queryKey: clusterKeys.affinityLabels(clusterId) })
       }
     },
   })
@@ -230,9 +242,9 @@ export function useDeleteAffinityLabel() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: (_data, _error, { clusterId }) => {
-      void queryClient.invalidateQueries({ queryKey: ['affinityLabels'] })
+      void queryClient.invalidateQueries({ queryKey: affinityLabelKeys.all })
       if (clusterId) {
-        void queryClient.invalidateQueries({ queryKey: ['cluster', clusterId, 'affinityLabels'] })
+        void queryClient.invalidateQueries({ queryKey: clusterKeys.affinityLabels(clusterId) })
       }
     },
   })

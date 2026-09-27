@@ -21,6 +21,7 @@ import { useNotify } from '../../notifications/context'
 import { useT } from '../../i18n/useT'
 import { formatBytes } from '../../lib/format'
 import { ConfirmModal } from '../ConfirmModal'
+import { storageDomainKeys } from '../../hooks/useStorageDomains'
 
 // Remove (reduce) LUNs from a block domain — webadmin's "Reduce LUNs" grid on
 // a maintenance domain. The rows come straight from the domain's own read
@@ -68,8 +69,8 @@ export function ReduceLunsModal({
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['storagedomains'] })
-      void queryClient.invalidateQueries({ queryKey: ['storagedomain', domain.id] })
+      void queryClient.invalidateQueries({ queryKey: storageDomainKeys.all })
+      void queryClient.invalidateQueries({ queryKey: storageDomainKeys.detail(domain.id) })
     },
   })
   const pending = reduce.isPending

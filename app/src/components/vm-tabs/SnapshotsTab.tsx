@@ -55,6 +55,7 @@ import { vmNameError } from '../edit-vm/editVmDraft'
 import { ColumnPicker } from '../list-toolbar/ColumnPicker'
 import { ResizableTh, resizableTableProps } from '../list-toolbar/ResizableTh'
 import { ConfirmModal } from '../ConfirmModal'
+import { vmKeys } from '../../hooks/useVms'
 
 // Clone-from-snapshot's save mutation. POST /vms (Add.FromSnapshot) rebuilds a
 // new VM from the snapshot's configuration; the toast mirrors useCloneVm's
@@ -76,7 +77,7 @@ function useCloneVmFromSnapshot() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['vms'] })
+      void queryClient.invalidateQueries({ queryKey: vmKeys.all })
     },
   })
 }

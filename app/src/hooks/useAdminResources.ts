@@ -23,12 +23,21 @@ export { isClusterUpgradeRunning } from '../api/resources/clusters'
 export const poolKeys = {
   all: ['pools'] as const,
   detail: (id: string) => ['pool', id] as const,
+  // PoolPermissionsTab's read — the PermissionEntityKind for pools is
+  // 'vmpool' (the REST collection name), so this slice does NOT sit under
+  // the ['pool', id] detail prefix; usePermissionMutations invalidates
+  // exactly [kind, id, 'permissions'] and this is that key for pools
+  permissions: (id: string) => ['vmpool', id, 'permissions'] as const,
 }
 
 export const userKeys = {
   all: ['users'] as const,
   list: (search = '') => ['users', search] as const,
   detail: (id: string) => ['user', id] as const,
+  groups: (id: string) => ['user', id, 'groups'] as const,
+  quotas: (id: string) => ['user', id, 'quotas'] as const,
+  permissions: (id: string) => ['user', id, 'permissions'] as const,
+  eventSubscriptions: (id: string) => ['user', id, 'eventSubscriptions'] as const,
 }
 
 export const groupKeys = {
@@ -36,19 +45,47 @@ export const groupKeys = {
   list: (search = '') => ['groups', search] as const,
 }
 
+// The chained option queries in the VM/template modals (Clone, Export, Make
+// Template, Manage Networks) key their DC subcollection read on a data center
+// id that is undefined until the cluster read lands — the query is disabled
+// then, but the key shape ['datacenter', undefined, <slice>] is what those
+// sites register, so the slice builders accept the undefined id verbatim
+// rather than substituting a placeholder.
 export const dataCenterKeys = {
   all: ['datacenters'] as const,
   list: (search = '') => ['datacenters', search] as const,
   detail: (id: string) => ['datacenter', id] as const,
+  storageDomains: (id: string | undefined) => ['datacenter', id, 'storageDomains'] as const,
+  networks: (id: string | undefined) => ['datacenter', id, 'networks'] as const,
+  clusters: (id: string | undefined) => ['datacenter', id, 'clusters'] as const,
+  qoss: (id: string | undefined) => ['datacenter', id, 'qoss'] as const,
+  // The vNIC-profile and CPU-profile modals' QoS pickers read the same
+  // /datacenters/{id}/qoss collection under a SEPARATE flat key — a
+  // pre-builder inconsistency with `qoss` above that the QoS mutations paper
+  // over by invalidating both (useDataCenterQosMutations). Unifying the two
+  // is a cache-contract change for a follow-up; both shapes stay verbatim.
+  qosPicker: (id: string | undefined) => ['datacenter-qoss', id] as const,
+  quotas: (id: string) => ['datacenter', id, 'quotas'] as const,
+  permissions: (id: string) => ['datacenter', id, 'permissions'] as const,
+  iscsiBonds: (id: string) => ['datacenter', id, 'iscsiBonds'] as const,
 }
 
 export const clusterKeys = {
   all: ['clusters'] as const,
   list: (search = '') => ['clusters', search] as const,
-  detail: (id: string) => ['cluster', id] as const,
+  // undefined is accepted for the same chained-modal reason as dataCenterKeys:
+  // Clone/Export/Make Template key on vm.cluster?.id before it is known
+  detail: (id: string | undefined) => ['cluster', id] as const,
   // the cluster's cpuprofiles subcollection — useClusterCpuProfiles
   // (useClusterDetail) and the Edit VM CPU-profile select share this entry
   cpuProfiles: (id: string) => ['cluster', id, 'cpuProfiles'] as const,
+  networks: (id: string) => ['cluster', id, 'networks'] as const,
+  affinityGroups: (id: string) => ['cluster', id, 'affinityGroups'] as const,
+  affinityLabels: (id: string) => ['cluster', id, 'affinityLabels'] as const,
+  permissions: (id: string | undefined) => ['cluster', id, 'permissions'] as const,
+  hosts: (id: string) => ['cluster', id, 'hosts'] as const,
+  // the cluster's VMs are the global /vms narrowed by cluster= — keyed by NAME
+  vms: (name: string) => ['cluster', name, 'vms'] as const,
 }
 
 // Pools, users, data centers, and clusters are near-static inventory; 60s

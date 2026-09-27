@@ -10,7 +10,7 @@ import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table'
 import { useQuery } from '@tanstack/react-query'
 import { listUserGroups } from '../../api/resources/users'
 import { useCapabilities } from '../../auth/capabilities'
-import { useAdminResourcePollInterval } from '../../hooks/useAdminResources'
+import { useAdminResourcePollInterval, userKeys } from '../../hooks/useAdminResources'
 import { useT } from '../../i18n/useT'
 import { DomainLabel, GroupIdentityCell } from './PrincipalIdentity'
 
@@ -28,7 +28,7 @@ export function UserGroupsTab({ userId }: { userId: string }) {
   const refetchInterval = useAdminResourcePollInterval()
 
   const groups = useQuery({
-    queryKey: ['user', userId, 'groups'],
+    queryKey: userKeys.groups(userId),
     queryFn: () => listUserGroups(userId),
     refetchInterval,
     enabled: isAdmin,

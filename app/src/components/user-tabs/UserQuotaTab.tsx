@@ -12,7 +12,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import { listUserQuotas, type UserQuotaGrant } from '../../api/resources/users'
 import { useCapabilities } from '../../auth/capabilities'
-import { useDataCenters } from '../../hooks/useAdminResources'
+import { useDataCenters, userKeys } from '../../hooks/useAdminResources'
 import { useT } from '../../i18n/useT'
 
 // The quotas this user can consume — webadmin's user Quota subtab
@@ -30,7 +30,7 @@ export function UserQuotaTab({ userId }: { userId: string }) {
   const { isAdmin } = useCapabilities()
 
   const grants = useQuery({
-    queryKey: ['user', userId, 'quotas'],
+    queryKey: userKeys.quotas(userId),
     queryFn: () => listUserQuotas(userId),
     // No poll: listUserQuotas fans out one permissions read per quota (on top of
     // listQuotas' per-DC fan-out), and quota grants change rarely — polling this

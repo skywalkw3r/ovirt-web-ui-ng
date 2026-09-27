@@ -30,11 +30,13 @@ import {
 import { useClustersInventory } from '../../hooks/useAdminResources'
 import { sortRows, useColumnSort } from '../../hooks/useColumnSort'
 import { STORAGE_DOMAIN_DETAIL_POLL_INTERVAL_MS } from '../../hooks/useStorageDomainDetail'
-import { useStorageDomains } from '../../hooks/useStorageDomains'
+import { storageDomainKeys, useStorageDomains } from '../../hooks/useStorageDomains'
 import { useNotify } from '../../notifications/context'
 import { useSettings } from '../../settings/SettingsProvider'
 import { useT } from '../../i18n/useT'
 import { formatBytes } from '../../lib/format'
+import { templateKeys } from '../../hooks/useCatalog'
+import { diskKeys } from '../../hooks/useCatalogPages'
 
 // The images subcollection isn't part of the shared useStorageDomainDetail
 // module (owned elsewhere), so its query rides here inline. It reuses the same
@@ -43,7 +45,7 @@ import { formatBytes } from '../../lib/format'
 function useStorageDomainImages(id: string) {
   const { refreshIntervalMs } = useSettings()
   return useQuery({
-    queryKey: ['storagedomain', id, 'images'],
+    queryKey: storageDomainKeys.images(id),
     queryFn: () => listStorageDomainImages(id),
     refetchInterval: Math.max(refreshIntervalMs, STORAGE_DOMAIN_DETAIL_POLL_INTERVAL_MS),
   })
@@ -103,8 +105,8 @@ function ImportImageModal({
     onSettled: () => {
       // the import mints a disk (and, on the template leg, a template) — both
       // catalogs pick the newcomer up on their prefix invalidate
-      void queryClient.invalidateQueries({ queryKey: ['disks'] })
-      void queryClient.invalidateQueries({ queryKey: ['templates'] })
+      void queryClient.invalidateQueries({ queryKey: diskKeys.all })
+      void queryClient.invalidateQueries({ queryKey: templateKeys.all })
     },
   })
 

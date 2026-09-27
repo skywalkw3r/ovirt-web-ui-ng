@@ -41,6 +41,8 @@ import { useT } from '../../i18n/useT'
 import { useNotify } from '../../notifications/context'
 import { useSettings } from '../../settings/SettingsProvider'
 import { ConfirmModal } from '../ConfirmModal'
+import { dataCenterKeys } from '../../hooks/useAdminResources'
+import { storageConnectionKeys } from '../../hooks/useStorageDomains'
 
 const DASH = '—'
 
@@ -70,7 +72,7 @@ export function IscsiMultipathTab({ dataCenterId }: { dataCenterId: string }) {
   const queryClient = useQueryClient()
 
   const bonds = useQuery({
-    queryKey: ['datacenter', dataCenterId, 'iscsiBonds'],
+    queryKey: dataCenterKeys.iscsiBonds(dataCenterId),
     queryFn: () => listIscsiBonds(dataCenterId),
     refetchInterval: Math.max(refreshIntervalMs, DATA_CENTER_DETAIL_POLL_INTERVAL_MS),
   })
@@ -91,7 +93,7 @@ export function IscsiMultipathTab({ dataCenterId }: { dataCenterId: string }) {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['datacenter', dataCenterId, 'iscsiBonds'] })
+      void queryClient.invalidateQueries({ queryKey: dataCenterKeys.iscsiBonds(dataCenterId) })
     },
   })
 
@@ -276,7 +278,7 @@ function IscsiBondModal({
   const queryClient = useQueryClient()
   const networks = useDataCenterNetworks(dataCenterId)
   const connections = useQuery({
-    queryKey: ['storageConnections', 'iscsi'],
+    queryKey: storageConnectionKeys.iscsi,
     queryFn: () => listIscsiStorageConnections(),
     // The pick-lists only power create; edit never touches memberships.
     enabled: !isEdit,
@@ -288,7 +290,7 @@ function IscsiBondModal({
   const [connectionIds, setConnectionIds] = useState<string[]>([])
 
   const invalidateBonds = () => {
-    void queryClient.invalidateQueries({ queryKey: ['datacenter', dataCenterId, 'iscsiBonds'] })
+    void queryClient.invalidateQueries({ queryKey: dataCenterKeys.iscsiBonds(dataCenterId) })
   }
 
   const create = useMutation({

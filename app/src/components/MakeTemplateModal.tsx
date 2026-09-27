@@ -31,6 +31,7 @@ import { useVmDisks } from '../hooks/useVmStorage'
 import { useT } from '../i18n/useT'
 import { formatBytes } from '../lib/format'
 import { FieldHelp } from './forms/FieldHelp'
+import { clusterKeys, dataCenterKeys } from '../hooks/useAdminResources'
 
 // Marker class the click shield below uses to recognize its own modal.
 const MODAL_CLASS = 'make-template-modal'
@@ -166,24 +167,24 @@ function MakeTemplateModal({ vm, onClose }: { vm: Vm; onClose: () => void }) {
   // fewer options, so no blocking spinner is needed (CloneVmModal precedent).
   // The disk table gets the full four states below.
   const vmCluster = useQuery({
-    queryKey: ['cluster', vm.cluster?.id],
+    queryKey: clusterKeys.detail(vm.cluster?.id),
     queryFn: () => getCluster(vm.cluster?.id ?? ''),
     enabled: vm.cluster?.id !== undefined,
   })
   const dataCenterId = vmCluster.data?.data_center?.id
   const vmArchitecture = vmCluster.data?.cpu?.architecture
   const clusters = useQuery({
-    queryKey: ['datacenter', dataCenterId, 'clusters'],
+    queryKey: dataCenterKeys.clusters(dataCenterId),
     queryFn: () => listDataCenterClusters(dataCenterId ?? ''),
     enabled: dataCenterId !== undefined,
   })
   const cpuProfiles = useQuery({
-    queryKey: ['cluster', clusterId, 'cpuProfiles'],
+    queryKey: clusterKeys.cpuProfiles(clusterId),
     queryFn: () => listClusterCpuProfiles(clusterId),
     enabled: clusterId !== '',
   })
   const storageDomains = useQuery({
-    queryKey: ['datacenter', dataCenterId, 'storageDomains'],
+    queryKey: dataCenterKeys.storageDomains(dataCenterId),
     queryFn: () => listDataCenterStorageDomains(dataCenterId ?? ''),
     enabled: dataCenterId !== undefined,
   })

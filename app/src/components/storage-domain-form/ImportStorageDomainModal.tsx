@@ -26,6 +26,8 @@ import { useT } from '../../i18n/useT'
 import { useNotify } from '../../notifications/context'
 import { FieldHelp } from '../forms/FieldHelp'
 import { SanStorageSection } from './SanStorageSection'
+import { hostKeys } from '../../hooks/useHosts'
+import { storageDomainKeys } from '../../hooks/useStorageDomains'
 
 // The Import-an-existing-domain flow (parity: Import Domain / unmanaged domains).
 // A storage target that already carries a domain (an NFS export, a POSIX mount,
@@ -143,7 +145,7 @@ export function ImportStorageDomainModal({
   }
 
   const hosts = useQuery({
-    queryKey: ['hosts'],
+    queryKey: hostKeys.all,
     queryFn: () => listHosts(),
     enabled: isOpen,
   })
@@ -166,7 +168,7 @@ export function ImportStorageDomainModal({
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['storagedomains'] })
+      void queryClient.invalidateQueries({ queryKey: storageDomainKeys.all })
     },
   })
 

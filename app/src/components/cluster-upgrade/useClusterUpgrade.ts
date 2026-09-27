@@ -9,6 +9,8 @@ import {
   type HostUpgradeState,
   type RunClusterUpgradeResult,
 } from './runClusterUpgrade'
+import { clusterKeys } from '../../hooks/useAdminResources'
+import { hostKeys } from '../../hooks/useHosts'
 
 export interface ClusterUpgradeHostState extends ClusterUpgradeHost {
   state: HostUpgradeState
@@ -60,10 +62,10 @@ export function useClusterUpgrade(clusterId: string, clusterName: string) {
   }, [])
 
   const invalidate = useCallback(() => {
-    void queryClient.invalidateQueries({ queryKey: ['hosts'] })
-    void queryClient.invalidateQueries({ queryKey: ['cluster', clusterId, 'hosts'] })
-    void queryClient.invalidateQueries({ queryKey: ['cluster', clusterId] })
-    void queryClient.invalidateQueries({ queryKey: ['clusters'] })
+    void queryClient.invalidateQueries({ queryKey: hostKeys.all })
+    void queryClient.invalidateQueries({ queryKey: clusterKeys.hosts(clusterId) })
+    void queryClient.invalidateQueries({ queryKey: clusterKeys.detail(clusterId) })
+    void queryClient.invalidateQueries({ queryKey: clusterKeys.all })
   }, [queryClient, clusterId])
 
   const start = useCallback(

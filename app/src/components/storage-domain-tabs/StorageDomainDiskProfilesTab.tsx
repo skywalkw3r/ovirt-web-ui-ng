@@ -43,6 +43,8 @@ import { useSettings } from '../../settings/SettingsProvider'
 import { ConfirmModal } from '../ConfirmModal'
 import { FieldHelp } from '../forms/FieldHelp'
 import { attachedDataCenterId } from '../storage-domain-form/lifecycle'
+import { dataCenterKeys } from '../../hooks/useAdminResources'
+import { storageDomainKeys } from '../../hooks/useStorageDomains'
 
 const DASH = '—'
 
@@ -54,7 +56,7 @@ const DASH = '—'
 function useStorageDomainDiskProfiles(id: string) {
   const { refreshIntervalMs } = useSettings()
   return useQuery({
-    queryKey: ['storagedomain', id, 'diskprofiles'],
+    queryKey: storageDomainKeys.diskProfiles(id),
     queryFn: () => listStorageDomainDiskProfiles(id),
     refetchInterval: Math.max(refreshIntervalMs, STORAGE_DOMAIN_DETAIL_POLL_INTERVAL_MS),
   })
@@ -68,7 +70,7 @@ function useStorageDomainDiskProfiles(id: string) {
 function useStorageQoss(dataCenterId: string | undefined) {
   const { refreshIntervalMs } = useSettings()
   return useQuery({
-    queryKey: ['datacenter', dataCenterId, 'qoss'],
+    queryKey: dataCenterKeys.qoss(dataCenterId),
     queryFn: () => listDataCenterQoss(dataCenterId ?? ''),
     enabled: dataCenterId !== undefined,
     refetchInterval: Math.max(refreshIntervalMs, STORAGE_DOMAIN_DETAIL_POLL_INTERVAL_MS),
@@ -109,7 +111,7 @@ function DiskProfileFormModal({
 
   const invalidate = () => {
     void queryClient.invalidateQueries({
-      queryKey: ['storagedomain', storageDomainId, 'diskprofiles'],
+      queryKey: storageDomainKeys.diskProfiles(storageDomainId),
     })
   }
 
@@ -306,7 +308,7 @@ export function StorageDomainDiskProfilesTab({ domain }: { domain: StorageDomain
     },
     onSettled: () => {
       void queryClient.invalidateQueries({
-        queryKey: ['storagedomain', domain.id, 'diskprofiles'],
+        queryKey: storageDomainKeys.diskProfiles(domain.id),
       })
     },
   })

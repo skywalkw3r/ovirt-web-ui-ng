@@ -5,6 +5,7 @@ import {
   updateDataCenterQos,
 } from '../api/resources/datacenters'
 import { useNotify } from '../notifications/context'
+import { dataCenterKeys } from './useAdminResources'
 
 // Every QoS mutation invalidates the two keys the QoS lists hang off so newly
 // authored/edited/removed profiles appear immediately in both the DC QoS tab
@@ -12,8 +13,8 @@ import { useNotify } from '../notifications/context'
 //   ['datacenter', dcId, 'qoss']  — useDataCenterQoss + the network form picker
 //   ['datacenter-qoss', dcId]     — the vNIC profile modal's QoS picker
 function invalidateQosQueries(queryClient: ReturnType<typeof useQueryClient>, dcId: string) {
-  void queryClient.invalidateQueries({ queryKey: ['datacenter', dcId, 'qoss'] })
-  void queryClient.invalidateQueries({ queryKey: ['datacenter-qoss', dcId] })
+  void queryClient.invalidateQueries({ queryKey: dataCenterKeys.qoss(dcId) })
+  void queryClient.invalidateQueries({ queryKey: dataCenterKeys.qosPicker(dcId) })
 }
 
 // The New QoS modal's save mutation. Mirrors useCreateVnicProfile: notify on

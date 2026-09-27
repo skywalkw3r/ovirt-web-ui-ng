@@ -21,6 +21,7 @@ import { useDeleteVnicProfile } from '../../hooks/useVnicProfileMutations'
 import { useT } from '../../i18n/useT'
 import { ConfirmModal } from '../ConfirmModal'
 import { VnicProfileFormModal } from '../vnic-profile-form/VnicProfileFormModal'
+import { networkKeys } from '../../hooks/useNetworks'
 
 // pass_through.mode is 'enabled' | 'disabled'; the engine omits the block on
 // profiles that predate SR-IOV support, and the default is disabled either way.
@@ -65,7 +66,7 @@ export function NetworkVnicProfilesTab({ networkId }: { networkId: string }) {
   // list; this tab reads the network-scoped ['network', id, 'vnicProfiles'] key,
   // so refresh it explicitly whenever a mutation lands.
   const invalidateProfiles = () =>
-    void queryClient.invalidateQueries({ queryKey: ['network', networkId, 'vnicProfiles'] })
+    void queryClient.invalidateQueries({ queryKey: networkKeys.vnicProfiles(networkId) })
 
   const canManage = loaded && isAdmin
 

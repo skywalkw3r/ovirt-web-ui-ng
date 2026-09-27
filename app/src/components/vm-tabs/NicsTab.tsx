@@ -54,6 +54,7 @@ import type { MessageId } from '../../i18n/messages/en'
 import { ColumnPicker } from '../list-toolbar/ColumnPicker'
 import { ResizableTh, resizableTableProps } from '../list-toolbar/ResizableTh'
 import { ConfirmModal } from '../ConfirmModal'
+import { vmKeys } from '../../hooks/useVms'
 
 // The card models the modal offers — the common NicInterface enum values
 // (verified against ovirt-engine-api-model types/NicInterface: virtio, e1000e,
@@ -116,7 +117,7 @@ function NicRateCell({
   const t = useT()
   const { refreshIntervalMs } = useSettings()
   const stats = useQuery({
-    queryKey: ['vm', vmId, 'nics', nicId, 'statistics'],
+    queryKey: vmKeys.nicStatistics(vmId, nicId),
     queryFn: () => listVmNicStatistics(vmId, nicId),
     refetchInterval: Math.max(refreshIntervalMs, NIC_STATS_MIN_INTERVAL_MS),
   })
@@ -268,7 +269,7 @@ export function NicsTab({ vmId }: { vmId: string }) {
   // show; results ride in the queries array's order.
   const nicStats = useQueries({
     queries: (nics.data ?? []).map((nic) => ({
-      queryKey: ['vm', vmId, 'nics', nic.id, 'statistics'],
+      queryKey: vmKeys.nicStatistics(vmId, nic.id),
       queryFn: () => listVmNicStatistics(vmId, nic.id),
       refetchInterval: Math.max(refreshIntervalMs, NIC_STATS_MIN_INTERVAL_MS),
     })),

@@ -9,6 +9,7 @@ import {
   listDataCenterStorageDomains,
 } from '../api/resources/datacenters'
 import { useSettings } from '../settings/SettingsProvider'
+import { dataCenterKeys } from './useAdminResources'
 
 // Data center subcollections drift slowly and only load while the detail page
 // is mounted; 60s matches the other admin/parity collections. The constant is a
@@ -24,7 +25,7 @@ export const DATA_CENTER_DETAIL_POLL_INTERVAL_MS = 60_000
 export function useDataCenter(id: string) {
   const { refreshIntervalMs } = useSettings()
   return useQuery({
-    queryKey: ['datacenter', id],
+    queryKey: dataCenterKeys.detail(id),
     queryFn: () => getDataCenter(id),
     refetchInterval: Math.max(refreshIntervalMs, DATA_CENTER_DETAIL_POLL_INTERVAL_MS),
   })
@@ -33,7 +34,7 @@ export function useDataCenter(id: string) {
 export function useDataCenterStorageDomains(id: string) {
   const { refreshIntervalMs } = useSettings()
   return useQuery({
-    queryKey: ['datacenter', id, 'storageDomains'],
+    queryKey: dataCenterKeys.storageDomains(id),
     queryFn: () => listDataCenterStorageDomains(id),
     refetchInterval: Math.max(refreshIntervalMs, DATA_CENTER_DETAIL_POLL_INTERVAL_MS),
   })
@@ -42,7 +43,7 @@ export function useDataCenterStorageDomains(id: string) {
 export function useDataCenterNetworks(id: string) {
   const { refreshIntervalMs } = useSettings()
   return useQuery({
-    queryKey: ['datacenter', id, 'networks'],
+    queryKey: dataCenterKeys.networks(id),
     queryFn: () => listDataCenterNetworks(id),
     refetchInterval: Math.max(refreshIntervalMs, DATA_CENTER_DETAIL_POLL_INTERVAL_MS),
   })
@@ -51,7 +52,7 @@ export function useDataCenterNetworks(id: string) {
 export function useDataCenterClusters(id: string) {
   const { refreshIntervalMs } = useSettings()
   return useQuery({
-    queryKey: ['datacenter', id, 'clusters'],
+    queryKey: dataCenterKeys.clusters(id),
     queryFn: () => listDataCenterClusters(id),
     refetchInterval: Math.max(refreshIntervalMs, DATA_CENTER_DETAIL_POLL_INTERVAL_MS),
   })
@@ -60,7 +61,7 @@ export function useDataCenterClusters(id: string) {
 export function useDataCenterQoss(id: string) {
   const { refreshIntervalMs } = useSettings()
   return useQuery({
-    queryKey: ['datacenter', id, 'qoss'],
+    queryKey: dataCenterKeys.qoss(id),
     queryFn: () => listDataCenterQoss(id),
     refetchInterval: Math.max(refreshIntervalMs, DATA_CENTER_DETAIL_POLL_INTERVAL_MS),
   })
@@ -69,7 +70,7 @@ export function useDataCenterQoss(id: string) {
 export function useDataCenterQuotas(id: string) {
   const { refreshIntervalMs } = useSettings()
   return useQuery({
-    queryKey: ['datacenter', id, 'quotas'],
+    queryKey: dataCenterKeys.quotas(id),
     queryFn: () => listDataCenterQuotas(id),
     refetchInterval: Math.max(refreshIntervalMs, DATA_CENTER_DETAIL_POLL_INTERVAL_MS),
   })
@@ -78,7 +79,7 @@ export function useDataCenterQuotas(id: string) {
 export function useDataCenterPermissions(id: string) {
   const { refreshIntervalMs } = useSettings()
   return useQuery({
-    queryKey: ['datacenter', id, 'permissions'],
+    queryKey: dataCenterKeys.permissions(id),
     queryFn: () => listDataCenterPermissions(id),
     refetchInterval: Math.max(refreshIntervalMs, DATA_CENTER_DETAIL_POLL_INTERVAL_MS),
   })

@@ -16,6 +16,7 @@ import { useT } from '../../i18n/useT'
 import { formatBytes, statusText } from '../../lib/format'
 import { useSettings } from '../../settings/SettingsProvider'
 import { StatusBadge } from '../StatusBadge'
+import { storageDomainKeys } from '../../hooks/useStorageDomains'
 
 const DASH = '—'
 
@@ -26,7 +27,7 @@ const DASH = '—'
 function useStorageDomainDiskSnapshots(id: string) {
   const { refreshIntervalMs } = useSettings()
   return useQuery({
-    queryKey: ['storagedomain', id, 'disksnapshots'],
+    queryKey: storageDomainKeys.diskSnapshots(id),
     queryFn: () => listStorageDomainDiskSnapshots(id),
     refetchInterval: Math.max(refreshIntervalMs, STORAGE_DOMAIN_DETAIL_POLL_INTERVAL_MS),
   })

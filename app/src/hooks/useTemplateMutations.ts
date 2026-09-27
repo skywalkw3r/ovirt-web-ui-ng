@@ -13,6 +13,8 @@ import type { NewNicSpec, NicPatch } from '../api/resources/nics'
 import type { Nic } from '../api/schemas/nic'
 import type { Template } from '../api/schemas/template'
 import { useNotify } from '../notifications/context'
+import { templateKeys } from './useCatalog'
+import { jobKeys } from './useJobs'
 
 // The Create Template (VM "Make Template") modal's save mutation. POST
 // /templates snapshots the down source VM's disks into a new template, so the
@@ -47,7 +49,7 @@ export function useCreateTemplate() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['templates'] })
+      void queryClient.invalidateQueries({ queryKey: templateKeys.all })
     },
   })
 }
@@ -72,8 +74,8 @@ export function useUpdateTemplate() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: (_data, _error, { id }) => {
-      void queryClient.invalidateQueries({ queryKey: ['template', id] })
-      void queryClient.invalidateQueries({ queryKey: ['templates'] })
+      void queryClient.invalidateQueries({ queryKey: templateKeys.detail(id) })
+      void queryClient.invalidateQueries({ queryKey: templateKeys.all })
     },
   })
 }
@@ -97,7 +99,7 @@ export function useDeleteTemplate() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['templates'] })
+      void queryClient.invalidateQueries({ queryKey: templateKeys.all })
     },
   })
 }
@@ -128,8 +130,8 @@ export function useExportTemplateOva() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['jobs'] })
-      void queryClient.invalidateQueries({ queryKey: ['templates'] })
+      void queryClient.invalidateQueries({ queryKey: jobKeys.all })
+      void queryClient.invalidateQueries({ queryKey: templateKeys.all })
     },
   })
 }
@@ -159,8 +161,8 @@ export function useExportTemplateToDomain() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['jobs'] })
-      void queryClient.invalidateQueries({ queryKey: ['templates'] })
+      void queryClient.invalidateQueries({ queryKey: jobKeys.all })
+      void queryClient.invalidateQueries({ queryKey: templateKeys.all })
     },
   })
 }
@@ -186,7 +188,7 @@ export function useAddTemplateNic(templateId: string) {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['template', templateId, 'nics'] })
+      void queryClient.invalidateQueries({ queryKey: templateKeys.nics(templateId) })
     },
   })
 }
@@ -205,7 +207,7 @@ export function useUpdateTemplateNic(templateId: string) {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['template', templateId, 'nics'] })
+      void queryClient.invalidateQueries({ queryKey: templateKeys.nics(templateId) })
     },
   })
 }
@@ -223,7 +225,7 @@ export function useRemoveTemplateNic(templateId: string) {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['template', templateId, 'nics'] })
+      void queryClient.invalidateQueries({ queryKey: templateKeys.nics(templateId) })
     },
   })
 }

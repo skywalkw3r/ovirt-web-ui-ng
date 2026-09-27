@@ -12,6 +12,7 @@ import {
 } from '../api/resources/hosts'
 import { listVms } from '../api/resources/vms'
 import { useSettings } from '../settings/SettingsProvider'
+import { hostKeys } from './useHosts'
 
 // Host subcollections drift slowly and only load while the detail page is
 // mounted; 60s matches the other admin/parity collections. The constant is a
@@ -26,7 +27,7 @@ export const HOST_DETAIL_POLL_INTERVAL_MS = 60_000
 export function useHostNics(id: string) {
   const { refreshIntervalMs } = useSettings()
   return useQuery({
-    queryKey: ['host', id, 'nics'],
+    queryKey: hostKeys.nics(id),
     queryFn: () => listHostNics(id),
     refetchInterval: Math.max(refreshIntervalMs, HOST_DETAIL_POLL_INTERVAL_MS),
   })
@@ -38,7 +39,7 @@ export function useHostNics(id: string) {
 export function useHostNetworkAttachments(id: string) {
   const { refreshIntervalMs } = useSettings()
   return useQuery({
-    queryKey: ['host', id, 'networkAttachments'],
+    queryKey: hostKeys.networkAttachments(id),
     queryFn: () => listHostNetworkAttachments(id),
     refetchInterval: Math.max(refreshIntervalMs, HOST_DETAIL_POLL_INTERVAL_MS),
   })
@@ -47,7 +48,7 @@ export function useHostNetworkAttachments(id: string) {
 export function useHostDevices(id: string) {
   const { refreshIntervalMs } = useSettings()
   return useQuery({
-    queryKey: ['host', id, 'devices'],
+    queryKey: hostKeys.devices(id),
     queryFn: () => listHostDevices(id),
     refetchInterval: Math.max(refreshIntervalMs, HOST_DETAIL_POLL_INTERVAL_MS),
   })
@@ -56,7 +57,7 @@ export function useHostDevices(id: string) {
 export function useHostHooks(id: string) {
   const { refreshIntervalMs } = useSettings()
   return useQuery({
-    queryKey: ['host', id, 'hooks'],
+    queryKey: hostKeys.hooks(id),
     queryFn: () => listHostHooks(id),
     refetchInterval: Math.max(refreshIntervalMs, HOST_DETAIL_POLL_INTERVAL_MS),
   })
@@ -65,7 +66,7 @@ export function useHostHooks(id: string) {
 export function useHostPermissions(id: string) {
   const { refreshIntervalMs } = useSettings()
   return useQuery({
-    queryKey: ['host', id, 'permissions'],
+    queryKey: hostKeys.permissions(id),
     queryFn: () => listHostPermissions(id),
     refetchInterval: Math.max(refreshIntervalMs, HOST_DETAIL_POLL_INTERVAL_MS),
   })
@@ -74,7 +75,7 @@ export function useHostPermissions(id: string) {
 export function useHostAffinityLabels(id: string) {
   const { refreshIntervalMs } = useSettings()
   return useQuery({
-    queryKey: ['host', id, 'affinityLabels'],
+    queryKey: hostKeys.affinityLabels(id),
     queryFn: () => listHostAffinityLabels(id),
     refetchInterval: Math.max(refreshIntervalMs, HOST_DETAIL_POLL_INTERVAL_MS),
   })
@@ -83,7 +84,7 @@ export function useHostAffinityLabels(id: string) {
 export function useHostErrata(id: string) {
   const { refreshIntervalMs } = useSettings()
   return useQuery({
-    queryKey: ['host', id, 'errata'],
+    queryKey: hostKeys.errata(id),
     queryFn: () => listHostErrata(id),
     refetchInterval: Math.max(refreshIntervalMs, HOST_DETAIL_POLL_INTERVAL_MS),
   })
@@ -99,7 +100,7 @@ export function useHostErrata(id: string) {
 export function useHostFenceAgents(id: string, enabled = true) {
   const { refreshIntervalMs } = useSettings()
   return useQuery({
-    queryKey: ['host', id, 'fenceAgents'],
+    queryKey: hostKeys.fenceAgents(id),
     queryFn: () => listHostFenceAgents(id),
     enabled: enabled && id !== '',
     refetchInterval: Math.max(refreshIntervalMs, HOST_DETAIL_POLL_INTERVAL_MS),
@@ -114,7 +115,7 @@ export function useHostFenceAgents(id: string, enabled = true) {
 export function useHostVms(hostName: string) {
   const { refreshIntervalMs } = useSettings()
   return useQuery({
-    queryKey: ['host', hostName, 'vms'],
+    queryKey: hostKeys.vms(hostName),
     queryFn: () => listVms({ search: `host.name=${hostName}` }),
     refetchInterval: refreshIntervalMs,
   })
@@ -123,7 +124,7 @@ export function useHostVms(hostName: string) {
 export function useHostEvents(hostName: string) {
   const { refreshIntervalMs } = useSettings()
   return useQuery({
-    queryKey: ['host', hostName, 'events'],
+    queryKey: hostKeys.events(hostName),
     queryFn: () => listEvents({ search: `host.name=${hostName}` }),
     refetchInterval: refreshIntervalMs,
   })

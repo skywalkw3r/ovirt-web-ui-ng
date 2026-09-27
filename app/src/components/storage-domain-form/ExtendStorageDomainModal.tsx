@@ -23,6 +23,8 @@ import { useNotify } from '../../notifications/context'
 import { useT } from '../../i18n/useT'
 import { ConfirmModal } from '../ConfirmModal'
 import { SanStorageSection, type LunVgDataLoss } from './SanStorageSection'
+import { hostKeys } from '../../hooks/useHosts'
+import { storageDomainKeys } from '../../hooks/useStorageDomains'
 
 // Extend a block (iSCSI/FCP) domain with newly selected LUNs — webadmin's
 // "Manage Domain" LUN grid, carved out as its own dialog so the metadata Edit
@@ -62,7 +64,7 @@ export function ExtendStorageDomainModal({
     'iscsi' | 'fcp'
 
   const hosts = useQuery({
-    queryKey: ['hosts'],
+    queryKey: hostKeys.all,
     queryFn: () => listHosts(),
     enabled: isOpen,
   })
@@ -81,8 +83,8 @@ export function ExtendStorageDomainModal({
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['storagedomains'] })
-      void queryClient.invalidateQueries({ queryKey: ['storagedomain', domain.id] })
+      void queryClient.invalidateQueries({ queryKey: storageDomainKeys.all })
+      void queryClient.invalidateQueries({ queryKey: storageDomainKeys.detail(domain.id) })
     },
   })
   const pending = extend.isPending

@@ -37,6 +37,7 @@ import { useT } from '../../i18n/useT'
 import { useNotify } from '../../notifications/context'
 import { ConfirmModal } from '../ConfirmModal'
 import { SearchInput } from '../list-toolbar/SearchInput'
+import { quotaKeys } from '../../hooks/useParityResources'
 
 // 'name' carries the first name in the oVirt user model; the principal lives
 // in user_name — prefer it (the AddPermissionModal convention).
@@ -102,7 +103,7 @@ export function QuotaUsersTab({
   // (the permissions path is DC-scoped); the disabled query stays isPending,
   // which the skeleton branch covers.
   const consumers = useQuery({
-    queryKey: ['quota', quotaId, 'permissions'],
+    queryKey: quotaKeys.permissions(quotaId),
     // the enabled gate guarantees dataCenterId here
     queryFn: () => listQuotaPermissions(dataCenterId as string, quotaId),
     select: quotaConsumers,
@@ -141,7 +142,7 @@ export function QuotaUsersTab({
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['quota', quotaId, 'permissions'] })
+      void queryClient.invalidateQueries({ queryKey: quotaKeys.permissions(quotaId) })
     },
   })
 
@@ -155,7 +156,7 @@ export function QuotaUsersTab({
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['quota', quotaId, 'permissions'] })
+      void queryClient.invalidateQueries({ queryKey: quotaKeys.permissions(quotaId) })
     },
   })
 

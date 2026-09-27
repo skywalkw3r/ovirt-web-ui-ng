@@ -5,13 +5,22 @@ import { useNotify } from '../notifications/context'
 import { useSettings } from '../settings/SettingsProvider'
 import { useT } from '../i18n/useT'
 
+// Query-key builders for the engine job (task) collection. `all` is the list
+// entry useJobs registers AND the prefix every job-spawning mutation (export,
+// import, template import, end-job) invalidates; a job's steps nest under it
+// so that same invalidation refreshes an expanded row.
+export const jobKeys = {
+  all: ['jobs'] as const,
+  steps: (jobId: string) => ['jobs', jobId, 'steps'] as const,
+}
+
 // Same cadence as the VM lists (10s default, user-tunable in Preferences) —
 // running tasks are exactly the thing users sit and watch. An unchanged
 // refetch does not re-render consumers.
 export function useJobs() {
   const { refreshIntervalMs } = useSettings()
   return useQuery({
-    queryKey: ['jobs'],
+    queryKey: jobKeys.all,
     queryFn: () => listJobs(),
     refetchInterval: refreshIntervalMs,
   })
@@ -24,7 +33,7 @@ export function useJobs() {
 export function useJobSteps(jobId: string, enabled: boolean) {
   const { refreshIntervalMs } = useSettings()
   return useQuery({
-    queryKey: ['jobs', jobId, 'steps'],
+    queryKey: jobKeys.steps(jobId),
     queryFn: () => listJobSteps(jobId),
     enabled,
     refetchInterval: refreshIntervalMs,
@@ -49,7 +58,7 @@ export function useEndJob() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['jobs'] })
+      void queryClient.invalidateQueries({ queryKey: jobKeys.all })
     },
   })
 }

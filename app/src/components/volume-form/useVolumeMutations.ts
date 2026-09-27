@@ -22,22 +22,12 @@ import {
 import { useCapabilities } from '../../auth/capabilities'
 import { useNotify } from '../../notifications/context'
 import { useAdminResourcePollInterval } from '../../hooks/useAdminResources'
+import { glusterVolumeKeys } from '../../hooks/useParityResources'
 
-// The flat gluster-volumes list (useGlusterVolumes in useParityResources) caches
-// under this key; every write invalidates it so the list reflects the change.
-const VOLUMES_KEY = ['glustervolumes']
-
-// Bricks live under a per-volume key so a volume's bricks modal caches (and the
-// add-bricks write invalidates) independently of the flat list.
-function bricksKey(clusterId: string, volumeId: string) {
-  return ['glusterbricks', clusterId, volumeId]
-}
-
-// A volume's tunable options cache under their own per-volume key so the Manage
-// Options modal caches (and set/reset writes invalidate) independently.
-function optionsKey(clusterId: string, volumeId: string) {
-  return ['glustervolumeoptions', clusterId, volumeId]
-}
+// Cache keys (glusterVolumeKeys, useParityResources): every write invalidates
+// the flat list useGlusterVolumes registers; bricks and tunable options live
+// under per-volume keys so a volume's modals cache (and the brick/option writes
+// invalidate) independently of the flat list.
 
 // The bricks a volume is built from (the Bricks modal). Admin-only server-side,
 // like the rest of the gluster surface; gating on isAdmin alone is safe (it stays
@@ -47,7 +37,7 @@ export function useGlusterBricks(clusterId: string, volumeId: string, enabled: b
   const { isAdmin } = useCapabilities()
   const refetchInterval = useAdminResourcePollInterval()
   return useQuery({
-    queryKey: bricksKey(clusterId, volumeId),
+    queryKey: glusterVolumeKeys.bricks(clusterId, volumeId),
     queryFn: () => listGlusterBricks(clusterId, volumeId),
     refetchInterval,
     enabled: isAdmin && enabled,
@@ -71,7 +61,7 @@ export function useCreateVolume() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: VOLUMES_KEY })
+      void queryClient.invalidateQueries({ queryKey: glusterVolumeKeys.all })
     },
   })
 }
@@ -103,8 +93,10 @@ export function useAddBricks() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: (_data, _error, { clusterId, volumeId }) => {
-      void queryClient.invalidateQueries({ queryKey: bricksKey(clusterId, volumeId) })
-      void queryClient.invalidateQueries({ queryKey: VOLUMES_KEY })
+      void queryClient.invalidateQueries({
+        queryKey: glusterVolumeKeys.bricks(clusterId, volumeId),
+      })
+      void queryClient.invalidateQueries({ queryKey: glusterVolumeKeys.all })
     },
   })
 }
@@ -132,7 +124,7 @@ export function useStartVolume() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: VOLUMES_KEY })
+      void queryClient.invalidateQueries({ queryKey: glusterVolumeKeys.all })
     },
   })
 }
@@ -160,7 +152,7 @@ export function useStopVolume() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: VOLUMES_KEY })
+      void queryClient.invalidateQueries({ queryKey: glusterVolumeKeys.all })
     },
   })
 }
@@ -190,7 +182,7 @@ export function useRebalanceVolume() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: VOLUMES_KEY })
+      void queryClient.invalidateQueries({ queryKey: glusterVolumeKeys.all })
     },
   })
 }
@@ -227,8 +219,10 @@ export function useRemoveBricks() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: (_data, _error, { clusterId, volumeId }) => {
-      void queryClient.invalidateQueries({ queryKey: bricksKey(clusterId, volumeId) })
-      void queryClient.invalidateQueries({ queryKey: VOLUMES_KEY })
+      void queryClient.invalidateQueries({
+        queryKey: glusterVolumeKeys.bricks(clusterId, volumeId),
+      })
+      void queryClient.invalidateQueries({ queryKey: glusterVolumeKeys.all })
     },
   })
 }
@@ -261,8 +255,10 @@ export function useMigrateBricks() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: (_data, _error, { clusterId, volumeId }) => {
-      void queryClient.invalidateQueries({ queryKey: bricksKey(clusterId, volumeId) })
-      void queryClient.invalidateQueries({ queryKey: VOLUMES_KEY })
+      void queryClient.invalidateQueries({
+        queryKey: glusterVolumeKeys.bricks(clusterId, volumeId),
+      })
+      void queryClient.invalidateQueries({ queryKey: glusterVolumeKeys.all })
     },
   })
 }
@@ -289,7 +285,9 @@ export function useStopMigrateBricks() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: (_data, _error, { clusterId, volumeId }) => {
-      void queryClient.invalidateQueries({ queryKey: bricksKey(clusterId, volumeId) })
+      void queryClient.invalidateQueries({
+        queryKey: glusterVolumeKeys.bricks(clusterId, volumeId),
+      })
     },
   })
 }
@@ -303,7 +301,7 @@ export function useVolumeOptions(clusterId: string, volumeId: string, enabled: b
   const { isAdmin } = useCapabilities()
   const refetchInterval = useAdminResourcePollInterval()
   return useQuery({
-    queryKey: optionsKey(clusterId, volumeId),
+    queryKey: glusterVolumeKeys.options(clusterId, volumeId),
     queryFn: () => listGlusterVolumeOptions(clusterId, volumeId),
     refetchInterval,
     enabled: isAdmin && enabled,
@@ -334,7 +332,9 @@ export function useSetVolumeOption() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: (_data, _error, { clusterId, volumeId }) => {
-      void queryClient.invalidateQueries({ queryKey: optionsKey(clusterId, volumeId) })
+      void queryClient.invalidateQueries({
+        queryKey: glusterVolumeKeys.options(clusterId, volumeId),
+      })
     },
   })
 }
@@ -360,7 +360,9 @@ export function useResetVolumeOption() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: (_data, _error, { clusterId, volumeId }) => {
-      void queryClient.invalidateQueries({ queryKey: optionsKey(clusterId, volumeId) })
+      void queryClient.invalidateQueries({
+        queryKey: glusterVolumeKeys.options(clusterId, volumeId),
+      })
     },
   })
 }
@@ -388,7 +390,9 @@ export function useResetAllVolumeOptions() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: (_data, _error, { clusterId, volumeId }) => {
-      void queryClient.invalidateQueries({ queryKey: optionsKey(clusterId, volumeId) })
+      void queryClient.invalidateQueries({
+        queryKey: glusterVolumeKeys.options(clusterId, volumeId),
+      })
     },
   })
 }
@@ -458,7 +462,7 @@ export function useDeleteVolume() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: VOLUMES_KEY })
+      void queryClient.invalidateQueries({ queryKey: glusterVolumeKeys.all })
     },
   })
 }

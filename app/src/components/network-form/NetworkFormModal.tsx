@@ -46,6 +46,8 @@ import {
   type ClusterAttachChoice,
   type NetworkDraft,
 } from './networkDraft'
+import { dataCenterKeys } from '../../hooks/useAdminResources'
+import { providerKeys } from '../../hooks/useParityResources'
 
 // The Create/Edit logical network modal. Owns a single flat draft — seeded from
 // the network's read model in edit mode, blank defaults in create mode. Save
@@ -110,7 +112,7 @@ export function NetworkFormModal({
   // Data center options for create mode — a network's DC is chosen once at
   // creation and fixed thereafter, so this only powers the create select.
   const dataCenters = useQuery({
-    queryKey: ['datacenters'],
+    queryKey: dataCenterKeys.all,
     queryFn: () => listDataCenters(),
     enabled: isOpen && !isEdit,
   })
@@ -122,12 +124,12 @@ export function NetworkFormModal({
   // result into clusterChoices (rather than deriving each render) keeps the
   // Attach/Required ticks the user makes; a DC change re-seeds them.
   const clusters = useQuery({
-    queryKey: ['datacenter', draft.dataCenterId, 'clusters'],
+    queryKey: dataCenterKeys.clusters(draft.dataCenterId),
     queryFn: () => listDataCenterClusters(draft.dataCenterId),
     enabled: isOpen && !isEdit && draft.dataCenterId !== '',
   })
   const qosProfiles = useQuery({
-    queryKey: ['datacenter', draft.dataCenterId, 'qoss'],
+    queryKey: dataCenterKeys.qoss(draft.dataCenterId),
     queryFn: () => listDataCenterQoss(draft.dataCenterId),
     enabled: isOpen && draft.dataCenterId !== '',
   })
@@ -144,7 +146,7 @@ export function NetworkFormModal({
   // select offers the chosen DC's own (non-external) networks — an external
   // network can't map onto another external network.
   const providers = useQuery({
-    queryKey: ['providers'],
+    queryKey: providerKeys.all,
     queryFn: () => listProviders(),
     enabled: isOpen && !isEdit && draft.external,
   })
@@ -152,7 +154,7 @@ export function NetworkFormModal({
     (provider) => provider.providerType === 'network',
   )
   const dcNetworks = useQuery({
-    queryKey: ['datacenter', draft.dataCenterId, 'networks'],
+    queryKey: dataCenterKeys.networks(draft.dataCenterId),
     queryFn: () => listDataCenterNetworks(draft.dataCenterId),
     enabled: isOpen && !isEdit && draft.external && draft.dataCenterId !== '',
   })
