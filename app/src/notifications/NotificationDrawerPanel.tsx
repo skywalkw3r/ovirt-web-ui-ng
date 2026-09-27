@@ -21,7 +21,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import { removeEvent } from '../api/resources/events'
 import type { OvirtEvent } from '../api/schemas/event'
-import { useEvents } from '../hooks/useEvents'
+import { eventKeys, useEvents } from '../hooks/useEvents'
 import { useNow } from '../hooks/useNow'
 import { ANCHORED_PANEL_STYLE, CLAMP_3_LINES } from './anchoredPanelStyle'
 import { useNotify } from './context'
@@ -231,7 +231,7 @@ function DrawerPanel({ events, readBefore, onClose, onMarkAllRead }: DrawerPanel
   const dismissMutation = useMutation({
     mutationFn: (id: string) => removeEvent(id),
     onError: (error) => notify({ title: error.message, variant: 'danger' }),
-    onSettled: () => void queryClient.invalidateQueries({ queryKey: ['events'] }),
+    onSettled: () => void queryClient.invalidateQueries({ queryKey: eventKeys.all }),
   })
 
   const data = events.data ?? []

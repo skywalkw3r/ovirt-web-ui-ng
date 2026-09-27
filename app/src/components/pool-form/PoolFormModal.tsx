@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
 import {
   Button,
   Form,
@@ -14,13 +13,10 @@ import {
   TextInput,
 } from '@patternfly/react-core'
 import type { VmPool } from '../../api/schemas/pool'
-import { listClusters } from '../../api/resources/clusters'
-import { listTemplates } from '../../api/resources/templates'
 import { useT } from '../../i18n/useT'
 import { FieldHelp } from '../forms/FieldHelp'
 import { OptionsSelect } from '../forms/OptionsSelect'
-import { clusterKeys } from '../../hooks/useAdminResources'
-import { templateKeys } from '../../hooks/useCatalog'
+import { useClusters, useTemplates } from '../../hooks/useCatalog'
 import { useCreatePool, useUpdatePool } from '../../hooks/usePoolMutations'
 import {
   blankDraft,
@@ -62,23 +58,14 @@ export function PoolFormModal({
     setDraft((current) => ({ ...current, [key]: value }))
   }
 
-  // Cluster + template options for create mode only — both are fixed at
-  // creation, so these queries only power the create selects (gated
-  // !isEdit). Both reads stay bare (no ?follow=) and call the resource fns
-  // directly — same as ClusterFormModal seeding its data-center select — so
-  // the picker works for user-tier pool creators, not just admins. The
-  // unsearched keys (clusterKeys.list() / templateKeys.list()) share
-  // ClustersPage's and the create wizard's inventory cache entries.
-  const clusters = useQuery({
-    queryKey: clusterKeys.list(),
-    queryFn: () => listClusters(),
-    enabled: isOpen && !isEdit,
-  })
-  const templates = useQuery({
-    queryKey: templateKeys.list(),
-    queryFn: () => listTemplates(),
-    enabled: isOpen && !isEdit,
-  })
+  // Shared catalog hooks, not private reads: the unsearched list entries are
+  // the same cache entries ClustersPage / the inventory views observe, and a
+  // shared key demands an identical queryFn — a bare listTemplates() here
+  // used to overwrite the follow=tags payload those views rely on (template
+  // folders blanked until the next poll). Deferred until the picker shows.
+  const pickersEnabled = isOpen && !isEdit
+  const clusters = useClusters('', { enabled: pickersEnabled })
+  const templates = useTemplates('', { enabled: pickersEnabled })
 
   const create = useCreatePool()
   const update = useUpdatePool()

@@ -42,13 +42,13 @@ import { useProductBrand } from '../hooks/useProductBrand'
 import { NotificationBell } from '../notifications/NotificationDrawerPanel'
 import { getActiveServer } from '../servers/registry'
 import { BrandLogo } from './BrandLogo'
-import { CommandPalette } from './CommandPalette'
 import { GlobalSearchBox } from './GlobalSearchBox'
 import { MotdBanner } from './MotdBanner'
 import { OfflineBanner } from './OfflineBanner'
 import { ShortcutsHelp } from './ShortcutsHelp'
 import { TasksButton } from './TasksButton'
 import { UserMenu } from './UserMenu'
+import { CommandPalette } from './CommandPalette'
 
 type IconComponent = ComponentType<{ className?: string }>
 

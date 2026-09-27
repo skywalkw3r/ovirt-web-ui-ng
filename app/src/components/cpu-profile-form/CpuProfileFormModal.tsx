@@ -24,6 +24,7 @@ import {
   useCreateClusterCpuProfile,
   useUpdateCpuProfile,
 } from '../../hooks/useClusterCpuProfileMutations'
+import { dataCenterKeys } from '../../hooks/useAdminResources'
 import { useT } from '../../i18n/useT'
 import { OptionsSelect, type OptionsQuery } from '../forms/OptionsSelect'
 
@@ -93,7 +94,7 @@ export function CpuProfileFormModal({
   // both dedupe to one request — hand-typed until a key builder exists for it.
   // Only fetched while the modal is open and a DC is in hand.
   const qoss = useQuery({
-    queryKey: ['datacenter-qoss', dcId],
+    queryKey: dataCenterKeys.qosPicker(dcId),
     queryFn: () => listDataCenterQoss(dcId),
     enabled: isOpen && dcId !== '',
   })

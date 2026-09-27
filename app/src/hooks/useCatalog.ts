@@ -49,19 +49,24 @@ export const iconKeys = {
 // list-page hooks (useTemplatesList, useClustersInventory) — mirror useEvents.
 // follow=tags matches useTemplatesList EXACTLY — shared cache keys demand
 // identical queryFns; the embedded tags are harmless to catalog consumers.
-export function useTemplates(search = '') {
+// `enabled` lets a dialog defer the read until it is actually open (a modal
+// mounted closed, an edit form that never shows the picker) while still
+// sharing the list entry — and its exact queryFn — with every other observer.
+export function useTemplates(search = '', options: { enabled?: boolean } = {}) {
   return useQuery({
     queryKey: templateKeys.list(search),
     queryFn: () => listTemplates({ search: search || undefined, follow: 'tags' }),
     staleTime: CATALOG_STALE_MS,
+    enabled: options.enabled,
   })
 }
 
-export function useClusters(search = '') {
+export function useClusters(search = '', options: { enabled?: boolean } = {}) {
   return useQuery({
     queryKey: clusterKeys.list(search),
     queryFn: () => listClusters({ search: search || undefined }),
     staleTime: CATALOG_STALE_MS,
+    enabled: options.enabled,
   })
 }
 

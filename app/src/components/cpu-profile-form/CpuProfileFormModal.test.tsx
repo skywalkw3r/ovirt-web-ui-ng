@@ -5,6 +5,7 @@ import { IntlProvider } from 'react-intl'
 import type { ClusterCpuProfile } from '../../api/resources/clusters'
 import type { DataCenterQos } from '../../api/resources/datacenters'
 import { enMessages } from '../../i18n/messages/en'
+import { dataCenterKeys } from '../../hooks/useAdminResources'
 
 // vitest env is 'node' (no jsdom); PF react-core's node entry pulls raw .css
 // node can't parse, so — like ClusterFormModal.test.tsx — the PF pieces are
@@ -215,7 +216,7 @@ beforeEach(() => {
 describe('CpuProfileFormModal — QoS read', () => {
   it('keys the read on the tab-shared literal and gates it on an open modal with a DC in hand', () => {
     render()
-    expect(state.lastQuery?.queryKey).toEqual(['datacenter-qoss', 'dc-1'])
+    expect(state.lastQuery?.queryKey).toEqual(dataCenterKeys.qosPicker('dc-1'))
     expect(state.lastQuery?.enabled).toBe(true)
 
     render({ dcId: '' })

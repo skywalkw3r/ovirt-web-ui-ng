@@ -40,17 +40,7 @@ function walk(dir: string, out: string[] = []): string[] {
 // migrate to and WHY it has not yet. An entry here is a debt marker, not a
 // license: remove it as soon as the file is touched for any other reason.
 const EXEMPT: ReadonlyMap<string, string> = new Map([
-  [
-    'components/cpu-profile-form/CpuProfileFormModal.tsx',
-    "['datacenter-qoss', dcId] → dataCenterKeys.qosPicker(dcId). The modal was being " +
-      'rewritten by a parallel workstream when the builders landed, so the file was out ' +
-      "of this pass's ownership.",
-  ],
-  [
-    'notifications/NotificationDrawerPanel.tsx',
-    "['events'] → eventKeys.all (the dismiss mutation's invalidation). notifications/ was " +
-      "outside this pass's ownership; a one-line follow-up.",
-  ],
+  // (empty — every file outside hooks/ and api/ goes through the builders)
 ])
 
 // 1. the plain smell: an array literal opening with a string
