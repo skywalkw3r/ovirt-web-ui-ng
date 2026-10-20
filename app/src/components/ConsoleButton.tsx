@@ -9,7 +9,7 @@ import {
 } from '@patternfly/react-core'
 import { CogIcon, DesktopIcon, DownloadIcon } from '@patternfly/react-icons'
 import { FormattedMessage } from 'react-intl'
-import { buildRdpFile, isWindowsOs } from '../api/resources/consoles'
+import { buildRdpFile, isValidRdpAddress, isWindowsOs } from '../api/resources/consoles'
 import type { GraphicsConsole } from '../api/schemas/console'
 import type { Vm } from '../api/schemas/vm'
 import { useConsoles, useDownloadVvFile } from '../hooks/useConsoles'
@@ -86,7 +86,18 @@ export function ConsoleButton({ vm }: { vm: Vm }) {
   const isWindows = isWindowsOs(vm.os?.type)
   const downloadRdp = () => {
     setIsOpen(false)
-    const rdp = buildRdpFile({ address: vm.fqdn || vm.name })
+    // The guest-agent-reported FQDN is untrusted input (see isValidRdpAddress
+    // in api/resources/consoles.ts); fall back to the VM name exactly as the
+    // legacy portal did, and refuse rather than emit a malformed file when
+    // neither is a usable host[:port].
+    const address = [vm.fqdn, vm.name].find(
+      (candidate): candidate is string => !!candidate && isValidRdpAddress(candidate),
+    )
+    if (!address) {
+      notify({ title: `${vm.name}: no usable host address for an RDP file`, variant: 'warning' })
+      return
+    }
+    const rdp = buildRdpFile({ address })
     saveBlob(`${vm.name}.rdp`, new Blob([rdp], { type: 'application/rdp' }))
     notify({ title: `${vm.name} RDP file downloaded`, variant: 'success' })
   }
@@ -166,15 +177,15 @@ export function ConsoleButton({ vm }: { vm: Vm }) {
               </DropdownItem>
             ))}
 
-          {/* RDP download for Windows guests. Hardcoded English this wave; the
-            (.rdp) token stays verbatim in every locale. */}
+          {/* RDP download for Windows guests; the (.rdp) token stays verbatim in
+            every locale. */}
           {isWindows && (
             <DropdownItem
               icon={<DownloadIcon />}
-              description="Remote Desktop to the Windows guest"
+              description={t('console.rdp.description')}
               onClick={downloadRdp}
             >
-              Download RDP file (.rdp)
+              {t('console.rdp.download')}
             </DropdownItem>
           )}
 

@@ -20,6 +20,7 @@ import { useDeleteClusterCpuProfile } from '../../hooks/useClusterCpuProfileMuta
 import { useT } from '../../i18n/useT'
 import { CpuProfileFormModal } from '../cpu-profile-form/CpuProfileFormModal'
 import { ConfirmModal } from '../ConfirmModal'
+import { dataCenterKeys } from '../../hooks/useAdminResources'
 
 // CPU profiles cap the host CPU share a VM can consume and carry QoS on the
 // cluster. They ride the 404-tolerant /cpuprofiles subcollection — engines with
@@ -46,7 +47,7 @@ export function ClusterCpuProfilesTab({ clusterId }: { clusterId: string }) {
   // request. Best-effort enrichment — the profiles table is the primary data, so
   // this drives no separate four-state; an unresolved id falls back to the GUID.
   const qoss = useQuery({
-    queryKey: ['datacenter-qoss', dcId],
+    queryKey: dataCenterKeys.qosPicker(dcId),
     queryFn: () => listDataCenterQoss(dcId),
     enabled: dcId !== '',
   })

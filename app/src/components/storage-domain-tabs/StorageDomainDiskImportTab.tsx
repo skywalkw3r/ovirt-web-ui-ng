@@ -25,6 +25,7 @@ import { useSettings } from '../../settings/SettingsProvider'
 import { useNotify } from '../../notifications/context'
 import { useT } from '../../i18n/useT'
 import { formatBytes, statusText } from '../../lib/format'
+import { storageDomainKeys } from '../../hooks/useStorageDomains'
 
 // oVirt disk states are ok/locked/illegal; anything unrecognized stays grey
 // (same mapping as StorageDomainDisksTab).
@@ -62,7 +63,7 @@ export function StorageDomainDiskImportTab({ storageDomainId }: { storageDomainI
   const [confirming, setConfirming] = useState<Disk | null>(null)
 
   const disks = useQuery({
-    queryKey: ['storagedomain', storageDomainId, 'unregistered-disks'],
+    queryKey: storageDomainKeys.unregisteredDisks(storageDomainId),
     queryFn: () => listUnregisteredStorageDomainDisks(storageDomainId),
     // Same 60s floor as the sibling detail subcollections — the Preferences
     // interval can slow it, never speed it past the VM cadence.
@@ -87,12 +88,12 @@ export function StorageDomainDiskImportTab({ storageDomainId }: { storageDomainI
     },
     onSettled: () => {
       void queryClient.invalidateQueries({
-        queryKey: ['storagedomain', storageDomainId, 'unregistered-disks'],
+        queryKey: storageDomainKeys.unregisteredDisks(storageDomainId),
       })
       void queryClient.invalidateQueries({
-        queryKey: ['storagedomain', storageDomainId, 'disks'],
+        queryKey: storageDomainKeys.disks(storageDomainId),
       })
-      void queryClient.invalidateQueries({ queryKey: ['storagedomain', storageDomainId] })
+      void queryClient.invalidateQueries({ queryKey: storageDomainKeys.detail(storageDomainId) })
     },
   })
 

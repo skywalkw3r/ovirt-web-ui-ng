@@ -11,14 +11,12 @@ import {
   ToolbarItem,
 } from '@patternfly/react-core'
 import { ActionsColumn, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { listGroups, removeGroup } from '../api/resources/users'
 import { useCapabilities } from '../auth/capabilities'
 import { ConfirmModal } from '../components/ConfirmModal'
 import { DomainLabel, GroupIdentityCell } from '../components/user-tabs/PrincipalIdentity'
 import { SearchInput } from '../components/list-toolbar/SearchInput'
-import { useAdminResourcePollInterval } from '../hooks/useAdminResources'
-import { useNotify } from '../notifications/context'
+import { useGroupsInventory } from '../hooks/useAdminResources'
+import { useRemoveGroup, type RemoveGroupVars } from '../hooks/useUserMutations'
 import { useT } from '../i18n/useT'
 import { sortRows, useColumnSort } from '../hooks/useColumnSort'
 
@@ -34,21 +32,13 @@ const GROUP_KEYS = ['name', 'namespace', 'domain'] as const
 export function GroupsPanel() {
   const t = useT()
   const { loaded, isAdmin } = useCapabilities()
-  const refetchInterval = useAdminResourcePollInterval()
-  const queryClient = useQueryClient()
-  const { notify } = useNotify()
 
   // Shares the ['groups', ''] cache entry the Add-Permission group picker reads
-  // (usePermissionMutations.useGroups) — this observer just adds the poll and
-  // the admin gate, mirroring useClustersInventory over useCatalog's clusters.
-  const groups = useQuery({
-    queryKey: ['groups', ''],
-    queryFn: () => listGroups(),
-    refetchInterval,
-    enabled: isAdmin,
-  })
+  // (usePermissionMutations.useGroups); the hook adds the poll and the admin
+  // gate.
+  const groups = useGroupsInventory()
 
-  const [removing, setRemoving] = useState<{ groupId: string; name: string } | null>(null)
+  const [removing, setRemoving] = useState<RemoveGroupVars | null>(null)
   // client-side name/namespace/domain filter — the group list is small
   const [filter, setFilter] = useState('')
   const { sort, thSort } = useColumnSort()
@@ -68,22 +58,9 @@ export function GroupsPanel() {
         : group.domain?.name,
   )
 
-  // DELETE /groups/{id}. Engine faults (e.g. the group still grants access)
-  // surface via error.message verbatim; the prefix invalidation refreshes both
-  // this table and the Add-Permission group picker. Inlined (no hooks/ file)
-  // but mirrors useRemoveUser's shape.
-  const remove = useMutation({
-    mutationFn: (vars: { groupId: string; name: string }) => removeGroup(vars.groupId),
-    onSuccess: (_data, { name }) => {
-      notify({ title: `Group ${name} removed`, variant: 'success' })
-    },
-    onError: (error) => {
-      notify({ title: error.message, variant: 'danger' })
-    },
-    onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['groups'] })
-    },
-  })
+  // DELETE /groups/{id} — engine faults surface via the toast, and the prefix
+  // invalidation refreshes both this table and the Add-Permission group picker.
+  const remove = useRemoveGroup()
 
   // Hidden below admin tier — the page already returns NotPermitted for
   // non-admins, so this only matters during the brief pre-profile window.
@@ -176,7 +153,7 @@ export function GroupsPanel() {
                           {
                             title: t('common.action.remove'),
                             isDanger: true,
-                            onClick: () => setRemoving({ groupId: group.id, name }),
+                            onClick: () => setRemoving({ groupId: group.id, displayName: name }),
                           },
                         ]}
                       />
@@ -192,7 +169,7 @@ export function GroupsPanel() {
       {removing && (
         <ConfirmModal
           isOpen
-          title={t('groups.remove.confirm.title', { name: removing.name })}
+          title={t('groups.remove.confirm.title', { name: removing.displayName })}
           body={t('groups.remove.confirm.body')}
           confirmLabel={t('common.action.remove')}
           onConfirm={() => {

@@ -3,6 +3,7 @@ import { performVmAction, runOnceVm, type RunOnceSpec, type VmAction } from '../
 import type { Vm } from '../api/schemas/vm'
 import { en, type MessageId } from '../i18n/messages/en'
 import { useNotify } from '../notifications/context'
+import { vmKeys } from './useVms'
 
 // Shared by the actions menu and notifications so the wording always matches
 // the menu item the user clicked ('stop' reads as "Power off"). Message ids,
@@ -44,8 +45,8 @@ export function useVmAction() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: (_data, _error, { vm }) => {
-      void queryClient.invalidateQueries({ queryKey: ['vms'] })
-      void queryClient.invalidateQueries({ queryKey: ['vm', vm.id] })
+      void queryClient.invalidateQueries({ queryKey: vmKeys.all })
+      void queryClient.invalidateQueries({ queryKey: vmKeys.detail(vm.id) })
     },
   })
 }
@@ -66,8 +67,8 @@ export function useRunOnceVm() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: (_data, _error, { vm }) => {
-      void queryClient.invalidateQueries({ queryKey: ['vms'] })
-      void queryClient.invalidateQueries({ queryKey: ['vm', vm.id] })
+      void queryClient.invalidateQueries({ queryKey: vmKeys.all })
+      void queryClient.invalidateQueries({ queryKey: vmKeys.detail(vm.id) })
     },
   })
 }

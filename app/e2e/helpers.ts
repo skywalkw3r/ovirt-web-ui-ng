@@ -4,8 +4,9 @@ import { expect, type Page } from '@playwright/test'
 // username picks the capability tier — 'admin*' lands admin). `path` is the
 // first URL visited: unauthenticated visits bounce to /login carrying a
 // redirect back, so the session lands on `path` after sign-in — the same
-// mechanism deep links use. The token is in-memory, so tests must navigate
-// client-side afterwards; a page.goto would drop the session.
+// mechanism deep links use. The token lives in memory plus this tab's
+// sessionStorage (api/session.ts), so a page.goto in the same tab keeps the
+// session; a new browser context starts signed out.
 export async function login(
   page: Page,
   { username = 'admin@internal', path = '/' }: { username?: string; path?: string } = {},

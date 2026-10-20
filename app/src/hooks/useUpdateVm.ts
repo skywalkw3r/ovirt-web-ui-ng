@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { updateVm } from '../api/resources/vms'
 import type { Vm } from '../api/schemas/vm'
 import { useNotify } from '../notifications/context'
+import { vmKeys } from './useVms'
 
 // The Edit Virtual Machine modal's save mutation. Mirrors useVmAction: notify
 // on success/failure, invalidate the VM detail and list queries so the refetch
@@ -32,8 +33,8 @@ export function useUpdateVm() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: (_data, _error, { vm }) => {
-      void queryClient.invalidateQueries({ queryKey: ['vm', vm.id] })
-      void queryClient.invalidateQueries({ queryKey: ['vms'] })
+      void queryClient.invalidateQueries({ queryKey: vmKeys.detail(vm.id) })
+      void queryClient.invalidateQueries({ queryKey: vmKeys.all })
     },
   })
 }

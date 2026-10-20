@@ -31,6 +31,8 @@ import {
   type NetworkRow,
   type RoleUsage,
 } from './clusterNetworkRoles'
+import { clusterKeys, dataCenterKeys } from '../../hooks/useAdminResources'
+import { networkKeys } from '../../hooks/useNetworks'
 
 // The four toggleable cluster roles map onto the shared networks.role.* catalog
 // ids (verified against ovirt-engine-api-model types/NetworkUsage.java). Resolved
@@ -67,7 +69,7 @@ export function ManageClusterNetworksModal({
   const t = useT()
   const roleLabel = (role: RoleUsage) => t(ROLE_LABEL_IDS[role])
   const networks = useQuery({
-    queryKey: ['datacenter', dataCenterId, 'networks'],
+    queryKey: dataCenterKeys.networks(dataCenterId),
     queryFn: () => listDataCenterNetworks(dataCenterId ?? ''),
     enabled: dataCenterId !== undefined,
   })
@@ -105,8 +107,8 @@ export function ManageClusterNetworksModal({
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['cluster', clusterId, 'networks'] })
-      void queryClient.invalidateQueries({ queryKey: ['networks'] })
+      void queryClient.invalidateQueries({ queryKey: clusterKeys.networks(clusterId) })
+      void queryClient.invalidateQueries({ queryKey: networkKeys.all })
     },
   })
 

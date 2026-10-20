@@ -2,6 +2,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { exportVmToOva } from '../api/resources/vms'
 import type { Vm } from '../api/schemas/vm'
 import { useNotify } from '../notifications/context'
+import { vmKeys } from './useVms'
+import { jobKeys } from './useJobs'
 
 // The Export as OVA modal's mutation. POST /vms/{id}/exporttopathonhost kicks
 // an async engine job (packaging the disks into an OVA on the chosen host), so
@@ -28,8 +30,8 @@ export function useExportOva() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['jobs'] })
-      void queryClient.invalidateQueries({ queryKey: ['vms'] })
+      void queryClient.invalidateQueries({ queryKey: jobKeys.all })
+      void queryClient.invalidateQueries({ queryKey: vmKeys.all })
     },
   })
 }

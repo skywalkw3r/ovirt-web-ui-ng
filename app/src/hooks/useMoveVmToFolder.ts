@@ -14,7 +14,7 @@ import type { Vm } from '../api/schemas/vm'
 import type { MessageId } from '../i18n/messages/en'
 import { useT } from '../i18n/useT'
 import { useNotify } from '../notifications/context'
-import { TAG_STALE_MS, folderTagsOf } from './useTags'
+import { folderTagsOf, TAG_STALE_MS, tagKeys } from './useTags'
 
 // MOVE SEMANTICS: an entity lives in at most one folder (docs/COMPONENTS.md
 // folder model), but nothing engine-side enforces that — a move therefore
@@ -95,7 +95,7 @@ function useMoveEntityToFolder(kind: 'vm' | 'template'): {
       // fetchQuery shares keys and freshness window with useTags/useVmTags,
       // so this reuses whatever the tree and label chips already fetched.
       const allTags = await queryClient.fetchQuery({
-        queryKey: ['tags'],
+        queryKey: tagKeys.all,
         queryFn: () => listTags(),
         staleTime: TAG_STALE_MS,
       })
@@ -110,7 +110,7 @@ function useMoveEntityToFolder(kind: 'vm' | 'template'): {
       const results = await Promise.allSettled(
         entities.map(async (entity) => {
           const entityTags = await queryClient.fetchQuery({
-            queryKey: [spec.entityKey, entity.id, 'tags'],
+            queryKey: tagKeys.entity(spec.entityKey, entity.id),
             queryFn: () => spec.listEntityTags(entity.id),
             staleTime: TAG_STALE_MS,
           })
@@ -169,12 +169,12 @@ function useMoveEntityToFolder(kind: 'vm' | 'template'): {
     },
     onSettled: (_data, _error, { entities }) => {
       for (const entity of entities) {
-        void queryClient.invalidateQueries({ queryKey: [spec.entityKey, entity.id, 'tags'] })
+        void queryClient.invalidateQueries({ queryKey: tagKeys.entity(spec.entityKey, entity.id) })
       }
-      void queryClient.invalidateQueries({ queryKey: ['tags'] })
+      void queryClient.invalidateQueries({ queryKey: tagKeys.all })
       // List rows embed their tags (the list reads follow tags) — refresh
       // them so the folder filter and counts reflect the move immediately.
-      void queryClient.invalidateQueries({ queryKey: [spec.listKey] })
+      void queryClient.invalidateQueries({ queryKey: tagKeys.taggedList(spec.listKey) })
     },
   })
 

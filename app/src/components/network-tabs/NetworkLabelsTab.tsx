@@ -20,6 +20,7 @@ import { useNetworkLabels } from '../../hooks/useNetworkDetail'
 import { useT } from '../../i18n/useT'
 import { useNotify } from '../../notifications/context'
 import { ConfirmModal } from '../ConfirmModal'
+import { networkKeys } from '../../hooks/useNetworks'
 
 // Network labels tag host NICs so the engine can auto-attach this network.
 // They are bare string ids (the label text IS the id) served from the
@@ -43,20 +44,21 @@ export function NetworkLabelsTab({ networkId }: { networkId: string }) {
 
   // The read hook keys ['network', id, 'labels'] — invalidate exactly that so
   // the list refetches after a mutation and reflects the change.
-  const labelsKey = ['network', networkId, 'labels']
 
   const addLabel = useMutation({
     mutationFn: (label: string) => addNetworkLabel(networkId, label),
     onSuccess: () => setLabelDraft(''),
     // ApiError.message carries the engine fault detail verbatim
     onError: (error) => notify({ title: error.message, variant: 'danger' }),
-    onSettled: () => void queryClient.invalidateQueries({ queryKey: labelsKey }),
+    onSettled: () =>
+      void queryClient.invalidateQueries({ queryKey: networkKeys.labels(networkId) }),
   })
 
   const removeLabel = useMutation({
     mutationFn: (label: string) => removeNetworkLabel(networkId, label),
     onError: (error) => notify({ title: error.message, variant: 'danger' }),
-    onSettled: () => void queryClient.invalidateQueries({ queryKey: labelsKey }),
+    onSettled: () =>
+      void queryClient.invalidateQueries({ queryKey: networkKeys.labels(networkId) }),
   })
 
   // Hidden (not disabled) below admin tier — same posture as PermissionsPanel;

@@ -12,6 +12,7 @@ import { Link } from '@tanstack/react-router'
 import { listStorageDomainLeaseVms } from '../../api/resources/leases'
 import { useT } from '../../i18n/useT'
 import { useSettings } from '../../settings/SettingsProvider'
+import { storageDomainKeys } from '../../hooks/useStorageDomains'
 
 // The lease list drifts slowly and only loads while the storage domain detail
 // page is mounted; 60s matches the other storage domain subcollections
@@ -25,7 +26,7 @@ export function StorageDomainLeasesTab({ storageDomainId }: { storageDomainId: s
   const t = useT()
   const { refreshIntervalMs } = useSettings()
   const leases = useQuery({
-    queryKey: ['storagedomain', storageDomainId, 'leases'],
+    queryKey: storageDomainKeys.leases(storageDomainId),
     queryFn: () => listStorageDomainLeaseVms(storageDomainId),
     refetchInterval: Math.max(refreshIntervalMs, LEASES_POLL_INTERVAL_MS),
   })

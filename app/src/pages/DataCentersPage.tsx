@@ -31,6 +31,7 @@ import { useDataCenters } from '../hooks/useAdminResources'
 import { useColumnPrefs } from '../hooks/useColumnPrefs'
 import { sortRows, useColumnSort } from '../hooks/useColumnSort'
 import { useListSearch } from '../hooks/useListSearch'
+import { usePagination } from '../hooks/usePagination'
 import { statusText } from '../lib/format'
 
 // 'up' | 'maintenance' | 'not_operational' | ... — same coloring policy as
@@ -123,12 +124,6 @@ const COLUMNS: DataCenterColumn[] = [
   },
 ]
 
-const PER_PAGE_OPTIONS = [
-  { title: '20', value: 20 },
-  { title: '50', value: 50 },
-  { title: '100', value: 100 },
-]
-
 export function DataCentersPage() {
   const t = useT()
   const { loaded, isAdmin } = useCapabilities()
@@ -143,25 +138,15 @@ export function DataCentersPage() {
   // until a header is clicked (see hooks/useColumnSort)
   const { sort, thSort } = useColumnSort()
   const [creating, setCreating] = useState(false)
-  const [page, setPage] = useState(1)
-  const [perPage, setPerPage] = useState(50)
-
-  // a new committed search starts back at page 1
-  const [prevQuery, setPrevQuery] = useState(query)
-  if (query !== prevQuery) {
-    setPrevQuery(query)
-    setPage(1)
-  }
 
   const visible = sortRows(dataCenters.data ?? [], sort, (row, key) =>
     columns.find((column) => column.key === key)?.sortValue?.(row),
   )
 
   // clamp rather than effect-reset: polling refetches can shrink the list
-  // underneath the current page
-  const lastPage = Math.max(1, Math.ceil(visible.length / perPage))
-  const currentPage = Math.min(page, lastPage)
-  const paged = visible.slice((currentPage - 1) * perPage, currentPage * perPage)
+  // underneath the current page; a new committed search starts back at page 1
+  const paging = usePagination({ total: visible.length, resetKeys: [query] })
+  const paged = paging.pageSlice(visible)
 
   const visibleColumns = columns.filter((column) => prefs.isVisible(column.key))
 
@@ -204,14 +189,11 @@ export function DataCentersPage() {
                 isCompact
                 variant="top"
                 itemCount={visible.length}
-                page={currentPage}
-                perPage={perPage}
-                perPageOptions={PER_PAGE_OPTIONS}
-                onSetPage={(_event, nextPage) => setPage(nextPage)}
-                onPerPageSelect={(_event, nextPerPage, nextPage) => {
-                  setPerPage(nextPerPage)
-                  setPage(nextPage)
-                }}
+                page={paging.page}
+                perPage={paging.perPage}
+                perPageOptions={paging.perPageOptions}
+                onSetPage={paging.onSetPage}
+                onPerPageSelect={paging.onPerPageSelect}
                 titles={{ paginationAriaLabel: t('datacenters.pagination.ariaLabel') }}
               />
             </ToolbarItem>

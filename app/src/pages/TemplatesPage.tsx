@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from 'react'
+import { useMemo, type ReactNode } from 'react'
 import {
   Button,
   EmptyState,
@@ -32,6 +32,7 @@ import { useClustersInventory, useDataCenters } from '../hooks/useAdminResources
 import { useColumnPrefs } from '../hooks/useColumnPrefs'
 import { sortRows, useColumnSort } from '../hooks/useColumnSort'
 import { useListSearch } from '../hooks/useListSearch'
+import { usePagination } from '../hooks/usePagination'
 
 // Cluster/DC names via client-side joins (flat /templates carries id links)
 interface TemplateColumnCtx {
@@ -140,12 +141,6 @@ const COLUMNS: TemplateColumn[] = [
   },
 ]
 
-const PER_PAGE_OPTIONS = [
-  { title: '20', value: 20 },
-  { title: '50', value: 50 },
-  { title: '100', value: 100 },
-]
-
 // No capability gate: templates are user-tier visible (AppShell lists the
 // nav entry without adminOnly) — every tier creates VMs from them.
 export function TemplatesPage() {
@@ -171,25 +166,15 @@ export function TemplatesPage() {
   // client-side header sort; no default — the engine list order stands
   // until a header is clicked (see hooks/useColumnSort)
   const { sort, thSort } = useColumnSort()
-  const [page, setPage] = useState(1)
-  const [perPage, setPerPage] = useState(50)
-
-  // a new committed search starts back at page 1
-  const [prevQuery, setPrevQuery] = useState(query)
-  if (query !== prevQuery) {
-    setPrevQuery(query)
-    setPage(1)
-  }
 
   const items = sortRows(templates.data ?? [], sort, (row, key) =>
     columns.find((column) => column.key === key)?.sortValue?.(row, columnCtx),
   )
 
   // clamp rather than effect-reset: polling refetches can shrink the list
-  // underneath the current page
-  const lastPage = Math.max(1, Math.ceil(items.length / perPage))
-  const currentPage = Math.min(page, lastPage)
-  const paged = items.slice((currentPage - 1) * perPage, currentPage * perPage)
+  // underneath the current page; a new committed search starts back at page 1
+  const paging = usePagination({ total: items.length, resetKeys: [query] })
+  const paged = paging.pageSlice(items)
 
   const visibleColumns = columns.filter((column) => prefs.isVisible(column.key))
 
@@ -216,14 +201,11 @@ export function TemplatesPage() {
                 isCompact
                 variant="top"
                 itemCount={items.length}
-                page={currentPage}
-                perPage={perPage}
-                perPageOptions={PER_PAGE_OPTIONS}
-                onSetPage={(_event, nextPage) => setPage(nextPage)}
-                onPerPageSelect={(_event, nextPerPage, nextPage) => {
-                  setPerPage(nextPerPage)
-                  setPage(nextPage)
-                }}
+                page={paging.page}
+                perPage={paging.perPage}
+                perPageOptions={paging.perPageOptions}
+                onSetPage={paging.onSetPage}
+                onPerPageSelect={paging.onPerPageSelect}
                 titles={{ paginationAriaLabel: t('templates.pagination.ariaLabel') }}
               />
             </ToolbarItem>

@@ -3,6 +3,7 @@ import { migrateVm, performVmAction, type VmAction } from '../api/resources/vms'
 import type { Vm } from '../api/schemas/vm'
 import { useNotify } from '../notifications/context'
 import { vmActionEnglishLabel } from './useVmActions'
+import { vmKeys } from './useVms'
 
 // Build the single aggregate toast for a fanned-out bulk operation. verb reads
 // as the past-tense request wording ("Shutdown requested", "Migration
@@ -44,7 +45,7 @@ export function useBulkVmAction(): {
   const queryClient = useQueryClient()
   const { notify } = useNotify()
 
-  const invalidate = () => void queryClient.invalidateQueries({ queryKey: ['vms'] })
+  const invalidate = () => void queryClient.invalidateQueries({ queryKey: vmKeys.all })
 
   const actionMutation = useMutation({
     mutationFn: async ({ vms, action }: { vms: Vm[]; action: VmAction }) =>

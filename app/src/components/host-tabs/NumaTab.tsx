@@ -33,6 +33,7 @@ import { formatBytes } from '../../lib/format'
 import { useSettings } from '../../settings/SettingsProvider'
 import { ColumnPicker } from '../list-toolbar/ColumnPicker'
 import { ResizableTh, resizableTableProps } from '../list-toolbar/ResizableTh'
+import { hostKeys } from '../../hooks/useHosts'
 
 // NUMA nodes drift slowly and only load while the host detail page is mounted;
 // 60s matches the other host subcollections (useHostDetail). The constant is a
@@ -180,7 +181,7 @@ export function NumaTab({ hostId }: { hostId: string }) {
   const pollInterval = Math.max(refreshIntervalMs, NUMA_POLL_INTERVAL_MS)
 
   const nodes = useQuery({
-    queryKey: ['host', hostId, 'numanodes'],
+    queryKey: hostKeys.numaNodes(hostId),
     queryFn: () => listHostNumaNodes(hostId),
     refetchInterval: pollInterval,
   })
@@ -193,7 +194,7 @@ export function NumaTab({ hostId }: { hostId: string }) {
   const host = useHost(hostId)
   const hostName = host.data?.name
   const pinning = useQuery({
-    queryKey: ['host', hostId, 'numa-pinning'],
+    queryKey: hostKeys.numaPinning(hostId),
     queryFn: () => loadHostNumaPinning(`host.name=${hostName}`),
     enabled: hostName !== undefined,
     staleTime: PINNING_STALE_MS,

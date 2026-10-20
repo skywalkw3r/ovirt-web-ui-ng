@@ -46,7 +46,7 @@ import {
   usePolicyAssignments,
   usePolicyUnitCatalog,
   useUpdateSchedulingPolicy,
-} from './useSchedulingPolicies'
+} from '../../hooks/useSchedulingPolicies'
 
 export type SchedulingPolicyEditorMode = 'create' | 'edit' | 'clone'
 

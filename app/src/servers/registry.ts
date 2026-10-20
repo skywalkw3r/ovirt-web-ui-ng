@@ -46,6 +46,13 @@ function isConfigured(base: string): boolean {
   return base === '' || getRuntimeConfig().servers.some((s) => s.base === base)
 }
 
+// Public form of the same check, for callers that receive a base from another
+// document (the console-tab handoff in pages/VmConsolePage.tsx) and must not
+// pin a session to anything the deployer did not configure.
+export function isConfiguredBase(base: string): boolean {
+  return isConfigured(base)
+}
+
 let active: string | undefined
 const listeners = new Set<() => void>()
 

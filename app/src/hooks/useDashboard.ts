@@ -13,9 +13,10 @@ import {
 import { useSettings } from '../settings/SettingsProvider'
 import { useClustersInventory, useDataCenters, usePools } from './useAdminResources'
 import { useEvents } from './useEvents'
-import { HOST_POLL_INTERVAL_MS } from './useHosts'
+import { HOST_POLL_INTERVAL_MS, hostKeys } from './useHosts'
 import { useStorageDomains } from './useStorageDomains'
 import { useVms } from './useVms'
+import { apiInfoKeys } from './useProductBrand'
 
 // Thin composition for DashboardPage: the queries stay independent so each
 // card renders its own skeleton/error/empty/populated state — one failing
@@ -35,7 +36,7 @@ export function useDashboard() {
   const pools = usePools()
   // Same key/fn pair as AboutPage; product info is effectively static, so no
   // refetch interval.
-  const apiInfo = useQuery({ queryKey: ['apiInfo'], queryFn: fetchApiInfo })
+  const apiInfo = useQuery({ queryKey: apiInfoKeys.all, queryFn: fetchApiInfo })
   const hosts = useHostsWithStats()
 
   return { vms, storageDomains, events, apiInfo, dataCenters, clusters, pools, hosts }
@@ -51,7 +52,7 @@ function useHostsWithStats() {
   const { isAdmin } = useCapabilities()
   const { refreshIntervalMs } = useSettings()
   return useQuery({
-    queryKey: ['hosts', 'statistics'],
+    queryKey: hostKeys.statistics,
     queryFn: () => listHostsWithStats(),
     refetchInterval: Math.max(refreshIntervalMs, HOST_POLL_INTERVAL_MS),
     enabled: isAdmin,

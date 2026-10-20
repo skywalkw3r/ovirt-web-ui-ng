@@ -24,6 +24,7 @@ import { DomainLabel, EmailCell, UserIdentityCell } from '../components/user-tab
 import { userDisplayName } from '../components/user-tabs/principal'
 import { AddUserFromDirectoryModal } from '../components/user-form/AddUserFromDirectoryModal'
 import { RemoveUserConfirm } from '../components/user-form/RemoveUserConfirm'
+import { usePagination } from '../hooks/usePagination'
 import { useRemoveUser, type RemoveUserVars } from '../hooks/useUserMutations'
 import { useUsers } from '../hooks/useAdminResources'
 import { useColumnPrefs } from '../hooks/useColumnPrefs'
@@ -84,12 +85,6 @@ const COLUMNS: UserColumn[] = [
   },
 ]
 
-const PER_PAGE_OPTIONS = [
-  { title: '20', value: 20 },
-  { title: '50', value: 50 },
-  { title: '100', value: 100 },
-]
-
 // Add-from-directory (search GET /domains/{id}/users, materialize via
 // POST /users) and remove (DELETE /users/{id}) ship here — see
 // AddUserFromDirectoryModal / RemoveUserConfirm. The identity cell links to
@@ -109,8 +104,6 @@ export function UsersPanel() {
   // client-side header sort; no default — the engine list order stands
   // until a header is clicked (see hooks/useColumnSort)
   const { sort, thSort } = useColumnSort()
-  const [page, setPage] = useState(1)
-  const [perPage, setPerPage] = useState(50)
 
   const [isAddOpen, setIsAddOpen] = useState(false)
   const [removing, setRemoving] = useState<RemoveUserVars | null>(null)
@@ -120,22 +113,14 @@ export function UsersPanel() {
   // before capabilities load; matches the nav's posture.
   const canManage = loaded && isAdmin
 
-  // a new committed search starts back at page 1
-  const [prevQuery, setPrevQuery] = useState(query)
-  if (query !== prevQuery) {
-    setPrevQuery(query)
-    setPage(1)
-  }
-
   const visible = sortRows(users.data ?? [], sort, (row, key) =>
     columns.find((column) => column.key === key)?.sortValue?.(row),
   )
 
   // clamp rather than effect-reset: polling refetches can shrink the list
-  // underneath the current page
-  const lastPage = Math.max(1, Math.ceil(visible.length / perPage))
-  const currentPage = Math.min(page, lastPage)
-  const paged = visible.slice((currentPage - 1) * perPage, currentPage * perPage)
+  // underneath the current page; a new committed search starts back at page 1
+  const paging = usePagination({ total: visible.length, resetKeys: [query] })
+  const paged = paging.pageSlice(visible)
 
   const visibleColumns = columns.filter((column) => prefs.isVisible(column.key))
 
@@ -177,14 +162,11 @@ export function UsersPanel() {
                 isCompact
                 variant="top"
                 itemCount={visible.length}
-                page={currentPage}
-                perPage={perPage}
-                perPageOptions={PER_PAGE_OPTIONS}
-                onSetPage={(_event, nextPage) => setPage(nextPage)}
-                onPerPageSelect={(_event, nextPerPage, nextPage) => {
-                  setPerPage(nextPerPage)
-                  setPage(nextPage)
-                }}
+                page={paging.page}
+                perPage={paging.perPage}
+                perPageOptions={paging.perPageOptions}
+                onSetPage={paging.onSetPage}
+                onPerPageSelect={paging.onPerPageSelect}
                 titles={{ paginationAriaLabel: t('users.pagination.ariaLabel') }}
               />
             </ToolbarItem>

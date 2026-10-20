@@ -21,6 +21,7 @@ import { useCapabilities } from '../auth/capabilities'
 import { useHosts } from '../hooks/useHosts'
 import { useT } from '../i18n/useT'
 import { useNotify } from '../notifications/context'
+import { vmKeys } from '../hooks/useVms'
 
 // Migrate is not a lifecycle action (different endpoint, carries the
 // destination choice), so it gets its own mutation instead of extending
@@ -39,8 +40,8 @@ function useMigrateVm() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: (_data, _error, { vm }) => {
-      void queryClient.invalidateQueries({ queryKey: ['vms'] })
-      void queryClient.invalidateQueries({ queryKey: ['vm', vm.id] })
+      void queryClient.invalidateQueries({ queryKey: vmKeys.all })
+      void queryClient.invalidateQueries({ queryKey: vmKeys.detail(vm.id) })
     },
   })
 }

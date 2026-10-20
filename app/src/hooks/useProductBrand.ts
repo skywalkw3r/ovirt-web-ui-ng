@@ -8,6 +8,13 @@ import {
   type ProductBrand,
 } from '../branding/brand'
 
+// GET /api — the engine's root info (product_info, version, summary). One
+// cache entry shared by this brand probe, the dashboard's version card and
+// the About dialog; effectively static, so none of them poll it.
+export const apiInfoKeys = {
+  all: ['apiInfo'] as const,
+}
+
 // Which engine flavour the app brands as (oVirt vs OLVM), derived from the
 // engine's product_info. Shares the ['apiInfo'] cache entry with the dashboard
 // and About dialog — product info is effectively static, hence no refetch
@@ -22,7 +29,7 @@ import {
 // already-cached resolution) carries the brand while parked.
 export function useProductBrand(options?: { live?: boolean }): ProductBrand {
   const live = options?.live ?? true
-  const { data } = useQuery({ queryKey: ['apiInfo'], queryFn: fetchApiInfo, enabled: live })
+  const { data } = useQuery({ queryKey: apiInfoKeys.all, queryFn: fetchApiInfo, enabled: live })
   const detected = data ? detectBrand(data.product_info) : null
   // Read once per mount: the mirror only matters until the live parse lands.
   const [mirror] = useState(() => readBrandMirror())

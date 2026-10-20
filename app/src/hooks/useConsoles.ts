@@ -3,6 +3,20 @@ import { buildVvFile, listGraphicsConsoles } from '../api/resources/consoles'
 import type { GraphicsConsole } from '../api/schemas/console'
 import type { Vm } from '../api/schemas/vm'
 import { useNotify } from '../notifications/context'
+import { vmKeys } from './useVms'
+
+// --- Console-tab imperative reads ------------------------------------------
+// VmConsolePage (the standalone console tab) resolves its reads imperatively
+// inside effects rather than through polled queries, on purpose: the console
+// list has a 401-means-session-ended branch that must fire on the FIRST
+// failure (no query retry/backoff, and the tab holds no username for
+// AuthProvider's teardown to run), the VM name is a one-shot best-effort read,
+// and the connection ticket is minted fresh on every (re)connect and must never
+// be cached. None of those fit useQuery, so the resource calls the tab needs
+// are surfaced here — the page consumes the hooks layer, never api/resources
+// (CONTRIBUTING.md: transport → schemas → resources → hooks → pages).
+export { buildConsoleConnection, listGraphicsConsoles } from '../api/resources/consoles'
+export { getVm } from '../api/resources/vms'
 
 // Console ids and protocols only change across VM runs, so unlike the other
 // per-VM queries this one never polls: ConsoleButton passes `enabled` from
@@ -10,7 +24,7 @@ import { useNotify } from '../notifications/context'
 // actually reaches for a console.
 export function useConsoles(vmId: string, opts: { enabled?: boolean } = {}) {
   return useQuery({
-    queryKey: ['vm', vmId, 'consoles'],
+    queryKey: vmKeys.consoles(vmId),
     queryFn: () => listGraphicsConsoles(vmId),
     enabled: opts.enabled ?? true,
     // reopening the dropdown within a minute reuses the cached pair instead

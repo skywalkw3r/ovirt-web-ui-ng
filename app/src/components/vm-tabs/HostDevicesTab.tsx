@@ -46,6 +46,8 @@ import { useNotify } from '../../notifications/context'
 import { useT } from '../../i18n/useT'
 import { FieldHelp } from '../forms/FieldHelp'
 import { ConfirmModal } from '../ConfirmModal'
+import { vmKeys } from '../../hooks/useVms'
+import { hostKeys } from '../../hooks/useHosts'
 
 // Only PCI and whole-USB devices are assignable for passthrough — mirror
 // webadmin's attach picker, which filters the host's device inventory to these
@@ -95,7 +97,7 @@ export function HostDevicesTab({ vmId }: { vmId: string }) {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['vm', vmId, 'hostDevices'] })
+      void queryClient.invalidateQueries({ queryKey: vmKeys.hostDevices(vmId) })
     },
   })
 
@@ -232,12 +234,12 @@ function AttachDevicesModal({
   // Reuse the read-only host reads (shared cache keys with useHost /
   // useHostDevices); gated until a pinned host is known.
   const host = useQuery({
-    queryKey: ['host', pinnedHostId],
+    queryKey: hostKeys.detail(pinnedHostId),
     queryFn: () => getHost(pinnedHostId ?? ''),
     enabled: pinnedHostId !== undefined,
   })
   const hostDevices = useQuery({
-    queryKey: ['host', pinnedHostId, 'devices'],
+    queryKey: hostKeys.devices(pinnedHostId),
     queryFn: () => listHostDevices(pinnedHostId ?? ''),
     enabled: pinnedHostId !== undefined,
   })
@@ -270,7 +272,7 @@ function AttachDevicesModal({
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['vm', vmId, 'hostDevices'] })
+      void queryClient.invalidateQueries({ queryKey: vmKeys.hostDevices(vmId) })
     },
   })
 
@@ -417,7 +419,7 @@ function VGpuSection({ vmId }: { vmId: string }) {
   const [removing, setRemoving] = useState<MediatedDevice | null>(null)
 
   const mdevs = useQuery({
-    queryKey: ['vm', vmId, 'mediatedDevices'],
+    queryKey: vmKeys.mediatedDevices(vmId),
     queryFn: () => listVmMediatedDevices(vmId),
     refetchInterval: Math.max(refreshIntervalMs, VM_DETAIL_POLL_INTERVAL_MS),
   })
@@ -431,7 +433,7 @@ function VGpuSection({ vmId }: { vmId: string }) {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['vm', vmId, 'mediatedDevices'] })
+      void queryClient.invalidateQueries({ queryKey: vmKeys.mediatedDevices(vmId) })
     },
   })
 
@@ -586,7 +588,7 @@ function AddVGpuModal({
   const discoveryHostId = vm.data?.host?.id ?? pinnedHostId
 
   const mdevTypes = useQuery({
-    queryKey: ['host', discoveryHostId, 'mdevTypes'],
+    queryKey: hostKeys.mdevTypes(discoveryHostId),
     queryFn: () => listHostMdevTypes(discoveryHostId ?? ''),
     enabled: discoveryHostId !== undefined,
   })
@@ -611,7 +613,7 @@ function AddVGpuModal({
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['vm', vmId, 'mediatedDevices'] })
+      void queryClient.invalidateQueries({ queryKey: vmKeys.mediatedDevices(vmId) })
     },
   })
 

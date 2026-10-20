@@ -41,6 +41,7 @@ import type { Network } from '../../api/schemas/network'
 import { FieldHelp } from '../forms/FieldHelp'
 import { useT } from '../../i18n/useT'
 import { useNotify } from '../../notifications/context'
+import { hostKeys } from '../../hooks/useHosts'
 
 // The SR-IOV virtual-functions editor for one physical-function NIC. Unlike the
 // transactional Setup Networks dialog around it, every control here applies
@@ -78,18 +79,18 @@ export function SriovVfModal({
   const [addNetworkId, setAddNetworkId] = useState('')
 
   const labels = useQuery({
-    queryKey: ['host', hostId, 'nic', nicId, 'vfLabels'],
+    queryKey: hostKeys.vfLabels(hostId, nicId),
     queryFn: () => listVfAllowedLabels(hostId, nicId),
     enabled: isOpen,
   })
   const allowedNetworks = useQuery({
-    queryKey: ['host', hostId, 'nic', nicId, 'vfNetworks'],
+    queryKey: hostKeys.vfNetworks(hostId, nicId),
     queryFn: () => listVfAllowedNetworks(hostId, nicId),
     enabled: isOpen,
   })
 
   const invalidateVfConfig = () =>
-    queryClient.invalidateQueries({ queryKey: ['host', hostId, 'nicDetails'] })
+    queryClient.invalidateQueries({ queryKey: hostKeys.nicDetails(hostId) })
 
   const applyConfig = useMutation({
     mutationFn: () =>
@@ -108,28 +109,27 @@ export function SriovVfModal({
     mutationFn: (label: string) => addVfAllowedLabel(hostId, nicId, label),
     onSuccess: () => {
       setNewLabel('')
-      void queryClient.invalidateQueries({ queryKey: ['host', hostId, 'nic', nicId, 'vfLabels'] })
+      void queryClient.invalidateQueries({ queryKey: hostKeys.vfLabels(hostId, nicId) })
     },
     onError: (error: Error) => notify({ title: error.message, variant: 'danger' }),
   })
   const removeLabel = useMutation({
     mutationFn: (label: string) => removeVfAllowedLabel(hostId, nicId, label),
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ['host', hostId, 'nic', nicId, 'vfLabels'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: hostKeys.vfLabels(hostId, nicId) }),
     onError: (error: Error) => notify({ title: error.message, variant: 'danger' }),
   })
   const addNetwork = useMutation({
     mutationFn: (networkId: string) => addVfAllowedNetwork(hostId, nicId, networkId),
     onSuccess: () => {
       setAddNetworkId('')
-      void queryClient.invalidateQueries({ queryKey: ['host', hostId, 'nic', nicId, 'vfNetworks'] })
+      void queryClient.invalidateQueries({ queryKey: hostKeys.vfNetworks(hostId, nicId) })
     },
     onError: (error: Error) => notify({ title: error.message, variant: 'danger' }),
   })
   const removeNetwork = useMutation({
     mutationFn: (networkId: string) => removeVfAllowedNetwork(hostId, nicId, networkId),
     onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ['host', hostId, 'nic', nicId, 'vfNetworks'] }),
+      queryClient.invalidateQueries({ queryKey: hostKeys.vfNetworks(hostId, nicId) }),
     onError: (error: Error) => notify({ title: error.message, variant: 'danger' }),
   })
 

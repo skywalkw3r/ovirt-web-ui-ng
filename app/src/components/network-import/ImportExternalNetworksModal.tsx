@@ -28,6 +28,9 @@ import {
 } from '../../api/resources/providers'
 import { useT } from '../../i18n/useT'
 import { useNotify } from '../../notifications/context'
+import { dataCenterKeys } from '../../hooks/useAdminResources'
+import { providerKeys } from '../../hooks/useParityResources'
+import { networkKeys } from '../../hooks/useNetworks'
 
 // Webadmin's "Import Networks" dialog (ImportNetworksModel): pick an
 // openstack-network provider, list the networks it holds, tick some, pick a
@@ -60,7 +63,7 @@ export function ImportExternalNetworksModal({
   // The ['providers'] key is shared with useProviders/NetworkFormModal, so an
   // admin session reuses the cached inventory instead of re-fanning out.
   const providers = useQuery({
-    queryKey: ['providers'],
+    queryKey: providerKeys.all,
     queryFn: () => listProviders(),
     enabled: isOpen,
   })
@@ -69,13 +72,13 @@ export function ImportExternalNetworksModal({
   )
 
   const dataCenters = useQuery({
-    queryKey: ['datacenters'],
+    queryKey: dataCenterKeys.all,
     queryFn: () => listDataCenters(),
     enabled: isOpen,
   })
 
   const providerNetworks = useQuery({
-    queryKey: ['provider', providerId, 'networks'],
+    queryKey: providerKeys.networks(providerId),
     queryFn: () => listProviderNetworks(providerId),
     enabled: isOpen && providerId !== '',
   })
@@ -122,7 +125,7 @@ export function ImportExternalNetworksModal({
           title: t('network.import.toast.success', { count: imported }),
           variant: 'success',
         })
-        void queryClient.invalidateQueries({ queryKey: ['networks'] })
+        void queryClient.invalidateQueries({ queryKey: networkKeys.all })
       }
       if (failedIds.length === 0) {
         onClose()

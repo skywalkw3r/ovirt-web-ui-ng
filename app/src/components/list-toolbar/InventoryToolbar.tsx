@@ -42,15 +42,9 @@ export function InventoryToolbar({
   return (
     <Toolbar style={{ paddingBottom: 'var(--pf-t--global--spacer--md)' }}>
       <ToolbarContent>
-        {/* With the tree collapsed the above-tree switcher would vanish, so it
-            rides along here beside the hamburger and never disappears — as a
-            segmented control, not the tab strip it wears above the tree (see
-            InventoryViewSwitcher on why). */}
-        {!isTreeOpen && (
-          <ToolbarItem alignSelf="center">
-            <InventoryViewSwitcher active={view} variant="toolbar" />
-          </ToolbarItem>
-        )}
+        {/* The tree toggle leads the row, always — it is the one control here
+            that exists in both tree states, so anchoring it at the left edge
+            keeps it under the same pixel whether the tree is open or shut. */}
         <ToolbarItem>
           <Button
             variant="plain"
@@ -59,6 +53,18 @@ export function InventoryToolbar({
             onClick={onToggleTree}
           />
         </ToolbarItem>
+        {/* With the tree collapsed the above-tree switcher would vanish, so it
+            rides along here just right of the hamburger and never disappears —
+            as a segmented control, not the tab strip it wears above the tree
+            (see InventoryViewSwitcher on why). It appears and disappears with
+            the tree, which is why it follows the toggle rather than leading
+            it: the other way round, collapsing the tree shoved the hamburger
+            sideways out from under the pointer that had just clicked it. */}
+        {!isTreeOpen && (
+          <ToolbarItem alignSelf="center">
+            <InventoryViewSwitcher active={view} variant="toolbar" />
+          </ToolbarItem>
+        )}
         <ToolbarItem style={{ width: '22rem' }}>
           <SearchInput
             value={filter}

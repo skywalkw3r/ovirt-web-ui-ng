@@ -12,6 +12,8 @@ import {
 } from '../api/resources/disks'
 import type { DiskAttachment } from '../api/schemas/disk'
 import { useNotify } from '../notifications/context'
+import { vmKeys } from './useVms'
+import { diskKeys } from './useCatalogPages'
 
 // Attachments always carry an id; the human-readable name lives on the
 // embedded disk entity and may be absent on stub responses.
@@ -48,8 +50,8 @@ export function useCreateVmDisk(vmId: string) {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['vm', vmId, 'disks'] })
-      void queryClient.invalidateQueries({ queryKey: ['disks'] })
+      void queryClient.invalidateQueries({ queryKey: vmKeys.disks(vmId) })
+      void queryClient.invalidateQueries({ queryKey: diskKeys.all })
     },
   })
 }
@@ -70,8 +72,8 @@ export function useCreateVmDirectLunDisk(vmId: string) {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['vm', vmId, 'disks'] })
-      void queryClient.invalidateQueries({ queryKey: ['disks'] })
+      void queryClient.invalidateQueries({ queryKey: vmKeys.disks(vmId) })
+      void queryClient.invalidateQueries({ queryKey: diskKeys.all })
     },
   })
 }
@@ -95,8 +97,8 @@ export function useResizeVmDisk(vmId: string) {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['vm', vmId, 'disks'] })
-      void queryClient.invalidateQueries({ queryKey: ['disks'] })
+      void queryClient.invalidateQueries({ queryKey: vmKeys.disks(vmId) })
+      void queryClient.invalidateQueries({ queryKey: diskKeys.all })
     },
   })
 }
@@ -118,8 +120,8 @@ export function useDetachVmDisk(vmId: string) {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['vm', vmId, 'disks'] })
-      void queryClient.invalidateQueries({ queryKey: ['disks'] })
+      void queryClient.invalidateQueries({ queryKey: vmKeys.disks(vmId) })
+      void queryClient.invalidateQueries({ queryKey: diskKeys.all })
     },
   })
 }
@@ -145,8 +147,8 @@ export function useAttachVmDisk(vmId: string) {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['vm', vmId, 'disks'] })
-      void queryClient.invalidateQueries({ queryKey: ['disks'] })
+      void queryClient.invalidateQueries({ queryKey: vmKeys.disks(vmId) })
+      void queryClient.invalidateQueries({ queryKey: diskKeys.all })
     },
   })
 }
@@ -170,8 +172,8 @@ export function useSetVmDiskActive(vmId: string) {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['vm', vmId, 'disks'] })
-      void queryClient.invalidateQueries({ queryKey: ['disks'] })
+      void queryClient.invalidateQueries({ queryKey: vmKeys.disks(vmId) })
+      void queryClient.invalidateQueries({ queryKey: diskKeys.all })
     },
   })
 }

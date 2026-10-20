@@ -10,7 +10,6 @@ import {
   ModalBody,
   ModalFooter,
   ModalHeader,
-  Skeleton,
   Switch,
   TextInput,
 } from '@patternfly/react-core'
@@ -23,11 +22,15 @@ import {
   MIGRATION_POLICIES,
   type MigrationBandwidthMethod,
 } from '../../api/resources/clusters'
+import { dataCenterKeys } from '../../hooks/useAdminResources'
 import { useCreateCluster, useUpdateCluster } from '../../hooks/useClusterMutations'
+import { macPoolKeys } from '../../hooks/useMacPools'
+import { schedulingPolicyKeys } from '../../hooks/useSchedulingPolicies'
 import type { MessageId } from '../../i18n/messages/en'
 import { useT } from '../../i18n/useT'
 import { FieldHelp } from '../forms/FieldHelp'
 import { ModalVerticalTabs } from '../forms/ModalVerticalTabs'
+import { OptionsSelect } from '../forms/OptionsSelect'
 import {
   BANDWIDTH_METHODS,
   BIOS_TYPES,
@@ -152,22 +155,26 @@ export function ClusterFormModal({
   }
 
   // Data center options for create mode — a cluster's DC is chosen once at
-  // creation and fixed thereafter, so this only powers the create select.
+  // creation and fixed thereafter, so this only powers the create select. The
+  // bare ['datacenters'] key (dataCenterKeys.all) is the entry the other
+  // create dialogs' data-center pickers share.
   const dataCenters = useQuery({
-    queryKey: ['datacenters'],
+    queryKey: dataCenterKeys.all,
     queryFn: () => listDataCenters(),
     enabled: isOpen && !isEdit,
   })
 
   // Scheduling-policy + MAC-pool option lists — top-level collections resolved
   // client-side (404-tolerant → []). Only fetched while the modal is open.
+  // Keyed like the admin pages' list hooks so a policy/pool created there
+  // refreshes these selects too.
   const schedulingPolicies = useQuery({
-    queryKey: ['schedulingPolicies'],
+    queryKey: schedulingPolicyKeys.all,
     queryFn: listSchedulingPolicies,
     enabled: isOpen,
   })
   const macPools = useQuery({
-    queryKey: ['macpools'],
+    queryKey: macPoolKeys.all,
     queryFn: listMacPools,
     enabled: isOpen,
   })
@@ -270,21 +277,24 @@ export function ClusterFormModal({
             readOnlyVariant="default"
           />
         ) : (
-          <FormSelect
+          <OptionsSelect
             id="cluster-data-center"
-            aria-label={t('clusterForm.dataCenter')}
+            ariaLabel={t('clusterForm.dataCenter')}
             value={draft.dataCenterId}
-            onChange={(_event, value) => set('dataCenterId', value)}
+            onChange={(value) => set('dataCenterId', value)}
+            query={dataCenters}
+            placeholder={{ label: t('clusterForm.dataCenter.placeholder'), isDisabled: true }}
           >
-            <FormSelectOption value="" label={t('clusterForm.dataCenter.placeholder')} isDisabled />
-            {(dataCenters.data ?? []).map((dataCenter) => (
-              <FormSelectOption
-                key={dataCenter.id}
-                value={dataCenter.id}
-                label={dataCenter.name ?? dataCenter.id}
-              />
-            ))}
-          </FormSelect>
+            {(items) =>
+              items.map((dataCenter) => (
+                <FormSelectOption
+                  key={dataCenter.id}
+                  value={dataCenter.id}
+                  label={dataCenter.name ?? dataCenter.id}
+                />
+              ))
+            }
+          </OptionsSelect>
         )}
       </FormGroup>
 
@@ -659,29 +669,25 @@ export function ClusterFormModal({
           />
         }
       >
-        {schedulingPolicies.isPending ? (
-          <Skeleton
-            width="100%"
-            height="36px"
-            screenreaderText={t('clusterForm.schedulingPolicy.loading')}
-          />
-        ) : (
-          <FormSelect
-            id="cluster-scheduling-policy"
-            aria-label={t('clusterForm.schedulingPolicy')}
-            value={draft.schedulingPolicyId}
-            onChange={(_event, value) => set('schedulingPolicyId', value)}
-          >
-            <FormSelectOption value="" label={t('clusterForm.inherit')} />
-            {(schedulingPolicies.data ?? []).map((policy) => (
+        <OptionsSelect
+          id="cluster-scheduling-policy"
+          ariaLabel={t('clusterForm.schedulingPolicy')}
+          value={draft.schedulingPolicyId}
+          onChange={(value) => set('schedulingPolicyId', value)}
+          query={schedulingPolicies}
+          placeholder={{ label: t('clusterForm.inherit') }}
+          loadingLabel={t('clusterForm.schedulingPolicy.loading')}
+        >
+          {(items) =>
+            items.map((policy) => (
               <FormSelectOption
                 key={policy.id}
                 value={policy.id}
                 label={policy.name ?? policy.id}
               />
-            ))}
-          </FormSelect>
-        )}
+            ))
+          }
+        </OptionsSelect>
       </FormGroup>
     </Form>
   )
@@ -1050,25 +1056,21 @@ export function ClusterFormModal({
           <FieldHelp field={t('clusterForm.macPool')} content={t('fieldHelp.cluster.macPool')} />
         }
       >
-        {macPools.isPending ? (
-          <Skeleton
-            width="100%"
-            height="36px"
-            screenreaderText={t('clusterForm.macPool.loading')}
-          />
-        ) : (
-          <FormSelect
-            id="cluster-mac-pool"
-            aria-label={t('clusterForm.macPool')}
-            value={draft.macPoolId}
-            onChange={(_event, value) => set('macPoolId', value)}
-          >
-            <FormSelectOption value="" label={t('clusterForm.inherit')} />
-            {(macPools.data ?? []).map((pool) => (
+        <OptionsSelect
+          id="cluster-mac-pool"
+          ariaLabel={t('clusterForm.macPool')}
+          value={draft.macPoolId}
+          onChange={(value) => set('macPoolId', value)}
+          query={macPools}
+          placeholder={{ label: t('clusterForm.inherit') }}
+          loadingLabel={t('clusterForm.macPool.loading')}
+        >
+          {(items) =>
+            items.map((pool) => (
               <FormSelectOption key={pool.id} value={pool.id} label={pool.name ?? pool.id} />
-            ))}
-          </FormSelect>
-        )}
+            ))
+          }
+        </OptionsSelect>
       </FormGroup>
     </Form>
   )

@@ -34,10 +34,11 @@ import {
   folderRootOf,
   folderSubtreeIds,
   folderVmCounts,
+  type TaggedEntity,
+  tagKeys,
   useDeleteTag,
   useTags,
   useUpdateTag,
-  type TaggedEntity,
 } from '../../hooks/useTags'
 import {
   folderDragPropsFor,
@@ -76,7 +77,9 @@ function findCachedEntity<T extends { id: string }>(
   listKey: 'vms' | 'templates',
   id: string,
 ): T | undefined {
-  for (const [, entities] of queryClient.getQueriesData<T[]>({ queryKey: [listKey] })) {
+  for (const [, entities] of queryClient.getQueriesData<T[]>({
+    queryKey: tagKeys.taggedList(listKey),
+  })) {
     const entity = entities?.find((candidate) => candidate.id === id)
     if (entity !== undefined) return entity
   }

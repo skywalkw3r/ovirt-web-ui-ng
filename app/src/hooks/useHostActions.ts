@@ -15,6 +15,7 @@ import {
 import type { Host } from '../api/schemas/host'
 import { useT } from '../i18n/useT'
 import { useNotify } from '../notifications/context'
+import { hostKeys } from './useHosts'
 
 // Shared by the kebab and notifications so the toast wording always matches
 // the menu item the user clicked ('deactivate' reads as "Enter maintenance").
@@ -175,8 +176,8 @@ export function useHostAction() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: (_data, _error, { host }) => {
-      void queryClient.invalidateQueries({ queryKey: ['hosts'] })
-      void queryClient.invalidateQueries({ queryKey: ['host', host.id] })
+      void queryClient.invalidateQueries({ queryKey: hostKeys.all })
+      void queryClient.invalidateQueries({ queryKey: hostKeys.detail(host.id) })
     },
   })
 }
@@ -200,8 +201,8 @@ export function useFenceHost() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: (_data, _error, { host }) => {
-      void queryClient.invalidateQueries({ queryKey: ['hosts'] })
-      void queryClient.invalidateQueries({ queryKey: ['host', host.id] })
+      void queryClient.invalidateQueries({ queryKey: hostKeys.all })
+      void queryClient.invalidateQueries({ queryKey: hostKeys.detail(host.id) })
     },
   })
 }
@@ -231,8 +232,8 @@ export function useConfirmHostRebooted() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: (_data, _error, { host }) => {
-      void queryClient.invalidateQueries({ queryKey: ['hosts'] })
-      void queryClient.invalidateQueries({ queryKey: ['host', host.id] })
+      void queryClient.invalidateQueries({ queryKey: hostKeys.all })
+      void queryClient.invalidateQueries({ queryKey: hostKeys.detail(host.id) })
     },
   })
 }
@@ -254,8 +255,8 @@ export function useSelectSpm() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: (_data, _error, { host }) => {
-      void queryClient.invalidateQueries({ queryKey: ['hosts'] })
-      void queryClient.invalidateQueries({ queryKey: ['host', host.id] })
+      void queryClient.invalidateQueries({ queryKey: hostKeys.all })
+      void queryClient.invalidateQueries({ queryKey: hostKeys.detail(host.id) })
     },
   })
 }
@@ -277,8 +278,8 @@ export function useApproveHost() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: (_data, _error, { host }) => {
-      void queryClient.invalidateQueries({ queryKey: ['hosts'] })
-      void queryClient.invalidateQueries({ queryKey: ['host', host.id] })
+      void queryClient.invalidateQueries({ queryKey: hostKeys.all })
+      void queryClient.invalidateQueries({ queryKey: hostKeys.detail(host.id) })
     },
   })
 }
@@ -301,8 +302,8 @@ export function useReinstallHost() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: (_data, _error, { host }) => {
-      void queryClient.invalidateQueries({ queryKey: ['hosts'] })
-      void queryClient.invalidateQueries({ queryKey: ['host', host.id] })
+      void queryClient.invalidateQueries({ queryKey: hostKeys.all })
+      void queryClient.invalidateQueries({ queryKey: hostKeys.detail(host.id) })
     },
   })
 }
@@ -325,8 +326,8 @@ export function useHostUpgradeCheck() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: (_data, _error, { host }) => {
-      void queryClient.invalidateQueries({ queryKey: ['hosts'] })
-      void queryClient.invalidateQueries({ queryKey: ['host', host.id] })
+      void queryClient.invalidateQueries({ queryKey: hostKeys.all })
+      void queryClient.invalidateQueries({ queryKey: hostKeys.detail(host.id) })
     },
   })
 }
@@ -350,8 +351,8 @@ export function useUpgradeHost() {
       notify({ title: error.message, variant: 'danger' })
     },
     onSettled: (_data, _error, { host }) => {
-      void queryClient.invalidateQueries({ queryKey: ['hosts'] })
-      void queryClient.invalidateQueries({ queryKey: ['host', host.id] })
+      void queryClient.invalidateQueries({ queryKey: hostKeys.all })
+      void queryClient.invalidateQueries({ queryKey: hostKeys.detail(host.id) })
     },
   })
 }

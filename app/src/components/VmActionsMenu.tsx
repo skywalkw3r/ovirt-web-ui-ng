@@ -36,6 +36,7 @@ import { MakeTemplateModalItem } from './MakeTemplateModal'
 import { AssignVmTagsModalItem } from './tags/AssignVmTagsModal'
 import { MoveToFolderModalItem } from './tags/MoveToFolderModal'
 import { POWER_ACTIONS, type PowerAction } from './vm-power-actions'
+import { vmKeys } from '../hooks/useVms'
 
 // Remove is not a lifecycle action (different endpoint, carries the disk
 // choice), so it gets its own mutation instead of extending useVmAction.
@@ -64,7 +65,7 @@ function useRemoveVm() {
       })
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['vms'] })
+      void queryClient.invalidateQueries({ queryKey: vmKeys.all })
     },
   })
 }

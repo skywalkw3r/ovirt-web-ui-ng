@@ -3,6 +3,7 @@ import { getDisk, listDiskPermissions, listDiskVms } from '../api/resources/disk
 import { listStorageDomains } from '../api/resources/storageDomains'
 import type { StorageDomain } from '../api/schemas/storage-domain'
 import { useSettings } from '../settings/SettingsProvider'
+import { diskKeys } from './useCatalogPages'
 
 // Disk subcollections drift slowly and only load while the detail page is
 // mounted; 60s matches the other admin/parity collections. The constant is a
@@ -17,7 +18,7 @@ export const DISK_DETAIL_POLL_INTERVAL_MS = 60_000
 export function useDisk(id: string) {
   const { refreshIntervalMs } = useSettings()
   return useQuery({
-    queryKey: ['disk', id],
+    queryKey: diskKeys.detail(id),
     queryFn: () => getDisk(id),
     refetchInterval: Math.max(refreshIntervalMs, DISK_DETAIL_POLL_INTERVAL_MS),
   })
@@ -26,7 +27,7 @@ export function useDisk(id: string) {
 export function useDiskVms(id: string) {
   const { refreshIntervalMs } = useSettings()
   return useQuery({
-    queryKey: ['disk', id, 'vms'],
+    queryKey: diskKeys.vms(id),
     queryFn: () => listDiskVms(id),
     refetchInterval: Math.max(refreshIntervalMs, DISK_DETAIL_POLL_INTERVAL_MS),
   })
@@ -35,7 +36,7 @@ export function useDiskVms(id: string) {
 export function useDiskPermissions(id: string) {
   const { refreshIntervalMs } = useSettings()
   return useQuery({
-    queryKey: ['disk', id, 'permissions'],
+    queryKey: diskKeys.permissions(id),
     queryFn: () => listDiskPermissions(id),
     refetchInterval: Math.max(refreshIntervalMs, DISK_DETAIL_POLL_INTERVAL_MS),
   })
@@ -51,7 +52,7 @@ export function useDiskStorageDomains(linkedIds: string[]) {
   const { refreshIntervalMs } = useSettings()
   const wanted = new Set(linkedIds)
   return useQuery({
-    queryKey: ['disk', [...wanted].sort().join(','), 'storageDomains'],
+    queryKey: diskKeys.storageDomains(wanted),
     queryFn: async (): Promise<StorageDomain[]> => {
       const all = await listStorageDomains()
       return all.filter((sd) => wanted.has(sd.id))

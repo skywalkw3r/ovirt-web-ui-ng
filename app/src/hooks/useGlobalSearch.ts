@@ -67,6 +67,13 @@ interface GroupDef {
 // Row-context joiner: skip absent parts, keep the separator consistent.
 const meta = (...parts: Array<string | undefined>) => parts.filter(Boolean).join(' · ')
 
+// Per-collection preview key: each (collection, term) caches independently, so
+// repeat terms are instant and one group's failure never touches its siblings.
+export const globalSearchKeys = {
+  group: (collection: SearchScope, clause: string | null) =>
+    ['global-search', collection, clause] as const,
+}
+
 const GROUP_DEFS: readonly GroupDef[] = [
   {
     key: 'vms',
@@ -195,7 +202,7 @@ export function useGlobalSearch(rawTerm: string): {
     queries: GROUP_DEFS.map((def) => ({
       // per-collection key: each term caches independently, repeat terms are
       // instant, and one group's failure never touches its siblings
-      queryKey: ['global-search', def.key, clause],
+      queryKey: globalSearchKeys.group(def.key, clause),
       queryFn: ({ signal }: { signal: AbortSignal }) => def.fetch(clause ?? '', signal),
       enabled: active && included(def),
       // preview freshness only — reopening the palette on the same term

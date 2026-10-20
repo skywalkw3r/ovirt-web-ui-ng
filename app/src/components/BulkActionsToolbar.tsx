@@ -174,8 +174,8 @@ export function BulkActionsToolbar({ selected, onClear }: { selected: Vm[]; onCl
 // choice over the whole selection (pinning targets one host for every VM, or
 // auto lets the scheduler place each). Kept in-toolbar rather than reusing
 // MigrateModal directly: that component owns its own single-VM mutation and
-// doesn't expose a reusable picker. Hardcoded English (i18n is read-only this
-// wave).
+// doesn't expose a reusable picker. Strings resolve through the bulk.migrate.*
+// ids plus the single-VM dialog's migrate.* host-picker ids.
 function BulkMigrateModal({
   vms,
   onMigrate,
@@ -186,6 +186,7 @@ function BulkMigrateModal({
   onClose: () => void
 }) {
   const hosts = useHosts()
+  const t = useT()
   const [pinHost, setPinHost] = useState(false)
   const [hostId, setHostId] = useState('')
 
@@ -206,7 +207,10 @@ function BulkMigrateModal({
       aria-labelledby="bulk-migrate-title"
       aria-describedby="bulk-migrate-body"
     >
-      <ModalHeader title={`Migrate ${vms.length} virtual machines`} labelId="bulk-migrate-title" />
+      <ModalHeader
+        title={t('bulk.migrate.title', { count: vms.length })}
+        labelId="bulk-migrate-title"
+      />
       <ModalBody id="bulk-migrate-body">
         <Form
           id="bulk-migrate-form"
@@ -216,7 +220,7 @@ function BulkMigrateModal({
           }}
         >
           <FormGroup
-            label="Destination"
+            label={t('migrate.destination')}
             role="radiogroup"
             isStack
             fieldId="bulk-migrate-destination"
@@ -224,41 +228,49 @@ function BulkMigrateModal({
             <Radio
               id="bulk-migrate-destination-auto"
               name="bulk-migrate-destination"
-              label="Automatically choose a host"
-              description="Let the engine's scheduler place each VM."
+              label={t('bulk.migrate.auto.label')}
+              description={t('bulk.migrate.auto.description')}
               isChecked={!pinHost}
               onChange={() => setPinHost(false)}
             />
             <Radio
               id="bulk-migrate-destination-pinned"
               name="bulk-migrate-destination"
-              label="Select a destination host"
+              label={t('bulk.migrate.pinned.label')}
               isChecked={pinHost}
               onChange={() => setPinHost(true)}
             />
           </FormGroup>
 
           {pinHost && (
-            <FormGroup label="Host" isRequired fieldId="bulk-migrate-host">
-              {hosts.isPending && <Skeleton height="2.25rem" screenreaderText="Loading hosts" />}
+            <FormGroup label={t('migrate.host.label')} isRequired fieldId="bulk-migrate-host">
+              {hosts.isPending && (
+                <Skeleton height="2.25rem" screenreaderText={t('migrate.host.loading')} />
+              )}
               {hosts.isError && (
                 <HelperText>
                   <HelperTextItem variant="error">
-                    Could not load hosts:{' '}
-                    {hosts.error instanceof Error ? hosts.error.message : 'Unknown error'}
+                    {t('migrate.host.error', {
+                      message:
+                        hosts.error instanceof Error
+                          ? hosts.error.message
+                          : t('common.error.unknown'),
+                    })}
                   </HelperTextItem>
                 </HelperText>
               )}
               {hosts.isSuccess && (
                 <FormSelect
                   id="bulk-migrate-host"
-                  aria-label="Host"
+                  aria-label={t('migrate.host.label')}
                   value={hostId}
                   onChange={(_event, value) => setHostId(value)}
                 >
                   <FormSelectOption
                     value=""
-                    label={targets.length === 0 ? 'No available hosts' : 'Select a host'}
+                    label={
+                      targets.length === 0 ? t('bulk.migrate.noHosts') : t('migrate.host.select')
+                    }
                     isPlaceholder
                     isDisabled
                   />
@@ -278,10 +290,10 @@ function BulkMigrateModal({
           form="bulk-migrate-form"
           isDisabled={pinHost && !hostId}
         >
-          Migrate
+          {t('common.action.migrate')}
         </Button>
         <Button variant="link" onClick={onClose}>
-          Cancel
+          {t('common.action.cancel')}
         </Button>
       </ModalFooter>
     </Modal>

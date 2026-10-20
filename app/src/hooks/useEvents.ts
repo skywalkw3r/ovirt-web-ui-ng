@@ -2,6 +2,19 @@ import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { listEvents } from '../api/resources/events'
 import { useSettings } from '../settings/SettingsProvider'
 
+// Query-key builders for the audit-log collection. `all` is the prefix the
+// notification drawer's dismiss mutation invalidates (it covers both shapes
+// below); `list` the newest-100 per-search entry useEvents polls (the
+// dashboard feed and drawer share its '' entry); `page` the Events page's
+// server-paged window, deliberately a separate shape so paging never disturbs
+// the drawer/dashboard cache or their polling.
+export const eventKeys = {
+  all: ['events'] as const,
+  list: (search = '') => ['events', search] as const,
+  page: (search: string, page: number, perPage: number) =>
+    ['events', 'page', search, page, perPage] as const,
+}
+
 // Same cadence as the VM lists (10s default, user-tunable in Preferences).
 // Relative timestamps are kept fresh by useNow in EventsPage — an unchanged
 // refetch does not re-render consumers. The committed search rides in the
@@ -14,7 +27,7 @@ import { useSettings } from '../settings/SettingsProvider'
 export function useEvents(search = '') {
   const { refreshIntervalMs } = useSettings()
   return useQuery({
-    queryKey: ['events', search],
+    queryKey: eventKeys.list(search),
     queryFn: () => listEvents({ max: 100, search: search || undefined }),
     refetchInterval: refreshIntervalMs,
   })
@@ -30,7 +43,7 @@ export function useEvents(search = '') {
 export function useEventsPage(search: string, page: number, perPage: number) {
   const { refreshIntervalMs } = useSettings()
   return useQuery({
-    queryKey: ['events', 'page', search, page, perPage],
+    queryKey: eventKeys.page(search, page, perPage),
     queryFn: () => listEvents({ search: search || undefined, page, max: perPage }),
     refetchInterval: refreshIntervalMs,
     placeholderData: keepPreviousData,

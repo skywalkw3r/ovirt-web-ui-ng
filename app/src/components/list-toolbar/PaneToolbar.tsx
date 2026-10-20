@@ -12,13 +12,7 @@ import { ColumnPicker } from './ColumnPicker'
 import type { ColumnPrefs } from '../../hooks/useColumnPrefs'
 import type { MessageId } from '../../i18n/messages/en'
 import { useT } from '../../i18n/useT'
-
-// Page sizes every inventory table offers.
-const PER_PAGE_OPTIONS = [
-  { title: '20', value: 20 },
-  { title: '50', value: 50 },
-  { title: '100', value: 100 },
-]
+import { PER_PAGE_OPTIONS } from '../../hooks/usePagination'
 
 export interface PaneToolbarPagination {
   itemCount: number
@@ -43,6 +37,8 @@ export interface PaneToolbarPagination {
 export function PaneToolbar({
   actions,
   bulk,
+  filters,
+  onClearFilters,
   pagination,
   onExportCsv,
   columns,
@@ -53,6 +49,14 @@ export function PaneToolbar({
   actions?: ReactNode
   // selection count + Clear, left of the actions (VMs & Templates only)
   bulk?: ReactNode
+  // FacetFilters group, first in the row. The attribute filters narrow THIS
+  // table, so they sit with its pagination and column picker under the pane's
+  // identity banner rather than up in the page toolbar beside the tree
+  // controls. They must render INSIDE this Toolbar — PF hangs the applied
+  // filter labels (and the Clear all button below them) off toolbar context,
+  // which is also why clearAllFilters is wired here and not by the caller.
+  filters?: ReactNode
+  onClearFilters?: () => void
   pagination: PaneToolbarPagination
   onExportCsv: () => void
   columns: { key: string; label: string; always?: boolean }[]
@@ -60,8 +64,14 @@ export function PaneToolbar({
 }) {
   const t = useT()
   return (
-    <Toolbar style={{ paddingBlockStart: 0, paddingBottom: 'var(--pf-t--global--spacer--sm)' }}>
+    <Toolbar
+      style={{ paddingBlockStart: 0, paddingBottom: 'var(--pf-t--global--spacer--sm)' }}
+      clearAllFilters={onClearFilters}
+      clearFiltersButtonText={t('common.filter.clearAll')}
+      numberOfFiltersText={(count) => t('common.filter.appliedCount', { count })}
+    >
       <ToolbarContent>
+        {filters}
         {bulk}
         {actions !== undefined && <ToolbarGroup>{actions}</ToolbarGroup>}
         <ToolbarGroup align={{ default: 'alignEnd' }}>

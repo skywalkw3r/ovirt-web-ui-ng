@@ -91,6 +91,33 @@ test('the cluster hosts table has a working column picker', async ({ page }) => 
   await expect(table.getByRole('columnheader', { name: 'Name' })).toBeVisible()
 })
 
+// The cluster DETAIL page's Virtual Machines tab rides VmMembershipTable (the
+// shell the pool / template / quota VM tabs share): its rows filter and page
+// client-side off the already-cached /vms feed, which is what keeps a cluster
+// holding thousands of VMs navigable.
+test('the cluster VMs tab filters its rows and offers a way back', async ({ page }) => {
+  await login(page, { path: '/clusters/cluster-01' })
+  await page.getByRole('tab', { name: 'Virtual Machines' }).click()
+  const rows = page.locator('table[aria-label="Virtual machines in this cluster"] tbody tr')
+  await expect(rows).toHaveCount(8)
+  // pagination counts the matched rows, not the page
+  await expect(page.getByRole('button', { name: /8 of 8/ })).toBeVisible()
+
+  // live filter, per keystroke: the name column and the description/comment one
+  const search = page.getByLabel('Search virtual machines')
+  await search.fill('postgres')
+  await expect(rows).toHaveCount(2)
+  await expect(page.getByRole('link', { name: 'db-01', exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: /2 of 2/ })).toBeVisible()
+
+  // nothing matches → the toolbar stays put (the box holding the query is the
+  // way out) and the empty state offers Clear search
+  await search.fill('no-such-vm')
+  await expect(page.getByText('No virtual machines match the search')).toBeVisible()
+  await page.getByRole('button', { name: 'Clear search' }).click()
+  await expect(rows).toHaveCount(8)
+})
+
 test('Hosts & Clusters is admin-only', async ({ page }) => {
   await login(page, { username: 'demo@internal', path: '/hosts-clusters' })
   await expect(page.getByText('You do not have permission to view Hosts & Clusters')).toBeVisible()
