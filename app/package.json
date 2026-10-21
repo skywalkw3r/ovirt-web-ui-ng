@@ -49,7 +49,7 @@
     "victory-tooltip": "^37.3.6",
     "victory-voronoi-container": "^37.3.6",
     "victory-zoom-container": "^37.3.6",
-    "zod": "^4.4.3"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.12.1",
