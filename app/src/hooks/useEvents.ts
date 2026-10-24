@@ -1,0 +1,54 @@
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { listEvents } from '../api/resources/events'
+import { useSettings } from '../settings/SettingsProvider'
+import { pollIntervalMs, type PollOptions } from './pollInterval'
+
+// Query-key builders for the audit-log collection. `all` is the prefix the
+// notification drawer's dismiss mutation invalidates (it covers both shapes
+// below); `list` the newest-100 per-search entry useEvents polls (the
+// dashboard feed and drawer share its '' entry); `page` the Events page's
+// server-paged window, deliberately a separate shape so paging never disturbs
+// the drawer/dashboard cache or their polling.
+export const eventKeys = {
+  all: ['events'] as const,
+  list: (search = '') => ['events', search] as const,
+  page: (search: string, page: number, perPage: number) =>
+    ['events', 'page', search, page, perPage] as const,
+}
+
+// Same cadence as the VM lists (10s default, user-tunable in Preferences).
+// Relative timestamps are kept fresh by useNow in EventsPage — an unchanged
+// refetch does not re-render consumers. The committed search rides in the
+// query key so each engine-DSL query caches (and polls) separately; callers
+// without a search (dashboard, notification drawer) share the '' entry.
+//
+// This is the cheap newest-100 window — no server-side paging. The dashboard
+// Activity feed and the notification drawer depend on exactly this shape; the
+// Events *page* walks the full audit log through useEventsPage below. The
+// closed bell passes `background` and rides the slower floor (pollInterval.ts)
+// — its badge is all that feed drives until the drawer opens.
+export function useEvents(search = '', { background = false }: PollOptions = {}) {
+  const { refreshIntervalMs } = useSettings()
+  return useQuery({
+    queryKey: eventKeys.list(search),
+    queryFn: () => listEvents({ max: 100, search: search || undefined }),
+    refetchInterval: pollIntervalMs(refreshIntervalMs, background),
+  })
+}
+
+// Server-side paged read for the Events page: window N of `perPage` rows,
+// newest first, so audit history beyond the newest 100 stays reachable
+// (webadmin parity). Keyed under ['events', 'page', …] — separate from
+// useEvents' newest-100 entries — so paging can never disturb the drawer or
+// dashboard cache or their polling. keepPreviousData holds the current window
+// on screen while the next one loads, so page flips never flash the skeleton;
+// only the current window polls (stale window entries fall out of the cache).
+export function useEventsPage(search: string, page: number, perPage: number) {
+  const { refreshIntervalMs } = useSettings()
+  return useQuery({
+    queryKey: eventKeys.page(search, page, perPage),
+    queryFn: () => listEvents({ search: search || undefined, page, max: perPage }),
+    refetchInterval: refreshIntervalMs,
+    placeholderData: keepPreviousData,
+  })
+}

@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!--
+      Content Security Policy (defense in depth). The authoritative CSP ships
+      as a real response header from the engine's Apache — see
+      docs/SECURITY-HEADERS.md; this <meta> is the same policy minus the two
+      directives a meta tag cannot express (frame-ancestors, which is
+      header-only per spec, and any Set-Cookie/transport concerns). Keep the
+      two in sync.
+        default-src 'self'      — everything defaults to same-origin (the app
+                                  is served same-origin behind the engine, so
+                                  API + assets are all 'self').
+        connect-src 'self' wss:
+                                — REST/XHR/SSO stay same-origin ('self'); wss:
+                                  allows the noVNC console websocket to the
+                                  engine's websocket-proxy (may be a different
+                                  host/port than the page origin). No bare
+                                  https: — the console only ever opens a wss:
+                                  socket, so allowing https: to any origin would
+                                  hand an XSS an unrestricted exfil channel for
+                                  no functional gain.
+                                  %VITE_CSP_CONNECT_EXTRA% (build env, default
+                                  empty — vite.config.ts) appends the engine
+                                  origins of a multi-engine deployment; the
+                                  Containerfile bakes a placeholder here that
+                                  nginx sub_filter swaps at serve time so the
+                                  meta always matches the response header.
+        img-src 'self' data:    — OS/status icons plus data: URIs PF emits.
+        style-src 'self' 'unsafe-inline'
+                                — PatternFly and Victory inject inline style
+                                  attributes at runtime; without 'unsafe-inline'
+                                  charts and layout break. Scripts are NOT
+                                  granted this.
+        script-src 'self'       — no inline/eval scripts; our bundle is 'self'.
+        base-uri 'self'         — block <base> injection redirecting relative URLs.
+        object-src 'none'       — no plugins/embeds.
+      frame-ancestors 'none' (clickjacking defense) is header-only — see the doc.
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; connect-src 'self' wss: %VITE_CSP_CONNECT_EXTRA%; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; base-uri 'self'; object-src 'none'"
+    />
+    <title>oVirt Console</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <!-- Deploy-time config (window.ovirtWebUiConfig), read by src/config/runtime.ts.
+         A non-hashed, no-cache, %config(noreplace) file a deployer edits without a
+         rebuild. %BASE_URL% resolves it under the app's sub-path; loaded before the
+         module bundle so the config is set before anything reads it. -->
+    <script src="%BASE_URL%config.js"></script>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

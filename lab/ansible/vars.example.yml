@@ -1,0 +1,128 @@
+---
+# vars.example.yml — the shared variable contract for the oVirt lab playbooks
+# (01-provision-proxmox-vm.yml .. 04-post-deploy.yml all read exactly these
+# names).
+#
+# Copy to vars.yml, edit, and keep vars.yml OUT of version control:
+#
+#   cp vars.example.yml vars.yml
+#
+# Secrets never live in this file — they are read from environment variables
+# at runtime. Export them before running:
+#
+#   export PROXMOX_TOKEN_SECRET='...'   # Proxmox API token secret
+#   export HE_ADMIN_PASSWORD='...'      # oVirt admin@ovirt password
+#   export HE_ROOT_PASSWORD='...'       # engine VM root password
+
+# ---------------------------------------------------------------------------
+# Proxmox API (used by 01-provision-proxmox-vm.yml)
+# ---------------------------------------------------------------------------
+
+# Hostname or IP of the Proxmox VE API endpoint (no scheme, no port).
+# MUST be the same machine as the [pve] host in inventory.ini — the API
+# (this var) and SSH (inventory) are configured in two files but talk to
+# one box. Play 1 probes this endpoint before doing any other work.
+proxmox_api_host: proxmox.domain.local
+
+# The user the API token belongs to.
+proxmox_api_user: root@pam
+
+# Token NAME only (e.g. 'ansible' for the token root@pam!ansible), NOT the
+# full 'user@realm!token' string. The token needs at least PVEVMAdmin on
+# /vms and Datastore.Allocate* on the storages below. Watch out: tokens
+# created with "privilege separation" have FEWER permissions than their
+# owning user by default.
+proxmox_api_token_id: ansible
+
+# Token secret (the UUID shown once at token creation). Environment only.
+proxmox_api_token_secret: "{{ lookup('env', 'PROXMOX_TOKEN_SECRET') }}"
+
+# Name of the PVE node the lab VM is created on (as shown in the PVE UI).
+# On a cluster this must be the same machine as the [pve] inventory host,
+# because a few provisioning steps run over SSH on that node.
+proxmox_node: pve
+
+# ---------------------------------------------------------------------------
+# Lab VM — the CentOS Stream 9 node that runs vdsm + NFS + the hosted engine
+# ---------------------------------------------------------------------------
+
+lab_vm_name: ovirt-node
+lab_vm_id: 950
+
+# Sizing. Working minimums: 4 cores / 16384 MB / 120 GB. The defaults below
+# are the "comfortable" tier from docs/LAB-SETUP.md — remember the
+# HostedEngine VM alone takes 4 GB RAM and a 60 GB disk out of this budget,
+# and a nested-virt deploy already runs 60-90 minutes.
+lab_vm_cores: 8
+lab_vm_memory_mb: 32768
+lab_vm_disk_gb: 300
+
+# Bridge the VM's NIC attaches to, and the storage for its disks. LVM-thin
+# is fine for disks; the cloud-init user-data snippet is stored on the
+# 'local' directory storage regardless, because LVM storages cannot hold
+# snippets.
+lab_vm_bridge: vmbr0
+lab_vm_storage: local-lvm
+
+# VLAN tag for the VM's NIC (comment out for an untagged/access port).
+# NOTE: the VM is created q35 + UEFI (OVMF) with this tag; changing machine
+# type, firmware, or VLAN on an EXISTING VM is not reconciled by re-running
+# play 1 — destroy the VM (see README teardown) and re-provision, or apply
+# manually: qm set <vmid> --machine q35 --bios ovmf \
+#   --efidisk0 <storage>:1,efitype=4m,pre-enrolled-keys=0 \
+#   --net0 virtio,bridge=<bridge>,tag=<vlan>
+lab_vm_vlan: 5
+
+# CentOS Stream 9 GenericCloud image. TRAP: two near-identical variants
+# exist — 'GenericCloud-9-*' is the older BIOS-ONLY build and will NOT boot
+# the q35+OVMF VM this play creates ("BdsDxe: No bootable option or device
+# was found"); 'GenericCloud-x86_64-9-*' is the newer hybrid BIOS+UEFI
+# build. Keep the x86_64-9 variant. 'latest' is a moving target on a Stream
+# cadence — pin a dated build for reproducible rebuilds. The download is
+# cached on the PVE host, so re-runs are free.
+lab_cloud_image_url: https://cloud.centos.org/centos/9-stream/x86_64/images/CentOS-Stream-GenericCloud-x86_64-9-latest.x86_64.qcow2
+
+# Optional integrity/refresh pin for the image cache, e.g. "sha256:<hex>".
+# When set, a cached image that no longer matches is re-downloaded.
+# lab_cloud_image_checksum: "sha256:0123abcd..."
+
+# Public key installed on the node's *root* account via cloud-init (the
+# hosted-engine installer must run as root, so the lab skips an unprivileged
+# user entirely).
+lab_ssh_public_key: "{{ lookup('file', '~/.ssh/id_ed25519.pub') }}"
+# ...or paste a literal key instead:
+# lab_ssh_public_key: "ssh-ed25519 AAAAC3Nza... you@workstation"
+
+# ---------------------------------------------------------------------------
+# Network identities
+# ---------------------------------------------------------------------------
+# BOTH FQDNs must resolve before the engine deploys — from your workstation
+# AND on the node itself. 02-bootstrap-node.yml takes care of the node's
+# /etc/hosts; if you have no lab DNS, add both entries to your workstation's
+# /etc/hosts too.
+
+node_fqdn: kvmnode.lab.domain.local
+node_ip: 10.5.5.40
+
+# The engine VM claims this SECOND, free IP on the same subnet via its own
+# static configuration — make sure DHCP can never hand it out.
+engine_fqdn: engine.lab.domain.local
+engine_ip: 10.5.5.41
+
+lab_ip_prefix: 24
+# Verify these two against your lab subnet before running.
+lab_gateway: 10.5.5.254
+# Upstream resolver for the node (router or real DNS server).
+lab_dns: 10.5.5.254
+
+# ---------------------------------------------------------------------------
+# Secrets — environment only, never committed
+# ---------------------------------------------------------------------------
+
+# oVirt administrator password (admin@ovirt / admin@internal) for the web UI
+# and the REST API.
+he_admin_password: "{{ lookup('env', 'HE_ADMIN_PASSWORD') }}"
+
+# Root password of the engine VM's OS (console access via
+# 'hosted-engine --console' when things go wrong).
+he_root_password: "{{ lookup('env', 'HE_ROOT_PASSWORD') }}"

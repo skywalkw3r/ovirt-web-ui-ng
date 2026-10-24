@@ -1,0 +1,539 @@
+import { useState } from 'react'
+import {
+  Button,
+  Checkbox,
+  EmptyState,
+  EmptyStateActions,
+  EmptyStateBody,
+  EmptyStateFooter,
+  Form,
+  FormGroup,
+  HelperText,
+  HelperTextItem,
+  Label,
+  LabelGroup,
+  Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+  Skeleton,
+  Stack,
+  StackItem,
+  TextInput,
+} from '@patternfly/react-core'
+import { ActionsColumn, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+  createIscsiBond,
+  deleteIscsiBond,
+  listIscsiBonds,
+  listIscsiStorageConnections,
+  updateIscsiBond,
+  type IscsiBond,
+  type StorageConnection,
+} from '../../api/resources/iscsiBonds'
+import { sortRows, useColumnSort } from '../../hooks/useColumnSort'
+import {
+  DATA_CENTER_DETAIL_POLL_INTERVAL_MS,
+  useDataCenterNetworks,
+} from '../../hooks/useDataCenterDetail'
+import { useT } from '../../i18n/useT'
+import { useNotify } from '../../notifications/context'
+import { useSettings } from '../../settings/SettingsProvider'
+import { ConfirmModal } from '../ConfirmModal'
+import { dataCenterKeys } from '../../hooks/useAdminResources'
+import { storageConnectionKeys } from '../../hooks/useStorageDomains'
+
+const DASH = '—'
+
+// Every column in visual order so each Th's index matches its position (the
+// trailing actions cell is unsortable and carries no key). Only Name sorts:
+// the other two cells render the bond's member networks / connections as label
+// lists, and ordering those by member count would sort on something the column
+// never shows.
+const ISCSI_BOND_KEYS = ['name', 'networks', 'connections'] as const
+
+// One iSCSI storage connection's human label — the target IQN when present,
+// otherwise the portal address (falling back to the id so a row is never blank).
+function connectionName(connection: StorageConnection): string {
+  return connection.target || connection.address || connection.id || DASH
+}
+
+// The portal detail line under a connection's name in the picker.
+function connectionPortal(connection: StorageConnection): string | undefined {
+  if (!connection.address) return undefined
+  return connection.port != null ? `${connection.address}:${connection.port}` : connection.address
+}
+
+export function IscsiMultipathTab({ dataCenterId }: { dataCenterId: string }) {
+  const t = useT()
+  const { refreshIntervalMs } = useSettings()
+  const { notify } = useNotify()
+  const queryClient = useQueryClient()
+
+  const bonds = useQuery({
+    queryKey: dataCenterKeys.iscsiBonds(dataCenterId),
+    queryFn: () => listIscsiBonds(dataCenterId),
+    refetchInterval: Math.max(refreshIntervalMs, DATA_CENTER_DETAIL_POLL_INTERVAL_MS),
+  })
+
+  const [adding, setAdding] = useState(false)
+  const [editing, setEditing] = useState<IscsiBond | null>(null)
+  const [removing, setRemoving] = useState<IscsiBond | null>(null)
+  // client-side header sort; no default — the engine list order stands until a
+  // header is clicked (see hooks/useColumnSort)
+  const { sort, thSort } = useColumnSort()
+
+  const remove = useMutation({
+    mutationFn: ({ bond }: { bond: IscsiBond }) => deleteIscsiBond(dataCenterId, bond.id!),
+    onSuccess: (_data, { bond }) => {
+      notify({ title: `iSCSI bond ${bond.name ?? ''} removed`, variant: 'success' })
+    },
+    onError: (error) => {
+      notify({ title: error.message, variant: 'danger' })
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: dataCenterKeys.iscsiBonds(dataCenterId) })
+    },
+  })
+
+  const bondCount = bonds.data?.length ?? 0
+  const sortedBonds = sortRows(bonds.data ?? [], sort, (bond, key) =>
+    key === 'name' ? bond.name : undefined,
+  )
+
+  return (
+    <>
+      {bonds.isSuccess && bondCount > 0 && (
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'flex-end',
+            marginBottom: 'var(--pf-t--global--spacer--sm)',
+          }}
+        >
+          <Button variant="secondary" onClick={() => setAdding(true)}>
+            {t('dc.iscsiMultipath.add')}
+          </Button>
+        </div>
+      )}
+
+      {bonds.isPending && (
+        <>
+          <Skeleton height="2.5rem" style={{ marginBottom: '0.5rem' }} />
+          <Skeleton height="2.5rem" screenreaderText={t('dc.iscsiMultipath.loading')} />
+        </>
+      )}
+
+      {bonds.isError && (
+        <EmptyState titleText={t('dc.iscsiMultipath.error.title')} status="danger">
+          <EmptyStateBody>
+            {bonds.error instanceof Error ? bonds.error.message : t('common.error.unknown')}
+          </EmptyStateBody>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="primary" onClick={() => void bonds.refetch()}>
+                {t('common.action.retry')}
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
+        </EmptyState>
+      )}
+
+      {bonds.isSuccess && bondCount === 0 && (
+        <EmptyState titleText={t('dc.iscsiMultipath.empty.title')} headingLevel="h4">
+          <EmptyStateBody>{t('dc.iscsiMultipath.empty.body')}</EmptyStateBody>
+          <EmptyStateFooter>
+            <EmptyStateActions>
+              <Button variant="primary" onClick={() => setAdding(true)}>
+                {t('dc.iscsiMultipath.add')}
+              </Button>
+            </EmptyStateActions>
+          </EmptyStateFooter>
+        </EmptyState>
+      )}
+
+      {bonds.isSuccess && bondCount > 0 && (
+        <Table aria-label={t('dc.iscsiMultipath.table.ariaLabel')} variant="compact">
+          <Thead>
+            <Tr>
+              <Th sort={thSort(ISCSI_BOND_KEYS, 0)}>{t('common.field.name')}</Th>
+              <Th>{t('dc.iscsiMultipath.column.networks')}</Th>
+              <Th>{t('dc.iscsiMultipath.column.connections')}</Th>
+              <Th screenReaderText={t('common.field.actions')} />
+            </Tr>
+          </Thead>
+          <Tbody>
+            {sortedBonds.map((bond) => {
+              const networks = bond.networks?.network ?? []
+              const connections = bond.storage_connections?.storage_connection ?? []
+              return (
+                <Tr key={bond.id}>
+                  <Td dataLabel={t('common.field.name')}>{bond.name ?? DASH}</Td>
+                  <Td dataLabel={t('dc.iscsiMultipath.column.networks')}>
+                    {networks.length > 0 ? (
+                      <LabelGroup numLabels={4}>
+                        {networks.map((network) => (
+                          <Label key={network.id} isCompact color="blue">
+                            {network.name ?? network.id}
+                          </Label>
+                        ))}
+                      </LabelGroup>
+                    ) : (
+                      DASH
+                    )}
+                  </Td>
+                  <Td dataLabel={t('dc.iscsiMultipath.column.connections')}>
+                    {connections.length > 0 ? (
+                      <LabelGroup numLabels={4}>
+                        {connections.map((connection) => (
+                          <Label key={connection.id} isCompact color="grey">
+                            {connectionName(connection)}
+                          </Label>
+                        ))}
+                      </LabelGroup>
+                    ) : (
+                      DASH
+                    )}
+                  </Td>
+                  <Td dataLabel={t('common.field.actions')} isActionCell>
+                    <ActionsColumn
+                      isDisabled={remove.isPending}
+                      items={[
+                        {
+                          title: t('common.action.edit'),
+                          onClick: () => setEditing(bond),
+                        },
+                        {
+                          title: t('common.action.remove'),
+                          isDanger: true,
+                          onClick: () => setRemoving(bond),
+                        },
+                      ]}
+                    />
+                  </Td>
+                </Tr>
+              )
+            })}
+          </Tbody>
+        </Table>
+      )}
+
+      {adding && <IscsiBondModal dataCenterId={dataCenterId} onClose={() => setAdding(false)} />}
+
+      {editing && (
+        <IscsiBondModal
+          dataCenterId={dataCenterId}
+          bond={editing}
+          onClose={() => setEditing(null)}
+        />
+      )}
+
+      {removing && (
+        <ConfirmModal
+          isOpen
+          title={t('dc.iscsiMultipath.remove.confirm.title', {
+            name: removing.name ?? removing.id ?? '',
+          })}
+          body={t('dc.iscsiMultipath.remove.confirm.body')}
+          confirmLabel={t('common.action.remove')}
+          isConfirmDisabled={remove.isPending}
+          onConfirm={() => {
+            const target = removing
+            setRemoving(null)
+            remove.mutate({ bond: target })
+          }}
+          onCancel={() => setRemoving(null)}
+        />
+      )}
+    </>
+  )
+}
+
+// The Add / Edit iSCSI bond dialog.
+//
+// CREATE: a name/description plus two pick-lists — the data center's logical
+// networks and its iSCSI storage connections. A bond needs at least one of each
+// to be meaningful (webadmin's NewEditIscsiBondModel enforces the same), so Save
+// gates on name + one network + one connection. Each pick-list keeps the four
+// data states in its own right.
+//
+// EDIT: the engine's IscsiBondService.Update honors ONLY name + description (the
+// bonded networks and storage connections are immutable through update — see
+// resources/iscsiBonds.ts updateIscsiBond), so the edit form edits just those
+// two fields and renders the current memberships read-only for context. Save
+// gates on name alone.
+function IscsiBondModal({
+  dataCenterId,
+  bond,
+  onClose,
+}: {
+  dataCenterId: string
+  bond?: IscsiBond
+  onClose: () => void
+}) {
+  const isEdit = bond !== undefined
+  const t = useT()
+  const { notify } = useNotify()
+  const queryClient = useQueryClient()
+  const networks = useDataCenterNetworks(dataCenterId)
+  const connections = useQuery({
+    queryKey: storageConnectionKeys.iscsi,
+    queryFn: () => listIscsiStorageConnections(),
+    // The pick-lists only power create; edit never touches memberships.
+    enabled: !isEdit,
+  })
+
+  const [name, setName] = useState(bond?.name ?? '')
+  const [description, setDescription] = useState(bond?.description ?? '')
+  const [networkIds, setNetworkIds] = useState<string[]>([])
+  const [connectionIds, setConnectionIds] = useState<string[]>([])
+
+  const invalidateBonds = () => {
+    void queryClient.invalidateQueries({ queryKey: dataCenterKeys.iscsiBonds(dataCenterId) })
+  }
+
+  const create = useMutation({
+    mutationFn: () =>
+      createIscsiBond(dataCenterId, {
+        name: name.trim(),
+        description: description.trim() || undefined,
+        networkIds,
+        storageConnectionIds: connectionIds,
+      }),
+    onSuccess: () => {
+      notify({ title: `iSCSI bond ${name.trim()} created`, variant: 'success' })
+      onClose()
+    },
+    onError: (error) => {
+      notify({ title: error.message, variant: 'danger' })
+    },
+    onSettled: invalidateBonds,
+  })
+
+  const update = useMutation({
+    mutationFn: () =>
+      updateIscsiBond(dataCenterId, bond!.id!, {
+        name: name.trim(),
+        description: description.trim(),
+      }),
+    onSuccess: () => {
+      notify({ title: `Changes to iSCSI bond ${name.trim()} saved`, variant: 'success' })
+      onClose()
+    },
+    onError: (error) => {
+      notify({ title: error.message, variant: 'danger' })
+    },
+    onSettled: invalidateBonds,
+  })
+
+  const toggle = (list: string[], id: string): string[] =>
+    list.includes(id) ? list.filter((entry) => entry !== id) : [...list, id]
+
+  const pending = create.isPending || update.isPending
+  const nameEmpty = name.trim() === ''
+  const saveDisabled = isEdit
+    ? nameEmpty || pending
+    : nameEmpty || networkIds.length === 0 || connectionIds.length === 0 || pending
+
+  // The bond's current memberships, shown read-only in edit mode.
+  const currentNetworks = bond?.networks?.network ?? []
+  const currentConnections = bond?.storage_connections?.storage_connection ?? []
+
+  return (
+    <Modal
+      variant="medium"
+      isOpen
+      onClose={onClose}
+      aria-labelledby="iscsi-bond-title"
+      aria-describedby="iscsi-bond-body"
+    >
+      <ModalHeader
+        title={
+          isEdit
+            ? t('dc.iscsiMultipath.modal.editTitle', { name: bond.name ?? bond.id ?? '' })
+            : t('dc.iscsiMultipath.add')
+        }
+        labelId="iscsi-bond-title"
+      />
+      <ModalBody id="iscsi-bond-body">
+        <Form onSubmit={(event) => event.preventDefault()}>
+          <FormGroup label={t('common.field.name')} isRequired fieldId="iscsi-bond-name">
+            <TextInput
+              id="iscsi-bond-name"
+              aria-label={t('dc.iscsiMultipath.field.nameAria')}
+              isRequired
+              value={name}
+              onChange={(_event, value) => setName(value)}
+            />
+          </FormGroup>
+          <FormGroup label={t('common.field.description')} fieldId="iscsi-bond-description">
+            <TextInput
+              id="iscsi-bond-description"
+              aria-label={t('dc.iscsiMultipath.field.descriptionAria')}
+              value={description}
+              onChange={(_event, value) => setDescription(value)}
+            />
+          </FormGroup>
+
+          {isEdit ? (
+            <>
+              {/* Memberships are fixed after create (the engine's Update ignores
+                  them), so they render read-only for context. */}
+              <FormGroup
+                label={t('dc.iscsiMultipath.column.networks')}
+                fieldId="iscsi-bond-networks-readonly"
+              >
+                {currentNetworks.length > 0 ? (
+                  <LabelGroup numLabels={6}>
+                    {currentNetworks.map((network) => (
+                      <Label key={network.id} isCompact color="blue">
+                        {network.name ?? network.id}
+                      </Label>
+                    ))}
+                  </LabelGroup>
+                ) : (
+                  <HelperText>
+                    <HelperTextItem>{t('dc.iscsiMultipath.membership.none')}</HelperTextItem>
+                  </HelperText>
+                )}
+              </FormGroup>
+              <FormGroup
+                label={t('dc.iscsiMultipath.column.connections')}
+                fieldId="iscsi-bond-connections-readonly"
+              >
+                {currentConnections.length > 0 ? (
+                  <LabelGroup numLabels={6}>
+                    {currentConnections.map((connection) => (
+                      <Label key={connection.id} isCompact color="grey">
+                        {connectionName(connection)}
+                      </Label>
+                    ))}
+                  </LabelGroup>
+                ) : (
+                  <HelperText>
+                    <HelperTextItem>{t('dc.iscsiMultipath.membership.none')}</HelperTextItem>
+                  </HelperText>
+                )}
+                <HelperText>
+                  <HelperTextItem>{t('dc.iscsiMultipath.membershipsReadonly')}</HelperTextItem>
+                </HelperText>
+              </FormGroup>
+            </>
+          ) : (
+            <>
+              <FormGroup
+                label={t('dc.iscsiMultipath.column.networks')}
+                isRequired
+                fieldId="iscsi-bond-networks"
+              >
+                {networks.isPending && (
+                  <Skeleton height="4rem" screenreaderText={t('networks.loading')} />
+                )}
+                {networks.isError && (
+                  <EmptyState titleText={t('dcNetworks.error.title')} status="danger">
+                    <EmptyStateBody>
+                      {networks.error instanceof Error
+                        ? networks.error.message
+                        : t('common.error.unknown')}
+                    </EmptyStateBody>
+                    <EmptyStateFooter>
+                      <EmptyStateActions>
+                        <Button variant="secondary" onClick={() => void networks.refetch()}>
+                          {t('common.action.retry')}
+                        </Button>
+                      </EmptyStateActions>
+                    </EmptyStateFooter>
+                  </EmptyState>
+                )}
+                {networks.isSuccess && networks.data.length === 0 && (
+                  <EmptyStateBody>{t('dcNetworks.empty.body')}</EmptyStateBody>
+                )}
+                {networks.isSuccess && networks.data.length > 0 && (
+                  <Stack>
+                    {networks.data.map((network) => (
+                      <StackItem key={network.id}>
+                        <Checkbox
+                          id={`iscsi-bond-network-${network.id}`}
+                          label={network.name}
+                          isChecked={networkIds.includes(network.id)}
+                          onChange={() => setNetworkIds((list) => toggle(list, network.id))}
+                        />
+                      </StackItem>
+                    ))}
+                  </Stack>
+                )}
+              </FormGroup>
+
+              <FormGroup
+                label={t('dc.iscsiMultipath.column.connections')}
+                isRequired
+                fieldId="iscsi-bond-connections"
+              >
+                {connections.isPending && (
+                  <Skeleton
+                    height="4rem"
+                    screenreaderText={t('dc.iscsiMultipath.connections.loading')}
+                  />
+                )}
+                {connections.isError && (
+                  <EmptyState
+                    titleText={t('dc.iscsiMultipath.connections.error.title')}
+                    status="danger"
+                  >
+                    <EmptyStateBody>
+                      {connections.error instanceof Error
+                        ? connections.error.message
+                        : t('common.error.unknown')}
+                    </EmptyStateBody>
+                    <EmptyStateFooter>
+                      <EmptyStateActions>
+                        <Button variant="secondary" onClick={() => void connections.refetch()}>
+                          {t('common.action.retry')}
+                        </Button>
+                      </EmptyStateActions>
+                    </EmptyStateFooter>
+                  </EmptyState>
+                )}
+                {connections.isSuccess && connections.data.length === 0 && (
+                  <EmptyStateBody>{t('dc.iscsiMultipath.connections.empty')}</EmptyStateBody>
+                )}
+                {connections.isSuccess && connections.data.length > 0 && (
+                  <Stack hasGutter>
+                    {connections.data.map((connection) => (
+                      <StackItem key={connection.id}>
+                        <Checkbox
+                          id={`iscsi-bond-connection-${connection.id}`}
+                          label={connectionName(connection)}
+                          description={connectionPortal(connection)}
+                          isChecked={connection.id ? connectionIds.includes(connection.id) : false}
+                          onChange={() =>
+                            connection.id &&
+                            setConnectionIds((list) => toggle(list, connection.id as string))
+                          }
+                        />
+                      </StackItem>
+                    ))}
+                  </Stack>
+                )}
+              </FormGroup>
+            </>
+          )}
+        </Form>
+      </ModalBody>
+      <ModalFooter>
+        <Button
+          variant="primary"
+          onClick={() => (isEdit ? update.mutate() : create.mutate())}
+          isLoading={pending}
+          isDisabled={saveDisabled}
+        >
+          {isEdit ? t('common.action.save') : t('common.action.create')}
+        </Button>
+        <Button variant="secondary" onClick={onClose} isDisabled={pending}>
+          {t('common.action.cancel')}
+        </Button>
+      </ModalFooter>
+    </Modal>
+  )
+}
