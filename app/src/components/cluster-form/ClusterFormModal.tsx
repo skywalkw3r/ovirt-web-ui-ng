@@ -275,9 +275,7 @@ export function ClusterFormModal({
     ) : (
       <FormHelperText>
         <HelperText>
-          <HelperTextItem>
-            Set when the cluster is created; it cannot be changed here.
-          </HelperTextItem>
+          <HelperTextItem>{t('clusterForm.createOnlyHint')}</HelperTextItem>
         </HelperText>
       </FormHelperText>
     )
@@ -293,12 +291,12 @@ export function ClusterFormModal({
 
   const managementNetworkGroup = (
     <FormGroup
-      label="Management network"
+      label={t('clusterForm.managementNetwork')}
       fieldId="cluster-management-network"
       labelHelp={
         <FieldHelp
-          field="Management network"
-          content="The data center network the cluster's hosts use to talk to the engine. It is chosen when the cluster is created."
+          field={t('clusterForm.managementNetwork')}
+          content={t('fieldHelp.cluster.managementNetwork')}
         />
       }
     >
@@ -306,11 +304,11 @@ export function ClusterFormModal({
         <>
           <TextInput
             id="cluster-management-network"
-            aria-label="Management network"
+            aria-label={t('clusterForm.managementNetwork')}
             value={readOnlyValue(
               clusterNetworks,
               clusterNetworks.data && findManagementNetwork(cluster, clusterNetworks.data)?.name,
-              'Unknown',
+              t('clusterForm.managementNetwork.unknown'),
             )}
             readOnlyVariant="default"
           />
@@ -319,16 +317,20 @@ export function ClusterFormModal({
       ) : draft.dataCenterId === '' ? (
         <FormSelect
           id="cluster-management-network"
-          aria-label="Management network"
+          aria-label={t('clusterForm.managementNetwork')}
           value=""
           isDisabled
         >
-          <FormSelectOption value="" label="Select a data center first" isDisabled />
+          <FormSelectOption
+            value=""
+            label={t('clusterForm.managementNetwork.selectDataCenterFirst')}
+            isDisabled
+          />
         </FormSelect>
       ) : (
         <OptionsSelect
           id="cluster-management-network"
-          ariaLabel="Management network"
+          ariaLabel={t('clusterForm.managementNetwork')}
           value={draft.managementNetworkId}
           onChange={(value) => set('managementNetworkId', value)}
           query={managementNetworks}
@@ -350,12 +352,12 @@ export function ClusterFormModal({
 
   const networkProviderGroup = (
     <FormGroup
-      label="Default network provider"
+      label={t('clusterForm.networkProvider')}
       fieldId="cluster-network-provider"
       labelHelp={
         <FieldHelp
-          field="Default network provider"
-          content="The external network provider deployed on every host added to the cluster. It can only be set when the cluster is created."
+          field={t('clusterForm.networkProvider')}
+          content={t('fieldHelp.cluster.networkProvider')}
         />
       }
     >
@@ -363,11 +365,11 @@ export function ClusterFormModal({
         <>
           <TextInput
             id="cluster-network-provider"
-            aria-label="Default network provider"
+            aria-label={t('clusterForm.networkProvider')}
             value={readOnlyValue(
               clusterProviders,
               clusterProviders.data?.[0]?.name,
-              'No default provider',
+              t('clusterForm.networkProvider.none'),
             )}
             readOnlyVariant="default"
           />
@@ -376,11 +378,11 @@ export function ClusterFormModal({
       ) : (
         <OptionsSelect
           id="cluster-network-provider"
-          ariaLabel="Default network provider"
+          ariaLabel={t('clusterForm.networkProvider')}
           value={draft.defaultNetworkProviderId}
           onChange={(value) => set('defaultNetworkProviderId', value)}
           query={networkProviders}
-          placeholder={{ label: 'No default provider' }}
+          placeholder={{ label: t('clusterForm.networkProvider.none') }}
         >
           {(items) =>
             items.map((provider) => (
