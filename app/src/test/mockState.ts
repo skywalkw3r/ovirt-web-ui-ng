@@ -1,5 +1,6 @@
 import { resetFollowDenials } from '../api/followDegrade'
 import { resetMockVms, setMockUsername } from '../api/mock/handlers'
+import { resetAreaRouteMocks } from '../api/mock/routes'
 import { clearSessionToken } from '../api/session'
 import { resetServersForTest } from '../servers/registry'
 
@@ -9,7 +10,8 @@ import { resetServersForTest } from '../servers/registry'
 //   - the in-memory session token + its sessionStorage mirror (api/session)
 //   - every `console-*` preference in localStorage (theme, settings, column
 //     prefs, tree state, active server) and the rest of sessionStorage
-//   - the mock engine's mutable fixtures and its capability-tier username
+//   - the mock engine's mutable fixtures (core table and per-area route
+//     modules) and its capability-tier username
 //   - follow-degrade denial memory (a 5xx in one test must not make the next
 //     test read bare)
 //   - the resolved active-server selection, which caches on first read
@@ -24,6 +26,7 @@ export function resetTestState(): void {
     // storage is always available under jsdom; guarded for node-env callers
   }
   resetMockVms()
+  resetAreaRouteMocks()
   setMockUsername('admin@internal')
   resetFollowDenials()
   resetServersForTest()

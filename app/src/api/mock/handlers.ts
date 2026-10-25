@@ -10285,7 +10285,7 @@ function requireClusterDetail(id: string): MockClusterDetail {
 // the new cluster to both the flat list and the detail record, and returns the
 // created detail body so GET /clusters and GET /clusters/{id} both see it.
 // Mirrors addNetwork.
-function addCluster(body: unknown): unknown {
+export function addCluster(body: unknown): unknown {
   const spec = (body ?? {}) as Partial<MockClusterDetail>
   if (!spec.name) {
     throw new ApiError(400, 'Incomplete parameters', 'Cluster [name] required for add')
@@ -13718,6 +13718,8 @@ const routes: MockRoute[] = [
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
+const areaRoutes = new Set<MockRoute>(extraRoutes)
+
 export async function mockRequest(path: string, opts: RequestOptions = {}): Promise<unknown> {
   await delay(LATENCY_MS)
   const [route = '', queryString] = path.split('?')
@@ -13726,6 +13728,9 @@ export async function mockRequest(path: string, opts: RequestOptions = {}): Prom
     // An omitted method matches any entry by path alone — kept for older
     // call sites that pass only a path (their routes are unambiguous).
     if (opts.method !== undefined && entry.method !== opts.method) continue
+    // Area modules sit ahead of the core table, so a method-less call (always
+    // a read) must skip their writes or a POST narrowing would swallow it.
+    if (opts.method === undefined && entry.method !== 'GET' && areaRoutes.has(entry)) continue
     const match = entry.pattern.exec(route)
     if (match) return entry.handle(match.slice(1).map(decodeURIComponent), opts.body, query)
   }
