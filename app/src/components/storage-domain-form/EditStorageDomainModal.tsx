@@ -36,6 +36,7 @@ interface EditDraft {
   criticalSpaceBlocker: string
   wipeAfterDelete: boolean
   backup: boolean
+  discardAfterDelete: boolean
 }
 
 // Seed the draft from the current domain. Thresholds fall back to the engine
@@ -52,8 +53,13 @@ function draftFrom(domain: StorageDomain): EditDraft {
     ),
     wipeAfterDelete: domain.wipe_after_delete === true,
     backup: domain.backup === true,
+    discardAfterDelete: domain.discard_after_delete === true,
   }
 }
+
+// Discard After Delete exists only on block (iSCSI/FC) domains (engine
+// StorageDomainValidator: "supported only by block domains").
+const BLOCK_STORAGE_TYPES = new Set(['iscsi', 'fcp'])
 
 // Optional numeric input → number, or undefined when blank/unparseable — same
 // helper the create modal uses so the two dialogs coerce identically.
@@ -68,8 +74,9 @@ function parseOptionalNumber(raw: string): number | undefined {
 // changed metadata (webadmin StorageModel parity). Editable set: name (always
 // resent), description, comment, warning-low-space %, critical-blocker GB,
 // wipe-after-delete, and backup (data domains only, mirroring the create
-// modal — StorageModel.updateBackup forces it off for ISO/Export). Mount it
-// only while open so each Edit reseeds from the live domain.
+// modal; StorageModel.updateBackup forces it off for ISO/Export), plus
+// Discard After Delete on block domains. Mount it only while open so each
+// Edit reseeds from the live domain.
 export function EditStorageDomainModal({
   domain,
   isOpen,
@@ -107,6 +114,13 @@ export function EditStorageDomainModal({
   // Backup is a data-domain-only capability — hidden (not just disabled) for
   // ISO/Export, exactly like the create modal.
   const isData = domain.type?.toLowerCase() === 'data'
+  // Discard After Delete: shown for block domains; it can be switched ON only
+  // while the domain supports discard (read-only supports_discard, true when
+  // every LUN can discard). Switching it OFF always stays possible, so a domain
+  // that lost support (an extend with a non-discard LUN) can still be cleared.
+  const isBlock = BLOCK_STORAGE_TYPES.has(domain.storage?.type ?? '')
+  const supportsDiscard = domain.supports_discard === true
+  const discardLocked = !supportsDiscard && !draft.discardAfterDelete
 
   const nameEmpty = draft.name.trim() === ''
   // Warning is a percentage (0–100); the critical blocker a non-negative GB
@@ -148,6 +162,12 @@ export function EditStorageDomainModal({
     // the flag is dropped here as a second guard.
     if (isData && draft.backup !== (domain.backup === true)) {
       body.backup = draft.backup
+    }
+
+    // Block domains only (hidden otherwise); the engine rejects true unless
+    // supports_discard, which the checkbox already gates.
+    if (isBlock && draft.discardAfterDelete !== (domain.discard_after_delete === true)) {
+      body.discard_after_delete = draft.discardAfterDelete
     }
 
     return body
@@ -273,6 +293,27 @@ export function EditStorageDomainModal({
                   isChecked={draft.backup}
                   onChange={(_event, checked) => set('backup', checked)}
                 />
+              </StackItem>
+            )}
+            {isBlock && (
+              <StackItem>
+                <Checkbox
+                  id="edit-storage-domain-discard-after-delete"
+                  label="Discard After Delete"
+                  aria-label="Discard After Delete"
+                  isChecked={draft.discardAfterDelete}
+                  isDisabled={discardLocked}
+                  onChange={(_event, checked) => set('discardAfterDelete', checked)}
+                />
+                {!supportsDiscard && (
+                  <FormHelperText>
+                    <HelperText>
+                      <HelperTextItem>
+                        Discard is not supported by the underlying storage.
+                      </HelperTextItem>
+                    </HelperText>
+                  </FormHelperText>
+                )}
               </StackItem>
             )}
           </Stack>

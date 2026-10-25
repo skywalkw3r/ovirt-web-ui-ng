@@ -18,14 +18,23 @@ import type {
   NewImageDiskSpec,
   UpdateDiskSpec,
 } from '../../api/resources/disks'
-import { diskSizeBytes, type Disk } from '../../api/schemas/disk'
+import { diskSizeBytes, type Disk, type DiskAttachment } from '../../api/schemas/disk'
 import type { DiscoveredLun } from '../../api/schemas/host-storage'
 import { useCreateDirectLunDisk, useCreateDisk, useUpdateDisk } from '../../hooks/useDiskMutations'
 import { useHosts } from '../../hooks/useHosts'
+import { useStorageDomainLookup } from '../../hooks/useStorageDomainLookup'
 import { useStorageDomains } from '../../hooks/useStorageDomains'
+import { useUpdateVmDiskAttachment } from '../../hooks/useVmDiskActions'
 import { useT } from '../../i18n/useT'
 import { formatBytes } from '../../lib/format'
 import { DirectLunFields } from './DirectLunFields'
+import { PassDiscardField } from './PassDiscardField'
+import {
+  effectivePassDiscard,
+  passDiscardState,
+  wipeLockedByPassDiscard,
+  type PassDiscardState,
+} from './passDiscard'
 import {
   AllocationField,
   DiskProfileField,
@@ -90,6 +99,7 @@ export function DiskFormModal({
   disk,
   onClose,
   initialDiskType = 'image',
+  vmAttachment,
 }: {
   // present ⇒ edit mode; absent ⇒ create mode
   disk?: Disk
@@ -98,10 +108,14 @@ export function DiskFormModal({
   // matches webadmin's default; tests render the Direct LUN branch statically
   // through it.
   initialDiskType?: DiskFormKind
+  // Edit mode from a VM's Disks tab: the attachment being edited and its VM.
+  // Adds the attachment-level Enable Discard (pass_discard), which a floating
+  // disk (no VM) never shows (webadmin updatePassDiscardAvailability).
+  vmAttachment?: { vmId: string; attachment: DiskAttachment }
 }) {
   const isEdit = disk !== undefined
   return isEdit ? (
-    <EditDiskForm disk={disk} onClose={onClose} />
+    <EditDiskForm disk={disk} onClose={onClose} vmAttachment={vmAttachment} />
   ) : (
     <CreateDiskForm onClose={onClose} initialDiskType={initialDiskType} />
   )
@@ -390,9 +404,23 @@ function CreateDiskForm({
 // image concepts, so the form drops them (webadmin keeps sizeExtend and volume
 // type unavailable for LUN) and only alias/description/shareable/wipe remain.
 
-function EditDiskForm({ disk, onClose }: { disk: Disk; onClose: () => void }) {
+const NO_PASS_DISCARD: PassDiscardState = { visible: false, disabled: true }
+
+function EditDiskForm({
+  disk,
+  onClose,
+  vmAttachment,
+}: {
+  disk: Disk
+  onClose: () => void
+  vmAttachment?: { vmId: string; attachment: DiskAttachment }
+}) {
   const t = useT()
   const update = useUpdateDisk()
+  // '' when there is no VM context: the hook needs a stable argument, and the
+  // mutation is never fired without one
+  const updateAttachment = useUpdateVmDiskAttachment(vmAttachment?.vmId ?? '')
+  const storageDomainOf = useStorageDomainLookup()
 
   // A direct-LUN disk reports its size from the bound LUN, not an image.
   const isLun = disk.storage_type === 'lun'
@@ -412,12 +440,32 @@ function EditDiskForm({ disk, onClose }: { disk: Disk; onClose: () => void }) {
   // SD itself is not changeable here)
   const storageDomainId = disk.storage_domains?.storage_domain?.[0]?.id
 
+  // Enable Discard (VM context only). Seeded from the attachment; the gate
+  // follows the live wipe switch, and in turn a block-domain image with discard
+  // on locks wipe-after-delete (webadmin updateWipeAfterDeleteChangeability).
+  const initialPassDiscard = vmAttachment?.attachment.pass_discard === true
+  const [passDiscard, setPassDiscard] = useState(initialPassDiscard)
+  const domain = storageDomainOf(storageDomainId)
+  const discardState = vmAttachment
+    ? passDiscardState({
+        diskStorageType: disk.storage_type ?? 'image',
+        diskInterface: vmAttachment.attachment.interface,
+        domain,
+        lun: disk.lun_storage?.logical_units?.logical_unit?.[0],
+        wipeAfterDelete,
+      })
+    : NO_PASS_DISCARD
+  const sendPassDiscard = effectivePassDiscard(discardState, passDiscard)
+  const passDiscardChanged = discardState.visible && sendPassDiscard !== initialPassDiscard
+  const wipeLocked = !isLun && wipeLockedByPassDiscard(domain, sendPassDiscard)
+
   const aliasValid = alias.trim() !== ''
   const aliasError = aliasTouched && !aliasValid
   const extend = typeof extendGib === 'number' && !Number.isNaN(extendGib) ? extendGib : 0
   const extendValid = extend >= 0
   const newBytes = currentBytes + extend * GiB
-  const canSubmit = aliasValid && extendValid && !update.isPending
+  const pending = update.isPending || updateAttachment.isPending
+  const canSubmit = aliasValid && extendValid && !pending
 
   const stepExtend = (delta: number) => {
     const current = typeof extendGib === 'number' && !Number.isNaN(extendGib) ? extendGib : 0
@@ -452,7 +500,36 @@ function EditDiskForm({ disk, onClose }: { disk: Disk; onClose: () => void }) {
         ? { diskProfileId: diskProfileId === DEFAULT_PROFILE ? undefined : diskProfileId }
         : {}),
     }
-    update.mutate({ id: disk.id, spec }, { onSuccess: () => onClose() })
+    const runDisk = () => update.mutateAsync({ id: disk.id, spec })
+    const steps: (() => Promise<unknown>)[] = []
+    if (vmAttachment && passDiscardChanged) {
+      const runAttachment = () =>
+        updateAttachment.mutateAsync({
+          attachmentId: vmAttachment.attachment.id,
+          diskName: trimmedAlias,
+          spec: { passDiscard: sendPassDiscard },
+        })
+      const diskChanged = Object.keys(spec).length > 0
+      // Order matters on a block domain: discard OFF must land before wipe ON,
+      // and wipe OFF before discard ON, or the engine refuses the second step.
+      if (sendPassDiscard) {
+        if (diskChanged) steps.push(runDisk)
+        steps.push(runAttachment)
+      } else {
+        steps.push(runAttachment)
+        if (diskChanged) steps.push(runDisk)
+      }
+    } else {
+      steps.push(runDisk)
+    }
+    void (async () => {
+      try {
+        for (const step of steps) await step()
+        onClose()
+      } catch {
+        // each hook's onError already toasted the engine fault; stay open
+      }
+    })()
   }
 
   const allocationText =
@@ -577,6 +654,15 @@ function EditDiskForm({ disk, onClose }: { disk: Disk; onClose: () => void }) {
             label={t('diskGeneral.term.wipeAfterDelete')}
             isChecked={wipeAfterDelete}
             onChange={setWipeAfterDelete}
+            isDisabled={wipeLocked && !wipeAfterDelete}
+            disabledReason="The underlying storage does not support Wipe After Delete when discard is enabled."
+          />
+
+          <PassDiscardField
+            id="disk-pass-discard"
+            state={discardState}
+            isChecked={passDiscard}
+            onChange={setPassDiscard}
           />
 
           {/* Disk profiles are storage-domain-scoped — a direct-LUN disk has
@@ -597,12 +683,12 @@ function EditDiskForm({ disk, onClose }: { disk: Disk; onClose: () => void }) {
           variant="primary"
           type="submit"
           form="disk-form"
-          isLoading={update.isPending}
+          isLoading={pending}
           isDisabled={!canSubmit}
         >
           {t('common.action.save')}
         </Button>
-        <Button variant="link" onClick={onClose} isDisabled={update.isPending}>
+        <Button variant="link" onClick={onClose} isDisabled={pending}>
           {t('common.action.cancel')}
         </Button>
       </ModalFooter>

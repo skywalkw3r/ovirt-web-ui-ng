@@ -3,6 +3,8 @@ import type { StorageDomain } from '../api/schemas/storage-domain'
 import {
   activateStorageDomain,
   createBlockStorageDomain,
+  createLocalStorageDomain,
+  createManagedBlockStorageDomain,
   createStorageDomain,
   deactivateStorageDomain,
   destroyStorageDomain,
@@ -12,6 +14,8 @@ import {
   removeStorageDomain,
   updateStorageDomain,
   type BlockStorageDomainSpec,
+  type LocalStorageDomainSpec,
+  type ManagedBlockStorageDomainSpec,
   type StorageDomainEditBody,
 } from '../api/resources/storageDomains'
 import { attachStorageDomain } from '../api/resources/datacenters'
@@ -32,14 +36,49 @@ function invalidateStorageDomain(queryClient: QueryClient, id: string) {
 }
 
 // The create step accepts either a pre-built body (the NFS path builds its own
-// storage block) OR a typed block spec (iSCSI/FCP, whose storage block the
-// resource builds from LUN ids). Exactly one is set per call; the block path
-// routes through createBlockStorageDomain so the modal never hand-assembles a
-// logical_units envelope. `payload` stays a plain Record so the NFS path — and
-// any future storage type — keeps working unchanged.
-export type CreateStorageDomainVariables =
-  | { payload: Record<string, unknown>; blockSpec?: undefined; dataCenterId?: string }
-  | { payload?: undefined; blockSpec: BlockStorageDomainSpec; dataCenterId?: string }
+// storage block) OR a typed spec: block (iSCSI/FCP, whose storage block the
+// resource builds from LUN ids), managed block storage (cinderlib driver
+// options) or local (localfs on one host). Exactly one is set per call; the
+// typed paths route through their resource builders so the modal never
+// hand-assembles an envelope. `payload` stays a plain Record so the NFS path
+// keeps working unchanged.
+type CreateStorageDomainSource =
+  | {
+      payload: Record<string, unknown>
+      blockSpec?: undefined
+      managedBlockSpec?: undefined
+      localSpec?: undefined
+    }
+  | {
+      payload?: undefined
+      blockSpec: BlockStorageDomainSpec
+      managedBlockSpec?: undefined
+      localSpec?: undefined
+    }
+  | {
+      payload?: undefined
+      blockSpec?: undefined
+      managedBlockSpec: ManagedBlockStorageDomainSpec
+      localSpec?: undefined
+    }
+  | {
+      payload?: undefined
+      blockSpec?: undefined
+      managedBlockSpec?: undefined
+      // AddLocalStorageDomain attaches the domain to the host's local data
+      // center itself, so the attach step never runs for it; dataCenterId (when
+      // given) only scopes the cache invalidation.
+      localSpec: LocalStorageDomainSpec
+    }
+
+export type CreateStorageDomainVariables = CreateStorageDomainSource & { dataCenterId?: string }
+
+function createFromSource(source: CreateStorageDomainSource): Promise<StorageDomain> {
+  if (source.blockSpec) return createBlockStorageDomain(source.blockSpec)
+  if (source.managedBlockSpec) return createManagedBlockStorageDomain(source.managedBlockSpec)
+  if (source.localSpec) return createLocalStorageDomain(source.localSpec)
+  return createStorageDomain(source.payload)
+}
 
 // The Create Storage Domain modal's save mutation. Engine semantics make this
 // a two-step orchestration: POST /storagedomains creates the domain (the named
@@ -58,10 +97,9 @@ export function useCreateStorageDomain() {
       variables: CreateStorageDomainVariables,
     ): Promise<{ created: StorageDomain; attachError?: Error }> => {
       const { dataCenterId } = variables
-      const created = variables.blockSpec
-        ? await createBlockStorageDomain(variables.blockSpec)
-        : await createStorageDomain(variables.payload)
-      if (!dataCenterId) return { created }
+      const created = await createFromSource(variables)
+      // a local domain is already attached by the engine (see localSpec)
+      if (!dataCenterId || variables.localSpec) return { created }
       try {
         await attachStorageDomain(dataCenterId, created.id)
         return { created }

@@ -4398,7 +4398,7 @@ function removeRolePermitMock(id: string, permitId: string): unknown {
 }
 
 // dc-01 is the data center the network fixtures above already point at.
-const dataCenters: MockDataCenter[] = [
+export const dataCenters: MockDataCenter[] = [
   {
     id: 'dc-01',
     name: 'Default',
@@ -4414,7 +4414,7 @@ const dataCenters: MockDataCenter[] = [
 // DataCenterSchema's z.coerce.number()/stringbool paths run. dc-01 (Default)
 // is the id the data center detail page is opened against; mac_pool rides
 // inlined with its name, exactly what ?follow= returns.
-const dataCenterDetails: Record<string, MockDataCenterDetail> = {
+export const dataCenterDetails: Record<string, MockDataCenterDetail> = {
   'dc-01': {
     id: 'dc-01',
     name: 'Default',
@@ -4830,9 +4830,9 @@ const initialHostTagAssignments = (): Map<string, string[]> => new Map([['host-0
 const initialUserTagAssignments = (): Map<string, string[]> => new Map()
 
 // Mutable so action endpoints can mutate state between polls.
-let vms = allInitialVms()
+export let vms = allInitialVms()
 let snapshots = initialSnapshots()
-let disks = initialDisks()
+export let disks = initialDisks()
 let nics = initialNics()
 export let hosts = initialHosts()
 // Most host subcollections are read-only (no mock action mutates them), so
@@ -4908,8 +4908,8 @@ let userTagAssignments = initialUserTagAssignments()
 // working copies in place (attach/detach flip DC membership, activate/
 // deactivate flip status, remove/destroy drop the domain; POST/DELETE /users
 // push/drop a row), so they are `let` bindings restored by resetMockVms.
-let storageDomains = initialStorageDomains()
-let storageDomainDetails = initialStorageDomainDetails()
+export let storageDomains = initialStorageDomains()
+export let storageDomainDetails = initialStorageDomainDetails()
 // Unregistered-entity OVF stores (register-from-storage): registering removes
 // the entity from these maps so a re-list reflects it, hence `let` + reset.
 let unregisteredStorageDomainVms = initialUnregisteredStorageDomainVms()
@@ -5030,7 +5030,7 @@ const initialHostStorage: Record<string, MockHostStorage[]> = {
 // claimed LUN here; resetMockVms restores the pristine template.
 const cloneHostStorage = (): Record<string, MockHostStorage[]> =>
   structuredClone(initialHostStorage)
-let hostStorage = cloneHostStorage()
+export let hostStorage = cloneHostStorage()
 // Disks detached from their VM: gone from the attachment list but surviving
 // in the flat /disks collection (detach_only semantics).
 let detachedDisks: MockDisk[] = []

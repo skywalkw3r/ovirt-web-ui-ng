@@ -6,9 +6,11 @@ import {
   detachVmDisk,
   resizeVmDisk,
   setVmDiskAttachmentActive,
+  updateVmDiskAttachment,
   type AttachDiskSpec,
   type NewDiskSpec,
   type NewVmDirectLunDiskSpec,
+  type UpdateDiskAttachmentSpec,
 } from '../api/resources/disks'
 import type { DiskAttachment } from '../api/schemas/disk'
 import { useNotify } from '../notifications/context'
@@ -139,6 +141,7 @@ export function useAttachVmDisk(vmId: string) {
         active: spec.active,
         bootable: spec.bootable,
         interface: spec.interface,
+        passDiscard: spec.passDiscard,
       }),
     onSuccess: (_data, spec) => {
       notify({ title: `Disk '${spec.diskName}' attached`, variant: 'success' })
@@ -167,6 +170,36 @@ export function useSetVmDiskActive(vmId: string) {
         title: `Disk '${diskName(attachment)}' ${active ? 'activated' : 'deactivated'}`,
         variant: 'success',
       })
+    },
+    onError: (error) => {
+      notify({ title: error.message, variant: 'danger' })
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: vmKeys.disks(vmId) })
+      void queryClient.invalidateQueries({ queryKey: diskKeys.all })
+    },
+  })
+}
+
+// Update attachment-level scalars (Enable Discard) from the VM-context Edit
+// dialog. The dialog sequences this with the disk-level useUpdateDisk PUT and
+// awaits both (mutateAsync), so the toast here names only the attachment step;
+// an engine refusal (DiskVmElementValidator) surfaces verbatim.
+export function useUpdateVmDiskAttachment(vmId: string) {
+  const queryClient = useQueryClient()
+  const { notify } = useNotify()
+
+  return useMutation({
+    mutationFn: ({
+      attachmentId,
+      spec,
+    }: {
+      attachmentId: string
+      diskName: string
+      spec: UpdateDiskAttachmentSpec
+    }) => updateVmDiskAttachment(vmId, attachmentId, spec),
+    onSuccess: (_data, { diskName }) => {
+      notify({ title: `Disk '${diskName}' attachment updated`, variant: 'success' })
     },
     onError: (error) => {
       notify({ title: error.message, variant: 'danger' })

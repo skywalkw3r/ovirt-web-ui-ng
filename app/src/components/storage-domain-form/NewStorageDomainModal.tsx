@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import {
   Button,
@@ -21,12 +21,20 @@ import {
 } from '@patternfly/react-core'
 import { listDataCenters } from '../../api/resources/datacenters'
 import { listHosts } from '../../api/resources/hosts'
+import { lunSupportsDiscard, type DiscoveredLun } from '../../api/schemas/host-storage'
 import { useCreateStorageDomain } from '../../hooks/useStorageDomainMutations'
 import type { MessageId } from '../../i18n/messages/en'
 import { useT } from '../../i18n/useT'
 import { FieldHelp } from '../forms/FieldHelp'
 import { ConfirmModal } from '../ConfirmModal'
 import { SanStorageSection, type LunVgDataLoss } from './SanStorageSection'
+import { DriverOptionsEditor } from './DriverOptionsEditor'
+import {
+  driverOptionsError,
+  hasNamedRow,
+  toStorageProperties,
+  type DriverOptionRow,
+} from './driverOptions'
 import { dataCenterKeys } from '../../hooks/useAdminResources'
 import { hostKeys } from '../../hooks/useHosts'
 
@@ -42,13 +50,19 @@ interface StorageDomainDraft {
   // glusterfs) all share the inline address:/path field; iscsi/fcp swap it for
   // the SAN discover/LUN-pick sub-form (SanStorageSection) and ride the block
   // create path instead. NFS adds the custom-connection overrides; POSIX adds a
-  // required VFS type; GlusterFS implies vfs_type 'glusterfs'.
-  storageType: 'nfs' | 'iscsi' | 'fcp' | 'posixfs' | 'glusterfs'
+  // required VFS type; GlusterFS implies vfs_type 'glusterfs'. localfs ("Local
+  // on Host", local data centers only) takes a plain host path;
+  // managed_block_storage (cinderlib) takes driver options instead of any
+  // connection.
+  storageType:
+    'nfs' | 'iscsi' | 'fcp' | 'posixfs' | 'glusterfs' | 'localfs' | 'managed_block_storage'
   dataCenterId: string
   hostName: string
   // The LUN ids the SAN sub-form selected — empty on the file paths.
   lunIds: string[]
   exportPath: string
+  // localfs only: the absolute directory on the chosen host
+  localPath: string
   // POSIX requires an explicit VFS type (webadmin PosixStorageModel's NotEmpty +
   // AsciiName validation); GlusterFS sends 'glusterfs' automatically, so this
   // input rides only for posixfs and is '' for every other kind.
@@ -64,6 +78,13 @@ interface StorageDomainDraft {
   criticalSpaceBlocker: string
   wipeAfterDelete: boolean
   backup: boolean
+  // Block domains only, and only when every selected LUN supports discard
+  // (engine isDiscardAfterDeleteLegalForNewBlockStorageDomain).
+  discardAfterDelete: boolean
+  // managed_block_storage only: the cinderlib driver options and the secret
+  // ones (passwords/tokens, stored encrypted by the engine)
+  driverOptions: DriverOptionRow[]
+  driverSensitiveOptions: DriverOptionRow[]
 }
 
 // Engine defaults for the advanced thresholds — values matching these are
@@ -84,6 +105,7 @@ function blankDraft(): StorageDomainDraft {
     hostName: '',
     lunIds: [],
     exportPath: '',
+    localPath: '',
     vfsType: '',
     nfsVersion: '',
     retransmissions: '',
@@ -93,6 +115,9 @@ function blankDraft(): StorageDomainDraft {
     criticalSpaceBlocker: String(CRITICAL_SPACE_BLOCKER_DEFAULT),
     wipeAfterDelete: false,
     backup: false,
+    discardAfterDelete: false,
+    driverOptions: [],
+    driverSensitiveOptions: [],
   }
 }
 
@@ -100,21 +125,40 @@ function blankDraft(): StorageDomainDraft {
 // NFS-only in webadmin (StorageModel.java: "currently both ISO and Export can
 // be only NFS"); the block storage models (Iscsi/Fcp) are Data-role only, so
 // the select is filtered to Data alone once a block type is chosen — see
-// domainFunctionsFor.
-const DOMAIN_FUNCTIONS: { value: string; labelId: MessageId }[] = [
+// domainFunctionsFor. Managed Block Storage is its own function (webadmin
+// tags its model StorageDomainType.ManagedBlockStorage), offered only for that
+// storage type.
+const DOMAIN_FUNCTIONS: { value: string; labelId?: MessageId; label?: string }[] = [
   { value: 'data', labelId: 'storageForm.function.data' },
   { value: 'iso', labelId: 'storageForm.function.iso' },
   { value: 'export', labelId: 'storageForm.function.export' },
+  { value: 'managed_block_storage', label: 'Managed Block Storage' },
 ]
 
 // The domain functions offered for a given storage type. Only NFS offers ISO
-// and Export ("currently both ISO and Export can be only NFS"); every other kind
-// — block (iSCSI/FCP) and the POSIX/GlusterFS file domains — is Data-only.
+// and Export ("currently both ISO and Export can be only NFS"); Managed Block
+// Storage offers only its own function; every other kind (block iSCSI/FCP, the
+// POSIX/GlusterFS file domains, local) is Data-only.
 // Restricting the select (not just coercing on submit) stops the user ever
 // POSTing type:'iso' with, say, a glusterfs storage block, which the engine only
 // rejects late with an opaque fault.
-function domainFunctionsFor(dataOnly: boolean): typeof DOMAIN_FUNCTIONS {
-  return dataOnly ? DOMAIN_FUNCTIONS.filter((fn) => fn.value === 'data') : DOMAIN_FUNCTIONS
+function domainFunctionsFor(storageType: StorageDomainDraft['storageType']) {
+  if (storageType === 'managed_block_storage') {
+    return DOMAIN_FUNCTIONS.filter((fn) => fn.value === 'managed_block_storage')
+  }
+  if (storageType === 'nfs') {
+    return DOMAIN_FUNCTIONS.filter((fn) => fn.value !== 'managed_block_storage')
+  }
+  return DOMAIN_FUNCTIONS.filter((fn) => fn.value === 'data')
+}
+
+// The domain function a storage type forces, given the current pick: MBS is
+// its own function; leaving MBS or NFS drops back to Data.
+function coerceDomainFunction(storageType: StorageDomainDraft['storageType'], current: string) {
+  if (storageType === 'managed_block_storage') return 'managed_block_storage'
+  if (current === 'managed_block_storage') return 'data'
+  if (storageType !== 'nfs' && current !== 'data') return 'data'
+  return current
 }
 
 // Backing-storage kinds. NFS/POSIX/GlusterFS are the inline file paths (all three
@@ -123,16 +167,22 @@ function domainFunctionsFor(dataOnly: boolean): typeof DOMAIN_FUNCTIONS {
 // the block create body. Labels resolve through the i18n catalog
 // (storage.type.posixfs / .glusterfs, storageForm.type.fcp); the technical
 // acronyms NFS / iSCSI stay verbatim.
+// "Local on Host" (localfs) only exists in a LOCAL data center
+// (data_center.local; the engine refuses it elsewhere with
+// ACTION_TYPE_FAILED_STORAGE_POOL_IS_NOT_LOCAL), so it is offered only then.
 const STORAGE_TYPES: {
   value: StorageDomainDraft['storageType']
   label?: string
   labelId?: MessageId
+  localDataCenterOnly?: boolean
 }[] = [
   { value: 'nfs', label: 'NFS' },
   { value: 'posixfs', labelId: 'storage.type.posixfs' },
   { value: 'glusterfs', labelId: 'storage.type.glusterfs' },
   { value: 'iscsi', label: 'iSCSI' },
   { value: 'fcp', labelId: 'storageForm.type.fcp' },
+  { value: 'localfs', label: 'Local on Host', localDataCenterOnly: true },
+  { value: 'managed_block_storage', label: 'Managed Block Storage' },
 ]
 
 // Engine nfs_version spellings; '' is "Auto negotiate" and is omitted from
@@ -169,6 +219,15 @@ function parseExportPath(raw: string): { address: string; path: string } | undef
   const path = trimmed.slice(colon + 1)
   if (!path.startsWith('/')) return undefined
   return { address: trimmed.slice(0, colon), path }
+}
+
+// A local domain's directory: absolute and whitespace-free (webadmin
+// LocalStorageModel's NotEmpty + LinuxMountPoint validation, minus the host
+// part). Returns the trimmed path or undefined when invalid.
+function parseLocalPath(raw: string): string | undefined {
+  const trimmed = raw.trim()
+  if (trimmed === '' || /\s/.test(trimmed) || !trimmed.startsWith('/')) return undefined
+  return trimmed
 }
 
 // The New Storage Domain modal (create-only). Creating an NFS domain is a
@@ -214,6 +273,15 @@ export function NewStorageDomainModal({
   // (lunUsedByVG) before it actually creates the domain.
   const [vgDataLoss, setVgDataLoss] = useState<LunVgDataLoss[]>([])
   const [confirmingVgLoss, setConfirmingVgLoss] = useState(false)
+  // The full LUN objects behind the SAN selection, for the Discard After Delete
+  // gate (discard_max_size per LUN).
+  const [selectedLuns, setSelectedLuns] = useState<DiscoveredLun[]>([])
+  // Row ids for the two driver-option editors (client-only React keys).
+  const rowIdRef = useRef(0)
+  const nextRowId = () => {
+    rowIdRef.current += 1
+    return rowIdRef.current
+  }
 
   const set = <K extends keyof StorageDomainDraft>(key: K, value: StorageDomainDraft[K]) => {
     setDraft((current) => ({ ...current, [key]: value }))
@@ -238,11 +306,18 @@ export function NewStorageDomainModal({
   const isBlock = draft.storageType === 'iscsi' || draft.storageType === 'fcp'
   const isPosix = draft.storageType === 'posixfs'
   const isGluster = draft.storageType === 'glusterfs'
-  // The file kinds share the address:/path field; block swaps it for the SAN
-  // sub-form. Everything but NFS is Data-only (ISO/Export are NFS-only).
+  const isLocal = draft.storageType === 'localfs'
+  const isManagedBlock = draft.storageType === 'managed_block_storage'
+  // The shared file kinds share the address:/path field; block swaps it for the
+  // SAN sub-form, local for a plain host path, managed block for driver options.
   const isFile = draft.storageType === 'nfs' || isPosix || isGluster
-  const dataOnly = draft.storageType !== 'nfs'
   const parsedPath = parseExportPath(draft.exportPath)
+  const parsedLocalPath = parseLocalPath(draft.localPath)
+  const selectedDataCenter = (dataCenters.data ?? []).find((dc) => dc.id === draft.dataCenterId)
+  const localDataCenter = selectedDataCenter?.local === true
+  const storageTypeOptions = STORAGE_TYPES.filter(
+    (option) => !option.localDataCenterOnly || localDataCenter,
+  )
   const nameEmpty = draft.name.trim() === ''
   const dataCenterMissing = draft.dataCenterId === ''
   const hostMissing = draft.hostName === ''
@@ -252,6 +327,30 @@ export function NewStorageDomainModal({
   // POSIX requires an explicit VFS type (webadmin's NotEmpty validation);
   // GlusterFS supplies 'glusterfs' itself, so only posixfs gates Save here.
   const vfsTypeMissing = isPosix && draft.vfsType.trim() === ''
+  const localPathInvalid = isLocal && parsedLocalPath === undefined
+  // Managed Block Storage: at least one named driver option, and no nameless or
+  // duplicate rows in either editor.
+  const driverOptionsInvalid = isManagedBlock ? driverOptionsError(draft.driverOptions) : undefined
+  const sensitiveOptionsInvalid = isManagedBlock
+    ? driverOptionsError(draft.driverSensitiveOptions)
+    : undefined
+  const managedBlockInvalid =
+    isManagedBlock &&
+    (!hasNamedRow(draft.driverOptions) ||
+      driverOptionsInvalid !== undefined ||
+      sensitiveOptionsInvalid !== undefined)
+
+  // Discard After Delete: block domains only, and only when every selected LUN
+  // can discard (discard_max_size > 0). Before any LUN is picked there is
+  // nothing to check, so the box stays greyed with a prompt.
+  const discardSupport: 'noLuns' | 'supported' | 'unsupported' =
+    selectedLuns.length === 0
+      ? 'noLuns'
+      : selectedLuns.every((lun) => lunSupportsDiscard(lun))
+        ? 'supported'
+        : 'unsupported'
+  const discardAfterDeleteEnabled = isBlock && discardSupport === 'supported'
+  const effectiveDiscardAfterDelete = discardAfterDeleteEnabled && draft.discardAfterDelete
 
   // The address:/path field is shared across the file kinds; only its labelling
   // differs (an NFS export vs a POSIX/Gluster mount spec).
@@ -294,7 +393,16 @@ export function NewStorageDomainModal({
     setConnectionExpanded(false)
     setAdvancedExpanded(false)
     setVgDataLoss([])
+    setSelectedLuns([])
     setConfirmingVgLoss(false)
+    onClose()
+  }
+
+  // The modal stays mounted across close/reopen, so a cancel must not leave
+  // typed secrets sitting in state: scrub the sensitive driver options (same
+  // discipline as SanStorageSection's CHAP password).
+  const close = () => {
+    setDraft((current) => ({ ...current, driverSensitiveOptions: [] }))
     onClose()
   }
 
@@ -323,6 +431,53 @@ export function NewStorageDomainModal({
           hostName: draft.hostName,
           storageType: draft.storageType as 'iscsi' | 'fcp',
           lunIds: draft.lunIds,
+          description: draft.description.trim() !== '' ? draft.description : undefined,
+          comment: draft.comment.trim() !== '' ? draft.comment : undefined,
+          warning_low_space_indicator: advancedWarning,
+          critical_space_action_blocker: advancedCritical,
+          wipe_after_delete: draft.wipeAfterDelete ? true : undefined,
+          backup: wantsBackup ? true : undefined,
+          discard_after_delete: effectiveDiscardAfterDelete ? true : undefined,
+        },
+        dataCenterId: draft.dataCenterId,
+      },
+      { onSuccess: onSaved },
+    )
+  }
+
+  // Managed Block Storage: the resource builds storage.driver_options /
+  // driver_sensitive_options from the rows. No wipe/backup/discard flag rides:
+  // AddManagedBlockStorageDomainCommand forces them all off.
+  const saveManagedBlock = () => {
+    create.mutate(
+      {
+        managedBlockSpec: {
+          name: draft.name,
+          hostName: draft.hostName,
+          driverOptions: toStorageProperties(draft.driverOptions),
+          driverSensitiveOptions: toStorageProperties(draft.driverSensitiveOptions),
+          description: draft.description.trim() !== '' ? draft.description : undefined,
+          comment: draft.comment.trim() !== '' ? draft.comment : undefined,
+          warning_low_space_indicator: advancedWarning,
+          critical_space_action_blocker: advancedCritical,
+        },
+        dataCenterId: draft.dataCenterId,
+      },
+      { onSuccess: onSaved },
+    )
+  }
+
+  // Local on Host: the engine attaches the new domain to the host's local data
+  // center itself (AddLocalStorageDomain), so the hook skips its attach step;
+  // dataCenterId only scopes the cache refresh.
+  const saveLocal = () => {
+    if (parsedLocalPath === undefined) return
+    create.mutate(
+      {
+        localSpec: {
+          name: draft.name,
+          host: { name: draft.hostName },
+          path: parsedLocalPath,
           description: draft.description.trim() !== '' ? draft.description : undefined,
           comment: draft.comment.trim() !== '' ? draft.comment : undefined,
           warning_low_space_indicator: advancedWarning,
@@ -410,7 +565,9 @@ export function NewStorageDomainModal({
       // let its confirm run the create. Otherwise create straight away.
       if (vgDataLoss.length > 0) setConfirmingVgLoss(true)
       else saveBlock()
-    } else saveFile()
+    } else if (isManagedBlock) saveManagedBlock()
+    else if (isLocal) saveLocal()
+    else saveFile()
   }
 
   return (
@@ -418,7 +575,7 @@ export function NewStorageDomainModal({
       <Modal
         variant="medium"
         isOpen={isOpen}
-        onClose={onClose}
+        onClose={close}
         aria-labelledby="storage-domain-form-title"
         aria-describedby="storage-domain-form-body"
       >
@@ -474,8 +631,12 @@ export function NewStorageDomainModal({
                   if (value !== 'data') set('backup', false)
                 }}
               >
-                {domainFunctionsFor(dataOnly).map((fn) => (
-                  <FormSelectOption key={fn.value} value={fn.value} label={t(fn.labelId)} />
+                {domainFunctionsFor(draft.storageType).map((fn) => (
+                  <FormSelectOption
+                    key={fn.value}
+                    value={fn.value}
+                    label={fn.labelId ? t(fn.labelId) : (fn.label as string)}
+                  />
                 ))}
               </FormSelect>
             </FormGroup>
@@ -496,11 +657,9 @@ export function NewStorageDomainModal({
                 value={draft.storageType}
                 onChange={(_event, value) => {
                   const nextStorageType = value as StorageDomainDraft['storageType']
-                  // Everything but NFS is Data-only; coerce a stale ISO/Export
-                  // function back to Data so it can't ride into the wrong create
-                  // body (the select is also filtered to Data below). Backup is
-                  // data-only and the coercion keeps type=data, so it is untouched.
-                  const nextDataOnly = nextStorageType !== 'nfs'
+                  // Everything but NFS is Data-only and MBS is its own function;
+                  // coerce a stale function so it can't ride into the wrong
+                  // create body (the select is also filtered below).
                   setDraft((current) => ({
                     ...current,
                     storageType: nextStorageType,
@@ -509,15 +668,25 @@ export function NewStorageDomainModal({
                     // type so nothing stale rides into the wrong create body.
                     lunIds: [],
                     exportPath: '',
+                    localPath: '',
                     vfsType: '',
-                    type: nextDataOnly && current.type !== 'data' ? 'data' : current.type,
+                    discardAfterDelete: false,
+                    // driver options belong to MBS alone; the secrets never
+                    // outlive a switch away from it
+                    driverSensitiveOptions:
+                      nextStorageType === 'managed_block_storage'
+                        ? current.driverSensitiveOptions
+                        : [],
+                    type: coerceDomainFunction(nextStorageType, current.type),
+                    backup: nextStorageType === 'managed_block_storage' ? false : current.backup,
                   }))
                   // The dropped LUN selection invalidates any VG data-loss the SAN
                   // section reported for it.
                   setVgDataLoss([])
+                  setSelectedLuns([])
                 }}
               >
-                {STORAGE_TYPES.map((option) => (
+                {storageTypeOptions.map((option) => (
                   <FormSelectOption
                     key={option.value}
                     value={option.value}
@@ -540,7 +709,32 @@ export function NewStorageDomainModal({
                 aria-label={t('storageForm.field.dataCenter')}
                 value={draft.dataCenterId}
                 isDisabled={dataCenters.isPending || dataCenters.isError}
-                onChange={(_event, value) => set('dataCenterId', value)}
+                onChange={(_event, value) => {
+                  // Local on Host belongs to local data centers: picking one
+                  // preselects it, leaving one drops it back to NFS.
+                  const local =
+                    (dataCenters.data ?? []).find((dc) => dc.id === value)?.local === true
+                  setDraft((current) => {
+                    const switchToLocal = local && current.storageType !== 'localfs'
+                    const leaveLocal = !local && current.storageType === 'localfs'
+                    if (!switchToLocal && !leaveLocal) return { ...current, dataCenterId: value }
+                    const nextStorageType = switchToLocal ? 'localfs' : 'nfs'
+                    return {
+                      ...current,
+                      dataCenterId: value,
+                      storageType: nextStorageType,
+                      lunIds: [],
+                      exportPath: '',
+                      localPath: '',
+                      vfsType: '',
+                      discardAfterDelete: false,
+                      driverSensitiveOptions: [],
+                      type: coerceDomainFunction(nextStorageType, current.type),
+                    }
+                  })
+                  setVgDataLoss([])
+                  setSelectedLuns([])
+                }}
               >
                 <FormSelectOption
                   value=""
@@ -639,6 +833,61 @@ export function NewStorageDomainModal({
               </FormGroup>
             )}
 
+            {isLocal && (
+              <FormGroup
+                label={t('storageForm.field.path')}
+                isRequired
+                fieldId="storage-domain-local-path"
+              >
+                <TextInput
+                  id="storage-domain-local-path"
+                  isRequired
+                  aria-label={t('storageForm.field.path')}
+                  placeholder="/data/images"
+                  validated={localPathInvalid && draft.localPath !== '' ? 'error' : 'default'}
+                  value={draft.localPath}
+                  onChange={(_event, value) => set('localPath', value)}
+                />
+                <FormHelperText>
+                  <HelperText>
+                    <HelperTextItem
+                      variant={localPathInvalid && draft.localPath !== '' ? 'error' : 'default'}
+                    >
+                      An absolute directory on the selected host, for example /data/images.
+                    </HelperTextItem>
+                  </HelperText>
+                </FormHelperText>
+              </FormGroup>
+            )}
+
+            {/* Managed Block Storage (cinderlib): no connection fields, only the
+                driver options the engine hands to the Cinder driver. The
+                sensitive editor masks its values; see DriverOptionsEditor. */}
+            {isManagedBlock && (
+              <DriverOptionsEditor
+                idPrefix="storage-domain-driver-options"
+                label="Driver Options"
+                helperText="Options passed to the Cinder driver, for example volume_driver."
+                rows={draft.driverOptions}
+                onChange={(rows) => set('driverOptions', rows)}
+                nextId={nextRowId}
+                isRequired
+                error={driverOptionsInvalid}
+              />
+            )}
+            {isManagedBlock && (
+              <DriverOptionsEditor
+                idPrefix="storage-domain-driver-sensitive-options"
+                label="Driver Sensitive Options"
+                helperText="Secrets such as passwords. The engine stores them encrypted and never shows them again."
+                rows={draft.driverSensitiveOptions}
+                onChange={(rows) => set('driverSensitiveOptions', rows)}
+                nextId={nextRowId}
+                sensitive
+                error={sensitiveOptionsInvalid}
+              />
+            )}
+
             {/* POSIX needs an explicit VFS type; GlusterFS implies 'glusterfs',
                 so only POSIX renders the input. Both file kinds allow custom
                 mount options (the NFS path keeps its own inside the custom
@@ -700,6 +949,7 @@ export function NewStorageDomainModal({
                   selectedLunIds={draft.lunIds}
                   onSelectedLunIdsChange={(ids) => set('lunIds', ids)}
                   onVgDataLossChange={setVgDataLoss}
+                  onSelectedLunsChange={setSelectedLuns}
                 />
               </FormGroup>
             )}
@@ -878,25 +1128,58 @@ export function NewStorageDomainModal({
                     )}
                   </FormGroup>
                 </StackItem>
-                <StackItem>
-                  <FormGroup
-                    label={t('storageForm.field.wipeAfterDelete')}
-                    fieldId="storage-domain-wipe-after-delete"
-                    labelHelp={
-                      <FieldHelp
-                        field={t('storageForm.field.wipeAfterDelete')}
-                        content={t('fieldHelp.storage.wipeAfterDelete')}
+                {/* Wipe After Delete and Backup are forced off for Managed Block
+                    Storage (AddManagedBlockStorageDomainCommand.init), so both
+                    disappear for it. */}
+                {!isManagedBlock && (
+                  <StackItem>
+                    <FormGroup
+                      label={t('storageForm.field.wipeAfterDelete')}
+                      fieldId="storage-domain-wipe-after-delete"
+                      labelHelp={
+                        <FieldHelp
+                          field={t('storageForm.field.wipeAfterDelete')}
+                          content={t('fieldHelp.storage.wipeAfterDelete')}
+                        />
+                      }
+                    >
+                      <Checkbox
+                        id="storage-domain-wipe-after-delete"
+                        aria-label={t('storageForm.field.wipeAfterDelete')}
+                        isChecked={draft.wipeAfterDelete}
+                        onChange={(_event, checked) => set('wipeAfterDelete', checked)}
                       />
-                    }
-                  >
-                    <Checkbox
-                      id="storage-domain-wipe-after-delete"
-                      aria-label={t('storageForm.field.wipeAfterDelete')}
-                      isChecked={draft.wipeAfterDelete}
-                      onChange={(_event, checked) => set('wipeAfterDelete', checked)}
-                    />
-                  </FormGroup>
-                </StackItem>
+                    </FormGroup>
+                  </StackItem>
+                )}
+                {/* Discard After Delete: block domains only (webadmin
+                    StorageModel.updateDiscardAfterDelete), enabled only when
+                    every selected LUN supports discard. */}
+                {isBlock && (
+                  <StackItem>
+                    <FormGroup fieldId="storage-domain-discard-after-delete">
+                      <Checkbox
+                        id="storage-domain-discard-after-delete"
+                        label="Discard After Delete"
+                        aria-label="Discard After Delete"
+                        isChecked={effectiveDiscardAfterDelete}
+                        isDisabled={!discardAfterDeleteEnabled}
+                        onChange={(_event, checked) => set('discardAfterDelete', checked)}
+                      />
+                      {!discardAfterDeleteEnabled && (
+                        <FormHelperText>
+                          <HelperText>
+                            <HelperTextItem>
+                              {discardSupport === 'noLuns'
+                                ? 'Select LUNs to check whether they support discard.'
+                                : 'Discard is not supported by the underlying storage.'}
+                            </HelperTextItem>
+                          </HelperText>
+                        </FormHelperText>
+                      )}
+                    </FormGroup>
+                  </StackItem>
+                )}
                 {/* Backup is a data-domain-only capability (webadmin's
                   StorageModel.updateBackup) — hidden, not just disabled, for
                   ISO/Export like the reference dialog */}
@@ -936,14 +1219,16 @@ export function NewStorageDomainModal({
               dataCenterMissing ||
               hostMissing ||
               pathInvalid ||
+              localPathInvalid ||
               vfsTypeMissing ||
               noLunsSelected ||
+              managedBlockInvalid ||
               boundsInvalid
             }
           >
             {t('common.action.save')}
           </Button>
-          <Button variant="secondary" onClick={onClose} isDisabled={pending}>
+          <Button variant="secondary" onClick={close} isDisabled={pending}>
             {t('common.action.cancel')}
           </Button>
         </ModalFooter>

@@ -20,12 +20,8 @@ import {
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table'
 import { ExclamationTriangleIcon } from '@patternfly/react-icons'
 import { StatusBadge } from '../StatusBadge'
-import {
-  iscsiDiscover,
-  iscsiLogin,
-  listHostStorage,
-  type IscsiTarget,
-} from '../../api/resources/hosts'
+import { iscsiDiscover, iscsiLogin, type IscsiTarget } from '../../api/resources/hosts'
+import { listHostLuns } from '../../api/resources/hostStorage'
 import type { DiscoveredLun } from '../../api/schemas/host-storage'
 import type { MessageId } from '../../i18n/messages/en'
 import { useT } from '../../i18n/useT'
@@ -264,7 +260,9 @@ export function SanStorageSection({
     setLunsLoading(true)
     setLunsError(undefined)
     try {
-      const result = await listHostStorage(id, type)
+      // listHostLuns keeps each LUN's discard_max_size (Discard After Delete /
+      // Enable Discard gates); hosts.ts listHostStorage predates that field
+      const result = await listHostLuns(id, type)
       setLuns(result)
     } catch (error) {
       setLunsError(error instanceof Error ? error.message : t('common.error.unknown'))

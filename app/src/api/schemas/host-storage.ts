@@ -1,5 +1,8 @@
 import { z } from 'zod'
 
+// the live engine serializes booleans as strings ("true"/"false")
+const BooleanishSchema = z.union([z.boolean(), z.stringbool()])
+
 // The live engine serializes numeric scalars as JSON strings (ports, LUN
 // sizes), so every numeric field below coerces — same discipline as the other
 // schemas.
@@ -61,6 +64,14 @@ export const LogicalUnitSchema = z.looseObject({
   disk_id: z.string().optional(),
   // set on LunStatus.Used LUNs already in a volume group (lunUsedByVG warning)
   volume_group_id: z.string().optional(),
+  // api-model LogicalUnit.discardMaxSize (since 4.1): the most bytes the
+  // device discards in one operation; 0 means no discard support. The engine
+  // reads a LUN as discard-capable when this is > 0 (LUNs.supportsDiscard), and
+  // a block domain supports discard only when every LUN does.
+  discard_max_size: z.coerce.number().optional(),
+  // api-model LogicalUnit.discardZeroesData: deprecated since 4.2.1 and always
+  // false on current engines. Parsed for completeness, never used as a gate.
+  discard_zeroes_data: BooleanishSchema.optional(),
 })
 
 export const HostStorageSchema = z.looseObject({
@@ -99,4 +110,38 @@ export interface DiscoveredLun {
   storageDomainId?: string
   diskId?: string
   volumeGroupId?: string
+  // bytes per discard op; 0/absent = the device cannot discard (see
+  // lunSupportsDiscard). Feeds the Discard After Delete and Enable Discard gates.
+  discardMaxSize?: number
+}
+
+// LogicalUnit (wire) -> DiscoveredLun (the picker's read model). Shared so
+// every LUN read maps the same fields, discard support included.
+export function toDiscoveredLun(lun: LogicalUnit): DiscoveredLun {
+  return {
+    id: lun.id,
+    address: lun.address,
+    port: lun.port,
+    target: lun.target,
+    portal: lun.portal,
+    size: lun.size,
+    vendorId: lun.vendor_id,
+    productId: lun.product_id,
+    serial: lun.serial,
+    status: lun.status,
+    storageDomainId: lun.storage_domain_id,
+    diskId: lun.disk_id,
+    volumeGroupId: lun.volume_group_id,
+    discardMaxSize: lun.discard_max_size,
+  }
+}
+
+// Mirrors ovirt-engine LUNs.supportsDiscard(): discard_max_size present and
+// > 0. Accepts both the wire and the read-model spelling so the disk dialogs
+// (wire LUNs on a LUN disk) and the SAN picker (DiscoveredLun) share it.
+export function lunSupportsDiscard(
+  lun: { discardMaxSize?: number; discard_max_size?: number } | undefined,
+): boolean {
+  const max = lun?.discardMaxSize ?? lun?.discard_max_size
+  return max !== undefined && max > 0
 }
