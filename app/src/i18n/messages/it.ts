@@ -4546,13 +4546,6 @@ export const it: LocaleCatalog = {
   'capacity.busiest': 'Più carico:',
   'capacity.byCluster.title': 'Per cluster',
   'capacity.byCluster.ariaLabel': 'Utilizzo per cluster',
-  'capacity.help.aria': 'Informazioni su {title}',
-  'capacity.help.cpu':
-    'CPU logiche in uso sugli host che inviano dati, ponderate per numero di core. Assegnato è stimato dalle vCPU delle VM in esecuzione; il Data Warehouse contiene il valore esatto.',
-  'capacity.help.memory':
-    'Memoria in uso sugli host che inviano dati. Impegnato è stimato dalla memoria definita delle VM in esecuzione; il Data Warehouse contiene il valore esatto.',
-  'capacity.help.storage':
-    'Spazio utilizzato nei domini di archiviazione. Impegnato e Assegnato provengono direttamente dal motore.',
   'capacity.byCluster.limited': 'I {shown} cluster più carichi su {count}',
   'capacity.byCluster.viewAll': 'Visualizza tutti i cluster',
 }

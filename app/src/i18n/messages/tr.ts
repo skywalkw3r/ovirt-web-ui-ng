@@ -4476,13 +4476,6 @@ export const tr: LocaleCatalog = {
   'capacity.busiest': 'En yoğun:',
   'capacity.byCluster.title': 'Kümeye göre',
   'capacity.byCluster.ariaLabel': 'Kümeye göre kullanım',
-  'capacity.help.aria': '{title} hakkında',
-  'capacity.help.cpu':
-    "Veri gönderen ana makinelerde kullanımdaki mantıksal CPU'lar, çekirdek sayısına göre ağırlıklı. Tahsis edilen, çalışan sanal makinelerin vCPU'larından tahmin edilir; kesin değer Data Warehouse içinde bulunur.",
-  'capacity.help.memory':
-    'Veri gönderen ana makinelerde kullanımdaki bellek. Taahhüt edilen, çalışan sanal makinelerde tanımlı bellekten tahmin edilir; kesin değer Data Warehouse içinde bulunur.',
-  'capacity.help.storage':
-    'Depolama alanlarında kullanılan alan. Taahhüt edilen ve Tahsis edilen değerler doğrudan motordan gelir.',
   'capacity.byCluster.limited': '{count} kümeden en yoğun {shown} küme',
   'capacity.byCluster.viewAll': 'Tüm kümeleri görüntüle',
 }

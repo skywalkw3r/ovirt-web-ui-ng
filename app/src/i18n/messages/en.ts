@@ -471,13 +471,6 @@ export const en = {
   'capacity.cpu.allocationNoRatio': '{vcpus} vCPU',
   'capacity.memory.committed': '{amount}, {percent}% of physical',
   'capacity.busiest': 'Busiest:',
-  'capacity.help.aria': 'About {title}',
-  'capacity.help.cpu':
-    'Logical CPUs in use across reporting hosts, weighted by core count. Allocated is estimated from the vCPUs of running VMs; the Data Warehouse holds the exact figure.',
-  'capacity.help.memory':
-    'Host memory in use across reporting hosts. Committed is estimated from the memory defined on running VMs; the Data Warehouse holds the exact figure.',
-  'capacity.help.storage':
-    'Space used across storage domains. Committed and Allocated come straight from the engine.',
   'capacity.byCluster.title': 'By cluster',
   'capacity.byCluster.ariaLabel': 'Utilization by cluster',
   'capacity.byCluster.limited': 'Busiest {shown} of {count} clusters',

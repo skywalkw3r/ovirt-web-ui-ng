@@ -4429,13 +4429,6 @@ export const ko: LocaleCatalog = {
   'capacity.busiest': '최대 사용량:',
   'capacity.byCluster.title': '클러스터별',
   'capacity.byCluster.ariaLabel': '클러스터별 사용률',
-  'capacity.help.aria': '{title} 정보',
-  'capacity.help.cpu':
-    '보고 중인 호스트에서 사용 중인 논리 CPU(코어 수 기준 가중치). 할당됨은 실행 중인 VM의 vCPU로 추정한 값이며, 정확한 수치는 Data Warehouse에 있습니다.',
-  'capacity.help.memory':
-    '보고 중인 호스트에서 사용 중인 메모리. 커밋됨은 실행 중인 VM에 정의된 메모리로 추정한 값이며, 정확한 수치는 Data Warehouse에 있습니다.',
-  'capacity.help.storage':
-    '스토리지 도메인 전체의 사용 공간. 커밋됨과 할당됨은 엔진에서 직접 가져옵니다.',
   'capacity.byCluster.limited': '클러스터 {count}개 중 사용량 상위 {shown}개',
   'capacity.byCluster.viewAll': '모든 클러스터 보기',
 }

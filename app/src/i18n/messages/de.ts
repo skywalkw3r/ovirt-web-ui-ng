@@ -4567,13 +4567,6 @@ export const de: LocaleCatalog = {
   'capacity.busiest': 'Am stärksten ausgelastet:',
   'capacity.byCluster.title': 'Nach Cluster',
   'capacity.byCluster.ariaLabel': 'Auslastung nach Cluster',
-  'capacity.help.aria': 'Über {title}',
-  'capacity.help.cpu':
-    'Belegte logische CPUs aller meldenden Hosts, gewichtet nach Kernanzahl. Zugewiesen ist aus den vCPUs laufender VMs geschätzt; die genauen Werte liegen im Data Warehouse.',
-  'capacity.help.memory':
-    'Belegter Arbeitsspeicher aller meldenden Hosts. Zugesichert ist aus dem Speicher laufender VMs geschätzt; die genauen Werte liegen im Data Warehouse.',
-  'capacity.help.storage':
-    'Belegter Platz aller Speicherdomänen. Zugesichert und Zugewiesen stammen direkt von der Engine.',
   'capacity.byCluster.limited': 'Die {shown} am stärksten ausgelasteten von {count} Clustern',
   'capacity.byCluster.viewAll': 'Alle Cluster anzeigen',
 }

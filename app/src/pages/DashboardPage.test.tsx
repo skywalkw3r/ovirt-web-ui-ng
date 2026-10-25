@@ -128,10 +128,6 @@ describe('DashboardPage', () => {
     // the compute tiles carry the allocation estimate
     const cpu = screen.getByRole('region', { name: 'CPU' })
     await within(cpu).findByText('Allocated:', undefined, { timeout: FIND_TIMEOUT_MS })
-    // every tile title carries its help bubble
-    for (const name of ['CPU', 'Memory', 'Storage']) {
-      expect(screen.getByRole('button', { name: `About ${name}` })).toBeDefined()
-    }
 
     const byCluster = await screen.findByRole(
       'grid',

@@ -4547,13 +4547,6 @@ export const fr: LocaleCatalog = {
   'capacity.busiest': 'Le plus sollicité :',
   'capacity.byCluster.title': 'Par cluster',
   'capacity.byCluster.ariaLabel': 'Utilisation par cluster',
-  'capacity.help.aria': 'À propos de {title}',
-  'capacity.help.cpu':
-    "Processeurs logiques utilisés sur les hôtes remontant des données, pondérés par nombre de cœurs. Alloué est estimé à partir des vCPU des VM en cours d'exécution ; le Data Warehouse contient le chiffre exact.",
-  'capacity.help.memory':
-    "Mémoire utilisée sur les hôtes remontant des données. Engagé est estimé à partir de la mémoire définie des VM en cours d'exécution ; le Data Warehouse contient le chiffre exact.",
-  'capacity.help.storage':
-    'Espace utilisé sur les domaines de stockage. Engagé et Alloué proviennent directement du moteur.',
   'capacity.byCluster.limited': 'Les {shown} clusters les plus sollicités sur {count}',
   'capacity.byCluster.viewAll': 'Voir tous les clusters',
 }

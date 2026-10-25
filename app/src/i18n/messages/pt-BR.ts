@@ -4522,13 +4522,6 @@ export const ptBR: LocaleCatalog = {
   'capacity.busiest': 'Mais ocupado:',
   'capacity.byCluster.title': 'Por cluster',
   'capacity.byCluster.ariaLabel': 'Utilização por cluster',
-  'capacity.help.aria': 'Sobre {title}',
-  'capacity.help.cpu':
-    'CPUs lógicas em uso nos hosts que reportam, ponderadas pelo número de núcleos. Alocado é estimado a partir das vCPUs das VMs em execução; o Data Warehouse contém o valor exato.',
-  'capacity.help.memory':
-    'Memória em uso nos hosts que reportam. Comprometido é estimado a partir da memória definida nas VMs em execução; o Data Warehouse contém o valor exato.',
-  'capacity.help.storage':
-    'Espaço usado nos domínios de armazenamento. Comprometido e Alocado vêm diretamente do motor.',
   'capacity.byCluster.limited': 'Os {shown} clusters mais ocupados de {count}',
   'capacity.byCluster.viewAll': 'Ver todos os clusters',
 }

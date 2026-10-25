@@ -4293,12 +4293,6 @@ export const zhCN: LocaleCatalog = {
   'capacity.busiest': '最繁忙：',
   'capacity.byCluster.title': '按集群',
   'capacity.byCluster.ariaLabel': '按集群的利用率',
-  'capacity.help.aria': '关于{title}',
-  'capacity.help.cpu':
-    '报告主机上正在使用的逻辑 CPU，按核心数加权。已分配根据运行中虚拟机的 vCPU 估算；准确数值保存在 Data Warehouse 中。',
-  'capacity.help.memory':
-    '报告主机上正在使用的内存。已承诺根据运行中虚拟机定义的内存估算；准确数值保存在 Data Warehouse 中。',
-  'capacity.help.storage': '存储域中已使用的空间。已承诺和已分配直接来自引擎。',
   'capacity.byCluster.limited': '{count} 个集群中最繁忙的 {shown} 个',
   'capacity.byCluster.viewAll': '查看所有集群',
 }

@@ -6,7 +6,6 @@ import { UsageBar } from '../components/HostListCells'
 import {
   Button,
   Card,
-  Tooltip,
   CardBody,
   CardHeader,
   CardTitle,
@@ -43,7 +42,6 @@ import {
   ExclamationCircleIcon,
   InProgressIcon,
   MemoryIcon,
-  OutlinedQuestionCircleIcon,
   ServerIcon,
   StorageDomainIcon,
   VirtualMachineIcon,
@@ -446,6 +444,12 @@ function vmStatusCounts(vms: { status?: string }[]): Map<VmStatusKind, number> {
   return counts
 }
 
+// Divided rows with room between them, so the list fills the card beside the
+// taller Activity card instead of bunching at the top.
+const INVENTORY_LIST: React.CSSProperties = {
+  ['--pf-v6-c-list--Gap' as string]: 'var(--pf-t--global--spacer--md)',
+}
+
 function InventoryCard({
   vms,
   pools,
@@ -479,7 +483,12 @@ function InventoryCard({
     <Card isFullHeight>
       <CardTitle>{t('dashboard.inventory.title')}</CardTitle>
       <CardBody>
-        <List isPlain aria-label={t('dashboard.inventory.ariaLabel')}>
+        <List
+          isPlain
+          isBordered
+          aria-label={t('dashboard.inventory.ariaLabel')}
+          style={INVENTORY_LIST}
+        >
           <InventoryRow
             title={t('dashboard.inventory.vms')}
             icon={<VirtualMachineIcon />}
@@ -738,23 +747,6 @@ function ThresholdBar({ percent, label }: { percent: number; label: string }) {
   )
 }
 
-// The "?" beside a tile title: what the tile measures and where its figures
-// come from, including that the CPU/memory allocation lines are estimates. A
-// focusable plain button, so keyboard users reach the tooltip too.
-function TileHelp({ title, help }: { title: string; help: string }) {
-  const t = useT()
-  return (
-    <Tooltip content={help}>
-      <Button
-        variant="plain"
-        hasNoPadding
-        aria-label={t('capacity.help.aria', { title })}
-        icon={<OutlinedQuestionCircleIcon />}
-      />
-    </Tooltip>
-  )
-}
-
 interface TileFigures {
   percent: number
   // free capacity in real units, e.g. "235 logical CPUs free"
@@ -769,14 +761,11 @@ interface TileFigures {
 function CapacityTile({
   icon,
   title,
-  help,
   figures,
   children,
 }: {
   icon: ReactNode
   title: string
-  // what the tile measures, shown from the "?" beside the title
-  help: string
   // populated tile; leave undefined and pass children for the other states
   figures?: TileFigures
   children?: ReactNode
@@ -801,7 +790,6 @@ function CapacityTile({
             {icon}
           </span>
           <h3 style={TILE_TITLE}>{title}</h3>
-          <TileHelp title={title} help={help} />
         </Flex>
         {band && (
           <Label isCompact color={BAND_LABEL[band].color}>
@@ -1112,24 +1100,14 @@ function CapacityCard({
           <Grid hasGutter>
             {isAdmin && (
               <GridItem md={4}>
-                <CapacityTile
-                  icon={<CpuIcon />}
-                  title={cpuTitle}
-                  help={t('capacity.help.cpu')}
-                  figures={cpuFigures}
-                >
+                <CapacityTile icon={<CpuIcon />} title={cpuTitle} figures={cpuFigures}>
                   {hostTileState(cpuTitle)}
                 </CapacityTile>
               </GridItem>
             )}
             {isAdmin && (
               <GridItem md={4}>
-                <CapacityTile
-                  icon={<MemoryIcon />}
-                  title={memoryTitle}
-                  help={t('capacity.help.memory')}
-                  figures={memoryFigures}
-                >
+                <CapacityTile icon={<MemoryIcon />} title={memoryTitle} figures={memoryFigures}>
                   {hostTileState(memoryTitle)}
                 </CapacityTile>
               </GridItem>
@@ -1138,7 +1116,6 @@ function CapacityCard({
               <CapacityTile
                 icon={<StorageDomainIcon />}
                 title={storageTitle}
-                help={t('capacity.help.storage')}
                 figures={storageFigures}
               >
                 {storageDomains.isPending ? (
@@ -1325,7 +1302,7 @@ export function DashboardPage() {
         }
         actions={<RefreshControl />}
       />
-      {/* A 3/5/4 row (details, inventory, activity) first, then Capacity
+      {/* A 2/6/4 row (details, inventory, activity) first, then Capacity
           spanning the page (its three tiles need the width). One flat grid
           (not per-column stacks) so the row lines up across columns; every
           card is isFullHeight and stretches to its row's tallest, giving
@@ -1340,10 +1317,10 @@ export function DashboardPage() {
         }}
       >
         {/* Row 1 */}
-        <GridItem xl={3}>
+        <GridItem xl={2}>
           <DetailsCard apiInfo={apiInfo} />
         </GridItem>
-        <GridItem xl={5}>
+        <GridItem xl={6}>
           <InventoryCard
             vms={vms}
             pools={pools}

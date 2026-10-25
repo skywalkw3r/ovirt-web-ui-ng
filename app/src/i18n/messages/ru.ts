@@ -4707,13 +4707,6 @@ export const ru: LocaleCatalog = {
   'capacity.busiest': 'Наиболее загружен:',
   'capacity.byCluster.title': 'По кластерам',
   'capacity.byCluster.ariaLabel': 'Использование по кластерам',
-  'capacity.help.aria': 'О разделе {title}',
-  'capacity.help.cpu':
-    'Занятые логические ЦП на хостах с данными, взвешенные по числу ядер. Распределено оценивается по vCPU запущенных ВМ; точное значение хранится в Data Warehouse.',
-  'capacity.help.memory':
-    'Занятая память на хостах с данными. Зафиксировано оценивается по памяти, заданной для запущенных ВМ; точное значение хранится в Data Warehouse.',
-  'capacity.help.storage':
-    'Занятое место в доменах хранилища. Зафиксировано и Распределено берутся напрямую из движка.',
   'capacity.byCluster.limited': 'Самые загруженные кластеры: {shown} из {count}',
   'capacity.byCluster.viewAll': 'Все кластеры',
 }

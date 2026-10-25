@@ -4482,13 +4482,6 @@ export const ja: LocaleCatalog = {
   'capacity.busiest': '最も高い使用率:',
   'capacity.byCluster.title': 'クラスター別',
   'capacity.byCluster.ariaLabel': 'クラスター別の使用率',
-  'capacity.help.aria': '{title}について',
-  'capacity.help.cpu':
-    '報告中のホストで使用中の論理 CPU（コア数で加重）。割り当て済みは実行中の VM の vCPU から推定しています。正確な値は Data Warehouse にあります。',
-  'capacity.help.memory':
-    '報告中のホストで使用中のメモリ。確約済みは実行中の VM に定義されたメモリから推定しています。正確な値は Data Warehouse にあります。',
-  'capacity.help.storage':
-    'ストレージドメイン全体の使用容量。確約済みと割り当て済みはエンジンから直接取得しています。',
   'capacity.byCluster.limited': '{count} 個中、使用率の高い {shown} 個のクラスター',
   'capacity.byCluster.viewAll': 'すべてのクラスターを表示',
 }
