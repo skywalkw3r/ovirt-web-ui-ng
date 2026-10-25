@@ -2,7 +2,7 @@ import { clusterRoutes, resetClusterRouteMocks } from './cluster'
 import { hostNetworkRoutes } from './host-network'
 import { storageRoutes } from './storage'
 import type { MockRoute } from './types'
-import { vmRoutes } from './vm'
+import { resetVmRouteMocks, vmRoutes } from './vm'
 
 export type { MockRoute } from './types'
 
@@ -19,4 +19,5 @@ export const extraRoutes: MockRoute[] = [
 // between tests alongside resetMockVms.
 export function resetAreaRouteMocks(): void {
   resetClusterRouteMocks()
+  resetVmRouteMocks()
 }
