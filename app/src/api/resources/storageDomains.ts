@@ -75,6 +75,10 @@ export interface BlockStorageDomainSpec {
   critical_space_action_blocker?: number
   wipe_after_delete?: boolean
   backup?: boolean
+  // Discard After Delete. The engine accepts true only when every LUN supports
+  // discard (StorageDomainValidator.isDiscardAfterDeleteLegalForNewBlockStorageDomain);
+  // the modal gates the checkbox on that and the engine stays the backstop.
+  discard_after_delete?: boolean
 }
 
 // Builds the block-domain create body and hands it to createStorageDomain (the
@@ -105,7 +109,140 @@ export async function createBlockStorageDomain(
   }
   if (spec.wipe_after_delete !== undefined) body.wipe_after_delete = spec.wipe_after_delete
   if (spec.backup !== undefined) body.backup = spec.backup
+  if (spec.discard_after_delete !== undefined) {
+    body.discard_after_delete = spec.discard_after_delete
+  }
   return createStorageDomain(body)
+}
+
+// One driver option of a Managed Block Storage (cinderlib) domain: the
+// api-model Property { name, value } inside storage.driver_options /
+// storage.driver_sensitive_options.
+export interface StorageProperty {
+  name: string
+  value: string
+}
+
+// The Managed Block Storage (cinderlib) create spec. Verified against
+// api-model HostStorage.driverOptions/driverSensitiveOptions (since 4.3) and
+// ovirt-engine BackendStorageDomainsResource.add: the MANAGED_BLOCK_STORAGE
+// branch skips the storage-connection mapping entirely (no address/path/LUNs)
+// and runs AddManagedBlockStorageDomain with the two option maps. The host is
+// still REQUIRED: add() calls validateParameters(storageDomain, "host.id|name",
+// "type", "storage") for every kind before branching, even though the cinderlib
+// calls run on the engine. The domain function is `managed_block_storage`
+// (webadmin AsyncDataProvider.getManagedBlockStorageModels tags the model with
+// StorageDomainType.ManagedBlockStorage; the api-model HostStorage example
+// posts the same), not `data`. The engine forces wipe/backup/discard off for
+// this kind (AddManagedBlockStorageDomainCommand.init), so no such flag rides,
+// and it adds volume_backend_name = the domain name to the driver options
+// itself.
+//
+// SECURITY: driverSensitiveOptions carry SAN passwords/tokens. They ride only
+// in this in-flight request body; the engine stores them encrypted and never
+// returns them, and nothing here logs or echoes them.
+export interface ManagedBlockStorageDomainSpec {
+  name: string
+  hostName: string
+  driverOptions: StorageProperty[]
+  driverSensitiveOptions?: StorageProperty[]
+  description?: string
+  comment?: string
+  warning_low_space_indicator?: number
+  critical_space_action_blocker?: number
+}
+
+// Rows with a blank name are dropped (an editor's empty trailing row); names
+// are trimmed, values ride verbatim (a secret may legitimately carry spaces).
+function propertyList(rows: StorageProperty[] | undefined): { property: StorageProperty[] } {
+  return {
+    property: (rows ?? [])
+      .map((row) => ({ name: row.name.trim(), value: row.value }))
+      .filter((row) => row.name !== ''),
+  }
+}
+
+export function buildManagedBlockStorageDomainBody(
+  spec: ManagedBlockStorageDomainSpec,
+): Record<string, unknown> {
+  const storage: Record<string, unknown> = {
+    type: 'managed_block_storage',
+    driver_options: propertyList(spec.driverOptions),
+  }
+  const sensitive = propertyList(spec.driverSensitiveOptions)
+  if (sensitive.property.length > 0) storage.driver_sensitive_options = sensitive
+  const body: Record<string, unknown> = {
+    name: spec.name,
+    type: 'managed_block_storage',
+    host: { name: spec.hostName },
+    storage,
+  }
+  if (spec.description) body.description = spec.description
+  if (spec.comment) body.comment = spec.comment
+  if (spec.warning_low_space_indicator !== undefined) {
+    body.warning_low_space_indicator = spec.warning_low_space_indicator
+  }
+  if (spec.critical_space_action_blocker !== undefined) {
+    body.critical_space_action_blocker = spec.critical_space_action_blocker
+  }
+  return body
+}
+
+export async function createManagedBlockStorageDomain(
+  spec: ManagedBlockStorageDomainSpec,
+): Promise<StorageDomain> {
+  return createStorageDomain(buildManagedBlockStorageDomainBody(spec))
+}
+
+// The local-storage ("Local on Host", localfs) create spec. Verified against
+// api-model StorageDomainsService.add (the Local signature: mandatory
+// storage.path, no address) and ovirt-engine BackendStorageDomainsResource.add
+// (LOCALFS -> AddLocalStorageDomain; file kinds require storage.path).
+// AddLocalStorageDomainCommand validates that the host's data center is a
+// LOCAL one (ACTION_TYPE_FAILED_STORAGE_POOL_IS_NOT_LOCAL) and then ATTACHES
+// the new domain to that data center itself (AttachStorageDomainToPool), so
+// unlike every other kind there is NO separate attach call: a follow-up POST
+// /datacenters/{id}/storagedomains would fault. `host` takes an id or a name
+// (validateParameters "host.id|name"). Local domains are data-only.
+export interface LocalStorageDomainSpec {
+  name: string
+  host: { id: string } | { name: string }
+  // absolute directory on the host, e.g. /data/images
+  path: string
+  description?: string
+  comment?: string
+  warning_low_space_indicator?: number
+  critical_space_action_blocker?: number
+  wipe_after_delete?: boolean
+  backup?: boolean
+}
+
+export function buildLocalStorageDomainBody(spec: LocalStorageDomainSpec): Record<string, unknown> {
+  const body: Record<string, unknown> = {
+    name: spec.name,
+    type: 'data',
+    host: 'id' in spec.host ? { id: spec.host.id } : { name: spec.host.name },
+    storage: { type: 'localfs', path: spec.path },
+  }
+  if (spec.description) body.description = spec.description
+  if (spec.comment) body.comment = spec.comment
+  if (spec.warning_low_space_indicator !== undefined) {
+    body.warning_low_space_indicator = spec.warning_low_space_indicator
+  }
+  if (spec.critical_space_action_blocker !== undefined) {
+    body.critical_space_action_blocker = spec.critical_space_action_blocker
+  }
+  if (spec.wipe_after_delete !== undefined) body.wipe_after_delete = spec.wipe_after_delete
+  if (spec.backup !== undefined) body.backup = spec.backup
+  return body
+}
+
+// Create a local domain on the host and (engine-side) attach it to the host's
+// local data center in one call. Resolves with the created domain.
+export async function createLocalStorageDomain(
+  spec: LocalStorageDomainSpec,
+): Promise<StorageDomain> {
+  return createStorageDomain(buildLocalStorageDomainBody(spec))
 }
 
 // Import a PRE-EXISTING block (iSCSI/FCP) domain — the SAN sibling of the
@@ -232,6 +369,9 @@ export interface StorageDomainEditBody {
   critical_space_action_blocker?: number
   wipe_after_delete?: boolean
   backup?: boolean
+  // Block domains only. The engine maps it on update (StorageDomainMapper) and
+  // rejects true unless supports_discard (isDiscardAfterDeleteLegalForExistingStorageDomain).
+  discard_after_delete?: boolean
 }
 
 // Webadmin-style edit: PUT the changed fields back. The engine answers with the

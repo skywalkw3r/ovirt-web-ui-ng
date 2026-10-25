@@ -21,6 +21,8 @@ export const StorageDomainLogicalUnitSchema = z.looseObject({
   serial: z.string().optional(),
   vendor_id: z.string().optional(),
   product_id: z.string().optional(),
+  // bytes per discard op; 0 = this LUN cannot discard (see host-storage.ts)
+  discard_max_size: z.coerce.number().optional(),
 })
 
 export type StorageDomainLogicalUnit = z.infer<typeof StorageDomainLogicalUnitSchema>
@@ -48,8 +50,12 @@ export const StorageDomainSchema = z.looseObject({
   // GB free below which the engine blocks new disk allocations
   critical_space_action_blocker: z.coerce.number().optional(),
   wipe_after_delete: BooleanishSchema.optional(),
+  // Block (iSCSI/FC) domains only: discard each volume's blocks when it is
+  // deleted. Settable only while supports_discard is true (engine
+  // StorageDomainValidator.isDiscardAfterDeleteLegal).
   discard_after_delete: BooleanishSchema.optional(),
   backup: BooleanishSchema.optional(),
+  // read-only: true when every LUN behind a block domain supports discard
   supports_discard: BooleanishSchema.optional(),
   // the backing storage connection (nfs/iscsi/fc/glusterfs details)
   storage: z
