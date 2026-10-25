@@ -280,7 +280,14 @@ export function NicsTab({ vmId }: { vmId: string }) {
   // network filter parameters did not, it stays open with an inline alert; an
   // Add in that state flips the SAME dialog instance (same key) to editing the
   // created NIC, so the typed rows survive and a retry never re-creates it.
-  const [nicDialog, setNicDialog] = useState<{ key: number; nic?: Nic } | null>(null)
+  // `createdName` marks an Add whose NIC POST already succeeded: from then on
+  // the dialog only ever applies parameters to that NIC (resolved by name when
+  // the NIC itself could not be read back), never POSTs it again.
+  const [nicDialog, setNicDialog] = useState<{
+    key: number
+    nic?: Nic
+    createdName?: string
+  } | null>(null)
   const [dialogSeq, setDialogSeq] = useState(0)
   const [filterError, setFilterError] = useState<string | null>(null)
   const [confirming, setConfirming] = useState<{ action: ConfirmAction; nic: Nic } | null>(null)
@@ -314,6 +321,11 @@ export function NicsTab({ vmId }: { vmId: string }) {
     const target = nicDialog?.nic
     const plan = values.networkFilterParameterPlan
     setFilterError(null)
+    if (target === undefined && nicDialog?.createdName !== undefined) {
+      if (plan) applyParameters(nicDialog.createdName, plan)
+      else closeNicDialog()
+      return
+    }
     if (target === undefined) {
       add.mutate(
         {
@@ -325,7 +337,14 @@ export function NicsTab({ vmId }: { vmId: string }) {
           macAddress: values.macAddress,
         },
         {
-          onSuccess: () => (plan ? applyParameters(values.name, plan) : closeNicDialog()),
+          onSuccess: () => {
+            if (!plan) {
+              closeNicDialog()
+              return
+            }
+            setNicDialog((dialog) => dialog && { ...dialog, createdName: values.name })
+            applyParameters(values.name, plan)
+          },
           // useAddVmNic toasts the fault; closing mirrors the pre-existing flow
           onError: closeNicDialog,
         },
@@ -631,6 +650,7 @@ export function NicsTab({ vmId }: { vmId: string }) {
         <NicModal
           key={nicDialog.key}
           nic={nicDialog.nic}
+          nameLocked={nicDialog.createdName !== undefined}
           vmId={vmId}
           isSaving={add.isPending || update.isPending || applyFilterParameters.isPending}
           saveError={
@@ -676,11 +696,15 @@ export function NicModal({
   vmId,
   isSaving = false,
   saveError,
+  nameLocked = false,
   onSubmit,
   onClose,
 }: {
   nic?: Nic
   vmId?: string
+  // an Add whose NIC already exists (only its parameters are pending): the
+  // name is what the retry resolves the NIC by, so it can no longer change
+  nameLocked?: boolean
   // the owner keeps the dialog open through its save (VM NICs tab)
   isSaving?: boolean
   // inline danger alert for a partial save (NIC saved, parameters not)
@@ -814,7 +838,7 @@ export function NicModal({
               id="nic-name"
               isRequired
               // the update endpoint has no rename, so the name is fixed
-              isDisabled={isEdit}
+              isDisabled={isEdit || nameLocked}
               value={name}
               onChange={(_event, value) => setName(value)}
             />

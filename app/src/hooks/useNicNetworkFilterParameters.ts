@@ -55,23 +55,23 @@ export function useApplyNicNetworkFilterParameters(vmId: string) {
       nicName: string
       plan: NetworkFilterParameterPlan
     }): Promise<string> => {
+      // Every failure, the by-name lookup included, surfaces as a
+      // NicFilterParametersError so callers handle one shape; `nic` is set
+      // once the lookup resolved it.
       let resolved: Nic | undefined
-      if (nicId === undefined) {
-        resolved = (await listVmNics(vmId)).find((nic) => nic.name === nicName)
-        if (resolved === undefined) {
-          throw new NicFilterParametersError(`network interface ${nicName} not found`)
-        }
-      }
-      const id = nicId ?? resolved!.id
       try {
-        await applyNetworkFilterParameterPlan(vmId, id, plan)
+        if (nicId === undefined) {
+          resolved = (await listVmNics(vmId)).find((nic) => nic.name === nicName)
+          if (resolved === undefined) throw new Error(`network interface ${nicName} not found`)
+        }
+        await applyNetworkFilterParameterPlan(vmId, nicId ?? resolved!.id, plan)
       } catch (error) {
         throw new NicFilterParametersError(
           error instanceof Error ? error.message : String(error),
           resolved,
         )
       }
-      return id
+      return nicId ?? resolved!.id
     },
     // A partly applied plan still moved the engine, so refresh on failure too.
     onSettled: (resolvedId, error, { nicId }) => {

@@ -308,4 +308,66 @@ describe('NicsTab partial save failures', () => {
       ['DHCPSERVER', '10.0.0.254'],
     ])
   })
+
+  it('never re-creates the NIC when the post-Add lookup itself failed', async () => {
+    const user = userEvent.setup()
+    // From the NIC POST until released, every NIC list read fails, so the
+    // by-name lookup that follows the Add cannot resolve the new NIC.
+    let nicPosted = false
+    let lookupDown = true
+    requestSpy.mockImplementation((path, opts) => {
+      const method = (opts as { method?: string } | undefined)?.method ?? 'GET'
+      if (path === '/vms/vm-01/nics' && method === 'POST') nicPosted = true
+      return nicPosted && lookupDown && path === '/vms/vm-01/nics' && method === 'GET'
+        ? Promise.reject(new ApiError(503, 'Service Unavailable', 'engine busy'))
+        : passthrough.request!(path, opts)
+    })
+    renderWithProviders(<NicsTab vmId="vm-01" />)
+    await user.click(
+      await screen.findByRole(
+        'button',
+        { name: 'Add network interface' },
+        { timeout: FIND_TIMEOUT_MS },
+      ),
+    )
+    const dialog = await screen.findByRole('dialog')
+    await user.type(within(dialog).getByRole('textbox', { name: 'Name' }), 'nic-lookup')
+    await user.selectOptions(
+      await within(dialog).findByRole(
+        'combobox',
+        { name: 'vNIC profile' },
+        { timeout: FIND_TIMEOUT_MS },
+      ),
+      'vnic-03',
+    )
+    await user.click(within(dialog).getByRole('button', { name: 'Add parameter' }))
+    await user.type(nameInput(1), 'IP')
+    await user.type(valueInput(1), '10.0.0.60')
+    await user.click(within(dialog).getByRole('button', { name: 'Add' }))
+
+    await within(dialog).findByText(
+      'The network interface was saved, but its network filter parameters were not: engine busy. Save again to retry.',
+      undefined,
+      { timeout: FIND_TIMEOUT_MS },
+    )
+    // the NIC exists now: its name is locked to what the retry resolves by
+    expect(
+      (within(dialog).getByRole('textbox', { name: 'Name' }) as HTMLInputElement).disabled,
+    ).toBe(true)
+
+    lookupDown = false
+    requestSpy.mockClear()
+    await user.click(within(dialog).getByRole('button', { name: 'Add' }))
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull(), {
+      timeout: FIND_TIMEOUT_MS,
+    })
+    // no second NIC POST: only the parameter lands
+    expect(writes()).toEqual([
+      expect.stringMatching(/^POST \/vms\/vm-01\/nics\/[^/]+\/networkfilterparameters$/),
+    ])
+    const created = (await listVmNics('vm-01')).filter((nic) => nic.name === 'nic-lookup')
+    expect(created).toHaveLength(1)
+    const parameters = await listNicNetworkFilterParameters('vm-01', created[0]!.id)
+    expect(parameters.map((p) => [p.name, p.value])).toEqual([['IP', '10.0.0.60']])
+  })
 })
