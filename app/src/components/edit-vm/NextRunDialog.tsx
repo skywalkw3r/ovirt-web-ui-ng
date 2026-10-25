@@ -48,7 +48,7 @@ export function NextRunDialog({
         {watchdogChanged && (
           <HelperText style={{ marginBlockStart: 'var(--pf-t--global--spacer--md)' }}>
             <HelperTextItem variant="warning">
-              The watchdog change takes effect at the next start of the VM, even with Apply now.
+              <FormattedMessage id="vm.edit.nextRun.watchdogNote" />
             </HelperTextItem>
           </HelperText>
         )}

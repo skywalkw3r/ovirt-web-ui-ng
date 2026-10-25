@@ -18,7 +18,6 @@ import { FieldHelp } from '../forms/FieldHelp'
 import {
   STORAGE_ERROR_RESUME_OPTIONS,
   WATCHDOG_ACTION_OPTIONS,
-  WATCHDOG_COPY,
   watchdogModelOptions,
   type EditVmDraft,
 } from './editVmDraft'
@@ -172,21 +171,26 @@ export function HighAvailabilitySection({
           Action"). Saved through the watchdogs subcollection after the VM PUT;
           a running VM picks it up on its next start. */}
       <FormGroup
-        label={WATCHDOG_COPY.model}
+        label={t('vm.edit.ha.watchdogModel')}
         fieldId="edit-vm-watchdog-model"
-        labelHelp={<FieldHelp field={WATCHDOG_COPY.model} content={WATCHDOG_COPY.modelHelp} />}
+        labelHelp={
+          <FieldHelp
+            field={t('vm.edit.ha.watchdogModel')}
+            content={t('fieldHelp.vm.watchdogModel')}
+          />
+        }
       >
         {watchdogs.isPending && !watchdogReady ? (
-          <Skeleton height="2.25rem" screenreaderText="Loading watchdog" />
+          <Skeleton height="2.25rem" screenreaderText={t('vm.edit.ha.watchdog.loading')} />
         ) : (
           <FormSelect
             id="edit-vm-watchdog-model"
-            aria-label={WATCHDOG_COPY.model}
+            aria-label={t('vm.edit.ha.watchdogModel')}
             value={draft.watchdogModel}
             isDisabled={!watchdogReady}
             onChange={(_event, value) => set('watchdogModel', value)}
           >
-            <FormSelectOption value="" label={WATCHDOG_COPY.none} />
+            <FormSelectOption value="" label={t('vm.edit.ha.watchdogModel.none')} />
             {modelOptions.map((model) => (
               <FormSelectOption key={model} value={model} label={model} />
             ))}
@@ -196,7 +200,7 @@ export function HighAvailabilitySection({
           <FormHelperText>
             <HelperText>
               <HelperTextItem variant="error">
-                Could not load the watchdog device; it is left unchanged.{' '}
+                {t('vm.edit.ha.watchdog.error')}{' '}
                 <Button variant="link" isInline onClick={() => void watchdogs.refetch()}>
                   {t('common.action.retry')}
                 </Button>
@@ -207,20 +211,25 @@ export function HighAvailabilitySection({
       </FormGroup>
 
       <FormGroup
-        label={WATCHDOG_COPY.action}
+        label={t('vm.edit.ha.watchdogAction')}
         fieldId="edit-vm-watchdog-action"
-        labelHelp={<FieldHelp field={WATCHDOG_COPY.action} content={WATCHDOG_COPY.actionHelp} />}
+        labelHelp={
+          <FieldHelp
+            field={t('vm.edit.ha.watchdogAction')}
+            content={t('fieldHelp.vm.watchdogAction')}
+          />
+        }
       >
         <FormSelect
           id="edit-vm-watchdog-action"
-          aria-label={WATCHDOG_COPY.action}
+          aria-label={t('vm.edit.ha.watchdogAction')}
           value={draft.watchdogAction}
           // the action only means something once a model is chosen
           isDisabled={!watchdogReady || draft.watchdogModel === ''}
           onChange={(_event, value) => set('watchdogAction', value)}
         >
           {WATCHDOG_ACTION_OPTIONS.map((option) => (
-            <FormSelectOption key={option.value} value={option.value} label={option.label} />
+            <FormSelectOption key={option.value} value={option.value} label={t(option.labelId)} />
           ))}
         </FormSelect>
       </FormGroup>

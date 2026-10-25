@@ -1202,27 +1202,16 @@ export function watchdogModelOptions(architecture: string | undefined, current: 
   return current !== '' && !models.includes(current) ? [current, ...models] : models
 }
 
-// Watchdog field copy shared by the Edit VM HA tab and the New VM wizard so
-// both read the same. i18n: plain English pending the catalog pass (see the
-// wave handoff); one place to convert.
-export const WATCHDOG_COPY = {
-  model: 'Watchdog model',
-  action: 'Watchdog action',
-  none: 'No watchdog',
-  modelHelp:
-    'A virtual watchdog card the guest must keep resetting. If the guest hangs and stops resetting it, the watchdog action runs. Requires a watchdog daemon in the guest. Applied on the next start of a running VM.',
-  actionHelp:
-    'What happens when the watchdog fires: None only logs an event, Reset reboots the VM, Power off stops it, Pause pauses it, and Dump writes a memory dump on the host.',
-} as const
-
 // Watchdog actions (api-model types/WatchdogAction), in webadmin's order.
-// i18n: plain English pending the catalog pass (see the wave handoff).
-export const WATCHDOG_ACTION_OPTIONS: { value: string; label: string }[] = [
-  { value: 'none', label: 'None' },
-  { value: 'reset', label: 'Reset' },
-  { value: 'poweroff', label: 'Power off' },
-  { value: 'pause', label: 'Pause' },
-  { value: 'dump', label: 'Dump' },
+// Labels resolve at render (t(option.labelId)); the field copy itself (label,
+// help, "No watchdog") is the vm.edit.ha.watchdog* / fieldHelp.vm.watchdog*
+// ids, shared by the Edit VM HA tab and the New VM wizard.
+export const WATCHDOG_ACTION_OPTIONS: { value: string; labelId: MessageId }[] = [
+  { value: 'none', labelId: 'vm.edit.ha.watchdogAction.none' },
+  { value: 'reset', labelId: 'vm.edit.ha.watchdogAction.reset' },
+  { value: 'poweroff', labelId: 'vm.edit.ha.watchdogAction.poweroff' },
+  { value: 'pause', labelId: 'vm.edit.ha.watchdogAction.pause' },
+  { value: 'dump', labelId: 'vm.edit.ha.watchdogAction.dump' },
 ]
 
 // Graphics protocol options — SPICE/VNC map to display.type; Headless removes

@@ -228,7 +228,7 @@ export function EditVmModal({
           <Alert
             variant="danger"
             isInline
-            title={`The VM was saved, but the watchdog change failed: ${watchdogError}. Save again to retry.`}
+            title={t('vm.edit.watchdog.partialFailure', { message: watchdogError })}
             style={{ marginBottom: 'var(--pf-t--global--spacer--md)' }}
           />
         )}
