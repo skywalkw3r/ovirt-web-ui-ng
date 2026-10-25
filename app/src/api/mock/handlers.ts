@@ -12,6 +12,7 @@ import {
 } from '../../lib/vm-status'
 import type { HostAction } from '../resources/hosts'
 import type { VmAction } from '../resources/vms'
+import { extraRoutes, type MockRoute } from './routes'
 
 const LATENCY_MS = 300
 // Shorter than the 10s VM poll on purpose: refetches see the transitional
@@ -11469,13 +11470,6 @@ function addGroupMock(body: unknown): unknown {
   return created
 }
 
-interface MockRoute {
-  method: NonNullable<RequestOptions['method']>
-  // Capture groups become the handler's params (URI-decoded, in order).
-  pattern: RegExp
-  handle: (params: string[], body: unknown, query: URLSearchParams) => unknown
-}
-
 // GET /hosts/host-01/numanodes — a two-node NUMA topology (memory in MB, CPU
 // cores per node). Other hosts return an empty list to exercise the empty state.
 const NUMA_FIXTURE = {
@@ -11518,8 +11512,10 @@ const katelloErrata = [
 
 // Later resources register here as (method, path-regex) entries. Order
 // matters only for legacy method-less calls (see mockRequest): keep GET
-// entries before writes that share a path.
+// entries before writes that share a path. Per-area modules under ./routes
+// come first so they can narrow a path the core table also matches.
 const routes: MockRoute[] = [
+  ...extraRoutes,
   {
     method: 'GET',
     pattern: /^$/,
