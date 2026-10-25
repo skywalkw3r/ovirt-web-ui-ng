@@ -118,6 +118,33 @@ describe('DashboardPage', () => {
     expect(screen.queryByText('Could not load events')).toBeNull()
   })
 
+  it('shows a capacity tile per resource and the by-cluster table to an admin', async () => {
+    renderWithProviders(<DashboardPage />)
+
+    // each tile settles into free capacity, a status word and a used line
+    for (const name of ['CPU', 'Memory', 'Storage']) {
+      const tile = await screen.findByRole('region', { name }, { timeout: FIND_TIMEOUT_MS })
+      await within(tile).findByText(/free$/, undefined, { timeout: FIND_TIMEOUT_MS })
+      expect(within(tile).getByText(/^\d+% used$/)).toBeDefined()
+      expect(within(tile).getByText(/^(Normal|Moderate|High|Critical)$/)).toBeDefined()
+      expect(
+        within(tile).getByRole('img', { name: new RegExp(`^${name}: \\d+% used$`) }),
+      ).toBeDefined()
+    }
+    // the compute tiles carry the labelled allocation estimate
+    const cpu = screen.getByRole('region', { name: 'CPU' })
+    await within(cpu).findByText('Allocated (est.):', undefined, { timeout: FIND_TIMEOUT_MS })
+    expect(within(cpu).getByRole('button', { name: 'About this estimate' })).toBeDefined()
+
+    const byCluster = await screen.findByRole(
+      'grid',
+      { name: 'Utilization by cluster' },
+      { timeout: FIND_TIMEOUT_MS },
+    )
+    // header row plus at least one cluster that has hosts
+    expect(within(byCluster).getAllByRole('row').length).toBeGreaterThan(1)
+  })
+
   it('never issues the admin-only host reads for a user-tier session and hides their rows', async () => {
     renderWithProviders(<DashboardPage />, { user: 'demo@internal' })
 
@@ -129,6 +156,10 @@ describe('DashboardPage', () => {
     })
     expect(within(inventory).queryByText(/Hosts$/)).toBeNull()
     expect(within(inventory).queryByText(/Data centers$/)).toBeNull()
+    // capacity: storage only; the host-fed tiles and the cluster table are admin-only
+    await screen.findByRole('region', { name: 'Storage' }, { timeout: FIND_TIMEOUT_MS })
+    expect(screen.queryByRole('region', { name: 'CPU' })).toBeNull()
+    expect(screen.queryByRole('grid', { name: 'Utilization by cluster' })).toBeNull()
     expect(requested().some((path) => path.startsWith('/hosts'))).toBe(false)
   })
 })

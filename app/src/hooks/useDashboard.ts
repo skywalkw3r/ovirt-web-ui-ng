@@ -4,11 +4,13 @@ import { listHostsWithStats } from '../api/resources/hosts'
 import { fetchApiInfo } from '../api/resources/system'
 import { useCapabilities } from '../auth/capabilities'
 import {
-  aggregateCpu,
+  aggregateCpuCapacity,
   aggregateMemory,
   aggregateStorage,
+  aggregateVmAllocation,
   type CapacitySummary,
-  type CpuSummary,
+  type CpuCapacity,
+  type VmAllocation,
 } from '../lib/utilization'
 import { useSettings } from '../settings/SettingsProvider'
 import { useClustersInventory, useDataCenters, usePools } from './useAdminResources'
@@ -62,20 +64,28 @@ function useHostsWithStats() {
 // ~40 samples at the 30s host/storage cadence ≈ the last twenty minutes.
 export interface DashboardUtilization {
   // undefined while loading, on error, or when nothing reports the metric
-  cpu?: CpuSummary
+  cpu?: CpuCapacity
   memory?: CapacitySummary
   storage?: CapacitySummary
+  // estimated vCPU / memory allocation of resource-holding VMs; undefined
+  // until the VM list lands
+  allocation?: VmAllocation
 }
 
-// Aggregates the utilization card's metric summaries. Derived from the same
+// Aggregates the capacity card's metric summaries. Derived from the same
 // query objects useDashboard returns, so the card stays in step with the poll
 // cycle.
 export function useDashboardUtilization(
   hosts: DashboardQueries['hosts'],
   storageDomains: DashboardQueries['storageDomains'],
+  vms: DashboardQueries['vms'],
 ): DashboardUtilization {
-  const cpu = useMemo(() => aggregateCpu(hosts.data ?? []), [hosts.data])
+  const cpu = useMemo(() => aggregateCpuCapacity(hosts.data ?? []), [hosts.data])
   const memory = useMemo(() => aggregateMemory(hosts.data ?? []), [hosts.data])
   const storage = useMemo(() => aggregateStorage(storageDomains.data ?? []), [storageDomains.data])
-  return { cpu, memory, storage }
+  const allocation = useMemo(
+    () => (vms.data ? aggregateVmAllocation(vms.data) : undefined),
+    [vms.data],
+  )
+  return { cpu, memory, storage, allocation }
 }

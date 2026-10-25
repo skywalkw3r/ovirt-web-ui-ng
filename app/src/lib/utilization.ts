@@ -1,6 +1,7 @@
 import type { Host } from '../api/schemas/host'
 import type { StorageDomain } from '../api/schemas/storage-domain'
 import type { VmStat } from '../api/schemas/statistic'
+import type { Vm } from '../api/schemas/vm'
 
 // Pure aggregation helpers behind the dashboard's Global utilization card.
 // They consume already-parsed entities (schema coercion has run), so every
@@ -49,8 +50,14 @@ export function hostGauges(host: Host): HostGauges {
 // percent = (rx+tx)*8 / speed. NICs without a speed (bonds pre-negotiation,
 // down links) are skipped; no reporting NIC → undefined (render as dash).
 export function hostNetworkPercent(host: Host): number | undefined {
+  return busiestHostNic(host)?.percent
+}
+
+// The NIC behind hostNetworkPercent, named, for the host Monitoring tab's
+// "Busiest NIC" caption. The first NIC wins a tie.
+export function busiestHostNic(host: Host): { name?: string; percent: number } | undefined {
   const nics = host.nics?.host_nic ?? []
-  let max: number | undefined
+  let busiest: { name?: string; percent: number } | undefined
   for (const nic of nics) {
     const speed = nic.speed
     if (!speed) continue
@@ -59,28 +66,72 @@ export function hostNetworkPercent(host: Host): number | undefined {
     const tx = gauge(stats, 'data.current.tx')
     if (rx === undefined && tx === undefined) continue
     const percent = Math.min(100, (((rx ?? 0) + (tx ?? 0)) * 8 * 100) / speed)
-    if (max === undefined || percent > max) max = percent
+    if (busiest === undefined || percent > busiest.percent) busiest = { name: nic.name, percent }
   }
-  return max
+  return busiest
 }
 
-export interface CpuSummary {
-  // plain mean across reporting hosts (the legacy webadmin figure) — a
-  // per-core weighting would need topology from every host to be honest
+// Logical CPUs (sockets x cores x threads) from the host's CPU topology; the
+// engine omits a leg equal to 1, so a missing leg counts as 1. Undefined when
+// the host publishes no topology at all.
+export function hostLogicalCpus(host: Host): number | undefined {
+  const topology = host.cpu?.topology
+  if (topology === undefined) return undefined
+  const count = (topology.sockets ?? 1) * (topology.cores ?? 1) * (topology.threads ?? 1)
+  return count > 0 ? count : undefined
+}
+
+export interface CpuCapacity {
+  // busy share across reporting hosts, weighted by logical CPU count so a
+  // 64-thread host outweighs a 4-thread one (0 to 100)
   usedPercent: number
   // hosts that published a CPU gauge this poll
   reportingHosts: number
+  // logical CPUs across reporting hosts that publish a topology, and how many
+  // of them are idle; undefined when no reporting host has a topology
+  logicalCpus?: number
+  freeLogicalCpus?: number
 }
 
-export function aggregateCpu(hosts: Host[]): CpuSummary | undefined {
-  const percents = hosts
-    .map((host) => hostGauges(host).cpuUsedPercent)
-    .filter((percent): percent is number => percent !== undefined)
-  if (percents.length === 0) return undefined
-  const mean = percents.reduce((sum, percent) => sum + percent, 0) / percents.length
-  // gauges occasionally jitter past their bounds; clamp so the donut never
-  // renders an impossible arc
-  return { usedPercent: Math.min(100, Math.max(0, mean)), reportingHosts: percents.length }
+// Core-weighted CPU across hosts, for the Dashboard capacity tile and the
+// cluster Monitoring tab. A reporting host without a topology weighs as the
+// average of those with one, so a single topology-less host neither vanishes
+// nor dominates; when no host has a topology this is the plain mean (the
+// legacy webadmin figure). Gauges occasionally jitter past their bounds, so
+// each host is clamped first.
+export function aggregateCpuCapacity(hosts: Host[]): CpuCapacity | undefined {
+  const reporting = hosts
+    .map((host) => ({ percent: hostGauges(host).cpuUsedPercent, cpus: hostLogicalCpus(host) }))
+    .filter((entry): entry is { percent: number; cpus: number | undefined } => {
+      return entry.percent !== undefined
+    })
+  if (reporting.length === 0) return undefined
+  const known = reporting.filter((entry) => entry.cpus !== undefined)
+  const knownCpus = known.reduce((sum, entry) => sum + (entry.cpus ?? 0), 0)
+  const fallbackWeight = known.length > 0 ? knownCpus / known.length : 1
+  let weighted = 0
+  let weights = 0
+  for (const entry of reporting) {
+    const weight = entry.cpus ?? fallbackWeight
+    weighted += clampPercent(entry.percent) * weight
+    weights += weight
+  }
+  const usedPercent = weights > 0 ? weighted / weights : 0
+  if (known.length === 0) return { usedPercent, reportingHosts: reporting.length }
+  const busyCpus = known.reduce(
+    (sum, entry) => sum + ((entry.cpus ?? 0) * clampPercent(entry.percent)) / 100,
+    0,
+  )
+  return {
+    usedPercent,
+    reportingHosts: reporting.length,
+    logicalCpus: knownCpus,
+    freeLogicalCpus: Math.max(0, Math.round(knownCpus - busyCpus)),
+  }
+}
+
+function clampPercent(percent: number): number {
+  return Math.min(100, Math.max(0, percent))
 }
 
 export interface CapacitySummary {
@@ -132,8 +183,20 @@ export function usedPercent(capacity: CapacitySummary): number {
 // storage — so no history/DWH endpoint is needed; one square per reporting
 // entity, colored by band.
 export interface EntityUtilization {
+  // entity id, for linking to its detail page
+  id: string
   name: string
   percent: number
+}
+
+// The highest-utilization entity (first wins a tie), for the Dashboard tiles'
+// "Busiest" line.
+export function busiestEntity(entities: EntityUtilization[]): EntityUtilization | undefined {
+  let busiest: EntityUtilization | undefined
+  for (const entity of entities) {
+    if (busiest === undefined || entity.percent > busiest.percent) busiest = entity
+  }
+  return busiest
 }
 
 // Utilization band → the four webadmin thresholds: >90 critical, 75–90 high,
@@ -148,7 +211,11 @@ export function utilizationBand(percent: number): UtilizationBand {
 
 export function hostCpuUtilizations(hosts: Host[]): EntityUtilization[] {
   return hosts
-    .map((host) => ({ name: host.name ?? host.id, percent: hostGauges(host).cpuUsedPercent }))
+    .map((host) => ({
+      id: host.id,
+      name: host.name ?? host.id,
+      percent: hostGauges(host).cpuUsedPercent,
+    }))
     .filter((entity): entity is EntityUtilization => entity.percent !== undefined)
 }
 
@@ -160,7 +227,7 @@ export function hostMemoryUtilizations(hosts: Host[]): EntityUtilization[] {
         memoryUsed !== undefined && memoryTotal !== undefined && memoryTotal > 0
           ? Math.min(100, Math.max(0, (memoryUsed / memoryTotal) * 100))
           : undefined
-      return { name: host.name ?? host.id, percent }
+      return { id: host.id, name: host.name ?? host.id, percent }
     })
     .filter((entity): entity is EntityUtilization => entity.percent !== undefined)
 }
@@ -176,7 +243,7 @@ export function storageUtilizations(domains: StorageDomain[]): EntityUtilization
         domain.used !== undefined && total !== undefined && total > 0
           ? Math.min(100, Math.max(0, (domain.used / total) * 100))
           : undefined
-      return { name: domain.name ?? domain.id, percent }
+      return { id: domain.id, name: domain.name ?? domain.id, percent }
     })
     .filter((entity): entity is EntityUtilization => entity.percent !== undefined)
 }
@@ -201,8 +268,8 @@ export interface VirtualResources {
 // no per-disk walk needed. The engine reports `used` (actual) and `committed`
 // (allocated, incl. over-provisioning); committed >= used, so Allocated >=
 // Committed. Same domain set / reporting rule as aggregateStorage. CPU and
-// memory have no equivalent engine field and are deliberately left for a later
-// VM-aggregation pass.
+// memory have no equivalent engine field; aggregateVmAllocation estimates them
+// from the VM list instead.
 export function aggregateStorageVirtual(domains: StorageDomain[]): VirtualResources | undefined {
   let used = 0
   let committed = 0
@@ -222,4 +289,49 @@ export function aggregateStorageVirtual(domains: StorageDomain[]): VirtualResour
     committedPercent: Math.max(0, (used / total) * 100),
     allocatedPercent: Math.max(0, (committed / total) * 100),
   }
+}
+
+// VM states that hold host CPU and memory: running, starting or stopping,
+// migrating, paused (memory stays resident) and not responding. Down,
+// suspended (memory saved to disk), image-locked and unknown VMs hold none.
+const RESOURCE_HOLDING_VM_STATUSES = new Set([
+  'up',
+  'powering_up',
+  'powering_down',
+  'paused',
+  'migrating',
+  'wait_for_launch',
+  'reboot_in_progress',
+  'saving_state',
+  'restoring_state',
+  'not_responding',
+])
+
+export interface VmAllocation {
+  // configured vCPUs (sockets x cores x threads) of resource-holding VMs
+  vcpus: number
+  // their defined memory, bytes
+  memory: number
+  // how many VMs were counted
+  vms: number
+}
+
+// An ESTIMATE of CPU and memory allocation (webadmin's "Allocated" /
+// "Committed" for compute), summed from each resource-holding VM's configured
+// topology and memory. The exact figures live in the Data Warehouse, which
+// the console does not query, so the Dashboard labels these as estimates.
+export function aggregateVmAllocation(vms: Vm[]): VmAllocation {
+  let vcpus = 0
+  let memory = 0
+  let counted = 0
+  for (const vm of vms) {
+    if (!vm.status || !RESOURCE_HOLDING_VM_STATUSES.has(vm.status)) continue
+    const topology = vm.cpu?.topology
+    vcpus += topology
+      ? (topology.sockets ?? 1) * (topology.cores ?? 1) * (topology.threads ?? 1)
+      : 0
+    memory += vm.memory ?? 0
+    counted += 1
+  }
+  return { vcpus, memory, vms: counted }
 }

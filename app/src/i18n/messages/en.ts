@@ -47,21 +47,7 @@ export const en = {
 
   // Monitoring tab (current utilization + DWH/Grafana history) --------------
   'monitoring.live.heading': 'Current utilization',
-  'monitoring.history.heading': 'History',
-  'monitoring.history.empty': 'No history data yet',
-  'monitoring.checking': 'Checking monitoring availability',
-  'monitoring.signin.title': 'Sign in to Grafana',
-  'monitoring.signin.body':
-    'Historical charts read the Data Warehouse through Grafana, which needs its own one-time sign-in. Open the Monitoring Portal, sign in, then retry.',
-  'monitoring.range.label': 'History time range',
-  'monitoring.range.6h': '6h',
-  'monitoring.range.24h': '24h',
-  'monitoring.range.7d': '7d',
-  'monitoring.unavailable.title': 'Monitoring history unavailable',
-  'monitoring.unavailable.body':
-    'The Data Warehouse / Grafana dashboards are not reachable. Current utilization above still works; historical charts require the Data Warehouse to be installed and reachable.',
   'monitoring.openPortal': 'Open Monitoring Portal',
-  'monitoring.retry': 'Retry',
 
   // Masthead aria-labels (icon-only controls) -------------------------------
   'masthead.globalNav': 'Global navigation',
@@ -451,12 +437,7 @@ export const en = {
   'dashboard.badge.notUp': 'not up',
 
   // Utilization card (CPU / memory / storage donuts + sparklines) ------------
-  'dashboard.utilization.title': 'Utilization',
   'dashboard.metric.cpu': 'CPU',
-  'dashboard.metric.band.critical': '> 90%',
-  'dashboard.metric.band.high': '75-90%',
-  'dashboard.metric.band.moderate': '65-75%',
-  'dashboard.metric.band.normal': '< 65%',
   'dashboard.metric.memory': 'Memory',
   'dashboard.metric.storage': 'Storage',
   'dashboard.metric.loading': 'Loading {title} utilization',
@@ -465,18 +446,39 @@ export const en = {
   'dashboard.metric.none.title': 'No metrics reported',
   'dashboard.metric.none.body': 'Hosts report utilization once they are up.',
   'dashboard.metric.noCapacity.title': 'No capacity data',
-  'dashboard.metric.usedLabel': 'Used',
-  'dashboard.metric.availableLabel': 'Available',
-  'dashboard.metric.usedSubtitle': 'used',
   'dashboard.metric.collectingTrend': 'collecting trend…',
-  'dashboard.metric.donutAria': '{title} utilization',
-  'dashboard.metric.donutDesc': '{title}: {percent} percent used',
   'dashboard.metric.trendAria': '{title} utilization trend',
   'dashboard.metric.trendDesc': "{title} used percentage across this session's refresh polls",
-  'dashboard.metric.cpuCaption':
-    '{available}% available · {count, plural, one {# host} other {# hosts}} reporting',
-  'dashboard.metric.available': '{free} available of {total}',
   'dashboard.metric.commitAlloc': 'Committed: {committed}%, Allocated: {allocated}%',
+  'capacity.title': 'Capacity',
+  'capacity.band.normal': 'Normal',
+  'capacity.band.moderate': 'Moderate',
+  'capacity.band.high': 'High',
+  'capacity.band.critical': 'Critical',
+  'capacity.cpu.free': '{count, plural, one {# logical CPU free} other {# logical CPUs free}}',
+  'capacity.percentFree': '{percent}% free',
+  'capacity.free': '{amount} free',
+  'capacity.cpu.weighted':
+    '{count, plural, one {Weighted by core count across # host} other {Weighted by core count across # hosts}}',
+  'capacity.reportingHosts':
+    '{count, plural, one {Across # reporting host} other {Across # reporting hosts}}',
+  'capacity.storageDomains':
+    '{count, plural, one {Across # storage domain} other {Across # storage domains}}',
+  'capacity.used': '{percent}% used',
+  'capacity.barAria': '{title}: {percent}% used',
+  'capacity.cpu.ofTotal': '{count, plural, one {of # logical CPU} other {of # logical CPUs}}',
+  'capacity.ofTotal': 'of {total}',
+  'capacity.allocatedEst': 'Allocated (est.):',
+  'capacity.committedEst': 'Committed (est.):',
+  'capacity.cpu.allocation': '{vcpus} vCPU, {ratio} per logical CPU',
+  'capacity.cpu.allocationNoRatio': '{vcpus} vCPU',
+  'capacity.memory.committed': '{amount}, {percent}% of physical',
+  'capacity.estimate.help':
+    'Estimated from the configured vCPUs and memory of running VMs. The Data Warehouse holds the exact figures.',
+  'capacity.estimate.aria': 'About this estimate',
+  'capacity.busiest': 'Busiest:',
+  'capacity.byCluster.title': 'By cluster',
+  'capacity.byCluster.ariaLabel': 'Utilization by cluster',
 
   // Virtual machines by status card ------------------------------------------
   'dashboard.vms.title': 'Virtual machines',
@@ -754,6 +756,18 @@ export const en = {
   'monitoring.gauge.network': 'Network',
   'monitoring.gauge.disk': 'Disk',
   'monitoring.vcpu': '{count} vCPU',
+  'monitoring.logicalCpus': '{count, plural, one {# logical CPU} other {# logical CPUs}}',
+  'monitoring.busiestNic': 'Busiest NIC: {name}',
+  'monitoring.loading': 'Loading utilization',
+  'monitoring.notReporting': 'Not reporting',
+  'clusterMonitoring.cpuCaption':
+    '{count, plural, one {Weighted across # reporting host} other {Weighted across # reporting hosts}}',
+  'clusterMonitoring.hostsReporting': 'Hosts reporting',
+  'clusterMonitoring.reportingValue': '{reporting} of {total}',
+  'clusterMonitoring.notReporting':
+    '{count, plural, one {# host not reporting} other {# hosts not reporting}}',
+  'clusterMonitoring.hosts.title': 'Hosts in this cluster',
+  'clusterMonitoring.hosts.ariaLabel': 'Host utilization in this cluster',
 
   // ==========================================================================
   // VM NETWORK INTERFACES TAB (components/vm-tabs/NicsTab).
@@ -5051,7 +5065,6 @@ export const en = {
   'cpuProfiles.name.required': 'A name is required.',
   'console.rdp.download': 'Download RDP file (.rdp)',
   'console.rdp.description': 'Remote Desktop to the Windows guest',
-  'monitoring.history.noData': 'No data in range',
 } as const
 
 // The id union — source of truth for every typed i18n surface (useT, the

@@ -7,8 +7,7 @@ import chart_color_black_300 from '@patternfly/react-tokens/dist/esm/chart_color
 // on the landing page for three rings and a number — while keeping the same
 // anatomy: segments clockwise from 12 o'clock, a centred headline with a
 // subtle qualifier under it, an accessible <title>/<desc> pair, and a native
-// tooltip per segment. Victory stays for the history line charts
-// (HistoryCharts), which need axes, hover voronoi and a legend.
+// tooltip per segment.
 
 export interface DonutSegment {
   label: string

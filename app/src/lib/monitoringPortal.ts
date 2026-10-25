@@ -22,3 +22,11 @@ export function monitoringPortalUrl(): string {
   if (fqdn) return `https://${fqdn}${base.startsWith('/') ? base : `/${base}`}`
   return rebase(base)
 }
+
+// Whether a Monitoring Portal link renders at all: admins only (Grafana and
+// the Data Warehouse are admin tooling), and never once a deployer sets
+// monitoring.enabled: false in config.js. Every portal link (sidebar, mini
+// rail, Monitoring tabs) shares this gate.
+export function showMonitoringPortal(isAdmin: boolean): boolean {
+  return isAdmin && getRuntimeConfig().monitoring.enabled
+}

@@ -41,9 +41,7 @@ import { HostNicsTab } from '../components/host-tabs/HostNicsTab'
 import { NumaTab } from '../components/host-tabs/NumaTab'
 import { HostPermissionsTab } from '../components/host-tabs/HostPermissionsTab'
 import { HostVmsTab } from '../components/host-tabs/HostVmsTab'
-import { HistoryCard } from '../components/metrics/HistoryCard'
-import { useRuntimeConfig } from '../config/runtime'
-import { useGrafanaAvailability } from '../hooks/useGrafanaAvailability'
+import { HostMonitoringTab } from '../components/host-tabs/HostMonitoringTab'
 import { useHost } from '../hooks/useHost'
 import { useDeleteHost } from '../hooks/useHostMutations'
 import { hostDetailRoute } from '../routes/router'
@@ -60,12 +58,6 @@ export function HostDetailPage() {
   // (docs/COMPONENTS.md: typed-name confirm for delete)
   const [removing, setRemoving] = useState<{ nameInput: string } | null>(null)
   const deleteMutation = useDeleteHost()
-  // History-only Monitoring tab: unlike the VM tab (which always has live
-  // gauges), this one is pure DWH/Grafana, so it only exists when a host query
-  // spec is configured AND the availability gate shows the surface.
-  const grafana = useGrafanaAvailability()
-  const { monitoring } = useRuntimeConfig()
-  const showMonitoring = grafana.visible && monitoring.queries.host !== undefined
 
   const notFound = host.error instanceof ApiError && host.error.status === 404
 
@@ -246,16 +238,14 @@ export function HostDetailPage() {
                 <HostGeneralTab host={host.data} />
               </TabContentBody>
             </Tab>
-            {showMonitoring && (
-              <Tab
-                eventKey="monitoring"
-                title={<TabTitleText>{t('hostDetail.tab.monitoring')}</TabTitleText>}
-              >
-                <TabContentBody hasPadding>
-                  <HistoryCard entity="host" entityId={hostId} />
-                </TabContentBody>
-              </Tab>
-            )}
+            <Tab
+              eventKey="monitoring"
+              title={<TabTitleText>{t('hostDetail.tab.monitoring')}</TabTitleText>}
+            >
+              <TabContentBody hasPadding>
+                <HostMonitoringTab hostId={hostId} />
+              </TabContentBody>
+            </Tab>
             <Tab eventKey="vms" title={<TabTitleText>{t('hostDetail.tab.vms')}</TabTitleText>}>
               <TabContentBody hasPadding>
                 <HostVmsTab hostName={host.data.name ?? ''} />

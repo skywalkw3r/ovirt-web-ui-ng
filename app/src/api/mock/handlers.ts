@@ -12928,7 +12928,19 @@ const routes: MockRoute[] = [
     pattern: /^\/hosts$/,
     handle: (_params, body, query) => addHost(body, query),
   },
-  { method: 'GET', pattern: /^\/hosts\/([^/]+)$/, handle: ([id]) => requireHost(id) },
+  {
+    method: 'GET',
+    pattern: /^\/hosts\/([^/]+)$/,
+    handle: ([id], _body, query) => {
+      const host = requireHost(id)
+      // getHostUsage (host Monitoring tab) inlines the same wandering gauges
+      // as the list read; getHost's follow=cluster stays the plain fixture
+      const follow = query.get('follow')?.split(',') ?? []
+      return follow.includes('statistics')
+        ? withHostStatistics(host, follow.includes('nics.statistics'))
+        : host
+    },
+  },
   {
     method: 'PUT',
     pattern: /^\/hosts\/([^/]+)$/,

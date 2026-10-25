@@ -138,7 +138,7 @@ Features present but shallow versus webadmin. Listed with the specific missing p
 - **Providers / Users / Quotas / Roles lists** — all present but read-only shells; the mutations and detail pages are the gaps in §3.
 - **Bookmarks** — full save/apply/delete UX but **localStorage-only**, not the engine `/bookmarks` REST collection, so they don't roam and aren't shared with GWT.
 - **User settings / Preferences** — refresh interval / preferred console / 11 locales present, but **localStorage-only**; webadmin persists per-user via `/users/{id}/options` (roaming) — the acknowledged later phase.
-- **Dashboard — Global Utilization** — CPU/Mem/Storage donuts + available captions present; missing the explicit **over-commit percentage line on CPU and memory** (only storage shows committed/allocated).
+- **Dashboard: Global Utilization**: CPU/Mem/Storage capacity tiles (free capacity, status, threshold bar, busiest entity) plus per-cluster rows; CPU and memory over-commit is an **estimate** summed from running VMs (storage committed/allocated is exact), since webadmin's exact figures come from the DWH.
 - **Dashboard — sparklines** — visual present but **session-local** (~20-min client window), not DWH-historical (deferred).
 - **Dashboard — inventory** — grouped list rather than 7 tiles; rows don't deep-link to a **status-pre-filtered** search; **Gluster volume count** not surfaced as a row.
 - **Dashboard — last-updated label + dashboard-local refresh** — auto-polls but no "updated at HH:MM" / local refresh control.

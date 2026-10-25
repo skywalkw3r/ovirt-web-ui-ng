@@ -90,8 +90,8 @@ pid, proxy temp files) is its only writable path, which is what
 OpenShift manifests.
 
 nginx serves the static build at the same sub-path **and** proxies an
-allowlist of engine API paths (REST, SSO token grant, sign-out, Grafana query
-API) to `ENGINE_ORIGIN`, so the browser still sees one origin; engine HTML is
+allowlist of engine API paths (REST, SSO token grant, sign-out) to
+`ENGINE_ORIGIN`, so the browser still sees one origin; engine HTML is
 never served from the console origin. TLS verification on the nginx→engine hop
 is **on** by default and expects the engine CA at
 `/etc/pki/ovirt-engine/ca.pem` — mount it, or (labs only) flip

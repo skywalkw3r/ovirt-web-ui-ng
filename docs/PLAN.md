@@ -112,7 +112,7 @@ Portal (webadmin).** *(Decision 2026-07-04 — expanded from the original
 | UI kit | PatternFly 6 (dark theme default) | Enterprise widget set (wizard, toolbar, tables, TreeView), a11y maintained by Red Hat, virtualization-console pedigree (Cockpit); PF6 dark theme carries the modern feel — we don't fight the system on styling |
 | Data tables | @patternfly/react-table (+ virtualization extension for big inventories) | Sortable/filterable enterprise tables out of the box |
 | Palette / extras | cmdk for the ⌘K command palette (PF has no equivalent — small custom island) | Keeps the vCenter-style quick-jump without leaving PF elsewhere |
-| Charts | @patternfly/react-charts | Sparklines and dashboard tiles, PF-consistent |
+| Charts | Dependency-free SVG (`components/metrics/Donut`) on PF chart tokens | Gauges, VM-status donut and capacity bars without a chart runtime |
 | Console | @patternfly/react-console over the websocket-proxy (+ `.vv` download for virt-viewer/SPICE) | Ready-made noVNC/SPICE component — reclaims the custom-wrapper week |
 | Tests | Vitest + React Testing Library; Playwright e2e vs lab engine | |
 | Lint/format | ESLint (typescript-eslint strict) + Prettier | |
@@ -439,8 +439,7 @@ engine and serves the UI same-origin; CI blocks on audit findings.
 
 ## Phase 5 — Polish & parity  *(largely done; i18n + release outstanding)*
 
-- Dashboard (VM counts by status, per-folder/per-cluster utilization —
-  @patternfly/react-charts tiles)
+- Dashboard (VM counts by status, capacity tiles with per-cluster rows)
 - Event log view (`/events`; legacy shows engine events per VM)
 - **oVirt search DSL** passthrough (`search=name=web* and status=up`) — power
   users live on this; expose it in the list filter bar

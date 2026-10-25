@@ -6,32 +6,17 @@ import { z } from 'zod'
 // no rebuild — exactly mirroring how the engine injects window.userInfo for SSO
 // (see auth/bootstrap.ts). It is validated/narrowed here at the trust boundary.
 
-// 'off' hides the history surface entirely; 'on' always renders it (an
-// unreachable Grafana shows the unavailable state); 'auto' — the default —
-// renders it only when the /api/health probe finds a live Grafana, so a stock
-// engine with DWH/Grafana installed gets history with zero configuration and a
-// DWH-less engine shows nothing.
-export type MonitoringMode = 'on' | 'off' | 'auto'
-
-// Native history charts for one entity kind: a Grafana dashboard UID plus the
-// panel ids to render. The app reads each panel's SQL (and the dashboard's
-// template-variable defaults and datasource) from the dashboard definition at
-// runtime, then substitutes the entity GUID for the `idVar` template variable.
-export interface QuerySpec {
-  dashboardUid: string
-  panelIds: number[]
-  // dashboard template variable carrying the entity GUID, without the leading $
-  idVar: string
-}
-
+// The admin "Monitoring Portal" links out to the engine's bundled Grafana
+// (lib/monitoringPortal.ts). The console draws no Grafana history itself:
+// Grafana signs users in with its own cookie on the ENGINE origin, which a
+// proxied console origin can never present, so in-console DWH charts cannot
+// authenticate there. Live utilization comes from the engine REST statistics.
 export interface MonitoringConfig {
   // same-origin path (default) or absolute http(s) URL to the oVirt Grafana
   grafanaBaseUrl: string
-  enabled: MonitoringMode
-  // vm defaults to the stock oVirt 4.5 VM dashboard (verified in-lab);
-  // host/cluster render only when a deployer configures them — their stock
-  // UIDs/variables vary by version, so they ship unset (see config.js).
-  queries: { vm: QuerySpec; host?: QuerySpec; cluster?: QuerySpec }
+  // false hides every Monitoring Portal link; true (the default) shows them
+  // to admins
+  enabled: boolean
 }
 
 // Multi-engine support: a deployer-listed oVirt engine this console may
@@ -117,23 +102,7 @@ export interface RuntimeConfig {
   support: SupportConfig
 }
 
-export type QueryEntity = keyof MonitoringConfig['queries']
-
 const DEFAULT_GRAFANA_BASE_URL = '/ovirt-engine-grafana'
-
-// The stock oVirt 4.5 VM dashboard: gauges (7 CPU, 8 memory, 18 disk) then the
-// over-time graphs. UID, panel ids, and the vm_id variable are lab-verified.
-const DEFAULT_VM_QUERY: QuerySpec = {
-  dashboardUid: 'VirtualMachineDashboard',
-  panelIds: [7, 8, 18, 14, 20, 19, 33, 21, 40],
-  idVar: 'vm_id',
-}
-
-const DEFAULT_ID_VARS: Record<QueryEntity, string> = {
-  vm: 'vm_id',
-  host: 'host_id',
-  cluster: 'cluster_id',
-}
 
 // Build-time default injected by Vite `define` (vite.config.ts). typeof-guarded
 // so non-Vite consumers (vitest) don't ReferenceError — same pattern as
@@ -145,9 +114,7 @@ function buildDefault(): { grafanaBaseUrl?: string; enabled?: boolean } {
 // The base URL is rendered into an href (Open-in-Grafana link), so it crosses a
 // trust boundary: accept only an absolute http(s) URL or a leading-slash
 // same-origin path. Reject javascript:, data:, and protocol-relative //host
-// (which escapes same-origin). Note the query/probe fetches are additionally
-// bound by CSP connect-src 'self' — a cross-origin base only works for the
-// link out, not for inline history charts.
+// (which escapes same-origin).
 function safeUrl(url: string | undefined): string | undefined {
   if (!url) return undefined
   if (url.startsWith('/') && !url.startsWith('//')) return url
@@ -226,25 +193,12 @@ function serverBase(url: string | undefined): string | undefined {
   }
 }
 
-const QuerySpecSchema = z.looseObject({
-  dashboardUid: z.string(),
-  panelIds: z.array(z.number()),
-  idVar: z.string().optional(),
-})
-
 const InjectedConfigSchema = z
   .looseObject({
     monitoring: z
       .looseObject({
         grafanaBaseUrl: z.string().optional(),
         enabled: z.boolean().optional(),
-        queries: z
-          .looseObject({
-            vm: QuerySpecSchema.optional(),
-            host: QuerySpecSchema.optional(),
-            cluster: QuerySpecSchema.optional(),
-          })
-          .optional(),
       })
       .optional(),
     servers: z
@@ -285,8 +239,6 @@ const InjectedConfigSchema = z
   })
   .optional()
 
-type InjectedSpec = z.infer<typeof QuerySpecSchema>
-
 // Multi-engine is a BUILD-TIME capability, not just a config switch: only
 // proxy/external builds (the Containerfile sets VITE_MULTI_ENGINE=1; source
 // builds may opt in) honor a configured server list. The integrated RPM on a
@@ -325,22 +277,6 @@ function toServers(
     out.push(entry)
   }
   return out
-}
-
-function toSpec(entity: QueryEntity, injected: InjectedSpec | undefined): QuerySpec | undefined {
-  if (injected === undefined) return undefined
-  return {
-    dashboardUid: injected.dashboardUid,
-    panelIds: injected.panelIds,
-    idVar: injected.idVar ?? DEFAULT_ID_VARS[entity],
-  }
-}
-
-// config.js keeps the deployer-facing switch a plain boolean; absence means
-// auto-detect via the health probe.
-function toMode(enabled: boolean | undefined): MonitoringMode | undefined {
-  if (enabled === undefined) return undefined
-  return enabled ? 'on' : 'off'
 }
 
 // A defensive ceiling so a runaway config.js value can't blow up the login
@@ -401,12 +337,7 @@ function resolve(): RuntimeConfig {
   return {
     monitoring: {
       grafanaBaseUrl,
-      enabled: toMode(injected?.enabled) ?? toMode(build.enabled) ?? 'auto',
-      queries: {
-        vm: toSpec('vm', injected?.queries?.vm) ?? DEFAULT_VM_QUERY,
-        host: toSpec('host', injected?.queries?.host),
-        cluster: toSpec('cluster', injected?.queries?.cluster),
-      },
+      enabled: injected?.enabled ?? build.enabled ?? true,
     },
     servers,
     login: {

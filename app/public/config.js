@@ -85,43 +85,19 @@ window.ovirtWebUiConfig = {
   //   url: 'https://support.example.com/virtualization',
   // },
 
-  // Monitoring tab: live utilization always works without this block; it
-  // configures the Grafana / Data-Warehouse HISTORY charts (admin-gated).
+  // Monitoring Portal: the admin links (sidebar and Monitoring tabs) that open
+  // the engine's bundled Grafana / Data Warehouse dashboards in a new tab.
+  // Live utilization on the Dashboard and the Monitoring tabs comes from the
+  // engine REST API and needs nothing here.
   //
-  // ZERO-CONFIG DEFAULT: the app probes {grafanaBaseUrl}/api/health and shows
-  // history automatically when ovirt-engine-grafana (with the Data Warehouse)
-  // is installed — on a stock engine you don't need to touch this file. Charts
-  // are drawn natively from Grafana's query API; users sign in to Grafana once
-  // (the UI prompts them) and the charts appear.
+  // On a multi-engine deploy the link opens https://<servers.list[].fqdn>
+  // plus grafanaBaseUrl, so set `fqdn` on each engine entry above.
   monitoring: {
-    // Force the history surface on/off instead of auto-detecting:
-    //   enabled: false,  // hide everywhere, never probe
-    //   enabled: true,   // always show; an unreachable Grafana renders an
-    //                    // "unavailable" state instead of hiding
-    // (leave unset for auto-detection)
+    // Hide every Monitoring Portal link (default: shown to admins):
+    //   enabled: false,
 
-    // Grafana base (same-origin path behind the engine's Apache). Default:
+    // Grafana base: a path on the engine (default) or an absolute http(s) URL
+    // for a standalone Grafana.
     grafanaBaseUrl: '/ovirt-engine-grafana',
-
-    // Which dashboard panels feed the native history charts, per entity. The
-    // app fetches the dashboard definition at runtime and reuses its SQL,
-    // template-variable defaults, and datasource — so panel edits in Grafana
-    // are picked up automatically. `idVar` names the dashboard variable that
-    // carries the entity GUID (defaults: vm_id / host_id / cluster_id).
-    //
-    // vm defaults to the stock oVirt 4.5 VM dashboard (shown below) — only
-    // set it to override. host/cluster are OFF until configured here; verify
-    // the UID, panel ids, and idVar against YOUR Grafana before enabling
-    // (stock candidates: HostDashboard / ClusterDashboard — check the
-    // dashboard URL and its variables in Grafana).
-    queries: {
-      // vm: {
-      //   dashboardUid: 'VirtualMachineDashboard',
-      //   panelIds: [7, 8, 18, 14, 20, 19, 33, 21, 40],
-      //   idVar: 'vm_id',
-      // },
-      // host: { dashboardUid: 'HostDashboard', panelIds: [/* … */], idVar: 'host_id' },
-      // cluster: { dashboardUid: 'ClusterDashboard', panelIds: [/* … */], idVar: 'cluster_id' },
-    },
   },
 }

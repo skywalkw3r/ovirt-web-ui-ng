@@ -1,5 +1,5 @@
 # Keeps the SHA-pinned actions in ci.yml and the npm dependency tree current.
-# PatternFly / TanStack / Victory move as families, so they are grouped into
+# PatternFly / TanStack move as families, so they are grouped into
 # one PR each instead of a dozen.
 version: 2
 updates:
@@ -24,8 +24,6 @@ updates:
         patterns: ['@patternfly/*']
       tanstack:
         patterns: ['@tanstack/*']
-      victory:
-        patterns: ['victory-*']
       dev-tooling:
         dependency-type: development
   - package-ecosystem: github-actions

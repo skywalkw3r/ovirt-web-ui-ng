@@ -1,14 +1,19 @@
 import { describe, expect, it } from 'vitest'
 import type { Host } from '../api/schemas/host'
 import type { StorageDomain } from '../api/schemas/storage-domain'
+import type { Vm } from '../api/schemas/vm'
 import {
-  aggregateCpu,
+  aggregateCpuCapacity,
   aggregateMemory,
   aggregateStorage,
   aggregateStorageVirtual,
+  aggregateVmAllocation,
+  busiestEntity,
+  busiestHostNic,
   capacityVariant,
   hostCpuUtilizations,
   hostGauges,
+  hostLogicalCpus,
   hostMemoryUtilizations,
   hostNetworkPercent,
   storageUtilizations,
@@ -78,24 +83,87 @@ describe('hostGauges', () => {
   })
 })
 
-describe('aggregateCpu', () => {
-  it('averages across reporting hosts and counts them', () => {
-    const summary = aggregateCpu([
+// A host with a CPU topology (sockets x cores x threads = logical CPUs).
+const topo = (sockets: number, cores: number, threads = 1): Partial<Host> => ({
+  cpu: { topology: { sockets, cores, threads } },
+})
+
+describe('hostLogicalCpus', () => {
+  it('multiplies the topology legs, counting a missing leg as 1', () => {
+    expect(hostLogicalCpus(host('h1', undefined, topo(2, 12, 2)))).toBe(48)
+    expect(hostLogicalCpus(host('h1', undefined, { cpu: { topology: { cores: 8 } } }))).toBe(8)
+  })
+
+  it('is undefined without a topology', () => {
+    expect(hostLogicalCpus(host('h1'))).toBeUndefined()
+  })
+})
+
+describe('aggregateCpuCapacity', () => {
+  it('is the plain mean across reporting hosts when none has a topology', () => {
+    const summary = aggregateCpuCapacity([
       host('h1', { 'cpu.current.user': 30, 'cpu.current.system': 10 }),
       host('h2', { 'cpu.current.user': 20 }),
-      host('h3'), // maintenance — no gauges, excluded from the mean
+      host('h3'), // maintenance, no gauges: excluded from the mean
     ])
     expect(summary).toEqual({ usedPercent: 30, reportingHosts: 2 })
   })
 
+  it('weights each host by its logical CPUs and counts the free ones', () => {
+    // 60 logical CPUs at 10% and 4 at 90%: weighted (6+3.6)/64 = 15%, not 50%
+    const summary = aggregateCpuCapacity([
+      host('big', { 'cpu.current.user': 10 }, topo(2, 15, 2)),
+      host('small', { 'cpu.current.user': 90 }, topo(1, 4)),
+    ])
+    expect(summary?.usedPercent).toBeCloseTo(15)
+    expect(summary?.logicalCpus).toBe(64)
+    expect(summary?.freeLogicalCpus).toBe(54) // 64 - (6 + 3.6), rounded
+    expect(summary?.reportingHosts).toBe(2)
+  })
+
+  it('weighs a topology-less host as the average of those with one', () => {
+    // weights 8 and (fallback) 8: plain mean of 20 and 60
+    const summary = aggregateCpuCapacity([
+      host('h1', { 'cpu.current.user': 20 }, topo(1, 8)),
+      host('h2', { 'cpu.current.user': 60 }),
+    ])
+    expect(summary?.usedPercent).toBeCloseTo(40)
+    expect(summary?.logicalCpus).toBe(8)
+  })
+
   it('clamps jittery gauges into 0-100', () => {
-    const summary = aggregateCpu([host('h1', { 'cpu.current.user': 80, 'cpu.current.system': 30 })])
+    const summary = aggregateCpuCapacity([
+      host('h1', { 'cpu.current.user': 80, 'cpu.current.system': 30 }),
+    ])
     expect(summary?.usedPercent).toBe(100)
   })
 
   it('is undefined when no host reports CPU', () => {
-    expect(aggregateCpu([host('h1'), host('h2')])).toBeUndefined()
-    expect(aggregateCpu([])).toBeUndefined()
+    expect(aggregateCpuCapacity([host('h1'), host('h2')])).toBeUndefined()
+    expect(aggregateCpuCapacity([])).toBeUndefined()
+  })
+})
+
+describe('aggregateVmAllocation', () => {
+  const vm = (id: string, status: string, extra: Partial<Vm> = {}): Vm =>
+    ({ id, name: id, status, ...extra }) as Vm
+
+  it('sums vCPUs and memory of resource-holding VMs only', () => {
+    const allocation = aggregateVmAllocation([
+      vm('a', 'up', { memory: 4 * GiB, cpu: { topology: { sockets: 2, cores: 2 } } }),
+      vm('b', 'paused', { memory: 2 * GiB, cpu: { topology: { sockets: 1 } } }),
+      vm('c', 'down', { memory: 8 * GiB, cpu: { topology: { sockets: 8 } } }),
+      vm('d', 'suspended', { memory: 8 * GiB, cpu: { topology: { sockets: 8 } } }),
+    ])
+    expect(allocation).toEqual({ vcpus: 5, memory: 6 * GiB, vms: 2 })
+  })
+
+  it('counts a VM with no topology as zero vCPUs', () => {
+    expect(aggregateVmAllocation([vm('a', 'up', { memory: GiB })])).toEqual({
+      vcpus: 0,
+      memory: GiB,
+      vms: 1,
+    })
   })
 })
 
@@ -210,6 +278,14 @@ describe('hostNetworkPercent', () => {
     expect(hostNetworkPercent(withNics([nic(undefined, 10_000_000, 5_000_000)]))).toBeUndefined()
     expect(hostNetworkPercent(withNics([]))).toBeUndefined()
   })
+
+  it('names the busiest NIC for the host Monitoring tab', () => {
+    const busy = { ...nic(1_000_000_000, 10_000_000, 5_000_000), name: 'ens3f0' }
+    const quiet = { ...nic(1_000_000_000, 1_000_000, 0), name: 'eno1' }
+    const result = busiestHostNic(withNics([quiet, busy]))
+    expect(result?.name).toBe('ens3f0')
+    expect(result?.percent).toBeCloseTo(12)
+  })
 })
 
 describe('utilizationBand', () => {
@@ -229,12 +305,12 @@ describe('per-entity utilizations', () => {
       host('h1', { 'cpu.current.user': 30, 'cpu.current.system': 10 }),
       host('h2'), // no stats → skipped
     ]
-    expect(hostCpuUtilizations(hosts)).toEqual([{ name: 'h1', percent: 40 }])
+    expect(hostCpuUtilizations(hosts)).toEqual([{ id: 'h1', name: 'h1', percent: 40 }])
   })
 
   it('extracts memory% per host that reports both sides', () => {
     const hosts = [host('h1', { 'memory.used': 6 * GiB, 'memory.total': 12 * GiB })]
-    expect(hostMemoryUtilizations(hosts)).toEqual([{ name: 'h1', percent: 50 }])
+    expect(hostMemoryUtilizations(hosts)).toEqual([{ id: 'h1', name: 'h1', percent: 50 }])
   })
 
   it('extracts storage% per domain that reports capacity', () => {
@@ -242,6 +318,17 @@ describe('per-entity utilizations', () => {
       domain('sd1', { used: 30 * GiB, available: 10 * GiB }),
       domain('sd2'), // no capacity → skipped
     ]
-    expect(storageUtilizations(domains)).toEqual([{ name: 'sd1', percent: 75 }])
+    expect(storageUtilizations(domains)).toEqual([{ id: 'sd1', name: 'sd1', percent: 75 }])
+  })
+
+  it('picks the busiest entity, first wins a tie', () => {
+    expect(
+      busiestEntity([
+        { id: 'a', name: 'a', percent: 40 },
+        { id: 'b', name: 'b', percent: 90 },
+        { id: 'c', name: 'c', percent: 90 },
+      ])?.id,
+    ).toBe('b')
+    expect(busiestEntity([])).toBeUndefined()
   })
 })

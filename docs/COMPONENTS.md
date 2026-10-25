@@ -43,7 +43,7 @@ PF6 token docs. Companion to `PLAN.md`.
 | Bulk actions | `Table` row selection + `Toolbar` action group + `OverflowMenu` |
 | Card/grid alt view | `Card` + `Gallery` layout |
 | Quick look | `Drawer` (right panel) with `DescriptionList` |
-| VM details tabs | `Tabs` + `DescriptionList`; sparklines via `@patternfly/react-charts` Sparkline |
+| VM details tabs | `Tabs` + `DescriptionList`; utilization gauges via the dependency-free SVG `components/metrics/Donut` |
 | Create/edit VM | `Wizard`; forms via `Form` + `FormSelect`/`NumberInput`/`Switch` + `HelperText`; review step via `DescriptionList` |
 | Async op feedback | `AlertGroup` (toast) + `Progress` for tracked jobs |
 | Destructive confirm | `Modal` (danger variant, typed-name confirm for delete) |
