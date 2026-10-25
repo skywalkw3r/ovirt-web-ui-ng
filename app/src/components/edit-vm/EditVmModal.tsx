@@ -9,6 +9,7 @@ import { clusterKeys } from '../../hooks/useAdminResources'
 import { useClusters, useOperatingSystems } from '../../hooks/useCatalog'
 import { useHosts } from '../../hooks/useHosts'
 import { useUpdateVm } from '../../hooks/useUpdateVm'
+import { useApplyVmWatchdog, useVmWatchdogs } from '../../hooks/useVmWatchdogs'
 import { vmKeys } from '../../hooks/useVms'
 import { useT } from '../../i18n/useT'
 import { ModalVerticalTabs } from '../forms/ModalVerticalTabs'
@@ -18,12 +19,14 @@ import { ConsoleSection } from './ConsoleSection'
 import { CustomPropertiesSection } from './CustomPropertiesSection'
 import {
   buildCdromChange,
+  buildWatchdogChange,
   draftToPayload,
   editRequiresRestart,
   vmIsRunning,
   vmMemoryError,
   vmNameError,
   vmToDraft,
+  watchdogDraftFields,
   type EditVmDraft,
 } from './editVmDraft'
 import { GeneralSection } from './GeneralSection'
@@ -64,6 +67,21 @@ export function EditVmModal({
     const seeded = vmToDraft(vm)
     setBaseline(seeded)
     setDraft(seeded)
+  }
+
+  // The watchdog device is not on the vm read: fold it into BOTH baseline and
+  // draft once its subcollection read lands (once per VM, same render-time
+  // reset idiom as above), so the save-time diff and the Next-Run check see an
+  // unchanged device as unchanged. A later refetch never re-seeds over a
+  // pending pick; a failed read leaves watchdogLoaded false, which keeps the
+  // selects disabled and the device out of the save.
+  const watchdogs = useVmWatchdogs(vm.id)
+  const [watchdogSeededId, setWatchdogSeededId] = useState<string | null>(null)
+  if (watchdogs.isSuccess && watchdogSeededId !== vm.id) {
+    setWatchdogSeededId(vm.id)
+    const fields = watchdogDraftFields(watchdogs.data)
+    setBaseline((current) => ({ ...current, ...fields }))
+    setDraft((current) => ({ ...current, ...fields }))
   }
 
   // Stable updater so sections don't re-render on every keystroke elsewhere.
@@ -108,6 +126,7 @@ export function EditVmModal({
   })
 
   const update = useUpdateVm()
+  const applyWatchdog = useApplyVmWatchdog()
   const queryClient = useQueryClient()
   const [confirmingNextRun, setConfirmingNextRun] = useState(false)
 
@@ -118,6 +137,10 @@ export function EditVmModal({
     // either way). buildCdromChange is undefined on an untouched picker, so
     // ordinary saves never eject; '' is an explicit eject.
     const cdFileId = buildCdromChange(draft)
+    // The watchdog device rides its own subcollection too (add / update /
+    // remove by diff against the baseline); it lands on the next start of a
+    // running VM whichever Next-Run choice was made, like the CD.
+    const watchdogChange = buildWatchdogChange(draft, baseline)
     update.mutate(
       { vm, payload: draftToPayload(draft, baseline), nextRun },
       {
@@ -125,6 +148,13 @@ export function EditVmModal({
           if (cdFileId !== undefined) {
             await changeVmCd(vm.id, cdFileId, { current: false })
             void queryClient.invalidateQueries({ queryKey: vmKeys.detail(vm.id) })
+          }
+          if (watchdogChange !== undefined) {
+            // The hook toasts a failure; the VM edit itself already landed, so
+            // the modal still closes rather than inviting a duplicate PUT.
+            await applyWatchdog
+              .mutateAsync({ vmId: vm.id, vmName: vm.name, change: watchdogChange })
+              .catch(() => undefined)
           }
           setConfirmingNextRun(false)
           onClose()
@@ -149,6 +179,11 @@ export function EditVmModal({
   // SystemSection renders the matching inline error; also gate Save so the modal
   // never PUTs a guaranteed > memory (or max < memory) the engine would reject.
   const memoryInvalid = vmMemoryError(draft) !== undefined
+  // The cluster's CPU architecture backs the watchdog model list when the vm
+  // read does not carry its own cpu.architecture.
+  const currentClusterArchitecture = clusters.data?.find(
+    (cluster) => cluster.id === draft.clusterId,
+  )?.cpu?.architecture
   // The VM's cluster over-commit % drives the guaranteed derivation in System.
   const overcommitPercent = clusters.data?.find((cluster) => cluster.id === draft.clusterId)
     ?.memory_policy?.over_commit?.percent
@@ -242,7 +277,13 @@ export function EditVmModal({
             {
               key: 'high-availability',
               title: t('vm.edit.section.highAvailability'),
-              content: <HighAvailabilitySection draft={draft} set={set} />,
+              content: (
+                <HighAvailabilitySection
+                  draft={draft}
+                  set={set}
+                  architecture={vm.cpu?.architecture ?? currentClusterArchitecture}
+                />
+              ),
             },
             {
               key: 'resource-allocation',
@@ -273,8 +314,8 @@ export function EditVmModal({
         <Button
           variant="primary"
           onClick={save}
-          isLoading={update.isPending}
-          isDisabled={update.isPending || nameInvalid || memoryInvalid}
+          isLoading={update.isPending || applyWatchdog.isPending}
+          isDisabled={update.isPending || applyWatchdog.isPending || nameInvalid || memoryInvalid}
         >
           {t('common.action.save')}
         </Button>
@@ -286,7 +327,7 @@ export function EditVmModal({
       {confirmingNextRun && (
         <NextRunDialog
           vmName={vm.name}
-          isSaving={update.isPending}
+          isSaving={update.isPending || applyWatchdog.isPending}
           onApplyLater={() => mutate(true)}
           onApplyNow={() => mutate(false)}
           onCancel={() => setConfirmingNextRun(false)}
