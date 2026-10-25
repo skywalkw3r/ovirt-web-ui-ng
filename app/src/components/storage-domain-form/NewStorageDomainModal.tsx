@@ -133,7 +133,7 @@ const DOMAIN_FUNCTIONS: { value: string; labelId?: MessageId; label?: string }[]
   { value: 'data', labelId: 'storageForm.function.data' },
   { value: 'iso', labelId: 'storageForm.function.iso' },
   { value: 'export', labelId: 'storageForm.function.export' },
-  { value: 'managed_block_storage', label: 'Managed Block Storage' },
+  { value: 'managed_block_storage', labelId: 'storageForm.function.managedBlockStorage' },
 ]
 
 // The domain functions offered for a given storage type. Only NFS offers ISO
@@ -184,8 +184,8 @@ const STORAGE_TYPES: {
   { value: 'glusterfs', labelId: 'storage.type.glusterfs' },
   { value: 'iscsi', label: 'iSCSI' },
   { value: 'fcp', labelId: 'storageForm.type.fcp' },
-  { value: 'localfs', label: 'Local on Host', localDataCenterOnly: true },
-  { value: 'managed_block_storage', label: 'Managed Block Storage' },
+  { value: 'localfs', labelId: 'storageForm.type.localfs', localDataCenterOnly: true },
+  { value: 'managed_block_storage', labelId: 'storageForm.type.managedBlockStorage' },
 ]
 
 // Engine nfs_version spellings; '' is "Auto negotiate" and is omitted from
@@ -905,7 +905,7 @@ export function NewStorageDomainModal({
                     <HelperTextItem
                       variant={localPathInvalid && draft.localPath !== '' ? 'error' : 'default'}
                     >
-                      An absolute directory on the selected host, for example /data/images.
+                      {t('storageForm.localPath.help')}
                     </HelperTextItem>
                   </HelperText>
                 </FormHelperText>
@@ -918,8 +918,8 @@ export function NewStorageDomainModal({
             {isManagedBlock && (
               <DriverOptionsEditor
                 idPrefix="storage-domain-driver-options"
-                label="Driver Options"
-                helperText="Options passed to the Cinder driver, for example volume_driver."
+                label={t('storageForm.driverOptions.label')}
+                helperText={t('storageForm.driverOptions.help')}
                 rows={draft.driverOptions}
                 onChange={(rows) => set('driverOptions', rows)}
                 nextId={nextRowId}
@@ -930,8 +930,8 @@ export function NewStorageDomainModal({
             {isManagedBlock && (
               <DriverOptionsEditor
                 idPrefix="storage-domain-driver-sensitive-options"
-                label="Driver Sensitive Options"
-                helperText="Secrets such as passwords. The engine stores them encrypted and never shows them again."
+                label={t('storageForm.driverSensitiveOptions.label')}
+                helperText={t('storageForm.driverSensitiveOptions.help')}
                 rows={draft.driverSensitiveOptions}
                 onChange={(rows) => set('driverSensitiveOptions', rows)}
                 nextId={nextRowId}
@@ -1212,8 +1212,8 @@ export function NewStorageDomainModal({
                     <FormGroup fieldId="storage-domain-discard-after-delete">
                       <Checkbox
                         id="storage-domain-discard-after-delete"
-                        label="Discard After Delete"
-                        aria-label="Discard After Delete"
+                        label={t('storageForm.discardAfterDelete')}
+                        aria-label={t('storageForm.discardAfterDelete')}
                         isChecked={effectiveDiscardAfterDelete}
                         isDisabled={!discardAfterDeleteEnabled}
                         onChange={(_event, checked) => set('discardAfterDelete', checked)}
@@ -1223,8 +1223,8 @@ export function NewStorageDomainModal({
                           <HelperText>
                             <HelperTextItem>
                               {discardSupport === 'noLuns'
-                                ? 'Select LUNs to check whether they support discard.'
-                                : 'Discard is not supported by the underlying storage.'}
+                                ? t('storageForm.discardAfterDelete.selectLuns')
+                                : t('storageForm.discard.unsupported')}
                             </HelperTextItem>
                           </HelperText>
                         </FormHelperText>
