@@ -357,7 +357,7 @@ export function HostActionsMenu({
             setCopyingNetworks(true)
           }}
         >
-          Copy host networks
+          {t('host.action.copyNetworks')}
         </DropdownItem>
       )}
       {showConfigureLocalStorage && (
@@ -367,7 +367,7 @@ export function HostActionsMenu({
             setConfiguringLocalStorage(true)
           }}
         >
-          Configure local storage
+          {t('host.action.configureLocalStorage')}
         </DropdownItem>
       )}
 

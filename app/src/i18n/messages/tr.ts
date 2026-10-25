@@ -4604,4 +4604,108 @@ export const tr: LocaleCatalog = {
     'Kümeye eklenen her ana makineye dağıtılan harici ağ sağlayıcısı. Yalnızca küme oluşturulurken ayarlanabilir.',
   'clusterForm.networkProvider.none': 'Varsayılan sağlayıcı yok',
   'clusterForm.createOnlyHint': 'Küme oluşturulurken ayarlanır; burada değiştirilemez.',
+
+  // Configure Local Storage (host kebab, wave 2)
+  'host.action.configureLocalStorage': 'Yerel depolamayı yapılandır',
+  'host.configureLocalStorage.title': '{name} üzerinde yerel depolamayı yapılandır',
+  'host.configureLocalStorage.intro.new':
+    '{host}, kendi kümesi olan yeni bir yerel veri merkezine ({dc}) taşınacak, ardından etkinleştirilecek ve bir yerel depolama alanı alacak.',
+  'host.configureLocalStorage.intro.reuse':
+    '{host}, {dc} yerel veri merkezine taşınacak, etkinleştirilecek ve bir yerel depolama alanı alacak.',
+  'host.configureLocalStorage.intro.consequence':
+    'Bir yerel veri merkezi yalnızca bu ana makineyi ve onun yerel depolamasını içerir; ana makine mevcut kümesinden ayrılır ve artık paylaşılan depolama alanlarını kullanamaz.',
+  'host.configureLocalStorage.alreadyConfigured.title': 'Yerel depolama zaten yapılandırılmış',
+  'host.configureLocalStorage.alreadyConfigured.body':
+    '{host} zaten yerel depolama alanı olan {dc} yerel veri merkezine ait.',
+  'host.configureLocalStorage.field.path': 'Yerel depolama yolu',
+  'host.configureLocalStorage.path.help': 'Ana makinedeki yerel depolamanızın yolunu ayarlayın.',
+  'fieldHelp.host.localStoragePath':
+    'Ana makinede veri alanı olacak mevcut bir dizin, örneğin /data/images. Sahibi vdsm:kvm (36:36) olmalıdır.',
+  'host.configureLocalStorage.note.dcReuse': 'Bu ada sahip mevcut yerel veri merkezi kullanılacak.',
+  'host.configureLocalStorage.note.dcNew': 'Yeni bir yerel veri merkezi.',
+  'host.configureLocalStorage.note.dcNewVersion':
+    'Yeni bir yerel veri merkezi, uyumluluk sürümü {version}.',
+  'host.configureLocalStorage.note.clusterReuse': 'Bu ada sahip mevcut küme kullanılacak.',
+  'host.configureLocalStorage.note.clusterNew':
+    'Yeni bir küme; CPU türü, ana makine etkinleştirildiğinde ana makineden algılanır.',
+  'host.configureLocalStorage.optimization.reuseNote':
+    'Bu ayarlar yalnızca yeni bir kümeye uygulanır; mevcut küme kendi ayarlarını korur.',
+  'host.configureLocalStorage.done': 'Bitti',
+  'host.configureLocalStorage.editAria': 'Düzenle: {field}',
+  'host.configureLocalStorage.doneAria': 'Düzenlemeyi bitir: {field}',
+  'host.configureLocalStorage.descriptionPlaceholder': 'Açıklama (isteğe bağlı)',
+  'host.configureLocalStorage.descriptionAria': 'Açıklama: {field}',
+  'host.configureLocalStorage.sectionsAria': 'Yerel depolama yapılandırması bölümleri',
+  'host.configureLocalStorage.loadError': 'Envanter yüklenemedi',
+  'host.configureLocalStorage.loading': 'Veri merkezleri, kümeler ve depolama yükleniyor',
+  'host.configureLocalStorage.progressAria': 'Yerel depolama yapılandırmasının ilerlemesi',
+  'host.configureLocalStorage.stepAria': '{step}: {status}',
+  'host.configureLocalStorage.step.dataCenter': 'Veri merkezi {dc}',
+  'host.configureLocalStorage.step.cluster': 'Küme {cluster}',
+  'host.configureLocalStorage.step.moveHost': '{host} ana makinesini {cluster} kümesine taşı',
+  'host.configureLocalStorage.step.activate':
+    '{host} ana makinesini etkinleştir ve çalışır duruma gelmesini bekle',
+  'host.configureLocalStorage.step.storage': '{path} konumundaki {name} depolama alanı',
+  'host.configureLocalStorage.stepStatus.pending': 'Bekliyor',
+  'host.configureLocalStorage.stepStatus.running': 'Devam ediyor',
+  'host.configureLocalStorage.stepStatus.done': 'Tamamlandı',
+  'host.configureLocalStorage.stepStatus.skipped': 'Gerekmiyor',
+  'host.configureLocalStorage.stepStatus.failed': 'Başarısız',
+  'host.configureLocalStorage.failed.title': 'Yerel depolama yapılandırılmadı',
+  'host.configureLocalStorage.confirm': 'Yapılandır',
+  'host.configureLocalStorage.validation.nameRequired': 'Bir ad girin.',
+  'host.configureLocalStorage.validation.nameTooLong': 'En fazla {n} karakter kullanın.',
+  'host.configureLocalStorage.validation.asciiName': 'Yalnızca harf, rakam, "-" ve "_" kullanın.',
+  'host.configureLocalStorage.validation.i18nName':
+    'Yalnızca harf, rakam, ".", "-" ve "_" kullanın.',
+  'host.configureLocalStorage.validation.pathRequired': 'Yerel depolama dizininin yolunu girin.',
+  'host.configureLocalStorage.validation.pathInvalid':
+    'Boşluk içermeyen mutlak bir yol girin, örneğin /data/images.',
+  'host.configureLocalStorage.validation.storageNameTaken':
+    '{name} adlı bir depolama alanı zaten var.',
+  'host.configureLocalStorage.validation.dataCenterNotLocal':
+    '{dc} veri merkezi zaten var ve yerel bir veri merkezi değil.',
+  'host.configureLocalStorage.validation.dataCenterOccupied':
+    '{dc} veri merkezi zaten {host} ana makinesini içeriyor; bir yerel veri merkezinde tek bir ana makine bulunur.',
+  'host.configureLocalStorage.validation.clusterInOtherDataCenter':
+    '{cluster} kümesi zaten başka bir veri merkezinde var.',
+  'host.configureLocalStorage.validation.clusterOccupied':
+    '{cluster} kümesi zaten {host} ana makinesini içeriyor.',
+  'host.configureLocalStorage.stepDetail.dataCenterReused':
+    'Mevcut {name} veri merkezi kullanılıyor.',
+  'host.configureLocalStorage.stepDetail.dataCenterCreated': '{name} veri merkezi oluşturuldu.',
+  'host.configureLocalStorage.stepDetail.clusterReused': 'Mevcut {name} kümesi kullanılıyor.',
+  'host.configureLocalStorage.stepDetail.clusterCreated': '{name} kümesi oluşturuldu.',
+  'host.configureLocalStorage.stepDetail.hostAlreadyInCluster':
+    'Ana makine zaten {name} kümesinde.',
+  'host.configureLocalStorage.stepDetail.hostMoved': 'Ana makine {name} kümesine taşındı.',
+  'host.configureLocalStorage.stepDetail.hostUp': 'Ana makine çalışıyor.',
+  'host.configureLocalStorage.stepDetail.storageCreated': '{name} depolama alanı oluşturuldu.',
+  'host.configureLocalStorage.error.hostFailedStatus':
+    '{host} ana makinesi up yerine {status} durumuna geçti.',
+  'host.configureLocalStorage.error.hostBackToMaintenance':
+    '{host} ana makinesi çalışır duruma gelmek yerine bakıma döndü.',
+  'host.configureLocalStorage.error.hostTimeout':
+    '{host} ana makinesi {seconds} saniye içinde çalışır duruma gelmedi (son durum: {status}).',
+  'host.configureLocalStorage.error.hostTimeoutNoStatus':
+    '{host} ana makinesi {seconds} saniye içinde çalışır duruma gelmedi.',
+  'host.configureLocalStorage.outcome.noChanges':
+    'Hiçbir değişiklik yapılmadı ve depolama alanı oluşturulmadı.',
+  'host.configureLocalStorage.outcome.changes':
+    'Depolama alanı oluşturulmadı. Hatadan önce yapılan değişiklikler: {changes}.',
+  'host.configureLocalStorage.outcome.change.dataCenterCreated': '{dc} veri merkezi oluşturuldu',
+  'host.configureLocalStorage.outcome.change.clusterCreated': '{cluster} kümesi oluşturuldu',
+  'host.configureLocalStorage.outcome.change.hostMoved': 'ana makine {cluster} kümesine taşındı',
+  'host.configureLocalStorage.outcome.change.hostActivated': 'ana makine etkinleştirildi',
+  'host.configureLocalStorage.outcome.undone':
+    'Kısmi kurulumu geri almak için şu değişiklikler geri alındı: {undone}.',
+  'host.configureLocalStorage.outcome.undone.hostMovedBack':
+    'ana makine {cluster} kümesine geri taşındı',
+  'host.configureLocalStorage.outcome.undone.hostMovedBackPrevious':
+    'ana makine önceki kümesine geri taşındı',
+  'host.configureLocalStorage.outcome.undone.clusterRemoved': '{cluster} kümesi kaldırıldı',
+  'host.configureLocalStorage.outcome.undone.dataCenterRemoved': '{dc} veri merkezi kaldırıldı',
+  'host.configureLocalStorage.outcome.undoStopped': 'Kısmi kurulumun geri alınması durdu: {error}',
+  'host.configureLocalStorage.outcome.rerunHint':
+    'Tamamlamak için gerekirse ana makineyi bakıma alın ve "Yerel depolamayı yapılandır" işlemini yeniden çalıştırın; boş yerel veri merkezi yeniden kullanılır.',
 }

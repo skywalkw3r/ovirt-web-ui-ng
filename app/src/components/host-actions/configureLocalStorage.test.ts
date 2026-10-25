@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { englishText, type LocalStorageMessage } from '../../lib/configureLocalStorage'
 import type { Cluster } from '../../api/schemas/cluster'
 import type { DataCenter } from '../../api/schemas/datacenter'
 import type { Host } from '../../api/schemas/host'
@@ -44,6 +45,10 @@ function inventory(over: Partial<LocalStorageInventory> = {}): LocalStorageInven
     ...over,
   }
 }
+
+// Validation errors are catalog messages; assert on their English text.
+const text = (message: LocalStorageMessage | undefined) =>
+  message === undefined ? undefined : englishText(message)
 
 describe('availableLocalName (webadmin availableName)', () => {
   it('uses the stem when free, else the lowest free numeric suffix', () => {
@@ -163,15 +168,17 @@ describe('resolveLocalStorage', () => {
       version,
     )
     expect(plan).toBeUndefined()
-    expect(errors.dataCenterName).toBe('Use only letters, digits, "-" and "_".')
-    expect(errors.clusterName).toBe('Enter a name.')
+    expect(text(errors.dataCenterName)).toBe('Use only letters, digits, "-" and "_".')
+    expect(text(errors.clusterName)).toBe('Enter a name.')
     expect(errors.storageName).toBeUndefined()
-    expect(errors.path).toMatch(/absolute path/)
-    expect(localPathError('/a b')).toMatch(/absolute path/)
-    expect(localPathError('')).toMatch(/Enter the path/)
+    expect(text(errors.path)).toMatch(/absolute path/)
+    expect(text(localPathError('/a b'))).toMatch(/absolute path/)
+    expect(text(localPathError(''))).toMatch(/Enter the path/)
     expect(
-      resolveLocalStorage(host(), form({ clusterName: 'c'.repeat(41) }), inventory(), version)
-        .errors.clusterName,
+      text(
+        resolveLocalStorage(host(), form({ clusterName: 'c'.repeat(41) }), inventory(), version)
+          .errors.clusterName,
+      ),
     ).toBe('Use at most 40 characters.')
   })
 
@@ -182,8 +189,8 @@ describe('resolveLocalStorage', () => {
       inventory(),
       version,
     )
-    expect(errors.storageName).toBe('A storage domain named DATA already exists.')
-    expect(errors.dataCenterName).toBe(
+    expect(text(errors.storageName)).toBe('A storage domain named DATA already exists.')
+    expect(text(errors.dataCenterName)).toBe(
       'Data center Default already exists and is not a local data center.',
     )
   })
@@ -195,7 +202,7 @@ describe('resolveLocalStorage', () => {
       inventory(),
       version,
     )
-    expect(errors.clusterName).toBe('Cluster Default already exists in another data center.')
+    expect(text(errors.clusterName)).toBe('Cluster Default already exists in another data center.')
   })
 
   it('refuses a local data center another host already holds', () => {
@@ -204,7 +211,7 @@ describe('resolveLocalStorage', () => {
     inv.clusters.push(cluster({ id: 'c-l', name: 'taken-c', data_center: { id: 'dc-l' } }))
     inv.hosts.push({ id: 'h9', name: 'node-09', cluster: { id: 'c-l' } } as Host)
     const { errors } = resolveLocalStorage(host(), form({ dataCenterName: 'taken' }), inv, version)
-    expect(errors.dataCenterName).toBe(
+    expect(text(errors.dataCenterName)).toBe(
       'Data center taken already holds host node-09; a local data center has one host.',
     )
   })

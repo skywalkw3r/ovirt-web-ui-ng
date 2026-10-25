@@ -46,7 +46,7 @@ describe('ConfigureLocalStorageModal', () => {
     ).toBeDefined()
     expect(screen.getByText('A new local data center, compatibility version 4.7.')).toBeDefined()
 
-    await user.click(screen.getByRole('button', { name: 'Edit cluster' }))
+    await user.click(screen.getByRole('button', { name: 'Edit Cluster' }))
     const clusterName = screen.getByRole('textbox', { name: 'Cluster' }) as HTMLInputElement
     expect(clusterName.readOnly).toBe(false)
     await user.clear(clusterName)
@@ -135,7 +135,7 @@ describe('ConfigureLocalStorageModal', () => {
     ).toBeGreaterThan(0)
     expect(
       screen.getByText(
-        /Data center node-03-Local and cluster node-03-Local were created, the host was moved to node-03-Local and the host was activated; the storage domain was not created\./,
+        'The storage domain was not created. Changes made before the failure: data center node-03-Local created, cluster node-03-Local created, host moved to node-03-Local, and host activated.',
       ),
     ).toBeDefined()
     const stepper = screen.getByRole('list', { name: 'Configure local storage progress' })

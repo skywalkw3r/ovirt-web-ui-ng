@@ -5173,6 +5173,113 @@ export const en = {
     'The external network provider deployed on every host added to the cluster. It can only be set when the cluster is created.',
   'clusterForm.networkProvider.none': 'No default provider',
   'clusterForm.createOnlyHint': 'Set when the cluster is created; it cannot be changed here.',
+
+  // Configure Local Storage (host kebab) ------------------------------------
+  'host.action.configureLocalStorage': 'Configure local storage',
+  'host.configureLocalStorage.title': 'Configure local storage on {name}',
+  'host.configureLocalStorage.intro.new':
+    '{host} will be moved into a new local data center, {dc}, with its own cluster, then activated and given a local storage domain.',
+  'host.configureLocalStorage.intro.reuse':
+    '{host} will be moved into the local data center {dc}, activated, and given a local storage domain.',
+  'host.configureLocalStorage.intro.consequence':
+    'A local data center holds only this host and its local storage; the host leaves its current cluster and can no longer use shared storage domains.',
+  'host.configureLocalStorage.alreadyConfigured.title': 'Local storage is already configured',
+  'host.configureLocalStorage.alreadyConfigured.body':
+    '{host} already belongs to the local data center {dc} with a local storage domain.',
+  'host.configureLocalStorage.field.path': 'Path to local storage',
+  'host.configureLocalStorage.path.help': 'Set the path to your local storage on the host.',
+  'fieldHelp.host.localStoragePath':
+    'An existing directory on the host that becomes the data domain, for example /data/images. It must be owned by vdsm:kvm (36:36).',
+  'host.configureLocalStorage.note.dcReuse':
+    'The existing local data center with this name will be used.',
+  'host.configureLocalStorage.note.dcNew': 'A new local data center.',
+  'host.configureLocalStorage.note.dcNewVersion':
+    'A new local data center, compatibility version {version}.',
+  'host.configureLocalStorage.note.clusterReuse':
+    'The existing cluster with this name will be used.',
+  'host.configureLocalStorage.note.clusterNew':
+    'A new cluster; its CPU type is detected from the host when it is activated.',
+  'host.configureLocalStorage.optimization.reuseNote':
+    'These settings apply to a new cluster only; the existing cluster keeps its own.',
+  'host.configureLocalStorage.done': 'Done',
+  'host.configureLocalStorage.editAria': 'Edit {field}',
+  'host.configureLocalStorage.doneAria': 'Done editing {field}',
+  'host.configureLocalStorage.descriptionPlaceholder': 'Description (optional)',
+  'host.configureLocalStorage.descriptionAria': '{field} description',
+  'host.configureLocalStorage.sectionsAria': 'Configure local storage sections',
+  'host.configureLocalStorage.loadError': 'Could not load the inventory',
+  'host.configureLocalStorage.loading': 'Loading data centers, clusters and storage',
+  'host.configureLocalStorage.progressAria': 'Configure local storage progress',
+  'host.configureLocalStorage.stepAria': '{step}: {status}',
+  'host.configureLocalStorage.step.dataCenter': 'Data center {dc}',
+  'host.configureLocalStorage.step.cluster': 'Cluster {cluster}',
+  'host.configureLocalStorage.step.moveHost': 'Move {host} to {cluster}',
+  'host.configureLocalStorage.step.activate': 'Activate {host} and wait until it is up',
+  'host.configureLocalStorage.step.storage': 'Storage domain {name} at {path}',
+  'host.configureLocalStorage.stepStatus.pending': 'Pending',
+  'host.configureLocalStorage.stepStatus.running': 'In progress',
+  'host.configureLocalStorage.stepStatus.done': 'Done',
+  'host.configureLocalStorage.stepStatus.skipped': 'Not needed',
+  'host.configureLocalStorage.stepStatus.failed': 'Failed',
+  'host.configureLocalStorage.failed.title': 'Local storage was not configured',
+  'host.configureLocalStorage.confirm': 'Configure',
+  'host.configureLocalStorage.validation.nameRequired': 'Enter a name.',
+  'host.configureLocalStorage.validation.nameTooLong':
+    'Use at most {n, plural, one {# character} other {# characters}}.',
+  'host.configureLocalStorage.validation.asciiName': 'Use only letters, digits, "-" and "_".',
+  'host.configureLocalStorage.validation.i18nName': 'Use only letters, digits, ".", "-" and "_".',
+  'host.configureLocalStorage.validation.pathRequired':
+    'Enter the path to the local storage directory.',
+  'host.configureLocalStorage.validation.pathInvalid':
+    'Enter an absolute path without spaces, for example /data/images.',
+  'host.configureLocalStorage.validation.storageNameTaken':
+    'A storage domain named {name} already exists.',
+  'host.configureLocalStorage.validation.dataCenterNotLocal':
+    'Data center {dc} already exists and is not a local data center.',
+  'host.configureLocalStorage.validation.dataCenterOccupied':
+    'Data center {dc} already holds host {host}; a local data center has one host.',
+  'host.configureLocalStorage.validation.clusterInOtherDataCenter':
+    'Cluster {cluster} already exists in another data center.',
+  'host.configureLocalStorage.validation.clusterOccupied':
+    'Cluster {cluster} already holds host {host}.',
+  'host.configureLocalStorage.stepDetail.dataCenterReused':
+    'Using the existing data center {name}.',
+  'host.configureLocalStorage.stepDetail.dataCenterCreated': 'Created data center {name}.',
+  'host.configureLocalStorage.stepDetail.clusterReused': 'Using the existing cluster {name}.',
+  'host.configureLocalStorage.stepDetail.clusterCreated': 'Created cluster {name}.',
+  'host.configureLocalStorage.stepDetail.hostAlreadyInCluster':
+    'The host is already in cluster {name}.',
+  'host.configureLocalStorage.stepDetail.hostMoved': 'Moved the host to cluster {name}.',
+  'host.configureLocalStorage.stepDetail.hostUp': 'The host is up.',
+  'host.configureLocalStorage.stepDetail.storageCreated': 'Created storage domain {name}.',
+  'host.configureLocalStorage.error.hostFailedStatus':
+    'Host {host} went to status {status} instead of up.',
+  'host.configureLocalStorage.error.hostBackToMaintenance':
+    'Host {host} returned to maintenance instead of coming up.',
+  'host.configureLocalStorage.error.hostTimeout':
+    'Host {host} did not come up within {seconds, plural, one {# second} other {# seconds}} (last status: {status}).',
+  'host.configureLocalStorage.error.hostTimeoutNoStatus':
+    'Host {host} did not come up within {seconds, plural, one {# second} other {# seconds}}.',
+  // Failed-run account: complete sentences; {changes} / {undone} are lists of
+  // the change.* / undone.* items joined with the locale's list format
+  'host.configureLocalStorage.outcome.noChanges':
+    'No changes were made, and the storage domain was not created.',
+  'host.configureLocalStorage.outcome.changes':
+    'The storage domain was not created. Changes made before the failure: {changes}.',
+  'host.configureLocalStorage.outcome.change.dataCenterCreated': 'data center {dc} created',
+  'host.configureLocalStorage.outcome.change.clusterCreated': 'cluster {cluster} created',
+  'host.configureLocalStorage.outcome.change.hostMoved': 'host moved to {cluster}',
+  'host.configureLocalStorage.outcome.change.hostActivated': 'host activated',
+  'host.configureLocalStorage.outcome.undone':
+    'To undo the partial setup, these changes were reverted: {undone}.',
+  'host.configureLocalStorage.outcome.undone.hostMovedBack': 'host moved back to {cluster}',
+  'host.configureLocalStorage.outcome.undone.hostMovedBackPrevious':
+    'host moved back to its previous cluster',
+  'host.configureLocalStorage.outcome.undone.clusterRemoved': 'cluster {cluster} removed',
+  'host.configureLocalStorage.outcome.undone.dataCenterRemoved': 'data center {dc} removed',
+  'host.configureLocalStorage.outcome.undoStopped': 'Undoing the partial setup stopped: {error}',
+  'host.configureLocalStorage.outcome.rerunHint':
+    'To finish, put the host into maintenance if needed and run Configure local storage again; it reuses the empty local data center.',
 } as const
 
 // The id union — source of truth for every typed i18n surface (useT, the

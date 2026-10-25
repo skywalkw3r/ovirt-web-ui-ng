@@ -4616,4 +4616,113 @@ export const ja: LocaleCatalog = {
     'クラスターに追加されるすべてのホストにデプロイされる外部ネットワークプロバイダーです。クラスターの作成時にのみ設定できます。',
   'clusterForm.networkProvider.none': 'デフォルトのプロバイダーなし',
   'clusterForm.createOnlyHint': 'クラスターの作成時に設定され、ここでは変更できません。',
+
+  // Configure Local Storage (host kebab, wave 2)
+  'host.action.configureLocalStorage': 'ローカルストレージを設定',
+  'host.configureLocalStorage.title': '{name} でローカルストレージを設定',
+  'host.configureLocalStorage.intro.new':
+    '{host} は独自のクラスターを持つ新しいローカルデータセンター {dc} に移動され、アクティブ化されてローカルストレージドメインが割り当てられます。',
+  'host.configureLocalStorage.intro.reuse':
+    '{host} はローカルデータセンター {dc} に移動され、アクティブ化されてローカルストレージドメインが割り当てられます。',
+  'host.configureLocalStorage.intro.consequence':
+    'ローカルデータセンターにはこのホストとそのローカルストレージだけが含まれます。ホストは現在のクラスターから外れ、共有ストレージドメインを使用できなくなります。',
+  'host.configureLocalStorage.alreadyConfigured.title':
+    'ローカルストレージはすでに設定されています',
+  'host.configureLocalStorage.alreadyConfigured.body':
+    '{host} はすでにローカルストレージドメインを持つローカルデータセンター {dc} に属しています。',
+  'host.configureLocalStorage.field.path': 'ローカルストレージへのパス',
+  'host.configureLocalStorage.path.help': 'ホスト上のローカルストレージへのパスを設定します。',
+  'fieldHelp.host.localStoragePath':
+    'データドメインになる、ホスト上の既存のディレクトリです（例: /data/images）。所有者は vdsm:kvm (36:36) である必要があります。',
+  'host.configureLocalStorage.note.dcReuse':
+    'この名前の既存のローカルデータセンターが使用されます。',
+  'host.configureLocalStorage.note.dcNew': '新しいローカルデータセンター。',
+  'host.configureLocalStorage.note.dcNewVersion':
+    '新しいローカルデータセンター、互換バージョン {version}。',
+  'host.configureLocalStorage.note.clusterReuse': 'この名前の既存のクラスターが使用されます。',
+  'host.configureLocalStorage.note.clusterNew':
+    '新しいクラスター。CPUタイプはホストのアクティブ化時にホストから検出されます。',
+  'host.configureLocalStorage.optimization.reuseNote':
+    'これらの設定は新しいクラスターにのみ適用されます。既存のクラスターは独自の設定を維持します。',
+  'host.configureLocalStorage.done': '完了',
+  'host.configureLocalStorage.editAria': '{field}を編集',
+  'host.configureLocalStorage.doneAria': '{field}の編集を完了',
+  'host.configureLocalStorage.descriptionPlaceholder': '説明（任意）',
+  'host.configureLocalStorage.descriptionAria': '{field}の説明',
+  'host.configureLocalStorage.sectionsAria': 'ローカルストレージ設定のセクション',
+  'host.configureLocalStorage.loadError': 'インベントリーを読み込めませんでした',
+  'host.configureLocalStorage.loading': 'データセンター、クラスター、ストレージを読み込んでいます',
+  'host.configureLocalStorage.progressAria': 'ローカルストレージ設定の進行状況',
+  'host.configureLocalStorage.stepAria': '{step}: {status}',
+  'host.configureLocalStorage.step.dataCenter': 'データセンター {dc}',
+  'host.configureLocalStorage.step.cluster': 'クラスター {cluster}',
+  'host.configureLocalStorage.step.moveHost': '{host} を {cluster} に移動',
+  'host.configureLocalStorage.step.activate': '{host} をアクティブ化して起動を待機',
+  'host.configureLocalStorage.step.storage': '{path} のストレージドメイン {name}',
+  'host.configureLocalStorage.stepStatus.pending': '保留中',
+  'host.configureLocalStorage.stepStatus.running': '実行中',
+  'host.configureLocalStorage.stepStatus.done': '完了',
+  'host.configureLocalStorage.stepStatus.skipped': '不要',
+  'host.configureLocalStorage.stepStatus.failed': '失敗',
+  'host.configureLocalStorage.failed.title': 'ローカルストレージは設定されませんでした',
+  'host.configureLocalStorage.confirm': '設定',
+  'host.configureLocalStorage.validation.nameRequired': '名前を入力してください。',
+  'host.configureLocalStorage.validation.nameTooLong': '{n} 文字以内で入力してください。',
+  'host.configureLocalStorage.validation.asciiName':
+    '英字、数字、「-」、「_」のみを使用してください。',
+  'host.configureLocalStorage.validation.i18nName':
+    '文字、数字、「.」、「-」、「_」のみを使用してください。',
+  'host.configureLocalStorage.validation.pathRequired':
+    'ローカルストレージディレクトリへのパスを入力してください。',
+  'host.configureLocalStorage.validation.pathInvalid':
+    'スペースを含まない絶対パスを入力してください（例: /data/images）。',
+  'host.configureLocalStorage.validation.storageNameTaken':
+    '{name} という名前のストレージドメインはすでに存在します。',
+  'host.configureLocalStorage.validation.dataCenterNotLocal':
+    'データセンター {dc} はすでに存在し、ローカルデータセンターではありません。',
+  'host.configureLocalStorage.validation.dataCenterOccupied':
+    'データセンター {dc} にはすでにホスト {host} があります。ローカルデータセンターに含められるホストは1台だけです。',
+  'host.configureLocalStorage.validation.clusterInOtherDataCenter':
+    'クラスター {cluster} はすでに別のデータセンターに存在します。',
+  'host.configureLocalStorage.validation.clusterOccupied':
+    'クラスター {cluster} にはすでにホスト {host} があります。',
+  'host.configureLocalStorage.stepDetail.dataCenterReused':
+    '既存のデータセンター {name} を使用します。',
+  'host.configureLocalStorage.stepDetail.dataCenterCreated':
+    'データセンター {name} を作成しました。',
+  'host.configureLocalStorage.stepDetail.clusterReused': '既存のクラスター {name} を使用します。',
+  'host.configureLocalStorage.stepDetail.clusterCreated': 'クラスター {name} を作成しました。',
+  'host.configureLocalStorage.stepDetail.hostAlreadyInCluster':
+    'ホストはすでにクラスター {name} にあります。',
+  'host.configureLocalStorage.stepDetail.hostMoved': 'ホストをクラスター {name} に移動しました。',
+  'host.configureLocalStorage.stepDetail.hostUp': 'ホストは起動しています。',
+  'host.configureLocalStorage.stepDetail.storageCreated':
+    'ストレージドメイン {name} を作成しました。',
+  'host.configureLocalStorage.error.hostFailedStatus':
+    'ホスト {host} は up ではなく {status} 状態になりました。',
+  'host.configureLocalStorage.error.hostBackToMaintenance':
+    'ホスト {host} は起動せずにメンテナンスに戻りました。',
+  'host.configureLocalStorage.error.hostTimeout':
+    'ホスト {host} は {seconds} 秒以内に起動しませんでした（最後の状態: {status}）。',
+  'host.configureLocalStorage.error.hostTimeoutNoStatus':
+    'ホスト {host} は {seconds} 秒以内に起動しませんでした。',
+  'host.configureLocalStorage.outcome.noChanges':
+    '変更は行われず、ストレージドメインも作成されませんでした。',
+  'host.configureLocalStorage.outcome.changes':
+    'ストレージドメインは作成されませんでした。失敗前に行われた変更: {changes}。',
+  'host.configureLocalStorage.outcome.change.dataCenterCreated': 'データセンター {dc} を作成',
+  'host.configureLocalStorage.outcome.change.clusterCreated': 'クラスター {cluster} を作成',
+  'host.configureLocalStorage.outcome.change.hostMoved': 'ホストを {cluster} に移動',
+  'host.configureLocalStorage.outcome.change.hostActivated': 'ホストをアクティブ化',
+  'host.configureLocalStorage.outcome.undone':
+    '部分的なセットアップを元に戻すため、次の変更を取り消しました: {undone}。',
+  'host.configureLocalStorage.outcome.undone.hostMovedBack': 'ホストを {cluster} に戻した',
+  'host.configureLocalStorage.outcome.undone.hostMovedBackPrevious':
+    'ホストを以前のクラスターに戻した',
+  'host.configureLocalStorage.outcome.undone.clusterRemoved': 'クラスター {cluster} を削除した',
+  'host.configureLocalStorage.outcome.undone.dataCenterRemoved': 'データセンター {dc} を削除した',
+  'host.configureLocalStorage.outcome.undoStopped':
+    '部分的なセットアップの取り消しが停止しました: {error}',
+  'host.configureLocalStorage.outcome.rerunHint':
+    '完了するには、必要に応じてホストをメンテナンスモードにし、「ローカルストレージを設定」をもう一度実行してください。空のローカルデータセンターが再利用されます。',
 }

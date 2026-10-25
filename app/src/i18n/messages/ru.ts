@@ -4834,4 +4834,111 @@ export const ru: LocaleCatalog = {
     'Внешний сетевой провайдер, развёртываемый на каждом хосте, добавляемом в кластер. Задаётся только при создании кластера.',
   'clusterForm.networkProvider.none': 'Без провайдера по умолчанию',
   'clusterForm.createOnlyHint': 'Задаётся при создании кластера; здесь изменить нельзя.',
+
+  // Configure Local Storage (host kebab, wave 2)
+  'host.action.configureLocalStorage': 'Настроить локальное хранилище',
+  'host.configureLocalStorage.title': 'Настройка локального хранилища на {name}',
+  'host.configureLocalStorage.intro.new':
+    '{host} будет перемещён в новый локальный дата-центр {dc} с собственным кластером, затем активирован и получит локальный домен хранилища.',
+  'host.configureLocalStorage.intro.reuse':
+    '{host} будет перемещён в локальный дата-центр {dc}, активирован и получит локальный домен хранилища.',
+  'host.configureLocalStorage.intro.consequence':
+    'Локальный дата-центр содержит только этот хост и его локальное хранилище; хост покидает текущий кластер и больше не может использовать общие домены хранилища.',
+  'host.configureLocalStorage.alreadyConfigured.title': 'Локальное хранилище уже настроено',
+  'host.configureLocalStorage.alreadyConfigured.body':
+    '{host} уже входит в локальный дата-центр {dc} с локальным доменом хранилища.',
+  'host.configureLocalStorage.field.path': 'Путь к локальному хранилищу',
+  'host.configureLocalStorage.path.help': 'Укажите путь к локальному хранилищу на хосте.',
+  'fieldHelp.host.localStoragePath':
+    'Существующий каталог на хосте, который станет доменом данных, например /data/images. Его владельцем должен быть vdsm:kvm (36:36).',
+  'host.configureLocalStorage.note.dcReuse':
+    'Будет использован существующий локальный дата-центр с этим именем.',
+  'host.configureLocalStorage.note.dcNew': 'Новый локальный дата-центр.',
+  'host.configureLocalStorage.note.dcNewVersion':
+    'Новый локальный дата-центр, версия совместимости {version}.',
+  'host.configureLocalStorage.note.clusterReuse':
+    'Будет использован существующий кластер с этим именем.',
+  'host.configureLocalStorage.note.clusterNew':
+    'Новый кластер; тип его CPU определяется по хосту при активации.',
+  'host.configureLocalStorage.optimization.reuseNote':
+    'Эти параметры применяются только к новому кластеру; существующий кластер сохраняет свои.',
+  'host.configureLocalStorage.done': 'Готово',
+  'host.configureLocalStorage.editAria': 'Изменить: {field}',
+  'host.configureLocalStorage.doneAria': 'Завершить изменение: {field}',
+  'host.configureLocalStorage.descriptionPlaceholder': 'Описание (необязательно)',
+  'host.configureLocalStorage.descriptionAria': 'Описание: {field}',
+  'host.configureLocalStorage.sectionsAria': 'Разделы настройки локального хранилища',
+  'host.configureLocalStorage.loadError': 'Не удалось загрузить инвентарь',
+  'host.configureLocalStorage.loading': 'Загрузка дата-центров, кластеров и хранилища',
+  'host.configureLocalStorage.progressAria': 'Ход настройки локального хранилища',
+  'host.configureLocalStorage.stepAria': '{step}: {status}',
+  'host.configureLocalStorage.step.dataCenter': 'Дата-центр {dc}',
+  'host.configureLocalStorage.step.cluster': 'Кластер {cluster}',
+  'host.configureLocalStorage.step.moveHost': 'Переместить {host} в {cluster}',
+  'host.configureLocalStorage.step.activate': 'Активировать {host} и дождаться его запуска',
+  'host.configureLocalStorage.step.storage': 'Домен хранилища {name} в {path}',
+  'host.configureLocalStorage.stepStatus.pending': 'В ожидании',
+  'host.configureLocalStorage.stepStatus.running': 'Выполняется',
+  'host.configureLocalStorage.stepStatus.done': 'Выполнено',
+  'host.configureLocalStorage.stepStatus.skipped': 'Не требуется',
+  'host.configureLocalStorage.stepStatus.failed': 'Ошибка',
+  'host.configureLocalStorage.failed.title': 'Локальное хранилище не настроено',
+  'host.configureLocalStorage.confirm': 'Настроить',
+  'host.configureLocalStorage.validation.nameRequired': 'Введите имя.',
+  'host.configureLocalStorage.validation.nameTooLong':
+    'Используйте не более {n, plural, one {# символа} few {# символов} many {# символов} other {# символа}}.',
+  'host.configureLocalStorage.validation.asciiName': 'Используйте только буквы, цифры, «-» и «_».',
+  'host.configureLocalStorage.validation.i18nName':
+    'Используйте только буквы, цифры, «.», «-» и «_».',
+  'host.configureLocalStorage.validation.pathRequired':
+    'Введите путь к каталогу локального хранилища.',
+  'host.configureLocalStorage.validation.pathInvalid':
+    'Введите абсолютный путь без пробелов, например /data/images.',
+  'host.configureLocalStorage.validation.storageNameTaken':
+    'Домен хранилища с именем {name} уже существует.',
+  'host.configureLocalStorage.validation.dataCenterNotLocal':
+    'Дата-центр {dc} уже существует и не является локальным.',
+  'host.configureLocalStorage.validation.dataCenterOccupied':
+    'В дата-центре {dc} уже есть хост {host}; в локальном дата-центре может быть только один хост.',
+  'host.configureLocalStorage.validation.clusterInOtherDataCenter':
+    'Кластер {cluster} уже существует в другом дата-центре.',
+  'host.configureLocalStorage.validation.clusterOccupied':
+    'В кластере {cluster} уже есть хост {host}.',
+  'host.configureLocalStorage.stepDetail.dataCenterReused':
+    'Используется существующий дата-центр {name}.',
+  'host.configureLocalStorage.stepDetail.dataCenterCreated': 'Создан дата-центр {name}.',
+  'host.configureLocalStorage.stepDetail.clusterReused':
+    'Используется существующий кластер {name}.',
+  'host.configureLocalStorage.stepDetail.clusterCreated': 'Создан кластер {name}.',
+  'host.configureLocalStorage.stepDetail.hostAlreadyInCluster':
+    'Хост уже находится в кластере {name}.',
+  'host.configureLocalStorage.stepDetail.hostMoved': 'Хост перемещён в кластер {name}.',
+  'host.configureLocalStorage.stepDetail.hostUp': 'Хост запущен.',
+  'host.configureLocalStorage.stepDetail.storageCreated': 'Создан домен хранилища {name}.',
+  'host.configureLocalStorage.error.hostFailedStatus':
+    'Хост {host} перешёл в состояние {status} вместо up.',
+  'host.configureLocalStorage.error.hostBackToMaintenance':
+    'Хост {host} вернулся в режим обслуживания вместо запуска.',
+  'host.configureLocalStorage.error.hostTimeout':
+    'Хост {host} не запустился за {seconds, plural, one {# секунду} few {# секунды} many {# секунд} other {# секунды}} (последнее состояние: {status}).',
+  'host.configureLocalStorage.error.hostTimeoutNoStatus':
+    'Хост {host} не запустился за {seconds, plural, one {# секунду} few {# секунды} many {# секунд} other {# секунды}}.',
+  'host.configureLocalStorage.outcome.noChanges':
+    'Изменения не внесены, и домен хранилища не создан.',
+  'host.configureLocalStorage.outcome.changes':
+    'Домен хранилища не создан. Изменения, внесённые до сбоя: {changes}.',
+  'host.configureLocalStorage.outcome.change.dataCenterCreated': 'создан дата-центр {dc}',
+  'host.configureLocalStorage.outcome.change.clusterCreated': 'создан кластер {cluster}',
+  'host.configureLocalStorage.outcome.change.hostMoved': 'хост перемещён в {cluster}',
+  'host.configureLocalStorage.outcome.change.hostActivated': 'хост активирован',
+  'host.configureLocalStorage.outcome.undone':
+    'Чтобы отменить частичную настройку, были отменены следующие изменения: {undone}.',
+  'host.configureLocalStorage.outcome.undone.hostMovedBack': 'хост возвращён в {cluster}',
+  'host.configureLocalStorage.outcome.undone.hostMovedBackPrevious':
+    'хост возвращён в прежний кластер',
+  'host.configureLocalStorage.outcome.undone.clusterRemoved': 'кластер {cluster} удалён',
+  'host.configureLocalStorage.outcome.undone.dataCenterRemoved': 'дата-центр {dc} удалён',
+  'host.configureLocalStorage.outcome.undoStopped': 'Отмена частичной настройки прервана: {error}',
+  'host.configureLocalStorage.outcome.rerunHint':
+    'Чтобы завершить, при необходимости переведите хост в режим обслуживания и снова запустите «Настроить локальное хранилище»; будет повторно использован пустой локальный дата-центр.',
 }

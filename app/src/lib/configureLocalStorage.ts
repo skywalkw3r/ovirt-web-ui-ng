@@ -22,6 +22,35 @@
 // Deliberate divergence: webadmin removes the cluster and data center even
 // when it reused them; this runner only removes what this run created.
 
+import { createIntl } from 'react-intl'
+import { enMessages, type MessageId } from '../i18n/messages/en'
+
+// A user-visible sentence as a catalog id plus its ICU values, resolved with
+// t() where it renders. Each id is one complete sentence, so word order is the
+// translator's, never assembled here.
+export interface LocalStorageMessage {
+  id: MessageId
+  values?: Record<string, string | number>
+}
+
+// English rendering of a LocalStorageMessage, for the plain Error text the
+// runner records in outcome.error (toasts stay English by repo convention).
+const englishIntl = createIntl({ locale: 'en', messages: enMessages })
+export function englishText(message: LocalStorageMessage): string {
+  return englishIntl.formatMessage({ id: message.id }, message.values)
+}
+
+// A failure the runner itself detects (the host never came up), carrying the
+// catalog message so the dialog can show it translated; `message` is English.
+export class LocalStorageRunError extends Error {
+  readonly localized: LocalStorageMessage
+  constructor(localized: LocalStorageMessage) {
+    super(englishText(localized))
+    this.name = 'LocalStorageRunError'
+    this.localized = localized
+  }
+}
+
 export type LocalStorageStepId = 'dataCenter' | 'cluster' | 'moveHost' | 'activate' | 'storage'
 
 export type LocalStorageStepStatus = 'pending' | 'running' | 'done' | 'skipped' | 'failed'
@@ -29,8 +58,9 @@ export type LocalStorageStepStatus = 'pending' | 'running' | 'done' | 'skipped' 
 export interface LocalStorageStep {
   id: LocalStorageStepId
   status: LocalStorageStepStatus
-  // what happened (reused entity, engine error, poll result); English
-  detail?: string
+  // what happened: a catalog message (reused or created entity, a failed wait
+  // for the host), or a plain string for an engine fault shown verbatim
+  detail?: LocalStorageMessage | string
 }
 
 export const LOCAL_STORAGE_STEP_ORDER: LocalStorageStepId[] = [
@@ -97,8 +127,11 @@ export interface LocalStorageRollback {
 export interface LocalStorageOutcome {
   ok: boolean
   failedStep?: LocalStorageStepId
-  // the engine's fault text, verbatim
+  // the engine's fault text verbatim, or the English text of errorMessage
   error?: string
+  // set when the runner itself detected the failure (host wait): the
+  // translatable form of `error`
+  errorMessage?: LocalStorageMessage
   dataCenter: { id?: string; created: boolean }
   cluster: { id?: string; created: boolean }
   hostMoved: boolean
@@ -177,15 +210,30 @@ async function waitForHostUp(
     last = await deps.getHostStatus(plan.host.id)
     if (last === 'up') return
     if (last !== undefined && ACTIVATION_FAILED_STATES.has(last)) {
-      throw new Error(`Host ${plan.host.name} went to status ${last} instead of up.`)
+      throw new LocalStorageRunError({
+        id: 'host.configureLocalStorage.error.hostFailedStatus',
+        values: { host: plan.host.name, status: last },
+      })
     }
     if (last === 'maintenance' && leftMaintenance) {
-      throw new Error(`Host ${plan.host.name} returned to maintenance instead of coming up.`)
+      throw new LocalStorageRunError({
+        id: 'host.configureLocalStorage.error.hostBackToMaintenance',
+        values: { host: plan.host.name },
+      })
     }
     if (last !== 'maintenance') leftMaintenance = true
   }
-  throw new Error(
-    `Host ${plan.host.name} did not come up within ${Math.round(opts.timeoutMs / 1000)} seconds (last status: ${last ?? 'unknown'}).`,
+  const seconds = Math.round(opts.timeoutMs / 1000)
+  throw new LocalStorageRunError(
+    last === undefined
+      ? {
+          id: 'host.configureLocalStorage.error.hostTimeoutNoStatus',
+          values: { host: plan.host.name, seconds },
+        }
+      : {
+          id: 'host.configureLocalStorage.error.hostTimeout',
+          values: { host: plan.host.name, seconds, status: last },
+        },
   )
 }
 
@@ -196,7 +244,11 @@ export async function runConfigureLocalStorage(
   opts: { pollMs?: number; timeoutMs?: number } = {},
 ): Promise<LocalStorageOutcome> {
   const steps = initialLocalStorageSteps()
-  const set = (id: LocalStorageStepId, status: LocalStorageStepStatus, detail?: string) => {
+  const set = (
+    id: LocalStorageStepId,
+    status: LocalStorageStepStatus,
+    detail?: LocalStorageMessage | string,
+  ) => {
     const index = steps.findIndex((step) => step.id === id)
     steps[index] = { id, status, detail }
     onProgress(steps.map((step) => ({ ...step })))
@@ -211,19 +263,26 @@ export async function runConfigureLocalStorage(
   const fail = (id: LocalStorageStepId, error: unknown) => {
     outcome.failedStep = id
     outcome.error = errorText(error)
-    set(id, 'failed', outcome.error)
+    if (error instanceof LocalStorageRunError) outcome.errorMessage = error.localized
+    set(id, 'failed', outcome.errorMessage ?? outcome.error)
   }
 
   // 1. Data center
   let dataCenterId = plan.dataCenter.existingId
   if (dataCenterId) {
-    set('dataCenter', 'skipped', `Using the existing data center ${plan.dataCenter.name}.`)
+    set('dataCenter', 'skipped', {
+      id: 'host.configureLocalStorage.stepDetail.dataCenterReused',
+      values: { name: plan.dataCenter.name },
+    })
   } else {
     set('dataCenter', 'running')
     try {
       dataCenterId = (await deps.createDataCenter(buildLocalDataCenterBody(plan))).id
       outcome.dataCenter = { id: dataCenterId, created: true }
-      set('dataCenter', 'done', `Created data center ${plan.dataCenter.name}.`)
+      set('dataCenter', 'done', {
+        id: 'host.configureLocalStorage.stepDetail.dataCenterCreated',
+        values: { name: plan.dataCenter.name },
+      })
     } catch (error) {
       fail('dataCenter', error)
       return outcome
@@ -233,13 +292,19 @@ export async function runConfigureLocalStorage(
   // 2. Cluster
   let clusterId = plan.cluster.existingId
   if (clusterId) {
-    set('cluster', 'skipped', `Using the existing cluster ${plan.cluster.name}.`)
+    set('cluster', 'skipped', {
+      id: 'host.configureLocalStorage.stepDetail.clusterReused',
+      values: { name: plan.cluster.name },
+    })
   } else {
     set('cluster', 'running')
     try {
       clusterId = (await deps.createCluster(buildLocalClusterBody(plan, dataCenterId))).id
       outcome.cluster = { id: clusterId, created: true }
-      set('cluster', 'done', `Created cluster ${plan.cluster.name}.`)
+      set('cluster', 'done', {
+        id: 'host.configureLocalStorage.stepDetail.clusterCreated',
+        values: { name: plan.cluster.name },
+      })
     } catch (error) {
       fail('cluster', error)
       return outcome
@@ -248,13 +313,19 @@ export async function runConfigureLocalStorage(
 
   // 3. Move the host (ChangeVDSCluster), unless it already sits there
   if (plan.host.clusterId === clusterId) {
-    set('moveHost', 'skipped', `The host is already in cluster ${plan.cluster.name}.`)
+    set('moveHost', 'skipped', {
+      id: 'host.configureLocalStorage.stepDetail.hostAlreadyInCluster',
+      values: { name: plan.cluster.name },
+    })
   } else {
     set('moveHost', 'running')
     try {
       await deps.updateHost(plan.host.id, { cluster: { id: clusterId } })
       outcome.hostMoved = true
-      set('moveHost', 'done', `Moved the host to cluster ${plan.cluster.name}.`)
+      set('moveHost', 'done', {
+        id: 'host.configureLocalStorage.stepDetail.hostMoved',
+        values: { name: plan.cluster.name },
+      })
     } catch (error) {
       fail('moveHost', error)
       return outcome
@@ -271,7 +342,7 @@ export async function runConfigureLocalStorage(
       timeoutMs: opts.timeoutMs ?? HOST_UP_TIMEOUT_MS,
     })
     outcome.hostActivated = true
-    set('activate', 'done', 'The host is up.')
+    set('activate', 'done', { id: 'host.configureLocalStorage.stepDetail.hostUp' })
   } catch (error) {
     fail('activate', error)
     outcome.rollback = await rollback(plan, deps, outcome)
@@ -288,7 +359,10 @@ export async function runConfigureLocalStorage(
       path: plan.storage.path,
     })
     outcome.storageDomainId = domain.id
-    set('storage', 'done', `Created storage domain ${plan.storage.name}.`)
+    set('storage', 'done', {
+      id: 'host.configureLocalStorage.stepDetail.storageCreated',
+      values: { name: plan.storage.name },
+    })
   } catch (error) {
     fail('storage', error)
     return outcome
@@ -344,63 +418,124 @@ async function rollback(
   return result
 }
 
-function joinAnd(parts: string[]): string {
-  if (parts.length <= 1) return parts.join('')
-  return `${parts.slice(0, -1).join(', ')} and ${parts[parts.length - 1]}`
+// The pieces of a failed run's account, each a catalog message. The changes
+// and undo lists are rendered as list items joined with the locale's list
+// format (Intl.ListFormat via formatLocalStorageOutcome), then placed into a
+// complete sentence, so no sentence is assembled from translated fragments.
+export interface LocalStorageOutcomeSummary {
+  // what this run changed and kept (empty: nothing changed)
+  changes: LocalStorageMessage[]
+  // what the rollback undid
+  undone: LocalStorageMessage[]
+  // the rollback's own engine fault, verbatim
+  undoError?: string
+  // the empty local data center or the moved host is left behind: say how to
+  // finish
+  rerunHint: boolean
 }
 
-// Plain-language account of what a failed run left behind, e.g. "Data center
-// X and cluster Y were created and the host was moved to Y; the storage
-// domain was not created." English; the modal shows it under the engine error.
-export function describeLocalStorageOutcome(
+export function summarizeLocalStorageOutcome(
   plan: LocalStoragePlan,
   outcome: LocalStorageOutcome,
-): string {
+): LocalStorageOutcomeSummary {
   const dc = plan.dataCenter.name
   const cluster = plan.cluster.name
   const rolledBack = outcome.rollback?.hostMovedBack === true
-  const created: string[] = []
-  if (outcome.dataCenter.created) created.push(`data center ${dc}`)
-  if (outcome.cluster.created) created.push(`cluster ${cluster}`)
-  const clauses: string[] = []
-  if (created.length > 0) {
-    clauses.push(`${joinAnd(created)} ${created.length > 1 ? 'were' : 'was'} created`)
+  const changes: LocalStorageMessage[] = []
+  if (outcome.dataCenter.created) {
+    changes.push({
+      id: 'host.configureLocalStorage.outcome.change.dataCenterCreated',
+      values: { dc },
+    })
   }
-  if (outcome.hostMoved || rolledBack) clauses.push(`the host was moved to ${cluster}`)
-  if (outcome.hostActivated) clauses.push('the host was activated')
-
-  const sentences: string[] = []
-  if (clauses.length === 0) {
-    sentences.push('No changes were made; the storage domain was not created.')
-  } else {
-    const text = joinAnd(clauses)
-    sentences.push(`${text[0].toUpperCase()}${text.slice(1)}; the storage domain was not created.`)
+  if (outcome.cluster.created) {
+    changes.push({
+      id: 'host.configureLocalStorage.outcome.change.clusterCreated',
+      values: { cluster },
+    })
+  }
+  if (outcome.hostMoved || rolledBack) {
+    changes.push({
+      id: 'host.configureLocalStorage.outcome.change.hostMoved',
+      values: { cluster },
+    })
+  }
+  if (outcome.hostActivated) {
+    changes.push({ id: 'host.configureLocalStorage.outcome.change.hostActivated' })
   }
 
   const rb = outcome.rollback
-  if (rb) {
-    const undone: string[] = []
-    if (rb.hostMovedBack) {
-      undone.push(`the host was moved back to ${plan.host.clusterName ?? 'its previous cluster'}`)
-    }
-    if (rb.clusterRemoved) undone.push(`cluster ${cluster} was removed`)
-    if (rb.dataCenterRemoved) undone.push(`data center ${dc} was removed`)
-    if (undone.length > 0) {
-      const text = joinAnd(undone)
-      sentences.push(`To undo the partial setup, ${text}.`)
-    }
-    if (rb.error) sentences.push(`Undoing the partial setup stopped: ${rb.error}`)
+  const undone: LocalStorageMessage[] = []
+  if (rb?.hostMovedBack) {
+    undone.push(
+      plan.host.clusterName
+        ? {
+            id: 'host.configureLocalStorage.outcome.undone.hostMovedBack',
+            values: { cluster: plan.host.clusterName },
+          }
+        : { id: 'host.configureLocalStorage.outcome.undone.hostMovedBackPrevious' },
+    )
+  }
+  if (rb?.clusterRemoved) {
+    undone.push({
+      id: 'host.configureLocalStorage.outcome.undone.clusterRemoved',
+      values: { cluster },
+    })
+  }
+  if (rb?.dataCenterRemoved) {
+    undone.push({
+      id: 'host.configureLocalStorage.outcome.undone.dataCenterRemoved',
+      values: { dc },
+    })
   }
 
   // A re-run picks the empty local data center up again (webadmin's
   // setDefaultNames reuses the host's own uninitialized local data center, or
   // a host-less one named after it).
-  const leftSetup =
+  const rerunHint =
     (outcome.dataCenter.created && rb?.dataCenterRemoved !== true) || outcome.hostMoved
-  if (leftSetup) {
+  return { changes, undone, undoError: rb?.error, rerunHint }
+}
+
+// The formatter the account renders with: the caller's t() and a conjunction
+// list format (react-intl's formatList in the dialog, an en createIntl in
+// tests).
+export interface LocalStorageFormatter {
+  t: (id: MessageId, values?: Record<string, string | number>) => string
+  list: (items: string[]) => string
+}
+
+// Plain-language account of what a failed run left behind, one complete
+// sentence per entry, e.g. "The storage domain was not created. Changes made:
+// data center X created, cluster Y created and host moved to Y." The modal
+// shows it under the engine error.
+export function describeLocalStorageOutcome(
+  plan: LocalStoragePlan,
+  outcome: LocalStorageOutcome,
+  fmt: LocalStorageFormatter,
+): string[] {
+  const summary = summarizeLocalStorageOutcome(plan, outcome)
+  const render = (message: LocalStorageMessage) => fmt.t(message.id, message.values)
+  const sentences: string[] = []
+  sentences.push(
+    summary.changes.length === 0
+      ? fmt.t('host.configureLocalStorage.outcome.noChanges')
+      : fmt.t('host.configureLocalStorage.outcome.changes', {
+          changes: fmt.list(summary.changes.map(render)),
+        }),
+  )
+  if (summary.undone.length > 0) {
     sentences.push(
-      'To finish, put the host into maintenance if needed and run Configure local storage again; it reuses the empty local data center.',
+      fmt.t('host.configureLocalStorage.outcome.undone', {
+        undone: fmt.list(summary.undone.map(render)),
+      }),
     )
   }
-  return sentences.join(' ')
+  if (summary.undoError !== undefined) {
+    sentences.push(
+      fmt.t('host.configureLocalStorage.outcome.undoStopped', { error: summary.undoError }),
+    )
+  }
+  if (summary.rerunHint) sentences.push(fmt.t('host.configureLocalStorage.outcome.rerunHint'))
+  return sentences
 }

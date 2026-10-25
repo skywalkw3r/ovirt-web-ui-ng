@@ -4559,4 +4559,108 @@ export const ko: LocaleCatalog = {
     '클러스터에 추가되는 모든 호스트에 배포되는 외부 네트워크 공급자입니다. 클러스터를 만들 때만 설정할 수 있습니다.',
   'clusterForm.networkProvider.none': '기본 공급자 없음',
   'clusterForm.createOnlyHint': '클러스터를 만들 때 설정되며 여기에서 변경할 수 없습니다.',
+
+  // Configure Local Storage (host kebab, wave 2)
+  'host.action.configureLocalStorage': '로컬 스토리지 구성',
+  'host.configureLocalStorage.title': '{name}에서 로컬 스토리지 구성',
+  'host.configureLocalStorage.intro.new':
+    '{host}이(가) 자체 클러스터가 있는 새 로컬 데이터 센터 {dc}(으)로 이동된 후 활성화되고 로컬 스토리지 도메인이 할당됩니다.',
+  'host.configureLocalStorage.intro.reuse':
+    '{host}이(가) 로컬 데이터 센터 {dc}(으)로 이동된 후 활성화되고 로컬 스토리지 도메인이 할당됩니다.',
+  'host.configureLocalStorage.intro.consequence':
+    '로컬 데이터 센터에는 이 호스트와 해당 로컬 스토리지만 포함됩니다. 호스트는 현재 클러스터를 떠나며 더 이상 공유 스토리지 도메인을 사용할 수 없습니다.',
+  'host.configureLocalStorage.alreadyConfigured.title': '로컬 스토리지가 이미 구성되어 있습니다',
+  'host.configureLocalStorage.alreadyConfigured.body':
+    '{host}은(는) 이미 로컬 스토리지 도메인이 있는 로컬 데이터 센터 {dc}에 속해 있습니다.',
+  'host.configureLocalStorage.field.path': '로컬 스토리지 경로',
+  'host.configureLocalStorage.path.help': '호스트의 로컬 스토리지 경로를 설정하십시오.',
+  'fieldHelp.host.localStoragePath':
+    '데이터 도메인이 될 호스트의 기존 디렉터리입니다(예: /data/images). 소유자는 vdsm:kvm (36:36)이어야 합니다.',
+  'host.configureLocalStorage.note.dcReuse': '이 이름의 기존 로컬 데이터 센터가 사용됩니다.',
+  'host.configureLocalStorage.note.dcNew': '새 로컬 데이터 센터입니다.',
+  'host.configureLocalStorage.note.dcNewVersion':
+    '새 로컬 데이터 센터, 호환성 버전 {version}입니다.',
+  'host.configureLocalStorage.note.clusterReuse': '이 이름의 기존 클러스터가 사용됩니다.',
+  'host.configureLocalStorage.note.clusterNew':
+    '새 클러스터입니다. CPU 유형은 호스트가 활성화될 때 호스트에서 감지됩니다.',
+  'host.configureLocalStorage.optimization.reuseNote':
+    '이 설정은 새 클러스터에만 적용됩니다. 기존 클러스터는 자체 설정을 유지합니다.',
+  'host.configureLocalStorage.done': '완료',
+  'host.configureLocalStorage.editAria': '{field} 편집',
+  'host.configureLocalStorage.doneAria': '{field} 편집 완료',
+  'host.configureLocalStorage.descriptionPlaceholder': '설명(선택 사항)',
+  'host.configureLocalStorage.descriptionAria': '{field} 설명',
+  'host.configureLocalStorage.sectionsAria': '로컬 스토리지 구성 섹션',
+  'host.configureLocalStorage.loadError': '인벤토리를 로드할 수 없습니다',
+  'host.configureLocalStorage.loading': '데이터 센터, 클러스터 및 스토리지 로드 중',
+  'host.configureLocalStorage.progressAria': '로컬 스토리지 구성 진행 상황',
+  'host.configureLocalStorage.stepAria': '{step}: {status}',
+  'host.configureLocalStorage.step.dataCenter': '데이터 센터 {dc}',
+  'host.configureLocalStorage.step.cluster': '클러스터 {cluster}',
+  'host.configureLocalStorage.step.moveHost': '{host}을(를) {cluster}(으)로 이동',
+  'host.configureLocalStorage.step.activate': '{host}을(를) 활성화하고 실행될 때까지 대기',
+  'host.configureLocalStorage.step.storage': '{path}의 스토리지 도메인 {name}',
+  'host.configureLocalStorage.stepStatus.pending': '대기 중',
+  'host.configureLocalStorage.stepStatus.running': '진행 중',
+  'host.configureLocalStorage.stepStatus.done': '완료',
+  'host.configureLocalStorage.stepStatus.skipped': '필요 없음',
+  'host.configureLocalStorage.stepStatus.failed': '실패',
+  'host.configureLocalStorage.failed.title': '로컬 스토리지가 구성되지 않았습니다',
+  'host.configureLocalStorage.confirm': '구성',
+  'host.configureLocalStorage.validation.nameRequired': '이름을 입력하십시오.',
+  'host.configureLocalStorage.validation.nameTooLong': '최대 {n}자까지 사용하십시오.',
+  'host.configureLocalStorage.validation.asciiName': '문자, 숫자, "-" 및 "_"만 사용하십시오.',
+  'host.configureLocalStorage.validation.i18nName': '문자, 숫자, ".", "-" 및 "_"만 사용하십시오.',
+  'host.configureLocalStorage.validation.pathRequired':
+    '로컬 스토리지 디렉터리 경로를 입력하십시오.',
+  'host.configureLocalStorage.validation.pathInvalid':
+    '공백 없는 절대 경로를 입력하십시오(예: /data/images).',
+  'host.configureLocalStorage.validation.storageNameTaken':
+    '{name}(이)라는 스토리지 도메인이 이미 있습니다.',
+  'host.configureLocalStorage.validation.dataCenterNotLocal':
+    '데이터 센터 {dc}이(가) 이미 있으며 로컬 데이터 센터가 아닙니다.',
+  'host.configureLocalStorage.validation.dataCenterOccupied':
+    '데이터 센터 {dc}에 이미 호스트 {host}이(가) 있습니다. 로컬 데이터 센터에는 호스트가 하나만 있습니다.',
+  'host.configureLocalStorage.validation.clusterInOtherDataCenter':
+    '클러스터 {cluster}이(가) 이미 다른 데이터 센터에 있습니다.',
+  'host.configureLocalStorage.validation.clusterOccupied':
+    '클러스터 {cluster}에 이미 호스트 {host}이(가) 있습니다.',
+  'host.configureLocalStorage.stepDetail.dataCenterReused':
+    '기존 데이터 센터 {name}을(를) 사용합니다.',
+  'host.configureLocalStorage.stepDetail.dataCenterCreated':
+    '데이터 센터 {name}을(를) 만들었습니다.',
+  'host.configureLocalStorage.stepDetail.clusterReused': '기존 클러스터 {name}을(를) 사용합니다.',
+  'host.configureLocalStorage.stepDetail.clusterCreated': '클러스터 {name}을(를) 만들었습니다.',
+  'host.configureLocalStorage.stepDetail.hostAlreadyInCluster':
+    '호스트가 이미 클러스터 {name}에 있습니다.',
+  'host.configureLocalStorage.stepDetail.hostMoved': '호스트를 클러스터 {name}(으)로 이동했습니다.',
+  'host.configureLocalStorage.stepDetail.hostUp': '호스트가 실행 중입니다.',
+  'host.configureLocalStorage.stepDetail.storageCreated':
+    '스토리지 도메인 {name}을(를) 만들었습니다.',
+  'host.configureLocalStorage.error.hostFailedStatus':
+    '호스트 {host}이(가) up 대신 {status} 상태가 되었습니다.',
+  'host.configureLocalStorage.error.hostBackToMaintenance':
+    '호스트 {host}이(가) 실행되지 않고 유지 관리 모드로 돌아갔습니다.',
+  'host.configureLocalStorage.error.hostTimeout':
+    '호스트 {host}이(가) {seconds}초 이내에 실행되지 않았습니다(마지막 상태: {status}).',
+  'host.configureLocalStorage.error.hostTimeoutNoStatus':
+    '호스트 {host}이(가) {seconds}초 이내에 실행되지 않았습니다.',
+  'host.configureLocalStorage.outcome.noChanges':
+    '변경 사항이 없으며 스토리지 도메인이 만들어지지 않았습니다.',
+  'host.configureLocalStorage.outcome.changes':
+    '스토리지 도메인이 만들어지지 않았습니다. 실패 전에 적용된 변경 사항: {changes}.',
+  'host.configureLocalStorage.outcome.change.dataCenterCreated': '데이터 센터 {dc} 생성',
+  'host.configureLocalStorage.outcome.change.clusterCreated': '클러스터 {cluster} 생성',
+  'host.configureLocalStorage.outcome.change.hostMoved': '호스트를 {cluster}(으)로 이동',
+  'host.configureLocalStorage.outcome.change.hostActivated': '호스트 활성화',
+  'host.configureLocalStorage.outcome.undone':
+    '부분 설정을 취소하기 위해 다음 변경 사항을 되돌렸습니다: {undone}.',
+  'host.configureLocalStorage.outcome.undone.hostMovedBack': '호스트를 {cluster}(으)로 되돌림',
+  'host.configureLocalStorage.outcome.undone.hostMovedBackPrevious':
+    '호스트를 이전 클러스터로 되돌림',
+  'host.configureLocalStorage.outcome.undone.clusterRemoved': '클러스터 {cluster} 제거',
+  'host.configureLocalStorage.outcome.undone.dataCenterRemoved': '데이터 센터 {dc} 제거',
+  'host.configureLocalStorage.outcome.undoStopped': '부분 설정 취소가 중단되었습니다: {error}',
+  'host.configureLocalStorage.outcome.rerunHint':
+    '완료하려면 필요한 경우 호스트를 유지 관리 모드로 전환한 후 "로컬 스토리지 구성"을 다시 실행하십시오. 빈 로컬 데이터 센터가 다시 사용됩니다.',
 }
