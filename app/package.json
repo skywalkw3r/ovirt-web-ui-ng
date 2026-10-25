@@ -29,7 +29,7 @@
     "@tanstack/react-router": "^1.170.40",
     "@tanstack/react-virtual": "^3.14.13",
     "cmdk": "^1.1.1",
-    "react": "^19.3.0",
+    "react": "^19.3.1",
     "react-dom": "^19.3.0",
     "react-intl": "^10.2.2",
     "victory-area": "^37.3.6",
