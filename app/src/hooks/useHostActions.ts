@@ -1,22 +1,38 @@
+import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { createCluster, deleteCluster } from '../api/resources/clusters'
+import { createDataCenter, deleteDataCenter, getDataCenter } from '../api/resources/datacenters'
 import {
   approveHost,
   copyHostNetworks,
   fenceHost,
   forceSelectSpm,
+  getHost,
   hostAction,
   hostUpgradeCheck,
   reinstallHost,
+  updateHost,
   upgradeHost,
   type FenceType,
   type HostAction,
   type HostUpgradeSpec,
   type ReinstallHostSpec,
 } from '../api/resources/hosts'
+import { createLocalStorageDomain } from '../api/resources/storageDomains'
 import type { Host } from '../api/schemas/host'
 import { useT } from '../i18n/useT'
+import {
+  initialLocalStorageSteps,
+  runConfigureLocalStorage,
+  type LocalStorageDeps,
+  type LocalStorageOutcome,
+  type LocalStoragePlan,
+  type LocalStorageStep,
+} from '../lib/configureLocalStorage'
 import { useNotify } from '../notifications/context'
+import { clusterKeys, dataCenterKeys } from './useAdminResources'
 import { hostKeys } from './useHosts'
+import { storageDomainKeys } from './useStorageDomains'
 
 // Shared by the kebab and notifications so the toast wording always matches
 // the menu item the user clicked ('deactivate' reads as "Enter maintenance").
@@ -169,6 +185,18 @@ export function canCopyHostNetworks(host: Host): boolean {
     COPY_NETWORKS_STATES.has(host.status) &&
     (host.cluster?.id ?? '') !== ''
   )
+}
+
+// Configure Local Storage turns the host into a single-host local-storage
+// setup (new local data center + cluster, host moved, activated, localfs
+// domain). webadmin's HostListModel.updateConfigureLocalStorageCommandAvailability1
+// offers it for exactly one selected host in Maintenance (ChangeVDSCluster
+// needs Maintenance), plus a System-level admin permission the admin tier and
+// the engine's own permission checks stand in for here. It stays offered when
+// the host is already in a local data center: the dialog then notes it, as
+// webadmin does.
+export function canConfigureLocalStorage(host: Host): boolean {
+  return host.status === 'maintenance'
 }
 
 // Empty-body lifecycle verbs (maintenance/activate/refresh/enroll). Shared by
@@ -400,4 +428,60 @@ export function useCopyHostNetworks() {
       void queryClient.invalidateQueries({ queryKey: hostKeys.detail(host.id) })
     },
   })
+}
+
+// The live REST wiring for the Configure Local Storage runner
+// (lib/configureLocalStorage.ts has the step order and the webadmin mapping).
+export const LOCAL_STORAGE_DEPS: LocalStorageDeps = {
+  createDataCenter: (body) => createDataCenter(body),
+  createCluster: (body) => createCluster(body),
+  updateHost: (id, body) => updateHost(id, body),
+  activateHost: (id) => hostAction(id, 'activate'),
+  getHostStatus: async (id) => (await getHost(id)).status,
+  getDataCenterStatus: async (id) => (await getDataCenter(id)).status,
+  createLocalStorageDomain: (spec) => createLocalStorageDomain(spec),
+  deleteCluster: (id) => deleteCluster(id),
+  deleteDataCenter: (id) => deleteDataCenter(id),
+  sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+}
+
+// Runs the Configure Local Storage chain and exposes per-step progress for the
+// modal. The runner never throws: a failed step comes back in the outcome
+// (engine error verbatim, what was left behind), which the modal shows inline;
+// the toast repeats the engine error. Every touched collection refetches either
+// way, since a failed run can still have created a data center or moved the
+// host.
+export function useConfigureLocalStorage(deps: LocalStorageDeps = LOCAL_STORAGE_DEPS) {
+  const queryClient = useQueryClient()
+  const { notify } = useNotify()
+  const [steps, setSteps] = useState<LocalStorageStep[]>(initialLocalStorageSteps)
+
+  const mutation = useMutation<LocalStorageOutcome, Error, LocalStoragePlan>({
+    mutationFn: (plan) => {
+      setSteps(initialLocalStorageSteps())
+      return runConfigureLocalStorage(plan, deps, setSteps)
+    },
+    onSuccess: (outcome, plan) => {
+      if (outcome.ok) {
+        notify({
+          title: `Local storage configured on ${plan.host.name}`,
+          variant: 'success',
+        })
+      } else {
+        notify({ title: outcome.error ?? 'Configure local storage failed', variant: 'danger' })
+      }
+    },
+    onError: (error) => {
+      notify({ title: error.message, variant: 'danger' })
+    },
+    onSettled: (_outcome, _error, plan) => {
+      void queryClient.invalidateQueries({ queryKey: hostKeys.all })
+      void queryClient.invalidateQueries({ queryKey: hostKeys.detail(plan.host.id) })
+      void queryClient.invalidateQueries({ queryKey: dataCenterKeys.all })
+      void queryClient.invalidateQueries({ queryKey: clusterKeys.all })
+      void queryClient.invalidateQueries({ queryKey: storageDomainKeys.all })
+    },
+  })
+
+  return { steps, ...mutation }
 }

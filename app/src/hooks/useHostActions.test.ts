@@ -4,6 +4,7 @@ import {
   canActivate,
   canApprove,
   canCheckForUpgrade,
+  canConfigureLocalStorage,
   canConfirmRebooted,
   canCopyHostNetworks,
   canEnterMaintenance,
@@ -315,5 +316,18 @@ describe('canCopyHostNetworks', () => {
     }
     expect(canCopyHostNetworks(host({ status: 'up' }))).toBe(false)
     expect(canCopyHostNetworks(host({ status: 'up', cluster: { id: '' } }))).toBe(false)
+  })
+})
+
+// Configure Local Storage: webadmin offers it for a single host in Maintenance
+// (HostListModel.updateConfigureLocalStorageCommandAvailability1), including a
+// host already in a local data center (the dialog notes that instead).
+describe('canConfigureLocalStorage', () => {
+  it('is offered only in maintenance', () => {
+    expect(canConfigureLocalStorage(host({ status: 'maintenance' }))).toBe(true)
+    for (const status of ['up', 'non_operational', 'install_failed', 'preparing_for_maintenance']) {
+      expect(canConfigureLocalStorage(host({ status })), status).toBe(false)
+    }
+    expect(canConfigureLocalStorage(host({}))).toBe(false)
   })
 })

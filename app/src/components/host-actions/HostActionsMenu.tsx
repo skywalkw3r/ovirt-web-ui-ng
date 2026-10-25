@@ -20,6 +20,7 @@ import {
   canActivate,
   canApprove,
   canCheckForUpgrade,
+  canConfigureLocalStorage,
   canConfirmRebooted,
   canCopyHostNetworks,
   canEnrollCertificate,
@@ -44,6 +45,7 @@ import { ContextMenu, type ContextMenuPosition } from '../context-menu/ContextMe
 import { ReinstallHostModal } from '../host-form/ReinstallHostModal'
 import { AssignTagsModal } from '../tags/AssignTagsModal'
 import { CreateVmWizardModal } from '../vm-create/CreateVmWizard'
+import { ConfigureLocalStorageModal } from './ConfigureLocalStorageModal'
 import { CopyHostNetworksModal } from './CopyHostNetworksModal'
 import { DiscoverIscsiModal } from './DiscoverIscsiModal'
 
@@ -100,6 +102,7 @@ export function HostActionsMenu({
   const [discoveringIscsi, setDiscoveringIscsi] = useState(false)
   const [addingVm, setAddingVm] = useState(false)
   const [copyingNetworks, setCopyingNetworks] = useState(false)
+  const [configuringLocalStorage, setConfiguringLocalStorage] = useState(false)
   const action = useHostAction()
   const fence = useFenceHost()
   const manualFence = useConfirmHostRebooted()
@@ -132,6 +135,10 @@ export function HostActionsMenu({
   // cluster peer; gated on the statuses the engine's setup-networks validator
   // accepts (the source/NIC-count checks happen inside the modal).
   const showCopyNetworks = canCopyHostNetworks(host)
+  // Configure local storage moves a Maintenance host into its own local data
+  // center (the dialog runs the data center / cluster / move / activate /
+  // domain chain).
+  const showConfigureLocalStorage = canConfigureLocalStorage(host)
 
   // Assign tags applies in every host state, so the kebab always offers at
   // least it — no all-hidden "disable the toggle" branch is needed anymore.
@@ -155,7 +162,8 @@ export function HostActionsMenu({
     assigningTags ||
     discoveringIscsi ||
     addingVm ||
-    copyingNetworks
+    copyingNetworks ||
+    configuringLocalStorage
   const onContextClose = contextMenu?.onClose
   useEffect(() => {
     if (!onContextClose || isOpen || modalActive || pending) return
@@ -352,6 +360,16 @@ export function HostActionsMenu({
           Copy host networks
         </DropdownItem>
       )}
+      {showConfigureLocalStorage && (
+        <DropdownItem
+          onClick={() => {
+            setIsOpen(false)
+            setConfiguringLocalStorage(true)
+          }}
+        >
+          Configure local storage
+        </DropdownItem>
+      )}
 
       {(showCheckUpgrade || showUpgrade || showReinstall || showEnroll) && (
         <Divider component="li" />
@@ -527,6 +545,11 @@ export function HostActionsMenu({
       {/* Mounted only while open so each opening starts with no source picked. */}
       {copyingNetworks && (
         <CopyHostNetworksModal host={host} onClose={() => setCopyingNetworks(false)} />
+      )}
+
+      {/* Mounted only while open so each opening recomputes the prefilled names. */}
+      {configuringLocalStorage && (
+        <ConfigureLocalStorageModal host={host} onClose={() => setConfiguringLocalStorage(false)} />
       )}
 
       {/* Remounted per open (like every modal here) so a cancelled wizard
