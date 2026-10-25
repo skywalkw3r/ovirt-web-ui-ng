@@ -14,6 +14,7 @@ import {
   FormSelectOption,
   HelperText,
   HelperTextItem,
+  Spinner,
   TextInput,
 } from '@patternfly/react-core'
 import { FormattedMessage, useIntl } from 'react-intl'
@@ -79,7 +80,7 @@ function store(key: string, value: string): void {
 }
 
 export function LoginPage() {
-  const { isAuthenticated, login } = useAuth()
+  const { isAuthenticated, isResolving, login } = useAuth()
   const intl = useIntl()
   const navigate = useNavigate()
   const search = useSearch({ strict: false }) as { redirect?: unknown }
@@ -166,6 +167,15 @@ export function LoginPage() {
   // href carries the dynamic redirect path; the Navigate component still
   // requires a `to`, which href takes precedence over.
   if (isAuthenticated) return <Navigate to="/" href={target} replace />
+  // A fresh tab opened straight onto /login while signed in elsewhere: hold
+  // the form until the sibling handoff answers (then the line above redirects).
+  if (isResolving) {
+    return (
+      <Bullseye style={{ height: '100vh' }}>
+        <Spinner aria-label="Restoring session" />
+      </Bullseye>
+    )
+  }
 
   const onSubmit = (event: FormEvent) => {
     event.preventDefault()

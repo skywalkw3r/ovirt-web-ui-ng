@@ -43,3 +43,34 @@ describe('session tier hint', () => {
     expect(session.isSessionAdmin()).toBe(false)
   })
 })
+
+describe('session id', () => {
+  beforeEach(() => vi.resetModules())
+  afterEach(() => vi.unstubAllGlobals())
+
+  it('is null without a token, and minted lazily for a restored token', async () => {
+    const store = stubSessionStorage()
+    const fresh = await import('./session')
+    expect(fresh.getSessionId()).toBeNull()
+
+    vi.resetModules()
+    store.set('console-session-token', 'tok-123')
+    const restored = await import('./session')
+    const id = restored.getSessionId()
+    expect(id).toEqual(expect.any(String))
+    expect(restored.getSessionId()).toBe(id) // stable once minted
+    expect(store.get('console-session-id')).toBe(id)
+  })
+
+  it('adopts a shared id and clears it with the token', async () => {
+    const store = stubSessionStorage()
+    const session = await import('./session')
+    session.setSessionToken('tok-123')
+    session.setSessionId('sid-shared')
+    expect(session.getSessionId()).toBe('sid-shared')
+
+    session.clearSessionToken()
+    expect(session.getSessionId()).toBeNull()
+    expect(store.has('console-session-id')).toBe(false)
+  })
+})
