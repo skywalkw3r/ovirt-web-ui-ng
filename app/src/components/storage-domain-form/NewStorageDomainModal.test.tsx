@@ -3,7 +3,7 @@ import '../../test/env'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
-import { dataCenterDetails, dataCenters, mockRequest } from '../../api/mock/handlers'
+import { mockRequest } from '../../api/mock/handlers'
 import { FIND_TIMEOUT_MS, renderWithProviders } from '../../test/render'
 import { NewStorageDomainModal } from './NewStorageDomainModal'
 
@@ -88,42 +88,75 @@ describe('NewStorageDomainModal: Managed Block Storage', () => {
 })
 
 describe('NewStorageDomainModal: Local on Host', () => {
-  it('is offered only for a local data center, and preselected there', async () => {
+  const types = () =>
+    within(combobox('Storage type'))
+      .getAllByRole('option')
+      .map((option) => (option as HTMLOptionElement).value)
+  const hostChoices = () =>
+    within(combobox('Host to use'))
+      .getAllByRole('option')
+      .map((option) => (option as HTMLOptionElement).value)
+      .filter((value) => value !== '')
+
+  // A local data center created through the mock engine (so the flat list
+  // carries `local` the way the live engine reports it), with node-03 moved
+  // into its cluster.
+  async function seedLocalDataCenter(): Promise<string> {
+    const dc = (await mockRequest('/datacenters', {
+      method: 'POST',
+      body: { name: 'local-dc', local: true },
+    })) as { id: string }
+    const cluster = (await mockRequest('/clusters', {
+      method: 'POST',
+      body: { name: 'local-cluster', data_center: { id: dc.id } },
+    })) as { id: string }
+    await mockRequest('/hosts/host-03', { method: 'PUT', body: { cluster: { id: cluster.id } } })
+    return dc.id
+  }
+
+  it("offers only Local on Host, and only that data center's hosts, for a local data center", async () => {
     const user = userEvent.setup()
-    // a local data center in the flat list (the engine reports `local` on it)
-    dataCenters.push({ id: 'dc-local', name: 'local-dc', status: 'up', local: true } as never)
-    dataCenterDetails['dc-local'] = { id: 'dc-local', name: 'local-dc', local: true } as never
-    try {
-      await openModal()
-      const types = () =>
-        within(combobox('Storage type'))
-          .getAllByRole('option')
-          .map((option) => (option as HTMLOptionElement).value)
-      await user.selectOptions(combobox('Data center'), 'dc-01')
-      expect(types()).not.toContain('localfs')
+    const localId = await seedLocalDataCenter()
+    await openModal()
 
-      await user.selectOptions(combobox('Data center'), 'dc-local')
-      expect(types()).toContain('localfs')
-      expect((combobox('Storage type') as HTMLSelectElement).value).toBe('localfs')
-      const path = screen.getByRole('textbox', { name: 'Path' })
-      await user.type(screen.getByRole('textbox', { name: 'Storage domain name' }), 'local-data')
-      await user.selectOptions(combobox('Host to use'), 'node-01')
-      await user.type(path, 'relative/dir')
-      expect(saveButton()).toHaveProperty('disabled', true)
-      await user.clear(path)
-      await user.type(path, '/data/images')
-      expect(saveButton()).toHaveProperty('disabled', false)
+    await user.selectOptions(combobox('Data center'), 'dc-01')
+    expect(types()).not.toContain('localfs')
+    expect(types()).toEqual(
+      expect.arrayContaining(['nfs', 'iscsi', 'fcp', 'managed_block_storage']),
+    )
+    // a shared data center keeps the full host list
+    expect(hostChoices()).toEqual(expect.arrayContaining(['node-01', 'node-02', 'node-03']))
+    await user.selectOptions(combobox('Host to use'), 'node-01')
 
-      // leaving the local data center drops Local on Host again
-      await user.selectOptions(combobox('Data center'), 'dc-01')
-      expect((combobox('Storage type') as HTMLSelectElement).value).toBe('nfs')
-    } finally {
-      dataCenters.splice(
-        dataCenters.findIndex((dc) => dc.id === 'dc-local'),
-        1,
-      )
-      delete dataCenterDetails['dc-local']
-    }
+    await user.selectOptions(combobox('Data center'), localId)
+    expect(types()).toEqual(['localfs'])
+    expect((combobox('Storage type') as HTMLSelectElement).value).toBe('localfs')
+    // node-01 is not in the local data center, so its pick is dropped
+    await waitFor(() => expect(hostChoices()).toEqual(['node-03']))
+    expect((combobox('Host to use') as HTMLSelectElement).value).toBe('')
+
+    const path = screen.getByRole('textbox', { name: 'Path' })
+    await user.type(screen.getByRole('textbox', { name: 'Storage domain name' }), 'local-data')
+    await user.selectOptions(combobox('Host to use'), 'node-03')
+    await user.type(path, 'relative/dir')
+    expect(saveButton()).toHaveProperty('disabled', true)
+    await user.clear(path)
+    await user.type(path, '/data/images')
+    expect(saveButton()).toHaveProperty('disabled', false)
+
+    // leaving the local data center drops Local on Host again
+    await user.selectOptions(combobox('Data center'), 'dc-01')
+    expect((combobox('Storage type') as HTMLSelectElement).value).toBe('nfs')
+    expect(types()).not.toContain('localfs')
+  })
+
+  it('keeps the host pick when it belongs to the local data center', async () => {
+    const user = userEvent.setup()
+    const localId = await seedLocalDataCenter()
+    await openModal()
+    await user.selectOptions(combobox('Host to use'), 'node-03')
+    await user.selectOptions(combobox('Data center'), localId)
+    expect((combobox('Host to use') as HTMLSelectElement).value).toBe('node-03')
   })
 })
 
