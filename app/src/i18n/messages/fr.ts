@@ -4563,8 +4563,8 @@ export const fr: LocaleCatalog = {
   'capacity.cpu.ofTotal':
     '{count, plural, one {sur # processeur logique} other {sur # processeurs logiques}}',
   'capacity.ofTotal': 'sur {total}',
-  'capacity.allocatedEst': 'Alloué (est.) :',
-  'capacity.committedEst': 'Engagé (est.) :',
+  'capacity.allocated': 'Alloué :',
+  'capacity.committed': 'Engagé :',
   'capacity.cpu.allocation': '{vcpus} vCPU, {ratio} par processeur logique',
   'capacity.cpu.allocationNoRatio': '{vcpus} vCPU',
   'capacity.memory.committed': '{amount}, {percent} % de la mémoire physique',

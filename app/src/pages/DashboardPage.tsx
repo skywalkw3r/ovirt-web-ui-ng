@@ -758,8 +758,9 @@ function ThresholdBar({ percent, label }: { percent: number; label: string }) {
   )
 }
 
-// The "(est.)" marker on the CPU/memory allocation lines, with the why behind
-// a help tooltip (a focusable plain button, so keyboard users reach it too).
+// The CPU/memory allocation label. Those figures are estimates, which a help
+// tooltip beside the label explains (a focusable plain button, so keyboard
+// users reach it too).
 function EstimateLabel({ labelId }: { labelId: MessageId }) {
   const t = useT()
   return (
@@ -1005,7 +1006,7 @@ function CapacityCard({
               : undefined,
           allocation: allocation && (
             <>
-              <EstimateLabel labelId="capacity.allocatedEst" />{' '}
+              <EstimateLabel labelId="capacity.allocated" />{' '}
               {cpu.logicalCpus
                 ? t('capacity.cpu.allocation', {
                     vcpus: allocation.vcpus,
@@ -1041,7 +1042,7 @@ function CapacityCard({
           totalLabel: t('capacity.ofTotal', { total: formatBytes(memory.total) }),
           allocation: allocation && memory.total > 0 && (
             <>
-              <EstimateLabel labelId="capacity.committedEst" />{' '}
+              <EstimateLabel labelId="capacity.committed" />{' '}
               {t('capacity.memory.committed', {
                 amount: formatBytes(allocation.memory),
                 percent: Math.round((allocation.memory / memory.total) * 100),

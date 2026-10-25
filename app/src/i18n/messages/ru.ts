@@ -4724,8 +4724,8 @@ export const ru: LocaleCatalog = {
   'capacity.cpu.ofTotal':
     '{count, plural, one {из # логического ЦП} few {из # логических ЦП} many {из # логических ЦП} other {из # логического ЦП}}',
   'capacity.ofTotal': 'из {total}',
-  'capacity.allocatedEst': 'Распределено (оценка):',
-  'capacity.committedEst': 'Зафиксировано (оценка):',
+  'capacity.allocated': 'Распределено:',
+  'capacity.committed': 'Зафиксировано:',
   'capacity.cpu.allocation': '{vcpus} vCPU, {ratio} на логический ЦП',
   'capacity.cpu.allocationNoRatio': '{vcpus} vCPU',
   'capacity.memory.committed': '{amount}, {percent}% физической памяти',

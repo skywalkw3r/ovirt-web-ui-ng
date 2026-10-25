@@ -131,9 +131,9 @@ describe('DashboardPage', () => {
         within(tile).getByRole('img', { name: new RegExp(`^${name}: \\d+% used$`) }),
       ).toBeDefined()
     }
-    // the compute tiles carry the labelled allocation estimate
+    // the compute tiles carry the allocation estimate with its help tooltip
     const cpu = screen.getByRole('region', { name: 'CPU' })
-    await within(cpu).findByText('Allocated (est.):', undefined, { timeout: FIND_TIMEOUT_MS })
+    await within(cpu).findByText('Allocated:', undefined, { timeout: FIND_TIMEOUT_MS })
     expect(within(cpu).getByRole('button', { name: 'About this estimate' })).toBeDefined()
 
     const byCluster = await screen.findByRole(
