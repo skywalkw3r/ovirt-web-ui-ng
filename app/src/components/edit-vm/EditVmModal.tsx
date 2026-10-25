@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react'
-import { Button, Modal, ModalBody, ModalFooter, ModalHeader } from '@patternfly/react-core'
+import { Alert, Button, Modal, ModalBody, ModalFooter, ModalHeader } from '@patternfly/react-core'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { listClusterCpuProfiles } from '../../api/resources/clusters'
 import { changeVmCd } from '../../api/resources/vms'
@@ -9,8 +9,10 @@ import { clusterKeys } from '../../hooks/useAdminResources'
 import { useClusters, useOperatingSystems } from '../../hooks/useCatalog'
 import { useHosts } from '../../hooks/useHosts'
 import { useUpdateVm } from '../../hooks/useUpdateVm'
+import { useApplyVmWatchdog, useVmWatchdogs } from '../../hooks/useVmWatchdogs'
 import { vmKeys } from '../../hooks/useVms'
 import { useT } from '../../i18n/useT'
+import { useNotify } from '../../notifications/context'
 import { ModalVerticalTabs } from '../forms/ModalVerticalTabs'
 import { OptionsHelper } from '../forms/OptionsSelect'
 import { BootOptionsSection } from './BootOptionsSection'
@@ -18,12 +20,17 @@ import { ConsoleSection } from './ConsoleSection'
 import { CustomPropertiesSection } from './CustomPropertiesSection'
 import {
   buildCdromChange,
+  baselineAfterWatchdogFailure,
+  buildWatchdogChange,
   draftToPayload,
   editRequiresRestart,
   vmIsRunning,
   vmMemoryError,
   vmNameError,
+  SPENT_STAGING,
+  vmFieldsChanged,
   vmToDraft,
+  watchdogDraftFields,
   type EditVmDraft,
 } from './editVmDraft'
 import { GeneralSection } from './GeneralSection'
@@ -64,6 +71,21 @@ export function EditVmModal({
     const seeded = vmToDraft(vm)
     setBaseline(seeded)
     setDraft(seeded)
+  }
+
+  // The watchdog device is not on the vm read: fold it into BOTH baseline and
+  // draft once its subcollection read lands (once per VM, same render-time
+  // reset idiom as above), so the save-time diff and the Next-Run check see an
+  // unchanged device as unchanged. A later refetch never re-seeds over a
+  // pending pick; a failed read leaves watchdogLoaded false, which keeps the
+  // selects disabled and the device out of the save.
+  const watchdogs = useVmWatchdogs(vm.id)
+  const [watchdogSeededId, setWatchdogSeededId] = useState<string | null>(null)
+  if (watchdogs.isSuccess && watchdogSeededId !== vm.id) {
+    setWatchdogSeededId(vm.id)
+    const fields = watchdogDraftFields(watchdogs.data)
+    setBaseline((current) => ({ ...current, ...fields }))
+    setDraft((current) => ({ ...current, ...fields }))
   }
 
   // Stable updater so sections don't re-render on every keystroke elsewhere.
@@ -108,40 +130,74 @@ export function EditVmModal({
   })
 
   const update = useUpdateVm()
+  const applyWatchdog = useApplyVmWatchdog()
   const queryClient = useQueryClient()
   const [confirmingNextRun, setConfirmingNextRun] = useState(false)
 
-  const mutate = (nextRun: boolean) => {
+  // Set when a save's vm PUT landed but its watchdog change failed: the inline
+  // Alert shows the fault, and the draft has been re-baselined (see
+  // baselineAfterWatchdogFailure) so a retry sends only the watchdog change and
+  // does not route through the Next-Run dialog again.
+  const [watchdogError, setWatchdogError] = useState<string | null>(null)
+  const { notify } = useNotify()
+
+  const mutate = async (nextRun: boolean) => {
     // The attached CD lives in the cdroms subcollection, not the vm PUT body,
     // so a touched Boot CD picker fires its own call after the PUT lands —
     // independent of the next-run choice (the change targets the next boot
     // either way). buildCdromChange is undefined on an untouched picker, so
     // ordinary saves never eject; '' is an explicit eject.
     const cdFileId = buildCdromChange(draft)
-    update.mutate(
-      { vm, payload: draftToPayload(draft, baseline), nextRun },
-      {
-        onSuccess: async () => {
-          if (cdFileId !== undefined) {
-            await changeVmCd(vm.id, cdFileId, { current: false })
-            void queryClient.invalidateQueries({ queryKey: vmKeys.detail(vm.id) })
-          }
-          setConfirmingNextRun(false)
-          onClose()
-        },
-      },
-    )
+    // The watchdog device rides its own subcollection too (add / update /
+    // remove by diff against the baseline); it lands on the next start of a
+    // running VM whichever Next-Run choice was made, like the CD.
+    const watchdogChange = buildWatchdogChange(draft, baseline)
+    // A watchdog-only save has nothing for the vm PUT, so it skips it (a plain
+    // Save with no changes at all still PUTs, as before).
+    const putVm = watchdogChange === undefined || vmFieldsChanged(draft, baseline)
+    setWatchdogError(null)
+    if (putVm) {
+      try {
+        await update.mutateAsync({ vm, payload: draftToPayload(draft, baseline), nextRun })
+      } catch {
+        // useUpdateVm toasts the fault; the modal (and an open Next-Run
+        // dialog) stays up on the draft, as before
+        return
+      }
+      if (cdFileId !== undefined) {
+        await changeVmCd(vm.id, cdFileId, { current: false })
+        void queryClient.invalidateQueries({ queryKey: vmKeys.detail(vm.id) })
+      }
+    }
+    if (watchdogChange !== undefined) {
+      try {
+        await applyWatchdog.mutateAsync({ vmId: vm.id, change: watchdogChange })
+      } catch (error) {
+        // Keep the modal open: the VM fields are saved, only the device is not.
+        setBaseline(baselineAfterWatchdogFailure(draft, baseline))
+        setDraft((current) => ({ ...current, ...SPENT_STAGING }))
+        setWatchdogError(error instanceof Error ? error.message : String(error))
+        setConfirmingNextRun(false)
+        return
+      }
+      // a skipped PUT means useUpdateVm did not acknowledge the save
+      if (!putVm) notify({ title: `Changes to ${vm.name} saved`, variant: 'success' })
+    }
+    setConfirmingNextRun(false)
+    onClose()
   }
 
   const save = () => {
     // A running VM with reboot-only changes detours through the Next-Run
     // dialog; a down VM (or a hot-applicable edit) saves straight through —
-    // the simple path is unchanged.
-    if (vmIsRunning(vm.status) && editRequiresRestart(draft, baseline)) {
+    // the simple path is unchanged. A watchdog-only retry after a partial
+    // failure already went through the dialog, so it saves straight through.
+    const watchdogOnlyRetry = watchdogError !== null && !vmFieldsChanged(draft, baseline)
+    if (vmIsRunning(vm.status) && !watchdogOnlyRetry && editRequiresRestart(draft, baseline)) {
       setConfirmingNextRun(true)
       return
     }
-    mutate(false)
+    void mutate(false)
   }
 
   // GeneralSection renders the matching inline error for the same validator.
@@ -149,6 +205,11 @@ export function EditVmModal({
   // SystemSection renders the matching inline error; also gate Save so the modal
   // never PUTs a guaranteed > memory (or max < memory) the engine would reject.
   const memoryInvalid = vmMemoryError(draft) !== undefined
+  // The cluster's CPU architecture backs the watchdog model list when the vm
+  // read does not carry its own cpu.architecture.
+  const currentClusterArchitecture = clusters.data?.find(
+    (cluster) => cluster.id === draft.clusterId,
+  )?.cpu?.architecture
   // The VM's cluster over-commit % drives the guaranteed derivation in System.
   const overcommitPercent = clusters.data?.find((cluster) => cluster.id === draft.clusterId)
     ?.memory_policy?.over_commit?.percent
@@ -163,6 +224,14 @@ export function EditVmModal({
     >
       <ModalHeader title={t('vm.edit.title', { name: vm.name })} labelId="edit-vm-title" />
       <ModalBody id="edit-vm-body">
+        {watchdogError !== null && (
+          <Alert
+            variant="danger"
+            isInline
+            title={`The VM was saved, but the watchdog change failed: ${watchdogError}. Save again to retry.`}
+            style={{ marginBottom: 'var(--pf-t--global--spacer--md)' }}
+          />
+        )}
         <ModalVerticalTabs
           idPrefix="edit-vm"
           ariaLabel={t('vm.edit.sections.ariaLabel')}
@@ -242,7 +311,13 @@ export function EditVmModal({
             {
               key: 'high-availability',
               title: t('vm.edit.section.highAvailability'),
-              content: <HighAvailabilitySection draft={draft} set={set} />,
+              content: (
+                <HighAvailabilitySection
+                  draft={draft}
+                  set={set}
+                  architecture={vm.cpu?.architecture ?? currentClusterArchitecture}
+                />
+              ),
             },
             {
               key: 'resource-allocation',
@@ -273,8 +348,8 @@ export function EditVmModal({
         <Button
           variant="primary"
           onClick={save}
-          isLoading={update.isPending}
-          isDisabled={update.isPending || nameInvalid || memoryInvalid}
+          isLoading={update.isPending || applyWatchdog.isPending}
+          isDisabled={update.isPending || applyWatchdog.isPending || nameInvalid || memoryInvalid}
         >
           {t('common.action.save')}
         </Button>
@@ -286,9 +361,10 @@ export function EditVmModal({
       {confirmingNextRun && (
         <NextRunDialog
           vmName={vm.name}
-          isSaving={update.isPending}
-          onApplyLater={() => mutate(true)}
-          onApplyNow={() => mutate(false)}
+          isSaving={update.isPending || applyWatchdog.isPending}
+          watchdogChanged={buildWatchdogChange(draft, baseline) !== undefined}
+          onApplyLater={() => void mutate(true)}
+          onApplyNow={() => void mutate(false)}
           onCancel={() => setConfirmingNextRun(false)}
         />
       )}

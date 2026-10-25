@@ -1,5 +1,7 @@
 import { vmLargeIconId } from '../../api/resources/icons'
+import { watchdogChangeFor, type WatchdogChange } from '../../api/resources/watchdogs'
 import type { Vm } from '../../api/schemas/vm'
+import type { Watchdog } from '../../api/schemas/watchdog'
 import type { MessageId } from '../../i18n/messages/en'
 import { statusKind } from '../../lib/vm-status'
 
@@ -108,6 +110,16 @@ export interface EditVmDraft {
   customParallelMigrations: number
   // High Availability depth — resume behavior after a storage I/O error pause.
   storageErrorResumeBehaviour: string
+  // High Availability depth: the watchdog device. It lives in the
+  // /vms/{id}/watchdogs subcollection, not on the vm read, so vmToDraft seeds
+  // "not loaded" and the modal folds the device in (watchdogDraftFields) into
+  // BOTH draft and baseline once the read lands; watchdogLoaded gates the
+  // selects and the save-time diff so an unread device is never touched.
+  // watchdogId '' = the VM has no watchdog; watchdogModel '' = "No watchdog".
+  watchdogLoaded: boolean
+  watchdogId: string
+  watchdogModel: string
+  watchdogAction: string
   // Resource Allocation depth — vNIC multi-queues + VirtIO-SCSI multi-queue
   // (0 queues = auto-derive from vCPUs/disks).
   multiQueuesEnabled: boolean
@@ -307,6 +319,11 @@ export function vmToDraft(vm: Vm): EditVmDraft {
     parallelMigrationsPolicy: vm.migration?.parallel_migrations_policy ?? 'inherit',
     customParallelMigrations: vm.migration?.custom_parallel_migrations ?? 0,
     storageErrorResumeBehaviour: vm.storage_error_resume_behaviour ?? 'auto_resume',
+    // Seeded from the watchdogs subcollection later (watchdogDraftFields).
+    watchdogLoaded: false,
+    watchdogId: '',
+    watchdogModel: '',
+    watchdogAction: DEFAULT_WATCHDOG_ACTION,
     multiQueuesEnabled: vm.multi_queues_enabled ?? true,
     virtioScsiMultiQueuesEnabled: vm.virtio_scsi_multi_queues_enabled ?? false,
     virtioScsiMultiQueues: vm.virtio_scsi_multi_queues ?? 0,
@@ -352,6 +369,90 @@ export function vmToDraft(vm: Vm): EditVmDraft {
     iconId: vmLargeIconId(vm) ?? '',
     iconUploadData: '',
     iconUploadMediaType: '',
+  }
+}
+
+// The engine's default watchdog action (webadmin preselects it too):
+// api-model WatchdogAction.NONE only logs the event.
+export const DEFAULT_WATCHDOG_ACTION = 'none'
+
+// The draft fields for the loaded watchdog collection. A VM holds at most one
+// watchdog; an empty list maps to "No watchdog" with the default action.
+export function watchdogDraftFields(
+  watchdogs: Watchdog[],
+): Pick<EditVmDraft, 'watchdogLoaded' | 'watchdogId' | 'watchdogModel' | 'watchdogAction'> {
+  const device = watchdogs[0]
+  return {
+    watchdogLoaded: true,
+    watchdogId: device?.id ?? '',
+    watchdogModel: device?.model ?? '',
+    watchdogAction: device?.action ?? DEFAULT_WATCHDOG_ACTION,
+  }
+}
+
+// The watchdog device operation a save must perform, or undefined when nothing
+// moved (or the device was never read, so its state is unknown). Picking "No
+// watchdog" removes the loaded device; picking a model on a VM without one adds
+// it; a model/action change on an existing device updates it in place.
+export function buildWatchdogChange(
+  draft: EditVmDraft,
+  baseline: EditVmDraft,
+): WatchdogChange | undefined {
+  if (!baseline.watchdogLoaded || !draft.watchdogLoaded) return undefined
+  const current =
+    baseline.watchdogId !== ''
+      ? {
+          id: baseline.watchdogId,
+          model: baseline.watchdogModel,
+          action: baseline.watchdogAction,
+        }
+      : undefined
+  return watchdogChangeFor(current, { model: draft.watchdogModel, action: draft.watchdogAction })
+}
+
+// Keys vmFieldsChanged ignores: the watchdog (its own subcollection) and the
+// CD tray id, which the Boot section seeds into the draft alone on open; a
+// real CD pick is caught by cdTouched instead.
+const NON_VM_DRAFT_KEYS: ReadonlySet<keyof EditVmDraft> = new Set([
+  'watchdogLoaded',
+  'watchdogId',
+  'watchdogModel',
+  'watchdogAction',
+  'attachedCdId',
+])
+
+// Did anything OTHER than the watchdog move? When not, a save that only
+// carries a watchdog change skips the vm PUT entirely (nothing to send), which
+// is also what makes a watchdog-only retry after a partial failure cheap.
+export function vmFieldsChanged(draft: EditVmDraft, baseline: EditVmDraft): boolean {
+  return (Object.keys(draft) as (keyof EditVmDraft)[]).some(
+    (key) => !NON_VM_DRAFT_KEYS.has(key) && changed(draft[key], baseline[key]),
+  )
+}
+
+// The staging fields a successful vm save consumes.
+export const SPENT_STAGING: Pick<
+  EditVmDraft,
+  'cdTouched' | 'iconUploadData' | 'iconUploadMediaType'
+> = { cdTouched: false, iconUploadData: '', iconUploadMediaType: '' }
+
+// The baseline after a save whose vm PUT (and CD change) landed but whose
+// watchdog change failed: everything the user edited is now saved EXCEPT the
+// watchdog, which keeps the old baseline's device. The one-shot staging fields
+// (touched CD picker, a pending icon upload) are spent, so they reset; the
+// caller applies the same reset to the draft. A retry then sends only the
+// watchdog change.
+export function baselineAfterWatchdogFailure(
+  draft: EditVmDraft,
+  baseline: EditVmDraft,
+): EditVmDraft {
+  return {
+    ...draft,
+    ...SPENT_STAGING,
+    watchdogLoaded: baseline.watchdogLoaded,
+    watchdogId: baseline.watchdogId,
+    watchdogModel: baseline.watchdogModel,
+    watchdogAction: baseline.watchdogAction,
   }
 }
 
@@ -824,6 +925,12 @@ const NEXT_RUN_KEYS: (keyof EditVmDraft)[] = [
   'parallelMigrationsPolicy',
   'customParallelMigrations',
   'storageErrorResumeBehaviour',
+  // HA depth: the watchdog is a device; its add/update/remove commands only
+  // write the vm_device table and the engine marks the device editable on
+  // status Down only (VmManagementParametersBase @EditableDeviceOnVmStatusField),
+  // so a running VM picks the change up on its next start.
+  'watchdogModel',
+  'watchdogAction',
   // Resource Allocation depth — queue counts bind to devices at boot.
   'multiQueuesEnabled',
   'virtioScsiMultiQueuesEnabled',
@@ -1071,6 +1178,51 @@ export const DISCONNECT_ACTION_OPTIONS: { value: string; labelId: MessageId }[] 
   { value: 'LOGOUT', labelId: 'vm.edit.console.disconnect.logout' },
   { value: 'REBOOT', labelId: 'action.reboot' },
   { value: 'SHUTDOWN', labelId: 'vm.edit.console.disconnect.shutdown' },
+]
+
+// Watchdog models (api-model types/WatchdogModel). i6300esb is the PCI model
+// for x86_64 and ppc64 guests; diag288 is the s390x facility (4.2+). The
+// option list narrows by CPU architecture (watchdogModelOptions); model names
+// are technical tokens rendered verbatim, only "No watchdog" is translatable.
+export const WATCHDOG_MODELS: { value: string; architectures: string[] }[] = [
+  { value: 'i6300esb', architectures: ['x86_64', 'ppc64'] },
+  { value: 'diag288', architectures: ['s390x'] },
+]
+
+// The model values to offer for an architecture: the matching models, all of
+// them when the architecture is unknown, plus the loaded value when it falls
+// outside the list so the select stays controlled and an edit never silently
+// rewrites it.
+export function watchdogModelOptions(architecture: string | undefined, current: string): string[] {
+  const arch = (architecture ?? '').toLowerCase()
+  const matching = WATCHDOG_MODELS.filter(
+    (model) => arch === '' || model.architectures.includes(arch),
+  ).map((model) => model.value)
+  const models = matching.length > 0 ? matching : WATCHDOG_MODELS.map((model) => model.value)
+  return current !== '' && !models.includes(current) ? [current, ...models] : models
+}
+
+// Watchdog field copy shared by the Edit VM HA tab and the New VM wizard so
+// both read the same. i18n: plain English pending the catalog pass (see the
+// wave handoff); one place to convert.
+export const WATCHDOG_COPY = {
+  model: 'Watchdog model',
+  action: 'Watchdog action',
+  none: 'No watchdog',
+  modelHelp:
+    'A virtual watchdog card the guest must keep resetting. If the guest hangs and stops resetting it, the watchdog action runs. Requires a watchdog daemon in the guest. Applied on the next start of a running VM.',
+  actionHelp:
+    'What happens when the watchdog fires: None only logs an event, Reset reboots the VM, Power off stops it, Pause pauses it, and Dump writes a memory dump on the host.',
+} as const
+
+// Watchdog actions (api-model types/WatchdogAction), in webadmin's order.
+// i18n: plain English pending the catalog pass (see the wave handoff).
+export const WATCHDOG_ACTION_OPTIONS: { value: string; label: string }[] = [
+  { value: 'none', label: 'None' },
+  { value: 'reset', label: 'Reset' },
+  { value: 'poweroff', label: 'Power off' },
+  { value: 'pause', label: 'Pause' },
+  { value: 'dump', label: 'Dump' },
 ]
 
 // Graphics protocol options — SPICE/VNC map to display.type; Headless removes

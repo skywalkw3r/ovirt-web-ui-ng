@@ -6,6 +6,8 @@ import {
   buildLargeIcon,
   buildRngDevice,
   buildSerialNumber,
+  baselineAfterWatchdogFailure,
+  buildWatchdogChange,
   deriveMemoryOnCommit,
   draftToPayload,
   type EditVmDraft,
@@ -18,7 +20,10 @@ import {
   mibToGib,
   vmIsRunning,
   vmMemoryError,
+  vmFieldsChanged,
   vmToDraft,
+  watchdogDraftFields,
+  watchdogModelOptions,
 } from './editVmDraft'
 
 const MiB = 1024 * 1024
@@ -1075,5 +1080,128 @@ describe('settings parity — next-run matrix', () => {
     expect(editRequiresRestart({ ...baseline, virtioScsiMultiQueuesEnabled: true }, baseline)).toBe(
       true,
     )
+  })
+})
+
+describe('watchdog draft fields and save diff', () => {
+  const unloaded = vmToDraft({ id: 'vm-01', name: 'web-01' })
+  const withDevice = {
+    ...unloaded,
+    ...watchdogDraftFields([{ id: 'w1', model: 'i6300esb', action: 'reset' }]),
+  }
+  const withoutDevice = { ...unloaded, ...watchdogDraftFields([]) }
+
+  it('seeds as not loaded from the vm read alone', () => {
+    expect(unloaded).toMatchObject({
+      watchdogLoaded: false,
+      watchdogId: '',
+      watchdogModel: '',
+      watchdogAction: 'none',
+    })
+  })
+
+  it('maps the loaded collection (device or none) onto the draft', () => {
+    expect(withDevice).toMatchObject({
+      watchdogLoaded: true,
+      watchdogId: 'w1',
+      watchdogModel: 'i6300esb',
+      watchdogAction: 'reset',
+    })
+    expect(withoutDevice).toMatchObject({
+      watchdogLoaded: true,
+      watchdogId: '',
+      watchdogModel: '',
+      watchdogAction: 'none',
+    })
+  })
+
+  it('is a no-op when nothing moved or the device was never read', () => {
+    expect(buildWatchdogChange(withDevice, withDevice)).toBeUndefined()
+    expect(buildWatchdogChange(withoutDevice, withoutDevice)).toBeUndefined()
+    // an unread device is never touched, whatever the draft says
+    expect(
+      buildWatchdogChange({ ...unloaded, watchdogModel: 'i6300esb' }, unloaded),
+    ).toBeUndefined()
+  })
+
+  it('adds, updates and removes by diff against the baseline', () => {
+    expect(
+      buildWatchdogChange(
+        { ...withoutDevice, watchdogModel: 'i6300esb', watchdogAction: 'poweroff' },
+        withoutDevice,
+      ),
+    ).toEqual({ kind: 'add', model: 'i6300esb', action: 'poweroff' })
+    expect(buildWatchdogChange({ ...withDevice, watchdogAction: 'pause' }, withDevice)).toEqual({
+      kind: 'update',
+      id: 'w1',
+      model: 'i6300esb',
+      action: 'pause',
+    })
+    expect(buildWatchdogChange({ ...withDevice, watchdogModel: '' }, withDevice)).toEqual({
+      kind: 'remove',
+      id: 'w1',
+    })
+  })
+
+  it('is next-run: a watchdog change on a running VM needs a restart', () => {
+    expect(editRequiresRestart(withDevice, withDevice)).toBe(false)
+    expect(editRequiresRestart({ ...withDevice, watchdogAction: 'dump' }, withDevice)).toBe(true)
+    expect(editRequiresRestart({ ...withDevice, watchdogModel: '' }, withDevice)).toBe(true)
+  })
+
+  it('never puts the watchdog in the vm PUT body', () => {
+    const payload = draftToPayload({ ...withDevice, watchdogAction: 'dump' }, withDevice)
+    expect(JSON.stringify(payload)).not.toContain('watchdog')
+  })
+
+  it('narrows the model list by architecture and keeps an off-list loaded model', () => {
+    expect(watchdogModelOptions('x86_64', '')).toEqual(['i6300esb'])
+    expect(watchdogModelOptions('ppc64', '')).toEqual(['i6300esb'])
+    expect(watchdogModelOptions('s390x', '')).toEqual(['diag288'])
+    expect(watchdogModelOptions(undefined, '')).toEqual(['i6300esb', 'diag288'])
+    expect(watchdogModelOptions('aarch64', '')).toEqual(['i6300esb', 'diag288'])
+    expect(watchdogModelOptions('x86_64', 'diag288')).toEqual(['diag288', 'i6300esb'])
+  })
+})
+
+describe('partial-save helpers', () => {
+  const baseline = {
+    ...vmToDraft({ id: 'vm-01', name: 'web-01' }),
+    ...watchdogDraftFields([{ id: 'w1', model: 'i6300esb', action: 'reset' }]),
+  }
+
+  it('vmFieldsChanged ignores the watchdog and the seeded CD tray id', () => {
+    expect(vmFieldsChanged(baseline, baseline)).toBe(false)
+    expect(vmFieldsChanged({ ...baseline, watchdogAction: 'dump' }, baseline)).toBe(false)
+    // the Boot section seeds the tray id into the draft alone on open
+    expect(vmFieldsChanged({ ...baseline, attachedCdId: 'iso-1' }, baseline)).toBe(false)
+    expect(vmFieldsChanged({ ...baseline, cdTouched: true }, baseline)).toBe(true)
+    expect(vmFieldsChanged({ ...baseline, name: 'renamed' }, baseline)).toBe(true)
+  })
+
+  it('re-baselines to the saved draft except the failed watchdog change', () => {
+    const draft = {
+      ...baseline,
+      name: 'renamed',
+      cdTouched: true,
+      attachedCdId: 'iso-1',
+      iconUploadData: 'AAAA',
+      iconUploadMediaType: 'image/png',
+      watchdogModel: '',
+    }
+    const next = baselineAfterWatchdogFailure(draft, baseline)
+    expect(next).toMatchObject({
+      name: 'renamed',
+      attachedCdId: 'iso-1',
+      cdTouched: false,
+      iconUploadData: '',
+      iconUploadMediaType: '',
+      watchdogId: 'w1',
+      watchdogModel: 'i6300esb',
+    })
+    // the retry carries only the watchdog change
+    const retryDraft = { ...draft, cdTouched: false, iconUploadData: '', iconUploadMediaType: '' }
+    expect(vmFieldsChanged(retryDraft, next)).toBe(false)
+    expect(buildWatchdogChange(retryDraft, next)).toEqual({ kind: 'remove', id: 'w1' })
   })
 })
