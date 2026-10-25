@@ -4673,4 +4673,113 @@ export const es: LocaleCatalog = {
     'El proveedor de red externo que se despliega en cada host añadido al clúster. Solo se puede establecer al crear el clúster.',
   'clusterForm.networkProvider.none': 'Sin proveedor predeterminado',
   'clusterForm.createOnlyHint': 'Se establece al crear el clúster; no se puede cambiar aquí.',
+
+  // Configure Local Storage (host kebab, wave 2)
+  'host.action.configureLocalStorage': 'Configurar almacenamiento local',
+  'host.configureLocalStorage.title': 'Configurar almacenamiento local en {name}',
+  'host.configureLocalStorage.intro.new':
+    '{host} se moverá a un nuevo centro de datos local, {dc}, con su propio clúster; después se activará y recibirá un dominio de almacenamiento local.',
+  'host.configureLocalStorage.intro.reuse':
+    '{host} se moverá al centro de datos local {dc}, se activará y recibirá un dominio de almacenamiento local.',
+  'host.configureLocalStorage.intro.consequence':
+    'Un centro de datos local contiene solo este host y su almacenamiento local; el host sale de su clúster actual y ya no puede usar dominios de almacenamiento compartidos.',
+  'host.configureLocalStorage.alreadyConfigured.title':
+    'El almacenamiento local ya está configurado',
+  'host.configureLocalStorage.alreadyConfigured.body':
+    '{host} ya pertenece al centro de datos local {dc} con un dominio de almacenamiento local.',
+  'host.configureLocalStorage.field.path': 'Ruta al almacenamiento local',
+  'host.configureLocalStorage.path.help': 'Indique la ruta a su almacenamiento local en el host.',
+  'fieldHelp.host.localStoragePath':
+    'Un directorio existente en el host que se convierte en el dominio de datos, por ejemplo /data/images. Su propietario debe ser vdsm:kvm (36:36).',
+  'host.configureLocalStorage.note.dcReuse':
+    'Se usará el centro de datos local existente con este nombre.',
+  'host.configureLocalStorage.note.dcNew': 'Un nuevo centro de datos local.',
+  'host.configureLocalStorage.note.dcNewVersion':
+    'Un nuevo centro de datos local, versión de compatibilidad {version}.',
+  'host.configureLocalStorage.note.clusterReuse': 'Se usará el clúster existente con este nombre.',
+  'host.configureLocalStorage.note.clusterNew':
+    'Un nuevo clúster; su tipo de CPU se detecta a partir del host cuando este se activa.',
+  'host.configureLocalStorage.optimization.reuseNote':
+    'Estos ajustes solo se aplican a un clúster nuevo; el clúster existente conserva los suyos.',
+  'host.configureLocalStorage.done': 'Listo',
+  'host.configureLocalStorage.editAria': 'Editar {field}',
+  'host.configureLocalStorage.doneAria': 'Terminar de editar {field}',
+  'host.configureLocalStorage.descriptionPlaceholder': 'Descripción (opcional)',
+  'host.configureLocalStorage.descriptionAria': 'Descripción de {field}',
+  'host.configureLocalStorage.sectionsAria':
+    'Secciones de la configuración del almacenamiento local',
+  'host.configureLocalStorage.loadError': 'No se pudo cargar el inventario',
+  'host.configureLocalStorage.loading': 'Cargando centros de datos, clústeres y almacenamiento',
+  'host.configureLocalStorage.progressAria':
+    'Progreso de la configuración del almacenamiento local',
+  'host.configureLocalStorage.stepAria': '{step}: {status}',
+  'host.configureLocalStorage.step.dataCenter': 'Centro de datos {dc}',
+  'host.configureLocalStorage.step.cluster': 'Clúster {cluster}',
+  'host.configureLocalStorage.step.moveHost': 'Mover {host} a {cluster}',
+  'host.configureLocalStorage.step.activate': 'Activar {host} y esperar a que esté activo',
+  'host.configureLocalStorage.step.storage': 'Dominio de almacenamiento {name} en {path}',
+  'host.configureLocalStorage.stepStatus.pending': 'Pendiente',
+  'host.configureLocalStorage.stepStatus.running': 'En curso',
+  'host.configureLocalStorage.stepStatus.done': 'Hecho',
+  'host.configureLocalStorage.stepStatus.skipped': 'No necesario',
+  'host.configureLocalStorage.stepStatus.failed': 'Error',
+  'host.configureLocalStorage.failed.title': 'No se configuró el almacenamiento local',
+  'host.configureLocalStorage.confirm': 'Configurar',
+  'host.configureLocalStorage.validation.nameRequired': 'Introduzca un nombre.',
+  'host.configureLocalStorage.validation.nameTooLong':
+    'Use como máximo {n, plural, one {# carácter} other {# caracteres}}.',
+  'host.configureLocalStorage.validation.asciiName': 'Use solo letras, dígitos, "-" y "_".',
+  'host.configureLocalStorage.validation.i18nName': 'Use solo letras, dígitos, ".", "-" y "_".',
+  'host.configureLocalStorage.validation.pathRequired':
+    'Introduzca la ruta al directorio de almacenamiento local.',
+  'host.configureLocalStorage.validation.pathInvalid':
+    'Introduzca una ruta absoluta sin espacios, por ejemplo /data/images.',
+  'host.configureLocalStorage.validation.storageNameTaken':
+    'Ya existe un dominio de almacenamiento llamado {name}.',
+  'host.configureLocalStorage.validation.dataCenterNotLocal':
+    'El centro de datos {dc} ya existe y no es un centro de datos local.',
+  'host.configureLocalStorage.validation.dataCenterOccupied':
+    'El centro de datos {dc} ya contiene el host {host}; un centro de datos local tiene un solo host.',
+  'host.configureLocalStorage.validation.clusterInOtherDataCenter':
+    'El clúster {cluster} ya existe en otro centro de datos.',
+  'host.configureLocalStorage.validation.clusterOccupied':
+    'El clúster {cluster} ya contiene el host {host}.',
+  'host.configureLocalStorage.stepDetail.dataCenterReused':
+    'Se usa el centro de datos existente {name}.',
+  'host.configureLocalStorage.stepDetail.dataCenterCreated': 'Se creó el centro de datos {name}.',
+  'host.configureLocalStorage.stepDetail.clusterReused': 'Se usa el clúster existente {name}.',
+  'host.configureLocalStorage.stepDetail.clusterCreated': 'Se creó el clúster {name}.',
+  'host.configureLocalStorage.stepDetail.hostAlreadyInCluster':
+    'El host ya está en el clúster {name}.',
+  'host.configureLocalStorage.stepDetail.hostMoved': 'El host se movió al clúster {name}.',
+  'host.configureLocalStorage.stepDetail.hostUp': 'El host está activo.',
+  'host.configureLocalStorage.stepDetail.storageCreated':
+    'Se creó el dominio de almacenamiento {name}.',
+  'host.configureLocalStorage.error.hostFailedStatus':
+    'El host {host} pasó al estado {status} en lugar de activarse.',
+  'host.configureLocalStorage.error.hostBackToMaintenance':
+    'El host {host} volvió a mantenimiento en lugar de activarse.',
+  'host.configureLocalStorage.error.hostTimeout':
+    'El host {host} no se activó en {seconds, plural, one {# segundo} other {# segundos}} (último estado: {status}).',
+  'host.configureLocalStorage.error.hostTimeoutNoStatus':
+    'El host {host} no se activó en {seconds, plural, one {# segundo} other {# segundos}}.',
+  'host.configureLocalStorage.outcome.noChanges':
+    'No se realizó ningún cambio y no se creó el dominio de almacenamiento.',
+  'host.configureLocalStorage.outcome.changes':
+    'No se creó el dominio de almacenamiento. Cambios realizados antes del error: {changes}.',
+  'host.configureLocalStorage.outcome.change.dataCenterCreated': 'centro de datos {dc} creado',
+  'host.configureLocalStorage.outcome.change.clusterCreated': 'clúster {cluster} creado',
+  'host.configureLocalStorage.outcome.change.hostMoved': 'host movido a {cluster}',
+  'host.configureLocalStorage.outcome.change.hostActivated': 'host activado',
+  'host.configureLocalStorage.outcome.undone':
+    'Para deshacer la configuración parcial, se revirtieron estos cambios: {undone}.',
+  'host.configureLocalStorage.outcome.undone.hostMovedBack': 'host devuelto a {cluster}',
+  'host.configureLocalStorage.outcome.undone.hostMovedBackPrevious':
+    'host devuelto a su clúster anterior',
+  'host.configureLocalStorage.outcome.undone.clusterRemoved': 'clúster {cluster} eliminado',
+  'host.configureLocalStorage.outcome.undone.dataCenterRemoved': 'centro de datos {dc} eliminado',
+  'host.configureLocalStorage.outcome.undoStopped':
+    'Se detuvo la reversión de la configuración parcial: {error}',
+  'host.configureLocalStorage.outcome.rerunHint':
+    'Para terminar, ponga el host en mantenimiento si es necesario y vuelva a ejecutar «Configurar almacenamiento local»; reutiliza el centro de datos local vacío.',
 }

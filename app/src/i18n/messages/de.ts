@@ -4699,4 +4699,116 @@ export const de: LocaleCatalog = {
   'clusterForm.networkProvider.none': 'Kein Standardanbieter',
   'clusterForm.createOnlyHint':
     'Wird beim Erstellen des Clusters festgelegt und kann hier nicht geändert werden.',
+
+  // Configure Local Storage (host kebab, wave 2)
+  'host.action.configureLocalStorage': 'Lokalen Speicher konfigurieren',
+  'host.configureLocalStorage.title': 'Lokalen Speicher auf {name} konfigurieren',
+  'host.configureLocalStorage.intro.new':
+    '{host} wird in ein neues lokales Rechenzentrum, {dc}, mit eigenem Cluster verschoben, anschließend aktiviert und erhält eine lokale Speicherdomäne.',
+  'host.configureLocalStorage.intro.reuse':
+    '{host} wird in das lokale Rechenzentrum {dc} verschoben, aktiviert und erhält eine lokale Speicherdomäne.',
+  'host.configureLocalStorage.intro.consequence':
+    'Ein lokales Rechenzentrum enthält nur diesen Host und seinen lokalen Speicher; der Host verlässt seinen aktuellen Cluster und kann keine gemeinsam genutzten Speicherdomänen mehr verwenden.',
+  'host.configureLocalStorage.alreadyConfigured.title': 'Lokaler Speicher ist bereits konfiguriert',
+  'host.configureLocalStorage.alreadyConfigured.body':
+    '{host} gehört bereits zum lokalen Rechenzentrum {dc} mit einer lokalen Speicherdomäne.',
+  'host.configureLocalStorage.field.path': 'Pfad zum lokalen Speicher',
+  'host.configureLocalStorage.path.help':
+    'Legen Sie den Pfad zu Ihrem lokalen Speicher auf dem Host fest.',
+  'fieldHelp.host.localStoragePath':
+    'Ein vorhandenes Verzeichnis auf dem Host, das zur Datendomäne wird, zum Beispiel /data/images. Es muss vdsm:kvm (36:36) gehören.',
+  'host.configureLocalStorage.note.dcReuse':
+    'Das vorhandene lokale Rechenzentrum mit diesem Namen wird verwendet.',
+  'host.configureLocalStorage.note.dcNew': 'Ein neues lokales Rechenzentrum.',
+  'host.configureLocalStorage.note.dcNewVersion':
+    'Ein neues lokales Rechenzentrum, Kompatibilitätsversion {version}.',
+  'host.configureLocalStorage.note.clusterReuse':
+    'Der vorhandene Cluster mit diesem Namen wird verwendet.',
+  'host.configureLocalStorage.note.clusterNew':
+    'Ein neuer Cluster; sein CPU-Typ wird beim Aktivieren des Hosts von diesem erkannt.',
+  'host.configureLocalStorage.optimization.reuseNote':
+    'Diese Einstellungen gelten nur für einen neuen Cluster; der vorhandene Cluster behält seine eigenen.',
+  'host.configureLocalStorage.done': 'Fertig',
+  'host.configureLocalStorage.editAria': '{field} bearbeiten',
+  'host.configureLocalStorage.doneAria': 'Bearbeitung von {field} beenden',
+  'host.configureLocalStorage.descriptionPlaceholder': 'Beschreibung (optional)',
+  'host.configureLocalStorage.descriptionAria': 'Beschreibung für {field}',
+  'host.configureLocalStorage.sectionsAria': 'Abschnitte der Konfiguration des lokalen Speichers',
+  'host.configureLocalStorage.loadError': 'Das Inventar konnte nicht geladen werden',
+  'host.configureLocalStorage.loading': 'Rechenzentren, Cluster und Speicher werden geladen',
+  'host.configureLocalStorage.progressAria': 'Fortschritt der Konfiguration des lokalen Speichers',
+  'host.configureLocalStorage.stepAria': '{step}: {status}',
+  'host.configureLocalStorage.step.dataCenter': 'Rechenzentrum {dc}',
+  'host.configureLocalStorage.step.cluster': 'Cluster {cluster}',
+  'host.configureLocalStorage.step.moveHost': '{host} nach {cluster} verschieben',
+  'host.configureLocalStorage.step.activate': '{host} aktivieren und warten, bis er aktiv ist',
+  'host.configureLocalStorage.step.storage': 'Speicherdomäne {name} unter {path}',
+  'host.configureLocalStorage.stepStatus.pending': 'Ausstehend',
+  'host.configureLocalStorage.stepStatus.running': 'Wird ausgeführt',
+  'host.configureLocalStorage.stepStatus.done': 'Erledigt',
+  'host.configureLocalStorage.stepStatus.skipped': 'Nicht erforderlich',
+  'host.configureLocalStorage.stepStatus.failed': 'Fehlgeschlagen',
+  'host.configureLocalStorage.failed.title': 'Lokaler Speicher wurde nicht konfiguriert',
+  'host.configureLocalStorage.confirm': 'Konfigurieren',
+  'host.configureLocalStorage.validation.nameRequired': 'Geben Sie einen Namen ein.',
+  'host.configureLocalStorage.validation.nameTooLong':
+    'Verwenden Sie höchstens {n, plural, one {# Zeichen} other {# Zeichen}}.',
+  'host.configureLocalStorage.validation.asciiName':
+    'Verwenden Sie nur Buchstaben, Ziffern, „-“ und „_“.',
+  'host.configureLocalStorage.validation.i18nName':
+    'Verwenden Sie nur Buchstaben, Ziffern, „.“, „-“ und „_“.',
+  'host.configureLocalStorage.validation.pathRequired':
+    'Geben Sie den Pfad zum Verzeichnis des lokalen Speichers ein.',
+  'host.configureLocalStorage.validation.pathInvalid':
+    'Geben Sie einen absoluten Pfad ohne Leerzeichen ein, zum Beispiel /data/images.',
+  'host.configureLocalStorage.validation.storageNameTaken':
+    'Eine Speicherdomäne namens {name} ist bereits vorhanden.',
+  'host.configureLocalStorage.validation.dataCenterNotLocal':
+    'Das Rechenzentrum {dc} ist bereits vorhanden und kein lokales Rechenzentrum.',
+  'host.configureLocalStorage.validation.dataCenterOccupied':
+    'Das Rechenzentrum {dc} enthält bereits den Host {host}; ein lokales Rechenzentrum hat nur einen Host.',
+  'host.configureLocalStorage.validation.clusterInOtherDataCenter':
+    'Der Cluster {cluster} ist bereits in einem anderen Rechenzentrum vorhanden.',
+  'host.configureLocalStorage.validation.clusterOccupied':
+    'Der Cluster {cluster} enthält bereits den Host {host}.',
+  'host.configureLocalStorage.stepDetail.dataCenterReused':
+    'Das vorhandene Rechenzentrum {name} wird verwendet.',
+  'host.configureLocalStorage.stepDetail.dataCenterCreated': 'Rechenzentrum {name} erstellt.',
+  'host.configureLocalStorage.stepDetail.clusterReused':
+    'Der vorhandene Cluster {name} wird verwendet.',
+  'host.configureLocalStorage.stepDetail.clusterCreated': 'Cluster {name} erstellt.',
+  'host.configureLocalStorage.stepDetail.hostAlreadyInCluster':
+    'Der Host ist bereits im Cluster {name}.',
+  'host.configureLocalStorage.stepDetail.hostMoved':
+    'Der Host wurde in den Cluster {name} verschoben.',
+  'host.configureLocalStorage.stepDetail.hostUp': 'Der Host ist aktiv.',
+  'host.configureLocalStorage.stepDetail.storageCreated': 'Speicherdomäne {name} erstellt.',
+  'host.configureLocalStorage.error.hostFailedStatus':
+    'Der Host {host} ist in den Status {status} statt in den Status „up“ gewechselt.',
+  'host.configureLocalStorage.error.hostBackToMaintenance':
+    'Der Host {host} ist in die Wartung zurückgekehrt, statt aktiv zu werden.',
+  'host.configureLocalStorage.error.hostTimeout':
+    'Der Host {host} wurde nicht innerhalb von {seconds, plural, one {# Sekunde} other {# Sekunden}} aktiv (letzter Status: {status}).',
+  'host.configureLocalStorage.error.hostTimeoutNoStatus':
+    'Der Host {host} wurde nicht innerhalb von {seconds, plural, one {# Sekunde} other {# Sekunden}} aktiv.',
+  'host.configureLocalStorage.outcome.noChanges':
+    'Es wurden keine Änderungen vorgenommen, und die Speicherdomäne wurde nicht erstellt.',
+  'host.configureLocalStorage.outcome.changes':
+    'Die Speicherdomäne wurde nicht erstellt. Vor dem Fehler vorgenommene Änderungen: {changes}.',
+  'host.configureLocalStorage.outcome.change.dataCenterCreated': 'Rechenzentrum {dc} erstellt',
+  'host.configureLocalStorage.outcome.change.clusterCreated': 'Cluster {cluster} erstellt',
+  'host.configureLocalStorage.outcome.change.hostMoved': 'Host nach {cluster} verschoben',
+  'host.configureLocalStorage.outcome.change.hostActivated': 'Host aktiviert',
+  'host.configureLocalStorage.outcome.undone':
+    'Um die teilweise Einrichtung rückgängig zu machen, wurden diese Änderungen zurückgenommen: {undone}.',
+  'host.configureLocalStorage.outcome.undone.hostMovedBack':
+    'Host zurück nach {cluster} verschoben',
+  'host.configureLocalStorage.outcome.undone.hostMovedBackPrevious':
+    'Host zurück in seinen vorherigen Cluster verschoben',
+  'host.configureLocalStorage.outcome.undone.clusterRemoved': 'Cluster {cluster} entfernt',
+  'host.configureLocalStorage.outcome.undone.dataCenterRemoved': 'Rechenzentrum {dc} entfernt',
+  'host.configureLocalStorage.outcome.undoStopped':
+    'Das Rückgängigmachen der teilweisen Einrichtung wurde abgebrochen: {error}',
+  'host.configureLocalStorage.outcome.rerunHint':
+    'Versetzen Sie zum Abschließen den Host bei Bedarf in die Wartung und führen Sie „Lokalen Speicher konfigurieren“ erneut aus; dabei wird das leere lokale Rechenzentrum wiederverwendet.',
 }
