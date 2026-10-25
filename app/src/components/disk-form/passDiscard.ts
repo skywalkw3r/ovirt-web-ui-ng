@@ -1,5 +1,6 @@
 import { lunSupportsDiscard } from '../../api/schemas/host-storage'
 import type { StorageDomain } from '../../api/schemas/storage-domain'
+import type { MessageId } from '../../i18n/messages/en'
 
 // "Enable Discard" (DiskAttachment.pass_discard) gating for the VM-context
 // disk dialogs. Mirrors two upstream sources:
@@ -23,17 +24,14 @@ const BLOCK_STORAGE_TYPES = new Set(['iscsi', 'fcp'])
 
 export type PassDiscardReason = 'interface' | 'storage' | 'wipeAfterDelete' | 'selectLun'
 
-// English copy for each reason, rendered by PassDiscardField. The i18n pass
-// moves these (and the label) into the catalogs.
-export const PASS_DISCARD_REASON_TEXT: Record<PassDiscardReason, string> = {
-  interface: 'The selected interface does not support discard.',
-  storage: 'Discard is not supported by the underlying storage.',
-  wipeAfterDelete:
-    'The underlying storage does not support discard when Wipe After Delete is enabled.',
-  selectLun: 'Select a LUN to check whether it supports discard.',
+// The message id for each reason, rendered by PassDiscardField. "storage"
+// shares the storage domain dialogs' wording.
+export const PASS_DISCARD_REASON_IDS: Record<PassDiscardReason, MessageId> = {
+  interface: 'diskForm.passDiscard.interface',
+  storage: 'storageForm.discard.unsupported',
+  wipeAfterDelete: 'diskForm.passDiscard.wipe',
+  selectLun: 'diskForm.passDiscard.selectLun',
 }
-
-export const PASS_DISCARD_LABEL = 'Enable Discard'
 
 export interface PassDiscardInput {
   // 'image' | 'lun' | 'managed_block_storage' (engine DiskStorageType)

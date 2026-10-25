@@ -9,6 +9,7 @@ import {
   TextInput,
 } from '@patternfly/react-core'
 import { MinusCircleIcon, PlusCircleIcon } from '@patternfly/react-icons'
+import type { MessageId } from '../../i18n/messages/en'
 import { useT } from '../../i18n/useT'
 import type { DriverOptionRow } from './driverOptions'
 
@@ -42,7 +43,8 @@ export function DriverOptionsEditor({
   nextId: () => number
   sensitive?: boolean
   isRequired?: boolean
-  error?: string
+  // a driverOptionsError id, rendered through the catalog
+  error?: MessageId
 }) {
   const t = useT()
   const update = (id: number, key: 'name' | 'value', value: string) =>
@@ -62,8 +64,12 @@ export function DriverOptionsEditor({
           <FlexItem grow={{ default: 'grow' }}>
             <TextInput
               id={`${idPrefix}-name-${row.id}`}
-              aria-label={`${label}: ${t('common.field.name')} ${index + 1}`}
-              placeholder={sensitive ? 'name (e.g. san_password)' : 'name (e.g. volume_driver)'}
+              aria-label={t('storageForm.driverOptions.nameAria', { list: label, n: index + 1 })}
+              placeholder={t(
+                sensitive
+                  ? 'storageForm.driverOptions.sensitiveNamePlaceholder'
+                  : 'storageForm.driverOptions.namePlaceholder',
+              )}
               value={row.name}
               onChange={(_event, value) => update(row.id, 'name', value)}
             />
@@ -73,8 +79,8 @@ export function DriverOptionsEditor({
               id={`${idPrefix}-value-${row.id}`}
               type={sensitive ? 'password' : 'text'}
               autoComplete={sensitive ? 'new-password' : 'off'}
-              aria-label={`${label}: ${t('common.field.value')} ${index + 1}`}
-              placeholder="value"
+              aria-label={t('storageForm.driverOptions.valueAria', { list: label, n: index + 1 })}
+              placeholder={t('storageForm.driverOptions.valuePlaceholder')}
               value={row.value}
               onChange={(_event, value) => update(row.id, 'value', value)}
             />
@@ -82,7 +88,7 @@ export function DriverOptionsEditor({
           <FlexItem>
             <Button
               variant="plain"
-              aria-label={`Remove option ${index + 1} from ${label}`}
+              aria-label={t('storageForm.driverOptions.removeAria', { n: index + 1, list: label })}
               icon={<MinusCircleIcon />}
               onClick={() => remove(row.id)}
             />
@@ -95,15 +101,15 @@ export function DriverOptionsEditor({
         isInline
         icon={<PlusCircleIcon />}
         onClick={add}
-        aria-label={`Add option to ${label}`}
+        aria-label={t('storageForm.driverOptions.addAria', { list: label })}
       >
-        Add option
+        {t('storageForm.driverOptions.add')}
       </Button>
       {(error !== undefined || helperText !== undefined) && (
         <FormHelperText>
           <HelperText>
             <HelperTextItem variant={error !== undefined ? 'error' : 'default'}>
-              {error ?? helperText}
+              {error !== undefined ? t(error) : helperText}
             </HelperTextItem>
           </HelperText>
         </FormHelperText>

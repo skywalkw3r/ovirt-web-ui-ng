@@ -299,8 +299,8 @@ export function EditStorageDomainModal({
               <StackItem>
                 <Checkbox
                   id="edit-storage-domain-discard-after-delete"
-                  label="Discard After Delete"
-                  aria-label="Discard After Delete"
+                  label={t('storageForm.discardAfterDelete')}
+                  aria-label={t('storageForm.discardAfterDelete')}
                   isChecked={draft.discardAfterDelete}
                   isDisabled={discardLocked}
                   onChange={(_event, checked) => set('discardAfterDelete', checked)}
@@ -308,9 +308,7 @@ export function EditStorageDomainModal({
                 {!supportsDiscard && (
                   <FormHelperText>
                     <HelperText>
-                      <HelperTextItem>
-                        Discard is not supported by the underlying storage.
-                      </HelperTextItem>
+                      <HelperTextItem>{t('storageForm.discard.unsupported')}</HelperTextItem>
                     </HelperText>
                   </FormHelperText>
                 )}

@@ -5,7 +5,8 @@ import {
   HelperText,
   HelperTextItem,
 } from '@patternfly/react-core'
-import { PASS_DISCARD_LABEL, PASS_DISCARD_REASON_TEXT, type PassDiscardState } from './passDiscard'
+import { useT } from '../../i18n/useT'
+import { PASS_DISCARD_REASON_IDS, type PassDiscardState } from './passDiscard'
 
 // The VM-context "Enable Discard" checkbox (DiskAttachment.pass_discard). The
 // dialog computes `state` with passDiscardState; this only renders it: hidden
@@ -23,14 +24,15 @@ export function PassDiscardField({
   isChecked: boolean
   onChange: (checked: boolean) => void
 }) {
+  const t = useT()
   if (!state.visible) return null
-  const reason = state.reason !== undefined ? PASS_DISCARD_REASON_TEXT[state.reason] : undefined
+  const reason = state.reason !== undefined ? t(PASS_DISCARD_REASON_IDS[state.reason]) : undefined
   return (
     <FormGroup fieldId={id}>
       <Checkbox
         id={id}
-        label={PASS_DISCARD_LABEL}
-        aria-label={PASS_DISCARD_LABEL}
+        label={t('diskForm.passDiscard')}
+        aria-label={t('diskForm.passDiscard')}
         isChecked={!state.disabled && isChecked}
         isDisabled={state.disabled}
         onChange={(_event, checked) => onChange(checked)}
