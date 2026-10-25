@@ -8,7 +8,11 @@
 //
 // The signal is deliberately "the user chose to sign out", NOT "tab A's token
 // died": each receiving tab runs its OWN sign-out and revokes ITS OWN token
-// (tab B's differs). Only the bare fact crosses — never a token.
+// (tab B's differs). Only the bare fact crosses (never a token), plus the
+// signer's non-secret session id (api/session.ts getSessionId): a tab that got
+// its token from the signer through the cross-tab handoff
+// (auth/sessionHandoff.ts) holds the SAME token, already revoked, and uses the
+// id to skip a second revoke the engine would refuse.
 //
 // Two transports, because for a security control neither alone is reliable:
 //   1. BroadcastChannel — instant, same-origin, absent in some contexts (older
@@ -54,9 +58,9 @@ function hasStorage(): boolean {
 
 // Tells every OTHER tab on this origin that the user signed out, over both
 // transports. Fire-and-forget: a tab that cannot signal still signs itself out.
-export function broadcastLogout(): void {
+export function broadcastLogout(sessionId?: string): void {
   try {
-    getChannel()?.postMessage(LOGOUT_MESSAGE)
+    getChannel()?.postMessage({ type: LOGOUT_MESSAGE, sessionId })
   } catch {
     // nothing actionable — this tab's own sign-out already happened
   }
@@ -64,7 +68,8 @@ export function broadcastLogout(): void {
     try {
       // A unique value guarantees the key CHANGES, so a `storage` event fires
       // even on a repeat logout (an unchanged value is a silent no-op).
-      localStorage.setItem(LOGOUT_STORAGE_KEY, `${Date.now()}.${Math.random()}`)
+      // The session id rides after the '|' (see sessionIdFromPing).
+      localStorage.setItem(LOGOUT_STORAGE_KEY, `${Date.now()}.${Math.random()}|${sessionId ?? ''}`)
     } catch {
       // storage unavailable (lockdown / private mode); the channel may still
       // have carried the signal.
@@ -72,12 +77,28 @@ export function broadcastLogout(): void {
   }
 }
 
+function sessionIdFromPing(value: string): string | undefined {
+  const id = value.slice(value.indexOf('|') + 1)
+  return value.includes('|') && id !== '' ? id : undefined
+}
+
 // Subscribes to sign-outs from OTHER tabs (over either transport). Returns an
 // unsubscribe. The handler must be idempotent — both transports can fire it.
-export function onLogoutBroadcast(handler: () => void): () => void {
+// It receives the signer's session id when the signer sent one.
+export function onLogoutBroadcast(handler: (sessionId?: string) => void): () => void {
   const ch = getChannel()
   const onMessage = (event: MessageEvent) => {
-    if (event.data === LOGOUT_MESSAGE) handler()
+    const data: unknown = event.data
+    // the bare string is the pre-session-id message shape
+    if (data === LOGOUT_MESSAGE) handler(undefined)
+    else if (
+      typeof data === 'object' &&
+      data !== null &&
+      (data as { type?: unknown }).type === LOGOUT_MESSAGE
+    ) {
+      const id = (data as { sessionId?: unknown }).sessionId
+      handler(typeof id === 'string' && id !== '' ? id : undefined)
+    }
   }
   ch?.addEventListener('message', onMessage)
 
@@ -86,7 +107,9 @@ export function onLogoutBroadcast(handler: () => void): () => void {
     // `storage` fires only in OTHER tabs, so the signer never re-enters here.
     // newValue is null on removeItem/clear — react only to our key taking a
     // fresh value.
-    if (event.key === LOGOUT_STORAGE_KEY && event.newValue !== null) handler()
+    if (event.key === LOGOUT_STORAGE_KEY && event.newValue !== null) {
+      handler(sessionIdFromPing(event.newValue))
+    }
   }
   if (storageEnabled) window.addEventListener('storage', onStorage)
 

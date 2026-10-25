@@ -15,6 +15,12 @@
 const ACTIVITY_EVENTS = ['pointerdown', 'pointermove', 'keydown', 'wheel', 'touchstart'] as const
 
 let lastActivity = Date.now()
+// Activity in THIS document only. Sibling tabs on the same session report
+// their activity (auth/sessionHandoff.ts), which counts toward lastActivity
+// (a tab you are not looking at must not time out the session you are using)
+// but never toward this clock: only local activity is re-announced, so two
+// tabs can never keep each other alive by echoing pulses back and forth.
+let lastLocalActivity = lastActivity
 let refcount = 0
 let detach: (() => void) | null = null
 
@@ -22,8 +28,18 @@ export function msSinceActivity(): number {
   return Date.now() - lastActivity
 }
 
+export function msSinceLocalActivity(): number {
+  return Date.now() - lastLocalActivity
+}
+
 // Exported for tests and for consumers that observe activity by other means.
 export function stampActivity(): void {
+  lastActivity = Date.now()
+  lastLocalActivity = lastActivity
+}
+
+// A sibling tab on the same session saw the user (see lastLocalActivity).
+export function stampRemoteActivity(): void {
   lastActivity = Date.now()
 }
 
