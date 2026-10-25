@@ -330,6 +330,7 @@ export const it: LocaleCatalog = {
   'common.bookmark.remove.body': 'La ricerca salvata <strong>{query}</strong> verrà rimossa.',
   'common.columns.ariaLabel': 'Gestisci colonne',
   'common.viewOptions.ariaLabel': 'Opzioni di visualizzazione',
+  'common.viewOptions.ariaLabelActive': 'Opzioni di visualizzazione — {count} attive',
   'common.columns.alwaysShown': 'Sempre visualizzato',
   'common.columns.reset': 'Reimposta i valori predefiniti',
   'common.columns.resize': 'Ridimensiona la colonna {name}',
@@ -1767,7 +1768,7 @@ export const it: LocaleCatalog = {
   'vmActions.remove.toast.success': 'Macchina virtuale {name} rimossa',
   'vmActions.remove.toast.protected':
     "Impossibile rimuovere {name} — è protetta dall'eliminazione o ancora in uso. Disattiva la protezione dall'eliminazione (Modifica) o risolvi il conflitto, quindi riprova.",
-  'settings.menu.ariaLabel': 'Menu utente',
+  'settings.menu.ariaLabel': '{username} — Menu utente',
   'settings.menu.settings': 'Impostazioni',
   'settings.menu.shortcuts': 'Scorciatoie da tastiera',
   'settings.menu.about': 'Informazioni',
@@ -4039,6 +4040,7 @@ export const it: LocaleCatalog = {
   'tags.assignVm.title.batch': 'Aggiungi tag a {count} VM',
   'tasks.action.clearFinished': 'Cancella completati',
   'tasks.badge.overCap': 'Attività — più di {BADGE_CAP} in esecuzione',
+  'tasks.badge.running': 'Attività — {count} in esecuzione',
   'tasks.column.correlationId': 'ID di correlazione',
   'tasks.drawer.empty.body':
     'I processi del motore appariranno qui man mano che le azioni vengono eseguite.',

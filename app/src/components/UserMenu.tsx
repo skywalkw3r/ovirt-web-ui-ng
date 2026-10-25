@@ -76,7 +76,8 @@ export function UserMenu() {
           <MenuToggle
             ref={toggleRef}
             variant="plainText"
-            aria-label={t('settings.menu.ariaLabel')}
+            // leads with the visible username (WCAG 2.5.3 label in name)
+            aria-label={t('settings.menu.ariaLabel', { username: username ?? '' })}
             onClick={() => setIsOpen(!isOpen)}
             isExpanded={isOpen}
           >

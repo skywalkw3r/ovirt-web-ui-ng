@@ -18,8 +18,9 @@ describe('DisksPage — OVF_STORE filter', () => {
     await waitFor(() => expect(within(grid).getAllByRole('row').length).toBeGreaterThan(1))
     expect(ovfRows(grid)).toHaveLength(0)
 
-    // the toggle lives in the view-options menu beside the column picker
-    await user.click(screen.getByRole('button', { name: 'View options' }))
+    // the toggle lives in the view-options menu beside the column picker; the
+    // checked box shows a badge, so the name gains a "— 1 active" suffix
+    await user.click(screen.getByRole('button', { name: /^View options/ }))
     const box = await screen.findByRole<HTMLInputElement>('checkbox', {
       name: /Hide OVF_STORE disks/,
     })

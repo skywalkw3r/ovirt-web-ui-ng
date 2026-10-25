@@ -403,6 +403,7 @@ export const en = {
   'common.bookmark.remove.body': 'The saved search <strong>{query}</strong> will be removed.',
   'common.columns.ariaLabel': 'Manage columns',
   'common.viewOptions.ariaLabel': 'View options',
+  'common.viewOptions.ariaLabelActive': 'View options — {count} active',
   'common.columns.alwaysShown': 'Always shown',
   'common.columns.reset': 'Reset to default',
   'common.columns.resize': 'Resize column {name}',
@@ -2084,7 +2085,7 @@ export const en = {
   // dropdown, the combined Account/Preferences modal, and the help links.
   // VNC/SPICE labels stay verbatim as product tokens.
   // ==========================================================================
-  'settings.menu.ariaLabel': 'User menu',
+  'settings.menu.ariaLabel': '{username} — User menu',
   'settings.menu.settings': 'Settings',
   'settings.menu.shortcuts': 'Keyboard shortcuts',
   'settings.menu.about': 'About',
@@ -4528,6 +4529,7 @@ export const en = {
   // tasks.* -------------------------------------------------------
   'tasks.action.clearFinished': 'Clear finished',
   'tasks.badge.overCap': 'Tasks — more than {BADGE_CAP} running',
+  'tasks.badge.running': 'Tasks — {count} running',
   'tasks.column.correlationId': 'Correlation ID',
   'tasks.drawer.empty.body': 'Engine tasks will appear here as actions run.',
   'tasks.drawer.empty.title': 'No tasks',
