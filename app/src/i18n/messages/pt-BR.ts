@@ -328,6 +328,7 @@ export const ptBR: LocaleCatalog = {
   'common.bookmark.remove.body': 'A pesquisa guardada <strong>{query}</strong> será removida.',
   'common.columns.ariaLabel': 'Administrar colunas',
   'common.viewOptions.ariaLabel': 'Opções de exibição',
+  'common.viewOptions.ariaLabelActive': 'Opções de exibição — {count} ativas',
   'common.columns.alwaysShown': 'Sempre mostrado',
   'common.columns.reset': 'Redefinir para os padrões',
   'common.columns.resize': 'Redimensionar a coluna {name}',
@@ -1759,7 +1760,7 @@ export const ptBR: LocaleCatalog = {
   'vmActions.remove.toast.success': 'Máquina virtual {name} removida',
   'vmActions.remove.toast.protected':
     'Não é possível remover {name} — ela está protegida contra exclusão ou ainda em uso. Desative a proteção contra exclusão (Editar) ou resolva o conflito e tente novamente.',
-  'settings.menu.ariaLabel': 'Menu do usuário',
+  'settings.menu.ariaLabel': '{username} — Menu do usuário',
   'settings.menu.settings': 'Configurações',
   'settings.menu.shortcuts': 'Atalhos de teclado',
   'settings.menu.about': 'Sobre',
@@ -4019,6 +4020,7 @@ export const ptBR: LocaleCatalog = {
   'tags.assignVm.title.batch': 'Adicionar marcadores a {count} VMs',
   'tasks.action.clearFinished': 'Limpar concluídas',
   'tasks.badge.overCap': 'Tarefas — mais de {BADGE_CAP} em execução',
+  'tasks.badge.running': 'Tarefas — {count} em execução',
   'tasks.column.correlationId': 'ID de correlação',
   'tasks.drawer.empty.body':
     'As tarefas do engine aparecerão aqui à medida que as ações forem executadas.',

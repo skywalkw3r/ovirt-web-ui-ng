@@ -333,6 +333,7 @@ export const ru: LocaleCatalog = {
   'common.bookmark.remove.body': 'Сохраненный поиск <strong>{query}</strong> будет удален.',
   'common.columns.ariaLabel': 'Управление столбцами',
   'common.viewOptions.ariaLabel': 'Параметры отображения',
+  'common.viewOptions.ariaLabelActive': 'Параметры отображения — активно: {count}',
   'common.columns.alwaysShown': 'Всегда показано',
   'common.columns.reset': 'Сбросить настройки по умолчанию',
   'common.columns.resize': 'Изменить ширину столбца {name}',
@@ -1762,7 +1763,7 @@ export const ru: LocaleCatalog = {
   'vmActions.remove.toast.success': 'Виртуальная машина {name} удалена',
   'vmActions.remove.toast.protected':
     'Не удалось удалить {name} — она защищена от удаления или ещё используется. Отключите защиту от удаления («Изменить») или устраните конфликт, затем повторите попытку.',
-  'settings.menu.ariaLabel': 'Меню пользователя',
+  'settings.menu.ariaLabel': '{username} — Меню пользователя',
   'settings.menu.settings': 'Настройки',
   'settings.menu.shortcuts': 'Сочетания клавиш',
   'settings.menu.about': 'О программе',
@@ -4169,6 +4170,7 @@ export const ru: LocaleCatalog = {
   // tasks
   'tasks.action.clearFinished': 'Очистить завершённые',
   'tasks.badge.overCap': 'Задачи — выполняется более {BADGE_CAP}',
+  'tasks.badge.running': 'Задачи — выполняется: {count}',
   'tasks.column.correlationId': 'Идентификатор корреляции',
   'tasks.drawer.empty.body': 'Задачи движка появятся здесь по мере выполнения действий.',
   'tasks.drawer.empty.title': 'Нет задач',

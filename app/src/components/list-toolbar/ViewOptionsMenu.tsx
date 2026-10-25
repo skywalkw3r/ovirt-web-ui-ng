@@ -41,7 +41,12 @@ export function ViewOptionsMenu({ options }: { options: ViewOption[] }) {
         <MenuToggle
           ref={toggleRef}
           variant="plain"
-          aria-label={t('common.viewOptions.ariaLabel')}
+          // carries the visible badge count (WCAG 2.5.3 label in name)
+          aria-label={
+            active > 0
+              ? t('common.viewOptions.ariaLabelActive', { count: active })
+              : t('common.viewOptions.ariaLabel')
+          }
           icon={<FilterIcon />}
           badge={active > 0 ? <Badge isRead>{active}</Badge> : undefined}
           onClick={() => setIsOpen(!isOpen)}

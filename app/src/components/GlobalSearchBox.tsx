@@ -16,7 +16,9 @@ export function GlobalSearchBox() {
     <button
       type="button"
       className="console-search-trigger"
-      aria-label={t('search.trigger')}
+      // No aria-label: the accessible name is the visible placeholder, so
+      // what a sighted voice-control user reads out is what activates it
+      // (WCAG 2.5.3 label in name). The label only ellipsizes, never hides.
       aria-keyshortcuts={isMac ? 'Meta+K' : 'Control+K'}
       // Flexible width so the masthead search shrinks gracefully instead of
       // squeezing the brand at narrow widths: it grows to fill its (flex)
@@ -27,7 +29,10 @@ export function GlobalSearchBox() {
     >
       <SearchIcon className="console-search-trigger__icon" />
       <span className="console-search-trigger__label">{t('search.placeholder')}</span>
-      <kbd className="console-search-trigger__kbd">{isMac ? '⌘K' : 'Ctrl+K'}</kbd>
+      {/* aria-keyshortcuts already announces the shortcut */}
+      <kbd className="console-search-trigger__kbd" aria-hidden="true">
+        {isMac ? '⌘K' : 'Ctrl+K'}
+      </kbd>
     </button>
   )
 }
