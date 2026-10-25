@@ -2,7 +2,11 @@ import type { Cluster } from '../../api/schemas/cluster'
 import type { DataCenter } from '../../api/schemas/datacenter'
 import type { Host } from '../../api/schemas/host'
 import type { StorageDomain } from '../../api/schemas/storage-domain'
-import type { CompatVersion, LocalStoragePlan } from '../../lib/configureLocalStorage'
+import type {
+  CompatVersion,
+  LocalStorageMessage,
+  LocalStoragePlan,
+} from '../../lib/configureLocalStorage'
 
 // Dialog-side logic for Configure Local Storage: the prefilled names and the
 // reuse decisions of webadmin's ConfigureLocalStorageModel.setDefaultNames
@@ -38,8 +42,9 @@ export interface LocalStorageDefaults {
   alreadyConfiguredIn?: string
 }
 
+// Field errors as catalog messages, rendered with t() by the dialog.
 export type LocalStorageFieldErrors = Partial<
-  Record<'dataCenterName' | 'clusterName' | 'storageName' | 'path', string>
+  Record<'dataCenterName' | 'clusterName' | 'storageName' | 'path', LocalStorageMessage>
 >
 
 // `<host>-Local` with dots turned into dashes, the shared stem of all three
@@ -188,25 +193,25 @@ function nameError(
   value: string,
   pattern: RegExp,
   maxLength: number | undefined,
-): string | undefined {
-  if (value === '') return 'Enter a name.'
+): LocalStorageMessage | undefined {
+  if (value === '') return { id: 'host.configureLocalStorage.validation.nameRequired' }
   if (maxLength !== undefined && value.length > maxLength) {
-    return `Use at most ${maxLength} characters.`
+    return { id: 'host.configureLocalStorage.validation.nameTooLong', values: { n: maxLength } }
   }
   if (!pattern.test(value)) {
     return pattern === ASCII_NAME
-      ? 'Use only letters, digits, "-" and "_".'
-      : 'Use only letters, digits, ".", "-" and "_".'
+      ? { id: 'host.configureLocalStorage.validation.asciiName' }
+      : { id: 'host.configureLocalStorage.validation.i18nName' }
   }
   return undefined
 }
 
 // LocalStorageModel: NotEmpty + LocalfsLinuxMountPoint (an absolute path, no
 // whitespace).
-export function localPathError(path: string): string | undefined {
-  if (path === '') return 'Enter the path to the local storage directory.'
+export function localPathError(path: string): LocalStorageMessage | undefined {
+  if (path === '') return { id: 'host.configureLocalStorage.validation.pathRequired' }
   if (/\s/.test(path) || !path.startsWith('/')) {
-    return 'Enter an absolute path without spaces, for example /data/images.'
+    return { id: 'host.configureLocalStorage.validation.pathInvalid' }
   }
   return undefined
 }
@@ -244,7 +249,10 @@ export function resolveLocalStorage(
   const storageNameError = nameError(storageName, ASCII_NAME, undefined)
   if (storageNameError) errors.storageName = storageNameError
   else if (inv.storageDomains.some((domain) => sameName(domain.name, storageName))) {
-    errors.storageName = `A storage domain named ${storageName} already exists.`
+    errors.storageName = {
+      id: 'host.configureLocalStorage.validation.storageNameTaken',
+      values: { name: storageName },
+    }
   }
   const pathError = localPathError(path)
   if (pathError) errors.path = pathError
@@ -253,11 +261,17 @@ export function resolveLocalStorage(
   const existingDc = inv.dataCenters.find((dc) => sameName(dc.name, dataCenterName))
   if (!errors.dataCenterName && existingDc) {
     if (existingDc.local !== true) {
-      errors.dataCenterName = `Data center ${existingDc.name} already exists and is not a local data center.`
+      errors.dataCenterName = {
+        id: 'host.configureLocalStorage.validation.dataCenterNotLocal',
+        values: { dc: existingDc.name },
+      }
     } else {
       const occupant = hostsInDataCenter(existingDc.id, inv).find(isOtherHost)
       if (occupant) {
-        errors.dataCenterName = `Data center ${existingDc.name} already holds host ${occupant.name}; a local data center has one host.`
+        errors.dataCenterName = {
+          id: 'host.configureLocalStorage.validation.dataCenterOccupied',
+          values: { dc: existingDc.name, host: occupant.name },
+        }
       }
     }
   }
@@ -265,13 +279,19 @@ export function resolveLocalStorage(
   const existingCluster = inv.clusters.find((cluster) => sameName(cluster.name, clusterName))
   if (!errors.clusterName && existingCluster) {
     if (!existingDc || existingCluster.data_center?.id !== existingDc.id) {
-      errors.clusterName = `Cluster ${existingCluster.name} already exists in another data center.`
+      errors.clusterName = {
+        id: 'host.configureLocalStorage.validation.clusterInOtherDataCenter',
+        values: { cluster: existingCluster.name },
+      }
     } else {
       const occupant = inv.hosts.find(
         (other) => other.cluster?.id === existingCluster.id && isOtherHost(other),
       )
       if (occupant) {
-        errors.clusterName = `Cluster ${existingCluster.name} already holds host ${occupant.name}.`
+        errors.clusterName = {
+          id: 'host.configureLocalStorage.validation.clusterOccupied',
+          values: { cluster: existingCluster.name, host: occupant.name },
+        }
       }
     }
   }

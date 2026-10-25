@@ -1,4 +1,6 @@
+import { createIntl } from 'react-intl'
 import { describe, expect, it, vi } from 'vitest'
+import { enMessages, type MessageId } from '../i18n/messages/en'
 import {
   buildLocalClusterBody,
   buildLocalDataCenterBody,
@@ -62,6 +64,19 @@ function fakeDeps(over: Partial<LocalStorageDeps> = {}) {
   }
   return { deps, calls, hostStatuses }
 }
+
+// The failed-run account rendered in English, sentences joined as the
+// dialog stacks them.
+const intl = createIntl({ locale: 'en', messages: enMessages })
+const englishFormatter = {
+  t: (id: MessageId, values?: Record<string, string | number>) =>
+    intl.formatMessage({ id }, values),
+  list: (items: string[]) => intl.formatList(items, { type: 'conjunction' }),
+}
+const account = (
+  p: LocalStoragePlan,
+  outcome: Awaited<ReturnType<typeof runConfigureLocalStorage>>,
+) => describeLocalStorageOutcome(p, outcome, englishFormatter).join(' ')
 
 const engineError = (message: string) => () => Promise.reject(new Error(message))
 
@@ -147,8 +162,8 @@ describe('runConfigureLocalStorage', () => {
       error: 'name already in use',
     })
     expect(calls).toEqual([])
-    expect(describeLocalStorageOutcome(p, outcome)).toBe(
-      'No changes were made; the storage domain was not created.',
+    expect(account(p, outcome)).toBe(
+      'No changes were made, and the storage domain was not created.',
     )
   })
 
@@ -159,8 +174,8 @@ describe('runConfigureLocalStorage', () => {
     expect(outcome).toMatchObject({ failedStep: 'cluster', error: 'CPU type not supported' })
     expect(outcome.rollback).toBeUndefined()
     expect(calls).toEqual(['createDataCenter node-03-Local'])
-    expect(describeLocalStorageOutcome(p, outcome)).toContain(
-      'Data center node-03-Local was created; the storage domain was not created.',
+    expect(account(p, outcome)).toContain(
+      'The storage domain was not created. Changes made before the failure: data center node-03-Local created.',
     )
   })
 
@@ -173,8 +188,8 @@ describe('runConfigureLocalStorage', () => {
     expect(outcome).toMatchObject({ failedStep: 'moveHost', hostMoved: false })
     expect(outcome.rollback).toBeUndefined()
     expect(calls).not.toContain('activateHost h1')
-    expect(describeLocalStorageOutcome(p, outcome)).toContain(
-      'Data center node-03-Local and cluster node-03-Local were created; the storage domain was not created.',
+    expect(account(p, outcome)).toContain(
+      'Changes made before the failure: data center node-03-Local created and cluster node-03-Local created.',
     )
   })
 
@@ -198,10 +213,9 @@ describe('runConfigureLocalStorage', () => {
       'deleteCluster c-new',
       'deleteDataCenter dc-new',
     ])
-    const text = describeLocalStorageOutcome(p, outcome)
-    expect(text).toContain('the host was moved back to Default')
+    const text = account(p, outcome)
     expect(text).toContain(
-      'cluster node-03-Local was removed and data center node-03-Local was removed',
+      'these changes were reverted: host moved back to Default, cluster node-03-Local removed, and data center node-03-Local removed.',
     )
     expect(text).not.toContain('run Configure local storage again')
   })
@@ -235,8 +249,8 @@ describe('runConfigureLocalStorage', () => {
     })
     expect(outcome.rollback).toBeUndefined()
     expect(calls).not.toContain('getDataCenterStatus')
-    expect(describeLocalStorageOutcome(p, outcome)).toBe(
-      'Data center node-03-Local and cluster node-03-Local were created and the host was moved to node-03-Local; the storage domain was not created. To finish, put the host into maintenance if needed and run Configure local storage again; it reuses the empty local data center.',
+    expect(account(p, outcome)).toBe(
+      'The storage domain was not created. Changes made before the failure: data center node-03-Local created, cluster node-03-Local created, and host moved to node-03-Local. To finish, put the host into maintenance if needed and run Configure local storage again; it reuses the empty local data center.',
     )
   })
 
@@ -288,8 +302,8 @@ describe('runConfigureLocalStorage', () => {
       'failed',
     ])
     expect(progress.at(-1)?.[4].detail).toBe('Cannot add Storage. Permission settings are wrong.')
-    expect(describeLocalStorageOutcome(p, outcome)).toContain(
-      'Data center node-03-Local and cluster node-03-Local were created, the host was moved to node-03-Local and the host was activated; the storage domain was not created.',
+    expect(account(p, outcome)).toContain(
+      'Changes made before the failure: data center node-03-Local created, cluster node-03-Local created, host moved to node-03-Local, and host activated.',
     )
   })
 
@@ -307,9 +321,7 @@ describe('runConfigureLocalStorage', () => {
       dataCenterRemoved: false,
       error: 'Cluster is in use',
     })
-    expect(describeLocalStorageOutcome(p, outcome)).toContain(
-      'Undoing the partial setup stopped: Cluster is in use',
-    )
+    expect(account(p, outcome)).toContain('Undoing the partial setup stopped: Cluster is in use')
   })
 })
 

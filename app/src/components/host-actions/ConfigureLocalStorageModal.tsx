@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from 'react'
+import { useIntl } from 'react-intl'
 import {
   Alert,
   Button,
@@ -35,6 +36,7 @@ import type { MessageId } from '../../i18n/messages/en'
 import { useT } from '../../i18n/useT'
 import {
   describeLocalStorageOutcome,
+  type LocalStorageMessage,
   type LocalStoragePlan,
   type LocalStorageStep,
   type LocalStorageStepId,
@@ -57,12 +59,20 @@ const OVER_COMMIT_LABELS: Record<string, MessageId> = {
   '200': 'clusterForm.overCommit.desktop',
 }
 
-const STEP_STATUS_TEXT: Record<LocalStorageStep['status'], string> = {
-  pending: 'Pending',
-  running: 'In progress',
-  done: 'Done',
-  skipped: 'Not needed',
-  failed: 'Failed',
+const STEP_STATUS_IDS: Record<LocalStorageStep['status'], MessageId> = {
+  pending: 'host.configureLocalStorage.stepStatus.pending',
+  running: 'host.configureLocalStorage.stepStatus.running',
+  done: 'host.configureLocalStorage.stepStatus.done',
+  skipped: 'host.configureLocalStorage.stepStatus.skipped',
+  failed: 'host.configureLocalStorage.stepStatus.failed',
+}
+
+type T = ReturnType<typeof useT>
+
+// A runner/validation message, or a plain engine fault shown verbatim.
+function messageText(message: LocalStorageMessage | string | undefined, t: T) {
+  if (message === undefined || typeof message === 'string') return message
+  return t(message.id, message.values)
 }
 
 const STEP_VARIANT = {
@@ -73,18 +83,24 @@ const STEP_VARIANT = {
   failed: 'danger',
 } as const
 
-function stepTitle(id: LocalStorageStepId, plan: LocalStoragePlan): string {
+function stepTitle(id: LocalStorageStepId, plan: LocalStoragePlan, t: T): string {
   switch (id) {
     case 'dataCenter':
-      return `Data center ${plan.dataCenter.name}`
+      return t('host.configureLocalStorage.step.dataCenter', { dc: plan.dataCenter.name })
     case 'cluster':
-      return `Cluster ${plan.cluster.name}`
+      return t('host.configureLocalStorage.step.cluster', { cluster: plan.cluster.name })
     case 'moveHost':
-      return `Move ${plan.host.name} to ${plan.cluster.name}`
+      return t('host.configureLocalStorage.step.moveHost', {
+        host: plan.host.name,
+        cluster: plan.cluster.name,
+      })
     case 'activate':
-      return `Activate ${plan.host.name} and wait until it is up`
+      return t('host.configureLocalStorage.step.activate', { host: plan.host.name })
     case 'storage':
-      return `Storage domain ${plan.storage.name} at ${plan.storage.path}`
+      return t('host.configureLocalStorage.step.storage', {
+        name: plan.storage.name,
+        path: plan.storage.path,
+      })
   }
 }
 
@@ -109,6 +125,7 @@ function NameField({
   onChange: (value: string) => void
   onDescriptionChange?: (value: string) => void
 }) {
+  const t = useT()
   const [editing, setEditing] = useState(false)
   return (
     <FormGroup label={label} isRequired fieldId={id}>
@@ -127,21 +144,24 @@ function NameField({
           <Button
             variant="link"
             isInline
-            aria-label={
-              editing ? `Done editing ${label.toLowerCase()}` : `Edit ${label.toLowerCase()}`
-            }
+            aria-label={t(
+              editing
+                ? 'host.configureLocalStorage.doneAria'
+                : 'host.configureLocalStorage.editAria',
+              { field: label },
+            )}
             aria-expanded={editing}
             onClick={() => setEditing(!editing)}
           >
-            {editing ? 'Done' : 'Edit'}
+            {editing ? t('host.configureLocalStorage.done') : t('common.action.edit')}
           </Button>
         </FlexItem>
       </Flex>
       {editing && onDescriptionChange && (
         <TextInput
           id={`${id}-description`}
-          aria-label={`${label} description`}
-          placeholder="Description (optional)"
+          aria-label={t('host.configureLocalStorage.descriptionAria', { field: label })}
+          placeholder={t('host.configureLocalStorage.descriptionPlaceholder')}
           value={description ?? ''}
           onChange={(_event, next) => onDescriptionChange(next)}
           style={{ marginTop: 'var(--pf-t--global--spacer--sm)' }}
@@ -168,6 +188,7 @@ function NameField({
 // and says what was left behind (lib/configureLocalStorage.ts).
 export function ConfigureLocalStorageModal({ host, onClose }: { host: Host; onClose: () => void }) {
   const t = useT()
+  const intl = useIntl()
   const dataCenters = useDataCenters()
   const clusters = useClustersInventory()
   const storageDomains = useStorageDomains()
@@ -219,7 +240,7 @@ export function ConfigureLocalStorageModal({ host, onClose }: { host: Host; onCl
       const failure = sources.find((source) => source.isError)?.error
       return (
         <EmptyState
-          titleText="Could not load the inventory"
+          titleText={t('host.configureLocalStorage.loadError')}
           headingLevel="h4"
           status="danger"
           variant="sm"
@@ -247,10 +268,7 @@ export function ConfigureLocalStorageModal({ host, onClose }: { host: Host; onCl
         <>
           <Skeleton height="2.25rem" style={{ marginBottom: '0.5rem' }} />
           <Skeleton height="2.25rem" style={{ marginBottom: '0.5rem' }} />
-          <Skeleton
-            height="2.25rem"
-            screenreaderText="Loading data centers, clusters and storage"
-          />
+          <Skeleton height="2.25rem" screenreaderText={t('host.configureLocalStorage.loading')} />
         </>
       )
     }
@@ -263,15 +281,17 @@ export function ConfigureLocalStorageModal({ host, onClose }: { host: Host; onCl
       >
         <NameField
           id="local-storage-dc-name"
-          label="Data center"
+          label={t('clusterForm.dataCenter')}
           value={form.dataCenterName}
-          error={errors.dataCenterName}
+          error={messageText(errors.dataCenterName, t)}
           note={
             resolved.reusesDataCenter
-              ? 'The existing local data center with this name will be used.'
+              ? t('host.configureLocalStorage.note.dcReuse')
               : defaults.version
-                ? `A new local data center, compatibility version ${defaults.version.major}.${defaults.version.minor}.`
-                : 'A new local data center.'
+                ? t('host.configureLocalStorage.note.dcNewVersion', {
+                    version: `${defaults.version.major}.${defaults.version.minor}`,
+                  })
+                : t('host.configureLocalStorage.note.dcNew')
           }
           description={form.dataCenterDescription}
           onChange={(value) => set('dataCenterName', value)}
@@ -279,13 +299,13 @@ export function ConfigureLocalStorageModal({ host, onClose }: { host: Host; onCl
         />
         <NameField
           id="local-storage-cluster-name"
-          label="Cluster"
+          label={t('common.field.cluster')}
           value={form.clusterName}
-          error={errors.clusterName}
+          error={messageText(errors.clusterName, t)}
           note={
             resolved.reusesCluster
-              ? 'The existing cluster with this name will be used.'
-              : 'A new cluster; its CPU type is detected from the host when it is activated.'
+              ? t('host.configureLocalStorage.note.clusterReuse')
+              : t('host.configureLocalStorage.note.clusterNew')
           }
           description={form.clusterDescription}
           onChange={(value) => set('clusterName', value)}
@@ -293,25 +313,25 @@ export function ConfigureLocalStorageModal({ host, onClose }: { host: Host; onCl
         />
         <NameField
           id="local-storage-storage-name"
-          label="Storage domain"
+          label={t('vmDisks.addModal.storageDomain')}
           value={form.storageName}
-          error={errors.storageName}
+          error={messageText(errors.storageName, t)}
           onChange={(value) => set('storageName', value)}
         />
         <FormGroup
-          label="Path to local storage"
+          label={t('host.configureLocalStorage.field.path')}
           isRequired
           fieldId="local-storage-path"
           labelHelp={
             <FieldHelp
-              field="Path to local storage"
-              content="An existing directory on the host that becomes the data domain, for example /data/images. It must be owned by vdsm:kvm (36:36)."
+              field={t('host.configureLocalStorage.field.path')}
+              content={t('fieldHelp.host.localStoragePath')}
             />
           }
         >
           <TextInput
             id="local-storage-path"
-            aria-label="Path to local storage"
+            aria-label={t('host.configureLocalStorage.field.path')}
             isRequired
             placeholder="/data/images"
             value={form.path}
@@ -322,8 +342,8 @@ export function ConfigureLocalStorageModal({ host, onClose }: { host: Host; onCl
             <HelperText>
               <HelperTextItem variant={errors.path && form.path !== '' ? 'error' : 'default'}>
                 {form.path !== '' && errors.path
-                  ? errors.path
-                  : 'Set the path to your local storage on the host.'}
+                  ? messageText(errors.path, t)
+                  : t('host.configureLocalStorage.path.help')}
               </HelperTextItem>
             </HelperText>
           </FormHelperText>
@@ -341,7 +361,7 @@ export function ConfigureLocalStorageModal({ host, onClose }: { host: Host; onCl
             variant="info"
             isInline
             isPlain
-            title="These settings apply to a new cluster only; the existing cluster keeps its own."
+            title={t('host.configureLocalStorage.optimization.reuseNote')}
           />
         )}
         <FormGroup
@@ -389,11 +409,15 @@ export function ConfigureLocalStorageModal({ host, onClose }: { host: Host; onCl
     )
     return (
       <ModalVerticalTabs
-        ariaLabel="Configure local storage sections"
+        ariaLabel={t('host.configureLocalStorage.sectionsAria')}
         idPrefix="configure-local-storage"
         sections={[
-          { key: 'general', title: 'General', content: general },
-          { key: 'optimization', title: 'Optimization', content: optimization },
+          { key: 'general', title: t('clusterForm.section.general'), content: general },
+          {
+            key: 'optimization',
+            title: t('clusterForm.section.optimization'),
+            content: optimization,
+          },
         ]}
       />
     )
@@ -401,9 +425,12 @@ export function ConfigureLocalStorageModal({ host, onClose }: { host: Host; onCl
 
   const targetDataCenter =
     resolved?.plan?.dataCenter.name ?? form?.dataCenterName ?? `${hostName}-Local`
-  const intro = resolved?.reusesDataCenter
-    ? `${hostName} will be moved into the local data center ${targetDataCenter}, activated, and given a local storage domain.`
-    : `${hostName} will be moved into a new local data center, ${targetDataCenter}, with its own cluster, then activated and given a local storage domain.`
+  const intro = t(
+    resolved?.reusesDataCenter
+      ? 'host.configureLocalStorage.intro.reuse'
+      : 'host.configureLocalStorage.intro.new',
+    { host: hostName, dc: targetDataCenter },
+  )
 
   return (
     <Modal
@@ -414,29 +441,34 @@ export function ConfigureLocalStorageModal({ host, onClose }: { host: Host; onCl
       aria-describedby="configure-local-storage-intro"
     >
       <ModalHeader
-        title={`Configure local storage on ${hostName}`}
+        title={t('host.configureLocalStorage.title', { name: hostName })}
         titleIconVariant="warning"
         labelId="configure-local-storage-title"
       />
       <ModalBody>
         <Stack hasGutter>
           <StackItem id="configure-local-storage-intro">
-            {intro} A local data center holds only this host and its local storage; the host leaves
-            its current cluster and can no longer use shared storage domains.
+            {intro} {t('host.configureLocalStorage.intro.consequence')}
           </StackItem>
           {defaults?.alreadyConfiguredIn && !started && (
             <StackItem>
-              <Alert variant="warning" isInline title="Local storage is already configured">
-                {hostName} already belongs to the local data center {defaults.alreadyConfiguredIn}{' '}
-                with a local storage domain.
+              <Alert
+                variant="warning"
+                isInline
+                title={t('host.configureLocalStorage.alreadyConfigured.title')}
+              >
+                {t('host.configureLocalStorage.alreadyConfigured.body', {
+                  host: hostName,
+                  dc: defaults.alreadyConfiguredIn,
+                })}
               </Alert>
             </StackItem>
           )}
           <StackItem>
             {runPlan ? (
-              <ProgressStepper isVertical aria-label="Configure local storage progress">
+              <ProgressStepper isVertical aria-label={t('host.configureLocalStorage.progressAria')}>
                 {configure.steps.map((step) => {
-                  const title = stepTitle(step.id, runPlan)
+                  const title = stepTitle(step.id, runPlan, t)
                   return (
                     <ProgressStep
                       key={step.id}
@@ -444,8 +476,11 @@ export function ConfigureLocalStorageModal({ host, onClose }: { host: Host; onCl
                       titleId={`configure-local-storage-step-${step.id}-title`}
                       variant={STEP_VARIANT[step.status]}
                       isCurrent={step.status === 'running'}
-                      description={step.detail}
-                      aria-label={`${title}: ${STEP_STATUS_TEXT[step.status]}`}
+                      description={messageText(step.detail, t)}
+                      aria-label={t('host.configureLocalStorage.stepAria', {
+                        step: title,
+                        status: t(STEP_STATUS_IDS[step.status]),
+                      })}
                     >
                       {title}
                     </ProgressStep>
@@ -458,17 +493,22 @@ export function ConfigureLocalStorageModal({ host, onClose }: { host: Host; onCl
           </StackItem>
           {failed && runPlan && (
             <StackItem>
-              <Alert variant="danger" isInline title="Local storage was not configured">
+              <Alert variant="danger" isInline title={t('host.configureLocalStorage.failed.title')}>
                 <Stack hasGutter>
-                  <StackItem>{outcome.error}</StackItem>
-                  <StackItem>{describeLocalStorageOutcome(runPlan, outcome)}</StackItem>
+                  <StackItem>{messageText(outcome.errorMessage ?? outcome.error, t)}</StackItem>
+                  {describeLocalStorageOutcome(runPlan, outcome, {
+                    t,
+                    list: (items) => intl.formatList(items, { type: 'conjunction' }),
+                  }).map((sentence) => (
+                    <StackItem key={sentence}>{sentence}</StackItem>
+                  ))}
                 </Stack>
               </Alert>
             </StackItem>
           )}
           {configure.isError && (
             <StackItem>
-              <Alert variant="danger" isInline title="Local storage was not configured">
+              <Alert variant="danger" isInline title={t('host.configureLocalStorage.failed.title')}>
                 {configure.error.message}
               </Alert>
             </StackItem>
@@ -492,7 +532,7 @@ export function ConfigureLocalStorageModal({ host, onClose }: { host: Host; onCl
               })
             }}
           >
-            Configure
+            {t('host.configureLocalStorage.confirm')}
           </Button>
         )}
         <Button variant="link" isDisabled={running} onClick={close}>
