@@ -115,6 +115,9 @@ export const DiskAttachmentSchema = z.looseObject({
   active: BooleanishSchema.optional(),
   // api-model DiskAttachment.readOnly (Boolean, default false)
   read_only: BooleanishSchema.optional(),
+  // api-model DiskAttachment.passDiscard: the guest's discard (TRIM/UNMAP)
+  // requests pass through to the storage (webadmin "Enable Discard")
+  pass_discard: BooleanishSchema.optional(),
   disk: z
     .looseObject({
       id: z.string().optional(),
@@ -131,6 +134,9 @@ export const DiskAttachmentSchema = z.looseObject({
       // and template dialogs, so the followed disk carries both fields.
       storage_type: z.string().optional(),
       shareable: BooleanishSchema.optional(),
+      // read by the Edit dialog's Enable Discard gate: a block-domain image
+      // disk cannot pass discard while wipe-after-delete is on
+      wipe_after_delete: BooleanishSchema.optional(),
       // Direct-LUN backing (absent on image disks) — the VM Disks tab reads
       // the LUN size from it because a LUN disk has no provisioned_size.
       lun_storage: LunStorageSchema.optional(),

@@ -344,11 +344,17 @@ export function DiskSwitchField({
   label,
   isChecked,
   onChange,
+  isDisabled = false,
+  disabledReason,
 }: {
   id: string
   label: string
   isChecked: boolean
   onChange: (checked: boolean) => void
+  // a locked switch (e.g. wipe-after-delete while discard is passed on a block
+  // domain) plus the reason shown beneath it
+  isDisabled?: boolean
+  disabledReason?: string
 }) {
   return (
     <FormGroup fieldId={id}>
@@ -356,8 +362,16 @@ export function DiskSwitchField({
         id={id}
         label={label}
         isChecked={isChecked}
+        isDisabled={isDisabled}
         onChange={(_event, checked) => onChange(checked)}
       />
+      {isDisabled && disabledReason !== undefined && (
+        <FormHelperText>
+          <HelperText>
+            <HelperTextItem>{disabledReason}</HelperTextItem>
+          </HelperText>
+        </FormHelperText>
+      )}
     </FormGroup>
   )
 }

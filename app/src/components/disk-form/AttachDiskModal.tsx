@@ -16,8 +16,11 @@ import {
 } from '@patternfly/react-core'
 import type { Disk } from '../../api/schemas/disk'
 import { useAllDisks } from '../../hooks/useCatalogPages'
+import { useStorageDomainLookup } from '../../hooks/useStorageDomainLookup'
 import { useT } from '../../i18n/useT'
 import { formatBytes } from '../../lib/format'
+import { PassDiscardField } from './PassDiscardField'
+import { effectivePassDiscard, passDiscardState } from './passDiscard'
 
 function diskOptionLabel(disk: Disk): string {
   const name = disk.alias ?? disk.name ?? disk.id
@@ -36,22 +39,36 @@ export function AttachDiskModal({
   onClose,
 }: {
   attachedDiskIds: Set<string>
-  onAttach: (disk: Disk, bootable: boolean) => void
+  onAttach: (disk: Disk, bootable: boolean, passDiscard: boolean) => void
   onClose: () => void
 }) {
   const t = useT()
   const allDisks = useAllDisks()
   const [diskId, setDiskId] = useState('')
   const [bootable, setBootable] = useState(false)
+  const [passDiscard, setPassDiscard] = useState(false)
+  // the picked disk's domain (storage type + supports_discard) for the Enable
+  // Discard gate; the flat disk carries only id stubs
+  const storageDomainOf = useStorageDomainLookup()
 
   const candidates = (allDisks.data ?? []).filter(
     (disk) => disk.content_type !== 'iso' && !attachedDiskIds.has(disk.id),
   )
   const selected = candidates.find((disk) => disk.id === diskId)
 
+  // Enable Discard gate for the picked disk on the attach default interface
+  // (virtio_scsi, see attachVmDisk). Hidden until a disk is picked.
+  const discardState = passDiscardState({
+    diskStorageType: selected === undefined ? 'none' : (selected.storage_type ?? 'image'),
+    diskInterface: 'virtio_scsi',
+    domain: storageDomainOf(selected?.storage_domains?.storage_domain?.[0]?.id),
+    lun: selected?.lun_storage?.logical_units?.logical_unit?.[0],
+    wipeAfterDelete: selected?.wipe_after_delete === true,
+  })
+
   const submit = () => {
     if (!selected) return
-    onAttach(selected, bootable)
+    onAttach(selected, bootable, effectivePassDiscard(discardState, passDiscard))
   }
 
   return (
@@ -123,6 +140,12 @@ export function AttachDiskModal({
               onChange={(_event, checked) => setBootable(checked)}
             />
           </FormGroup>
+          <PassDiscardField
+            id="attach-disk-pass-discard"
+            state={discardState}
+            isChecked={passDiscard}
+            onChange={setPassDiscard}
+          />
         </Form>
       </ModalBody>
       <ModalFooter>

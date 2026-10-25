@@ -28,9 +28,24 @@ vi.mock('@patternfly/react-core', () => ({
       {children}
     </button>
   ),
-  // Passthroughs SanStorageSection (rendered by the Direct LUN branch) needs.
-  Checkbox: ({ label, id }: { label?: ReactNode; id?: string }) => (
-    <label data-id={id}>
+  // Passthroughs SanStorageSection (rendered by the Direct LUN branch) needs;
+  // checked/disabled ride as attributes for the Enable Discard assertions.
+  Checkbox: ({
+    label,
+    id,
+    isChecked,
+    isDisabled,
+  }: {
+    label?: ReactNode
+    id?: string
+    isChecked?: boolean
+    isDisabled?: boolean
+  }) => (
+    <label
+      data-id={id}
+      data-checked={isChecked ? 'true' : 'false'}
+      data-disabled={isDisabled ? 'true' : 'false'}
+    >
       <input type="checkbox" readOnly />
       {label}
     </label>
@@ -134,8 +149,22 @@ vi.mock('@patternfly/react-core', () => ({
   Skeleton: ({ screenreaderText }: { screenreaderText?: string }) => (
     <span>{screenreaderText ?? 'skeleton'}</span>
   ),
-  Switch: ({ label, isChecked, id }: { label?: ReactNode; isChecked?: boolean; id?: string }) => (
-    <label data-id={id} data-checked={isChecked ? 'true' : 'false'}>
+  Switch: ({
+    label,
+    isChecked,
+    isDisabled,
+    id,
+  }: {
+    label?: ReactNode
+    isChecked?: boolean
+    isDisabled?: boolean
+    id?: string
+  }) => (
+    <label
+      data-id={id}
+      data-checked={isChecked ? 'true' : 'false'}
+      data-disabled={isDisabled ? 'true' : 'false'}
+    >
       <input type="checkbox" checked={Boolean(isChecked)} readOnly />
       {label}
     </label>
@@ -224,6 +253,12 @@ vi.mock('../../hooks/useDiskMutations', () => ({
     data: state.profiles,
     error: null,
   }),
+}))
+
+// The VM-context edit's attachment mutation (Enable Discard), inert like the
+// disk mutations above.
+vi.mock('../../hooks/useVmDiskActions', () => ({
+  useUpdateVmDiskAttachment: () => ({ mutateAsync: () => Promise.resolve(), isPending: false }),
 }))
 
 const { DiskFormModal } = await import('./DiskFormModal')
@@ -387,6 +422,111 @@ describe('DiskFormModal — edit', () => {
     expect(html).toContain('aria-label="Disk profile"')
     expect(html).toContain('data-value="dp-01"')
     expect(html).toContain('<option value="dp-01">gold</option>')
+  })
+})
+
+describe('DiskFormModal: edit from a VM (Enable Discard)', () => {
+  // sd-blk-on supports discard, sd-blk-off does not; sd-01 is an NFS (file)
+  // domain, where discard always passes.
+  const VM_DOMAINS = [
+    ...DOMAINS,
+    {
+      id: 'sd-blk-on',
+      name: 'blk-on',
+      type: 'data',
+      storage: { type: 'iscsi' },
+      supports_discard: true,
+    },
+    {
+      id: 'sd-blk-off',
+      name: 'blk-off',
+      type: 'data',
+      storage: { type: 'fcp' },
+      supports_discard: false,
+    },
+  ]
+  const imageOn = (sdId: string, extra: Record<string, unknown> = {}) => ({
+    id: 'disk-9',
+    alias: 'data-9',
+    status: 'ok',
+    storage_type: 'image',
+    provisioned_size: 5 * 1024 ** 3,
+    wipe_after_delete: false,
+    storage_domains: { storage_domain: [{ id: sdId }] },
+    ...extra,
+  })
+  function renderVmEdit(disk: Record<string, unknown>, attachment: Record<string, unknown>) {
+    return renderToStaticMarkup(
+      <IntlProvider locale="en" messages={enMessages}>
+        <DiskFormModal
+          /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+          disk={disk as any}
+          /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+          vmAttachment={{ vmId: 'vm-01', attachment: { id: 'att-9', ...attachment } as any }}
+          onClose={() => {}}
+        />
+      </IntlProvider>,
+    )
+  }
+
+  it('is absent when editing a floating disk (no VM context)', () => {
+    state.domains = state.success(VM_DOMAINS)
+    expect(renderEdit(imageOn('sd-01'))).not.toContain('Enable Discard')
+  })
+
+  it('seeds from the attachment and stays enabled on a file domain', () => {
+    state.domains = state.success(VM_DOMAINS)
+    const html = renderVmEdit(imageOn('sd-01'), { interface: 'virtio_scsi', pass_discard: true })
+    expect(html).toContain('data-id="disk-pass-discard" data-checked="true" data-disabled="false"')
+  })
+
+  it('greys out with the storage reason on a block domain without discard support', () => {
+    state.domains = state.success(VM_DOMAINS)
+    const html = renderVmEdit(imageOn('sd-blk-off'), { interface: 'virtio_scsi' })
+    expect(html).toContain('data-id="disk-pass-discard" data-checked="false" data-disabled="true"')
+    expect(html).toContain('Discard is not supported by the underlying storage.')
+  })
+
+  it('greys out with the interface reason on an interface that cannot discard', () => {
+    state.domains = state.success(VM_DOMAINS)
+    const html = renderVmEdit(imageOn('sd-01'), { interface: 'spapr_vscsi' })
+    expect(html).toContain('data-disabled="true"')
+    expect(html).toContain('The selected interface does not support discard.')
+  })
+
+  it('locks wipe-after-delete while discard is passed on a block domain', () => {
+    state.domains = state.success(VM_DOMAINS)
+    const html = renderVmEdit(imageOn('sd-blk-on'), { interface: 'virtio', pass_discard: true })
+    expect(html).toContain('data-id="disk-wipe" data-checked="false" data-disabled="true"')
+    expect(html).toContain('does not support Wipe After Delete when discard is enabled')
+  })
+
+  it('greys out with the wipe reason when the disk wipes after delete on a block domain', () => {
+    state.domains = state.success(VM_DOMAINS)
+    const html = renderVmEdit(imageOn('sd-blk-on', { wipe_after_delete: true }), {
+      interface: 'virtio_scsi',
+    })
+    expect(html).toContain('data-id="disk-pass-discard" data-checked="false" data-disabled="true"')
+    expect(html).toContain('does not support discard when Wipe After Delete is enabled')
+  })
+
+  it('gates a direct-LUN disk on its LUN discard_max_size', () => {
+    state.domains = state.success(VM_DOMAINS)
+    const lun = (max: number) => ({
+      id: 'disk-lun-9',
+      alias: 'lun-9',
+      storage_type: 'lun',
+      lun_storage: {
+        type: 'iscsi',
+        logical_units: { logical_unit: [{ id: 'lun-x', size: 1, discard_max_size: max }] },
+      },
+    })
+    expect(renderVmEdit(lun(4096), { interface: 'virtio_scsi' })).toContain(
+      'data-id="disk-pass-discard" data-checked="false" data-disabled="false"',
+    )
+    expect(renderVmEdit(lun(0), { interface: 'virtio_scsi' })).toContain(
+      'Discard is not supported by the underlying storage.',
+    )
   })
 })
 

@@ -152,6 +152,9 @@ export interface NewDiskSpec {
   readOnly?: boolean
   // optional: omit to take the storage domain's default profile
   diskProfileId?: string
+  // attachment-level flag, api-model DiskAttachment.passDiscard ("Enable
+  // Discard"). Omitted when unset so the engine default (false) stands.
+  passDiscard?: boolean
 }
 
 // Body mirrors legacy Transforms.DiskAttachment.toApi (ovirtapi/transform.js):
@@ -171,6 +174,7 @@ export async function createVmDisk(vmId: string, spec: NewDiskSpec): Promise<voi
       interface: spec.interface ?? 'virtio_scsi',
       // false is meaningful, so only drop it when the caller leaves it unset
       ...(spec.readOnly !== undefined ? { read_only: spec.readOnly } : {}),
+      ...(spec.passDiscard !== undefined ? { pass_discard: spec.passDiscard } : {}),
       disk: {
         alias: spec.name,
         format: spec.format ?? 'cow',
@@ -219,6 +223,8 @@ export interface AttachDiskSpec {
   interface?: string
   // attachment-level flag — api-model DiskAttachment.readOnly (default false)
   readOnly?: boolean
+  // attachment-level flag, api-model DiskAttachment.passDiscard (default false)
+  passDiscard?: boolean
 }
 
 // Attach an EXISTING disk to a VM (webadmin's Attach, distinct from the New
@@ -234,6 +240,7 @@ export async function attachVmDisk(vmId: string, spec: AttachDiskSpec): Promise<
       interface: spec.interface ?? 'virtio_scsi',
       // false is meaningful, so only drop it when the caller leaves it unset
       ...(spec.readOnly !== undefined ? { read_only: spec.readOnly } : {}),
+      ...(spec.passDiscard !== undefined ? { pass_discard: spec.passDiscard } : {}),
       disk: { id: spec.diskId },
     },
   })
@@ -252,6 +259,33 @@ export async function setVmDiskAttachmentActive(
   await request(
     `/vms/${encodeURIComponent(vmId)}/diskattachments/${encodeURIComponent(attachmentId)}`,
     { method: 'PUT', body: { active } },
+  )
+}
+
+// The attachment-level fields the VM-context Edit dialog changes. Only
+// passDiscard today; the disk-level fields keep riding PUT /disks/{id}
+// (updateDisk) so the floating and VM-context edits share one disk path.
+export interface UpdateDiskAttachmentSpec {
+  passDiscard?: boolean
+}
+
+// PUT /vms/{vmId}/diskattachments/{attachmentId} with only the changed
+// attachment scalars. ovirt-engine DiskAttachmentMapper maps pass_discard when
+// set and the backend runs UpdateDisk, whose DiskVmElementValidator
+// .isPassDiscardSupported rejects an interface/storage that cannot discard
+// (ApiError.message carries that fault verbatim). Settle-only: the list poll
+// re-reads the attachment.
+export async function updateVmDiskAttachment(
+  vmId: string,
+  attachmentId: string,
+  spec: UpdateDiskAttachmentSpec,
+): Promise<void> {
+  await request(
+    `/vms/${encodeURIComponent(vmId)}/diskattachments/${encodeURIComponent(attachmentId)}`,
+    {
+      method: 'PUT',
+      body: { ...(spec.passDiscard !== undefined ? { pass_discard: spec.passDiscard } : {}) },
+    },
   )
 }
 
@@ -512,6 +546,8 @@ export interface NewVmDirectLunDiskSpec extends NewDirectLunDiskSpec {
   bootable?: boolean
   active?: boolean
   interface?: string
+  // attachment-level Enable Discard (api-model DiskAttachment.passDiscard)
+  passDiscard?: boolean
 }
 
 // POST /vms/{id}/diskattachments with the direct-LUN disk nested inline —
@@ -528,6 +564,7 @@ export async function createVmDirectLunDisk(
       active: spec.active ?? true,
       bootable: spec.bootable ?? false,
       interface: spec.interface ?? 'virtio_scsi',
+      ...(spec.passDiscard !== undefined ? { pass_discard: spec.passDiscard } : {}),
       disk: directLunDiskBody(spec),
     },
   })

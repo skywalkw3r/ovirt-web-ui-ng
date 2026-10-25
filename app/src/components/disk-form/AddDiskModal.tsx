@@ -23,6 +23,8 @@ import type { NewVmImageDiskSpec } from '../../hooks/useVmDiskActions'
 import { useT } from '../../i18n/useT'
 import { diskInterfaceText } from '../../lib/format'
 import { DirectLunFields } from './DirectLunFields'
+import { PassDiscardField } from './PassDiscardField'
+import { effectivePassDiscard, passDiscardState } from './passDiscard'
 import {
   AllocationField,
   DiskProfileField,
@@ -110,6 +112,9 @@ export function AddDiskModal({
   const [readOnly, setReadOnly] = useState(false)
   // DEFAULT_PROFILE ⇒ let the engine assign the storage domain's default profile
   const [diskProfileId, setDiskProfileId] = useState(DEFAULT_PROFILE)
+  // Enable Discard (attachment pass_discard); the rendered/sent value is gated
+  // by passDiscardState below
+  const [passDiscard, setPassDiscard] = useState(false)
 
   // Direct LUN branch: discovery host, fabric kind, the single picked LUN
   // (full object — the create body needs the iSCSI coordinates + size).
@@ -131,6 +136,26 @@ export function AddDiskModal({
     touched: allocationTouched,
   })
 
+  // Enable Discard gate (engine DiskVmElementValidator.isPassDiscardSupported).
+  // An image's wipe-after-delete is not a field here: the engine seeds it from
+  // the domain (AddDiskCommand: unset WAD takes the storage domain's), so the
+  // domain's policy is the one the block-domain rule sees. A direct LUN rides
+  // the default virtio_scsi interface (createVmDirectLunDisk).
+  const discardState =
+    diskType === 'image'
+      ? passDiscardState({
+          diskStorageType: 'image',
+          diskInterface,
+          domain: selectedDomain,
+          wipeAfterDelete: selectedDomain?.wipe_after_delete === true,
+        })
+      : passDiscardState({
+          diskStorageType: 'lun',
+          diskInterface: 'virtio_scsi',
+          lun: selectedLuns[0],
+        })
+  const sendPassDiscard = effectivePassDiscard(discardState, passDiscard)
+
   const nameValid = name.trim() !== ''
   const sizeValid = isDiskSizeValid(sizeGib)
   const nameError = nameTouched && !nameValid
@@ -147,6 +172,7 @@ export function AddDiskModal({
       onAddLun({
         alias: name.trim(),
         bootable,
+        passDiscard: sendPassDiscard,
         lun: {
           type: lunStorageType,
           id: lun.id,
@@ -170,6 +196,7 @@ export function AddDiskModal({
       sparse: resolved.derived.sparse,
       shareable,
       readOnly,
+      passDiscard: sendPassDiscard,
       // omit when Default profile is selected — the engine assigns the SD default
       diskProfileId: diskProfileId === DEFAULT_PROFILE ? undefined : diskProfileId,
     })
@@ -280,6 +307,12 @@ export function AddDiskModal({
               onSelectedLunsChange={setSelectedLuns}
             />
           )}
+          <PassDiscardField
+            id="add-disk-pass-discard"
+            state={discardState}
+            isChecked={passDiscard}
+            onChange={setPassDiscard}
+          />
           <DiskSwitchField
             id="add-disk-bootable"
             label={t('vmDisks.addModal.bootable')}

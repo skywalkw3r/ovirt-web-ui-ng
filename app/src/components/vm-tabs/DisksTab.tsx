@@ -138,7 +138,8 @@ export function DisksTab({ vmId }: { vmId: string }) {
   // disk-type filter, mirroring the flat Disks page (image/lun/managed block)
   const [diskType, setDiskType] = useState<'all' | 'image' | 'lun' | 'managed_block_storage'>('all')
   // non-null while the edit dialog is up; carries the underlying disk to edit
-  const [editing, setEditing] = useState<Disk | null>(null)
+  // plus its attachment (the attachment-level Enable Discard rides on it)
+  const [editing, setEditing] = useState<{ disk: Disk; attachment: DiskAttachment } | null>(null)
   const [resizing, setResizing] = useState<DiskAttachment | null>(null)
   const [detaching, setDetaching] = useState<DiskAttachment | null>(null)
   // non-null while the sparsify confirm dialog is up; carries the disk to reclaim
@@ -207,7 +208,7 @@ export function DisksTab({ vmId }: { vmId: string }) {
       const asDisk: Disk = { ...disk, id: diskId }
       actions.push({
         title: t('common.action.edit'),
-        onClick: () => setEditing(asDisk),
+        onClick: () => setEditing({ disk: asDisk, attachment }),
       })
     }
     actions.push({
@@ -484,7 +485,13 @@ export function DisksTab({ vmId }: { vmId: string }) {
         </div>
       )}
 
-      {editing && <DiskFormModal disk={editing} onClose={() => setEditing(null)} />}
+      {editing && (
+        <DiskFormModal
+          disk={editing.disk}
+          vmAttachment={{ vmId, attachment: editing.attachment }}
+          onClose={() => setEditing(null)}
+        />
+      )}
 
       {isAddOpen && (
         <AddDiskModal
@@ -503,11 +510,12 @@ export function DisksTab({ vmId }: { vmId: string }) {
       {isAttachOpen && (
         <AttachDiskModal
           attachedDiskIds={attachedDiskIds}
-          onAttach={(disk, bootable) => {
+          onAttach={(disk, bootable, passDiscard) => {
             setIsAttachOpen(false)
             attach.mutate({
               diskId: disk.id,
               bootable,
+              passDiscard,
               diskName: disk.alias ?? disk.name ?? disk.id,
             })
           }}
