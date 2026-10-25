@@ -4834,12 +4834,12 @@ let vms = allInitialVms()
 let snapshots = initialSnapshots()
 let disks = initialDisks()
 let nics = initialNics()
-let hosts = initialHosts()
+export let hosts = initialHosts()
 // Most host subcollections are read-only (no mock action mutates them), so
 // plain consts suffice — but setupnetworks rewrites NIC IPs and the
 // attachment map, so those two get let bindings and a resetMockVms hook.
-let hostNics = initialHostNics()
-let hostNetworkAttachments = initialHostNetworkAttachments()
+export let hostNics = initialHostNics()
+export let hostNetworkAttachments = initialHostNetworkAttachments()
 // Fence agents mutate via the POST/PUT/DELETE /hosts/{id}/fenceagents handlers,
 // so a `let` binding restored by resetMockVms (and its own id sequence).
 let hostFenceAgents = initialHostFenceAgents()

@@ -17,6 +17,7 @@ import {
 } from '../schemas/host'
 import { FenceAgentListSchema, FenceAgentSchema, type FenceAgent } from '../schemas/fence-agent'
 import { HostNicListSchema, type HostNic } from '../schemas/host-nic'
+import { LldpElementListSchema, type LldpElement } from '../schemas/lldp'
 import { NetworkAttachmentListSchema, type NetworkAttachment } from '../schemas/network-attachment'
 import { HostDeviceListSchema, type HostDevice } from '../schemas/host-device'
 import { HostHookListSchema, type HostHook } from '../schemas/host-hook'
@@ -789,6 +790,47 @@ export async function setupHostNetworks(id: string, spec: SetupNetworksSpec): Pr
 // setupHostNetworks sends commit_on_success instead, so this is a fallback.
 export async function commitHostNetConfig(id: string): Promise<void> {
   await request(`/hosts/${encodeURIComponent(id)}/commitnetconfig`, { method: 'POST', body: {} })
+}
+
+// POST /hosts/{id}/copyhostnetworks: replace THIS host's network
+// configuration with the source host's (oVirt 4.4+). Verified against
+// ovirt-engine-api-model services/HostService.java CopyHostNetworks: the only
+// mandatory input is source_host.id (async is optional and not sent). Engine
+// side (CopyHostNetworksCommand) the two hosts must share a cluster and the
+// destination must have at least as many non-management physical NICs as the
+// source; NICs are paired by name order, every attachment the source lacks is
+// REMOVED from the destination, and the result is committed (commit_on_success)
+// through an internal HostSetupNetworks run, which also requires the
+// destination to be Up, Maintenance or NonOperational. A rejected precondition
+// answers a fault whose detail the caller surfaces verbatim.
+export async function copyHostNetworks(id: string, sourceHostId: string): Promise<void> {
+  await request(`/hosts/${encodeURIComponent(id)}/copyhostnetworks`, {
+    method: 'POST',
+    body: { source_host: { id: sourceHostId } },
+  })
+}
+
+// GET /hosts/{id}/nics/{nicId}/linklayerdiscoveryprotocolelements: the LLDP
+// TLVs the NIC received from its switch port (api-model
+// services/LinkLayerDiscoveryProtocolService.java, since 4.1.6). The engine
+// asks VDSM live on every read, so callers fetch on demand rather than poll; a
+// host VDSM cannot be reached answers a fault (surfaced as an error state). A
+// 404 means the optional subcollection is absent on this engine/NIC, i.e.
+// nothing reported, per the "404 on an optional subcollection means empty" rule.
+export async function listHostNicLldp(hostId: string, nicId: string): Promise<LldpElement[]> {
+  try {
+    const data = LldpElementListSchema.parse(
+      await request(
+        `/hosts/${encodeURIComponent(hostId)}/nics/${encodeURIComponent(
+          nicId,
+        )}/linklayerdiscoveryprotocolelements`,
+      ),
+    )
+    return data.link_layer_discovery_protocol_element ?? []
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) return []
+    throw error
+  }
 }
 
 export async function listHostDevices(id: string): Promise<HostDevice[]> {

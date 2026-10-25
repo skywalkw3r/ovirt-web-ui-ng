@@ -7,23 +7,29 @@ import {
   EmptyStateFooter,
   Label,
   LabelGroup,
+  MenuToggle,
   Skeleton,
   Toolbar,
   ToolbarContent,
   ToolbarGroup,
   ToolbarItem,
 } from '@patternfly/react-core'
-import { Table, Tbody, Td, Thead, Tr } from '@patternfly/react-table'
+import { EllipsisVIcon } from '@patternfly/react-icons'
+import { ActionsColumn, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table'
 import { StatusBadge } from '../StatusBadge'
 import type { HostNic } from '../../api/schemas/host-nic'
 import type { NetworkAttachment } from '../../api/schemas/network-attachment'
 import { useColumnPrefs, type ColumnDef } from '../../hooks/useColumnPrefs'
 import { sortRows, useColumnSort } from '../../hooks/useColumnSort'
+import { useHost } from '../../hooks/useHost'
+import { canCopyHostNetworks } from '../../hooks/useHostActions'
 import { useHostNetworkAttachments, useHostNics } from '../../hooks/useHostDetail'
 import { useT } from '../../i18n/useT'
 import { statusText } from '../../lib/format'
 import { ColumnPicker } from '../list-toolbar/ColumnPicker'
 import { ResizableTh, resizableTableProps } from '../list-toolbar/ResizableTh'
+import { CopyHostNetworksModal } from '../host-actions/CopyHostNetworksModal'
+import { NicLldpModal } from '../host-network/NicLldp'
 import { SetupNetworksModal } from '../host-network/SetupNetworksModal'
 
 // The engine reports link speed in bits/s (serialized as a string, coerced by
@@ -97,6 +103,12 @@ export function HostNicsTab({ hostId, clusterId }: { hostId: string; clusterId?:
   // its own error state).
   const attachments = useHostNetworkAttachments(hostId)
   const [settingUp, setSettingUp] = useState(false)
+  const [copyingNetworks, setCopyingNetworks] = useState(false)
+  const [lldpNic, setLldpNic] = useState<HostNic | null>(null)
+  // The host itself (status, cluster) gates Copy host networks. Same key the
+  // detail page already observes, so this adds no request there.
+  const host = useHost(hostId)
+  const canCopy = host.data !== undefined && canCopyHostNetworks(host.data)
 
   // >4 columns ⇒ the COLUMNS + useColumnPrefs + ColumnPicker house pattern
   // (Name pinned). Built in-component so the labels localize via t(). Headers
@@ -165,6 +177,15 @@ export function HostNicsTab({ hostId, clusterId }: { hostId: string; clusterId?:
               {t('hostNics.setupNetworks')}
             </Button>
           </ToolbarItem>
+          {/* Same modal and gate as the host kebab's item; hidden (not
+              disabled) when the host's status rules it out, like the kebab. */}
+          {canCopy && (
+            <ToolbarItem>
+              <Button variant="secondary" onClick={() => setCopyingNetworks(true)}>
+                Copy host networks
+              </Button>
+            </ToolbarItem>
+          )}
           <ToolbarGroup align={{ default: 'alignEnd' }}>
             <ToolbarItem>
               <ColumnPicker
@@ -234,6 +255,7 @@ export function HostNicsTab({ hostId, clusterId }: { hostId: string; clusterId?:
                     {column.label}
                   </ResizableTh>
                 ))}
+                <Th screenReaderText={t('common.field.actions')} />
               </Tr>
             </Thead>
             <Tbody>
@@ -244,6 +266,22 @@ export function HostNicsTab({ hostId, clusterId }: { hostId: string; clusterId?:
                       {cellOf(nic, column.key)}
                     </Td>
                   ))}
+                  <Td dataLabel={t('common.field.actions')} isActionCell>
+                    <ActionsColumn
+                      actionsToggle={({ onToggle, isOpen, isDisabled, toggleRef }) => (
+                        <MenuToggle
+                          ref={toggleRef}
+                          aria-label={t('common.action.actionsFor', { name: nic.name ?? nic.id })}
+                          variant="plain"
+                          icon={<EllipsisVIcon />}
+                          onClick={onToggle}
+                          isExpanded={isOpen}
+                          isDisabled={isDisabled}
+                        />
+                      )}
+                      items={[{ title: 'View LLDP information', onClick: () => setLldpNic(nic) }]}
+                    />
+                  </Td>
                 </Tr>
               ))}
             </Tbody>
@@ -259,6 +297,20 @@ export function HostNicsTab({ hostId, clusterId }: { hostId: string; clusterId?:
           clusterId={clusterId}
           isOpen={settingUp}
           onClose={() => setSettingUp(false)}
+        />
+      )}
+
+      {copyingNetworks && host.data !== undefined && (
+        <CopyHostNetworksModal host={host.data} onClose={() => setCopyingNetworks(false)} />
+      )}
+
+      {/* LLDP is read live from VDSM, so it is fetched only while this is open */}
+      {lldpNic !== null && (
+        <NicLldpModal
+          hostId={hostId}
+          nicId={lldpNic.id}
+          nicName={lldpNic.name ?? lldpNic.id}
+          onClose={() => setLldpNic(null)}
         />
       )}
     </>
