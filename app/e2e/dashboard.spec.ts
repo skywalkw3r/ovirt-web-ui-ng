@@ -1,20 +1,14 @@
 import { expect, test } from '@playwright/test'
 import { login } from './helpers'
 
-// The Storage domains card is a pressure gauge, not an inventory: of the six
-// non-image fixture domains it shows only the four fullest, highest
-// utilization first — data 65%, block-data 30%, hosted_storage 26%, iso 18%;
-// nfs-data-2 (12%) and export (10%) fall below the cut. The full list stays
-// one click away.
-test('storage card shows the four fullest domains, highest utilization first', async ({ page }) => {
+// The Storage capacity tile names its fullest domain (data, 65% in the
+// fixture) as the busiest and links straight to it.
+test('the storage capacity tile links to the fullest domain', async ({ page }) => {
   await login(page)
-  const items = page.getByRole('list', { name: 'Storage domain capacity' }).getByRole('listitem')
-  await expect(items).toHaveCount(4)
-  await expect(items.nth(0)).toContainText('data')
-  await expect(items.nth(1)).toContainText('block-data')
-  await expect(items.nth(2)).toContainText('hosted_storage')
-  await expect(items.nth(3)).toContainText('iso')
-  await expect(page.getByRole('link', { name: 'View storage domains' })).toBeVisible()
+  const storage = page.getByRole('region', { name: 'Storage' })
+  await expect(storage.getByText(/free$/)).toBeVisible()
+  await storage.getByRole('link', { name: 'data' }).click()
+  await expect(page).toHaveURL(/\/storage\/[^/]+$/)
 })
 
 // The Inventory card's status counts deep-link into the filtered list, so a

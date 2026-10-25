@@ -1,14 +1,13 @@
 import { useMemo, type ReactNode } from 'react'
 import { useIntl } from 'react-intl'
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table'
-import { Donut, DONUT_TRACK_COLOR } from '../components/metrics/Donut'
+import { DONUT_TRACK_COLOR } from '../components/metrics/Donut'
 import { UsageBar } from '../components/HostListCells'
 import {
   Button,
   Card,
   Tooltip,
   CardBody,
-  CardFooter,
   CardHeader,
   CardTitle,
   DescriptionList,
@@ -29,7 +28,6 @@ import {
   List,
   ListItem,
   PageSection,
-  Progress,
   Skeleton,
   Stack,
   Timestamp,
@@ -51,10 +49,6 @@ import {
   VirtualMachineIcon,
   WrenchIcon,
 } from '@patternfly/react-icons'
-import chart_color_black_300 from '@patternfly/react-tokens/dist/esm/chart_color_black_300'
-import chart_color_black_500 from '@patternfly/react-tokens/dist/esm/chart_color_black_500'
-import chart_color_blue_300 from '@patternfly/react-tokens/dist/esm/chart_color_blue_300'
-import chart_color_green_300 from '@patternfly/react-tokens/dist/esm/chart_color_green_300'
 import chart_color_red_orange_300 from '@patternfly/react-tokens/dist/esm/chart_color_red_orange_300'
 import chart_color_yellow_300 from '@patternfly/react-tokens/dist/esm/chart_color_yellow_300'
 import chart_color_orange_300 from '@patternfly/react-tokens/dist/esm/chart_color_orange_300'
@@ -84,12 +78,13 @@ import {
   aggregateMemory,
   aggregateStorageVirtual,
   busiestEntity,
-  capacityVariant,
   hostCpuUtilizations,
   hostMemoryUtilizations,
   storageUtilizations,
   usedPercent,
   utilizationBand,
+  type CapacitySummary,
+  type CpuCapacity,
   type EntityUtilization,
   type UtilizationBand,
 } from '../lib/utilization'
@@ -102,28 +97,13 @@ const SUBTLE_TEXT: React.CSSProperties = {
   fontSize: 'var(--pf-t--global--font--size--sm)',
 }
 
-// Chart tokens (not the Label palette) so the slices follow the dark theme;
-// colors mirror VmStatusLabel's kind → color map.
-const DONUT_SEGMENTS: { kind: VmStatusKind; labelId: MessageId; color: string }[] = [
-  { kind: 'running', labelId: 'dashboard.vmStatus.running', color: chart_color_green_300.var },
-  { kind: 'stopped', labelId: 'dashboard.vmStatus.stopped', color: chart_color_black_300.var },
-  { kind: 'paused', labelId: 'dashboard.vmStatus.paused', color: chart_color_yellow_300.var },
-  {
-    kind: 'transitional',
-    labelId: 'dashboard.vmStatus.transitional',
-    color: chart_color_blue_300.var,
-  },
-  { kind: 'error', labelId: 'dashboard.vmStatus.error', color: chart_color_red_orange_300.var },
-  { kind: 'unknown', labelId: 'dashboard.vmStatus.unknown', color: chart_color_black_500.var },
-]
-
-// VM donut kinds whose count maps faithfully to an engine status clause get a
+// VM status kinds whose count maps faithfully to an engine status clause get a
 // status-prefiltered deep link into the filterable /vms list — VmsPage reads
 // ?q= as the engine search DSL (see useVmSearch), so the URL shape mirrors the
 // list toolbar's own committed query. The clause has to cover every status the
 // kind counts (paused also buckets 'suspended', see lib/vm-status), or the
 // linked list under-reports its own badge. Open-ended kinds (transitional,
-// unknown) have no bounded clause, so their legend rows stay plain text.
+// unknown) have no bounded clause, so they get no link.
 const VM_STATUS_QUERY: Partial<Record<VmStatusKind, string>> = {
   running: 'status=up',
   stopped: 'status=down',
@@ -758,24 +738,20 @@ function ThresholdBar({ percent, label }: { percent: number; label: string }) {
   )
 }
 
-// The CPU/memory allocation label. Those figures are estimates, which a help
-// tooltip beside the label explains (a focusable plain button, so keyboard
-// users reach it too).
-function EstimateLabel({ labelId }: { labelId: MessageId }) {
+// The "?" beside a tile title: what the tile measures and where its figures
+// come from, including that the CPU/memory allocation lines are estimates. A
+// focusable plain button, so keyboard users reach the tooltip too.
+function TileHelp({ title, help }: { title: string; help: string }) {
   const t = useT()
   return (
-    <span style={SUBTLE_TEXT}>
-      {t(labelId)}
-      <Tooltip content={t('capacity.estimate.help')}>
-        <Button
-          variant="plain"
-          hasNoPadding
-          aria-label={t('capacity.estimate.aria')}
-          icon={<OutlinedQuestionCircleIcon />}
-          style={{ marginInlineStart: 'var(--pf-t--global--spacer--xs)' }}
-        />
-      </Tooltip>
-    </span>
+    <Tooltip content={help}>
+      <Button
+        variant="plain"
+        hasNoPadding
+        aria-label={t('capacity.help.aria', { title })}
+        icon={<OutlinedQuestionCircleIcon />}
+      />
+    </Tooltip>
   )
 }
 
@@ -793,11 +769,14 @@ interface TileFigures {
 function CapacityTile({
   icon,
   title,
+  help,
   figures,
   children,
 }: {
   icon: ReactNode
   title: string
+  // what the tile measures, shown from the "?" beside the title
+  help: string
   // populated tile; leave undefined and pass children for the other states
   figures?: TileFigures
   children?: ReactNode
@@ -822,6 +801,7 @@ function CapacityTile({
             {icon}
           </span>
           <h3 style={TILE_TITLE}>{title}</h3>
+          <TileHelp title={title} help={help} />
         </Flex>
         {band && (
           <Label isCompact color={BAND_LABEL[band].color}>
@@ -865,10 +845,21 @@ function Busiest({ entity, link }: { entity: EntityUtilization; link: ReactNode 
   )
 }
 
+// How many clusters the By cluster table shows; the rest stay one click away
+// on the Clusters page.
+const CLUSTER_TABLE_LIMIT = 10
+
+// A cluster's load for ranking: the higher of its CPU and memory use, so a
+// memory-bound cluster ranks as high as a CPU-bound one. -1 when it reports
+// neither, which sorts it last.
+function clusterLoad(row: { cpu?: CpuCapacity; memory?: CapacitySummary }): number {
+  return Math.max(row.cpu?.usedPercent ?? -1, row.memory ? usedPercent(row.memory) : -1)
+}
+
 // One row per cluster that has hosts: how many report, and the cluster's
 // core-weighted CPU and its memory, with the same compact bars as the hosts
-// list. Names come from the clusters read when it has landed, else the
-// host's own cluster back-link.
+// list. Busiest first, capped at CLUSTER_TABLE_LIMIT. Names come from the
+// clusters read when it has landed, else the host's own cluster back-link.
 function ClusterCapacityTable({
   hosts,
   clusters,
@@ -892,13 +883,28 @@ function ClusterCapacityTable({
         cpu: aggregateCpuCapacity(members),
         memory: aggregateMemory(members),
       }))
-      .sort((a, b) => a.name.localeCompare(b.name))
+      .sort((a, b) => clusterLoad(b) - clusterLoad(a) || a.name.localeCompare(b.name))
   }, [hosts, clusters])
 
   if (rows.length === 0) return null
+  const shown = rows.slice(0, CLUSTER_TABLE_LIMIT)
   return (
     <div>
-      <h3 style={SECTION_TITLE}>{t('capacity.byCluster.title')}</h3>
+      <Flex
+        justifyContent={{ default: 'justifyContentSpaceBetween' }}
+        alignItems={{ default: 'alignItemsBaseline' }}
+        style={{ marginBlockEnd: 'var(--pf-t--global--spacer--sm)' }}
+      >
+        <h3 style={{ ...SECTION_TITLE, marginBlockEnd: 0 }}>{t('capacity.byCluster.title')}</h3>
+        {rows.length > shown.length && (
+          <span style={SUBTLE_TEXT}>
+            {t('capacity.byCluster.limited', { shown: shown.length, count: rows.length })}{' '}
+            <Link to="/clusters" style={INLINE_LINK}>
+              {t('capacity.byCluster.viewAll')}
+            </Link>
+          </span>
+        )}
+      </Flex>
       <Table aria-label={t('capacity.byCluster.ariaLabel')} variant="compact">
         <Thead>
           <Tr>
@@ -909,7 +915,7 @@ function ClusterCapacityTable({
           </Tr>
         </Thead>
         <Tbody>
-          {rows.map((row) => (
+          {shown.map((row) => (
             <Tr key={row.id}>
               <Td dataLabel={t('hosts.column.cluster')}>
                 <Link to="/clusters/$clusterId" params={{ clusterId: row.id }}>
@@ -1006,7 +1012,7 @@ function CapacityCard({
               : undefined,
           allocation: allocation && (
             <>
-              <EstimateLabel labelId="capacity.allocated" />{' '}
+              <span style={SUBTLE_TEXT}>{t('capacity.allocated')}</span>{' '}
               {cpu.logicalCpus
                 ? t('capacity.cpu.allocation', {
                     vcpus: allocation.vcpus,
@@ -1042,7 +1048,7 @@ function CapacityCard({
           totalLabel: t('capacity.ofTotal', { total: formatBytes(memory.total) }),
           allocation: allocation && memory.total > 0 && (
             <>
-              <EstimateLabel labelId="capacity.committed" />{' '}
+              <span style={SUBTLE_TEXT}>{t('capacity.committed')}</span>{' '}
               {t('capacity.memory.committed', {
                 amount: formatBytes(allocation.memory),
                 percent: Math.round((allocation.memory / memory.total) * 100),
@@ -1106,14 +1112,24 @@ function CapacityCard({
           <Grid hasGutter>
             {isAdmin && (
               <GridItem md={4}>
-                <CapacityTile icon={<CpuIcon />} title={cpuTitle} figures={cpuFigures}>
+                <CapacityTile
+                  icon={<CpuIcon />}
+                  title={cpuTitle}
+                  help={t('capacity.help.cpu')}
+                  figures={cpuFigures}
+                >
                   {hostTileState(cpuTitle)}
                 </CapacityTile>
               </GridItem>
             )}
             {isAdmin && (
               <GridItem md={4}>
-                <CapacityTile icon={<MemoryIcon />} title={memoryTitle} figures={memoryFigures}>
+                <CapacityTile
+                  icon={<MemoryIcon />}
+                  title={memoryTitle}
+                  help={t('capacity.help.memory')}
+                  figures={memoryFigures}
+                >
                   {hostTileState(memoryTitle)}
                 </CapacityTile>
               </GridItem>
@@ -1122,6 +1138,7 @@ function CapacityCard({
               <CapacityTile
                 icon={<StorageDomainIcon />}
                 title={storageTitle}
+                help={t('capacity.help.storage')}
                 figures={storageFigures}
               >
                 {storageDomains.isPending ? (
@@ -1148,250 +1165,6 @@ function CapacityCard({
           )}
         </Stack>
       </CardBody>
-    </Card>
-  )
-}
-
-// ---------------------------------------------------------------------------
-// Virtual machines by status (center column) — the portal's own inventory,
-// kept from the previous dashboard.
-
-function VmsCard({ vms }: { vms: DashboardQueries['vms'] }) {
-  const t = useT()
-  const counts = vmStatusCounts(vms.data ?? [])
-  // Keep the legend stable across polls (zero-count kinds stay listed);
-  // 'unknown' only appears when the engine actually reports one. 'transitional'
-  // is omitted from the chart entirely — the transient migrating/rebooting
-  // states are rarely non-zero and add legend noise.
-  const segments = DONUT_SEGMENTS.filter(
-    ({ kind }) =>
-      kind !== 'transitional' && (kind !== 'unknown' || (counts.get('unknown') ?? 0) > 0),
-  ).map(({ kind, labelId, color }) => ({
-    kind,
-    label: t(labelId),
-    color,
-    count: counts.get(kind) ?? 0,
-  }))
-  // Gate the four-states on the real inventory size, but the donut center
-  // counts only what the ring charts (transitional is excluded above), so the
-  // arcs and the centre figure always agree.
-  const total = vms.data?.length ?? 0
-  const chartedTotal = segments.reduce((sum, segment) => sum + segment.count, 0)
-
-  return (
-    <Card isFullHeight>
-      <CardTitle>{t('dashboard.vms.title')}</CardTitle>
-      <CardBody>
-        {vms.isPending && (
-          <Skeleton shape="circle" width="140px" screenreaderText={t('dashboard.vms.loading')} />
-        )}
-
-        {vms.isError && (
-          <QueryError
-            title={t('dashboard.vms.error')}
-            error={vms.error}
-            onRetry={() => void vms.refetch()}
-          />
-        )}
-
-        {vms.isSuccess && total === 0 && (
-          <EmptyState variant="xs" titleText={t('dashboard.vms.empty.title')}>
-            <EmptyStateBody>{t('dashboard.vms.empty.body')}</EmptyStateBody>
-          </EmptyState>
-        )}
-
-        {vms.isSuccess && total > 0 && (
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'flex-start',
-              gap: 'var(--pf-t--global--spacer--xl)',
-            }}
-          >
-            {/* Legend text sits to the left of the donut, vertically centered
-                against it. The Victory legend is inline SVG text — not focusable
-                and not a link. Rendering the legend as HTML instead lets each
-                status count deep-link into the filtered /vms list (keyboard-
-                navigable, middle-clickable) while the donut keeps its swatch
-                colors. */}
-            <List isPlain aria-label={t('dashboard.vms.chartTitle')}>
-              {segments.map((segment) => {
-                const q = VM_STATUS_QUERY[segment.kind]
-                const swatch = (
-                  <span
-                    aria-hidden
-                    style={{
-                      display: 'inline-block',
-                      width: '0.75rem',
-                      height: '0.75rem',
-                      borderRadius: 'var(--pf-t--global--border--radius--tiny)',
-                      backgroundColor: segment.color,
-                      marginInlineEnd: 'var(--pf-t--global--spacer--sm)',
-                      flexShrink: 0,
-                    }}
-                  />
-                )
-                const text = `${segment.label}: ${segment.count}`
-                return (
-                  <ListItem key={segment.kind}>
-                    {q !== undefined ? (
-                      <Link
-                        to="/vms"
-                        search={{ q }}
-                        style={{ display: 'inline-flex', alignItems: 'center' }}
-                      >
-                        {swatch}
-                        {text}
-                      </Link>
-                    ) : (
-                      <span style={{ display: 'inline-flex', alignItems: 'center' }}>
-                        {swatch}
-                        {text}
-                      </span>
-                    )}
-                  </ListItem>
-                )
-              })}
-            </List>
-            <div style={{ height: '200px', width: '230px', flexShrink: 0 }}>
-              <Donut
-                ariaTitle={t('dashboard.vms.chartTitle')}
-                ariaDesc={t('dashboard.vms.chartDesc')}
-                segments={segments.map(({ label, count, color }) => ({
-                  label,
-                  value: count,
-                  color,
-                }))}
-                tooltip={(segment) => `${segment.label}: ${segment.value}`}
-                title={String(chartedTotal)}
-                subTitle={t('dashboard.vms.unit', { count: chartedTotal })}
-                width={230}
-                height={200}
-                padding={20}
-                name="vm-status-donut"
-              />
-            </div>
-          </div>
-        )}
-      </CardBody>
-      {/* "View virtual machines" pinned to the bottom-right of the card. */}
-      <CardFooter style={{ textAlign: 'left' }}>
-        <Link to="/vms-templates">{t('dashboard.vms.viewAll')}</Link>
-      </CardFooter>
-    </Card>
-  )
-}
-
-// ---------------------------------------------------------------------------
-// Storage domains card (right rail) — per-domain capacity bars. Same
-// rendering rules as StorageDomainsPage's CapacityCell, with the domain name
-// rendered above the bar. The name stays outside the Progress title because
-// PF marks the title's description element aria-hidden, which axe flags when
-// the admin link makes it focusable (aria-hidden-focus).
-
-function DomainCapacity({ domain, isAdmin }: { domain: StorageDomain; isAdmin: boolean }) {
-  const t = useT()
-  // the detail route is admin-gated, so only admins get the hyperlink
-  const name = isAdmin ? (
-    <Link to="/storage/$storageDomainId" params={{ storageDomainId: domain.id }}>
-      {domain.name}
-    </Link>
-  ) : (
-    domain.name
-  )
-  if (domain.used === undefined || domain.available === undefined) {
-    return (
-      <>
-        {name} {t('dashboard.storage.capacityUnknownSuffix')}
-      </>
-    )
-  }
-  const total = domain.used + domain.available
-  const percent = total > 0 ? (domain.used / total) * 100 : 0
-  const measure = t('dashboard.storage.measure', {
-    used: formatBytes(domain.used),
-    total: formatBytes(total),
-    percent: Math.round(percent),
-  })
-  return (
-    <>
-      <div>{name}</div>
-      <Progress
-        value={percent}
-        variant={capacityVariant(percent)}
-        size="sm"
-        label={measure}
-        valueText={measure}
-        aria-label={t('dashboard.storage.capacityAria', { name: domain.name })}
-      />
-    </>
-  )
-}
-
-// The card is a pressure gauge, not an inventory: only the fullest few
-// domains show, highest utilization first — the complete list lives behind
-// the View storage domains footer link. Domains without capacity figures
-// sort last (nothing to warn about).
-const STORAGE_CARD_COUNT = 4
-
-function domainUtilization(domain: StorageDomain): number {
-  if (domain.used === undefined || domain.available === undefined) return -1
-  const total = domain.used + domain.available
-  return total > 0 ? domain.used / total : 0
-}
-
-function StorageCard({
-  storageDomains,
-  isAdmin,
-}: {
-  storageDomains: DashboardQueries['storageDomains']
-  isAdmin: boolean
-}) {
-  const t = useT()
-  const domains = operatorDomains(storageDomains.data ?? [])
-    .sort((a, b) => domainUtilization(b) - domainUtilization(a))
-    .slice(0, STORAGE_CARD_COUNT)
-  return (
-    <Card isFullHeight>
-      <CardTitle>{t('dashboard.storage.title')}</CardTitle>
-      <CardBody>
-        {storageDomains.isPending && (
-          <>
-            <Skeleton height="2.5rem" style={{ marginBottom: '0.5rem' }} />
-            <Skeleton height="2.5rem" screenreaderText={t('dashboard.storage.loading')} />
-          </>
-        )}
-
-        {storageDomains.isError && (
-          <QueryError
-            title={t('dashboard.storage.error')}
-            error={storageDomains.error}
-            onRetry={() => void storageDomains.refetch()}
-          />
-        )}
-
-        {storageDomains.isSuccess && domains.length === 0 && (
-          <EmptyState variant="xs" titleText={t('dashboard.storage.empty.title')}>
-            <EmptyStateBody>{t('dashboard.storage.permBody')}</EmptyStateBody>
-          </EmptyState>
-        )}
-
-        {storageDomains.isSuccess && domains.length > 0 && (
-          <List isPlain aria-label={t('dashboard.storage.listAriaLabel')}>
-            {domains.map((domain) => (
-              <ListItem key={domain.id}>
-                <DomainCapacity domain={domain} isAdmin={isAdmin} />
-              </ListItem>
-            ))}
-          </List>
-        )}
-      </CardBody>
-      {isAdmin && (
-        <CardFooter>
-          <Link to="/storage">{t('dashboard.storage.viewAll')}</Link>
-        </CardFooter>
-      )}
     </Card>
   )
 }
@@ -1552,11 +1325,11 @@ export function DashboardPage() {
         }
         actions={<RefreshControl />}
       />
-      {/* A 3/5/4 row (details, VM status, activity) first, then Capacity
-          spanning the page (its three tiles need the width), then an even
-          inventory/storage row. One flat grid (not per-column stacks) so the
-          rows line up across columns; every card is isFullHeight and
-          stretches to its row's tallest, giving aligned box edges. */}
+      {/* A 3/5/4 row (details, inventory, activity) first, then Capacity
+          spanning the page (its three tiles need the width). One flat grid
+          (not per-column stacks) so the row lines up across columns; every
+          card is isFullHeight and stretches to its row's tallest, giving
+          aligned box edges. */}
       {/* rowGap tightens the vertical space between the rows below the
           default 1rem gutter; the column gutter is left untouched. */}
       <Grid
@@ -1571,7 +1344,15 @@ export function DashboardPage() {
           <DetailsCard apiInfo={apiInfo} />
         </GridItem>
         <GridItem xl={5}>
-          <VmsCard vms={vms} />
+          <InventoryCard
+            vms={vms}
+            pools={pools}
+            hosts={hosts}
+            dataCenters={dataCenters}
+            clusters={clusters}
+            storageDomains={storageDomains}
+            isAdmin={isAdmin}
+          />
         </GridItem>
         <GridItem xl={4}>
           <ActivityCard events={events} />
@@ -1586,22 +1367,6 @@ export function DashboardPage() {
             utilization={utilization}
             isAdmin={isAdmin}
           />
-        </GridItem>
-
-        {/* Row 3 */}
-        <GridItem xl={6}>
-          <InventoryCard
-            vms={vms}
-            pools={pools}
-            hosts={hosts}
-            dataCenters={dataCenters}
-            clusters={clusters}
-            storageDomains={storageDomains}
-            isAdmin={isAdmin}
-          />
-        </GridItem>
-        <GridItem xl={6}>
-          <StorageCard storageDomains={storageDomains} isAdmin={isAdmin} />
         </GridItem>
       </Grid>
     </PageSection>

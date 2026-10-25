@@ -36,12 +36,10 @@ test('login page has no serious accessibility violations', async ({ page }) => {
 test('dashboard has no serious accessibility violations', async ({ page }) => {
   await login(page)
   await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible()
-  // The status donut is the last card to settle; scanning mid-render would
-  // miss the chart's accessible title. That title is an SVG <title> element,
-  // which is never "visible" — attached is the strongest waitable state.
-  await expect(page.getByText('Virtual machines by status')).toBeAttached()
-  // ...and the capacity tiles plus the by-cluster table, so their status
-  // labels, threshold bars and inline links are scanned populated
+  // Wait for the inventory and the capacity tiles plus the by-cluster table,
+  // so their counts, status labels, threshold bars and inline links are
+  // scanned populated
+  await expect(page.getByRole('list', { name: 'Resource inventory' })).toBeVisible()
   await expect(page.getByRole('grid', { name: 'Utilization by cluster' })).toBeVisible()
   await expect(page.getByRole('region', { name: 'CPU' }).getByText(/free$/)).toBeVisible()
 

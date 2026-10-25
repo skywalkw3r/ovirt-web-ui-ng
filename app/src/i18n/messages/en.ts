@@ -470,41 +470,21 @@ export const en = {
   'capacity.cpu.allocation': '{vcpus} vCPU, {ratio} per logical CPU',
   'capacity.cpu.allocationNoRatio': '{vcpus} vCPU',
   'capacity.memory.committed': '{amount}, {percent}% of physical',
-  'capacity.estimate.help':
-    'Estimated from the configured vCPUs and memory of running VMs. The Data Warehouse holds the exact figures.',
-  'capacity.estimate.aria': 'About this estimate',
   'capacity.busiest': 'Busiest:',
+  'capacity.help.aria': 'About {title}',
+  'capacity.help.cpu':
+    'Logical CPUs in use across reporting hosts, weighted by core count. Allocated is estimated from the vCPUs of running VMs; the Data Warehouse holds the exact figure.',
+  'capacity.help.memory':
+    'Host memory in use across reporting hosts. Committed is estimated from the memory defined on running VMs; the Data Warehouse holds the exact figure.',
+  'capacity.help.storage':
+    'Space used across storage domains. Committed and Allocated come straight from the engine.',
   'capacity.byCluster.title': 'By cluster',
   'capacity.byCluster.ariaLabel': 'Utilization by cluster',
+  'capacity.byCluster.limited': 'Busiest {shown} of {count} clusters',
+  'capacity.byCluster.viewAll': 'View all clusters',
 
-  // Virtual machines by status card ------------------------------------------
-  'dashboard.vms.title': 'Virtual machines',
-  'dashboard.vms.loading': 'Loading virtual machines',
-  'dashboard.vms.error': 'Could not load virtual machines',
-  'dashboard.vms.empty.title': 'No virtual machines',
-  'dashboard.vms.empty.body': 'VMs you have permission to see will appear here.',
-  'dashboard.vms.chartTitle': 'Virtual machines by status',
-  'dashboard.vms.chartDesc': 'Virtual machine counts by status',
-  'dashboard.vms.unit': '{count, plural, one {VM} other {VMs}}',
-  'dashboard.vms.viewAll': 'View virtual machines',
-  'dashboard.vmStatus.running': 'Running',
-  'dashboard.vmStatus.stopped': 'Stopped',
-  'dashboard.vmStatus.paused': 'Paused',
-  'dashboard.vmStatus.transitional': 'Transitional',
-  'dashboard.vmStatus.error': 'Error',
-  'dashboard.vmStatus.unknown': 'Unknown',
-
-  // Storage domains card (per-domain capacity bars) --------------------------
-  'dashboard.storage.title': 'Storage domains',
-  'dashboard.storage.loading': 'Loading storage domains',
-  'dashboard.storage.error': 'Could not load storage domains',
-  'dashboard.storage.empty.title': 'No storage domains',
+  // Capacity card: the Storage tile's empty state -----------------------------
   'dashboard.storage.permBody': 'Storage domains you have permission to see will appear here.',
-  'dashboard.storage.listAriaLabel': 'Storage domain capacity',
-  'dashboard.storage.capacityUnknownSuffix': '— capacity unknown',
-  'dashboard.storage.measure': '{used} of {total} ({percent}%)',
-  'dashboard.storage.capacityAria': '{name} capacity',
-  'dashboard.storage.viewAll': 'View storage domains',
 
   // Activity card (engine audit log, newest first) ---------------------------
   'dashboard.activity.title': 'Activity',

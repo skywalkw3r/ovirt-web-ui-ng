@@ -1,11 +1,10 @@
 import { useId } from 'react'
 import chart_color_black_300 from '@patternfly/react-tokens/dist/esm/chart_color_black_300'
 
-// A dependency-free SVG donut for the dashboard's utilization and VM-status
-// rings and the VM monitoring gauges. It replaces PatternFly's Victory-backed
-// ChartDonut there — a 270 KB (73 KB gzipped) chart runtime is a lot to ship
-// on the landing page for three rings and a number — while keeping the same
-// anatomy: segments clockwise from 12 o'clock, a centred headline with a
+// A dependency-free SVG donut for the VM, host and cluster Monitoring gauges.
+// It replaced PatternFly's Victory-backed ChartDonut, a 270 KB (73 KB
+// gzipped) chart runtime that was a lot to ship for a ring and a number,
+// while keeping the same anatomy: segments clockwise from 12 o'clock, a centred headline with a
 // subtle qualifier under it, an accessible <title>/<desc> pair, and a native
 // tooltip per segment.
 
