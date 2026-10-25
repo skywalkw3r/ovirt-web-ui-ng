@@ -69,7 +69,7 @@ export default defineConfig(({ mode }) => {
     // config (config/runtime.ts). A deployer overrides it at runtime via
     // window.ovirtWebUiConfig (config.js) with no rebuild; VITE_GRAFANA_* only
     // seeds the baked-in default. `enabled` is omitted unless explicitly set so
-    // it defaults to 'auto' (the health probe decides whether history renders).
+    // it defaults to true (the Monitoring Portal links show for admins).
     define: {
       __APP_VERSION__: JSON.stringify(APP_VERSION),
       __COMPONENT_VERSIONS__: JSON.stringify(COMPONENT_VERSIONS),

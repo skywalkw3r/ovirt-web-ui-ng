@@ -31,10 +31,9 @@
                                   meta always matches the response header.
         img-src 'self' data:    — OS/status icons plus data: URIs PF emits.
         style-src 'self' 'unsafe-inline'
-                                — PatternFly and Victory inject inline style
-                                  attributes at runtime; without 'unsafe-inline'
-                                  charts and layout break. Scripts are NOT
-                                  granted this.
+                                — PatternFly injects inline style attributes
+                                  at runtime; without 'unsafe-inline' layout
+                                  breaks. Scripts are NOT granted this.
         script-src 'self'       — no inline/eval scripts; our bundle is 'self'.
         base-uri 'self'         — block <base> injection redirecting relative URLs.
         object-src 'none'       — no plugins/embeds.

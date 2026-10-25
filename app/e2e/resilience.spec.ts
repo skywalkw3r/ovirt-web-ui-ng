@@ -59,7 +59,7 @@ test("'g e' navigates to Events", async ({ page }) => {
   // a moment after sign-in; wait for the dashboard to fully settle so it can't
   // race the keyboard navigation below.
   await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible()
-  await expect(page.getByText('Virtual machines by status')).toBeAttached()
+  await expect(page.getByRole('list', { name: 'Resource inventory' })).toBeVisible()
 
   await page.keyboard.press('g')
   await page.keyboard.press('e')

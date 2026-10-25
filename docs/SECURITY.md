@@ -39,10 +39,9 @@ deploys an nginx reverse proxy sits between the browser and the engine
 (`packaging/nginx-sample.conf`; multi-engine: one `/e/<slug>/` prefix per
 engine) — that nginx→engine hop is its own trust boundary, secured by default
 with upstream TLS verification (see §4). The proxy forwards an **allowlist**
-only — `/ovirt-engine/api`, the SSO token grant, the token-scoped sign-out and
-Grafana's query API — never the engine's own HTML (webadmin, SSO pages, the
-Grafana UI), which would otherwise run same-origin with the console's session
-store.
+only: `/ovirt-engine/api`, the SSO token grant and the token-scoped sign-out.
+It never forwards the engine's own HTML (webadmin, SSO pages, the Grafana UI),
+which would otherwise run same-origin with the console's session store.
 
 ---
 

@@ -27,8 +27,7 @@ const queryClient = new QueryClient({
       // every alt-tab back into a burst of one request per mounted query
       // against the engine — pure load, with no fresher data than the next
       // tick brings anyway. A hook that genuinely needs the focus trigger opts
-      // back in explicitly (useDwhHistory: 'always', to pick up a Grafana
-      // sign-in completed in another tab).
+      // back in explicitly.
       refetchOnWindowFocus: false,
       retry: (failureCount, error) => {
         // Never retry a 4xx (401/403 included): a client error — auth,

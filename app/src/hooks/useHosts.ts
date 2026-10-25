@@ -25,6 +25,8 @@ export const hostKeys = {
   statistics: ['hosts', 'statistics'] as const,
   // HostDevicesTab keys on the VM's pinned host, undefined until known
   detail: (id: string | undefined) => ['host', id] as const,
+  // useHostUsage: one host with its usage gauges inlined (Monitoring tab)
+  usageDetail: (id: string) => ['host', id, 'usage'] as const,
   nics: (id: string) => ['host', id, 'nics'] as const,
   // SetupNetworksModal's NIC read with labels/VF config inlined
   nicDetails: (id: string) => ['host', id, 'nicDetails'] as const,

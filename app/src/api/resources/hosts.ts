@@ -139,6 +139,29 @@ export async function getHost(id: string): Promise<Host> {
   )
 }
 
+// One host's live usage gauges for its Monitoring tab: the single-entity
+// analog of listHostsUsage, so the tab and the hosts list read the exact same
+// numbers through lib/utilization.ts. Same three-rung ladder, same rules:
+// statistics + per-NIC statistics (Network gauge), then statistics alone, then
+// the bare read, each rung's denial remembered per host; a WAN engine starts
+// at the statistics rung. No all_content: the tab needs gauges, not the
+// computed properties.
+export async function getHostUsage(id: string): Promise<Host> {
+  const base = `/hosts/${encodeURIComponent(id)}`
+  const statsRung = () =>
+    fetchWithFollowFallback(
+      `hosts.usage.get:statistics:${id}`,
+      async () => HostSchema.parse(await request(`${base}?follow=statistics`)),
+      async () => HostSchema.parse(await request(base)),
+    )
+  if (isActiveEngineWan()) return statsRung()
+  return fetchWithFollowFallback(
+    `hosts.usage.get:statistics,nics.statistics:${id}`,
+    async () => HostSchema.parse(await request(`${base}?follow=statistics,nics.statistics`)),
+    statsRung,
+  )
+}
+
 // Webadmin-style edit: PUT the changed fields back. The engine answers with
 // the full updated host, which we parse through HostSchema so callers (the
 // edit modal's optimistic refetch) get a coerced read model — mirror

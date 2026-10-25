@@ -10,7 +10,7 @@
 #   * app/dist/  ->  /usr/share/ovirt-engine/ovirt-web-ui-ng/   (the Apache Alias)
 #   * served same-origin at  https://<engine>/ovirt-engine/web-ui-ng/
 #
-# config.js (window.ovirtWebUiConfig -- your Grafana embed config) is deploy-time
+# config.js (window.ovirtWebUiConfig -- your deploy-time runtime config) is deploy-time
 # state edited ON the engine, so routine deploys PRESERVE it (rsync --exclude).
 # Pass --with-config to overwrite it from your local app/dist/config.js.
 #
@@ -107,7 +107,7 @@ say "Ensuring webroot $WEBROOT"
 
 # -a archive, -z compress, --delete prunes old content-hashed assets.
 # config.js is excluded by default so a routine deploy never clobbers the
-# engine's live Grafana config (the exclude also shields it from --delete).
+# engine's live runtime config (the exclude also shields it from --delete).
 rsync_flags=(-az --delete --stats)
 [ "$WITH_CONFIG" = 1 ] || rsync_flags+=(--exclude 'config.js')
 [ "$DRY_RUN" = 1 ] && rsync_flags+=(--dry-run --itemize-changes)

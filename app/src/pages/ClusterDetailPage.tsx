@@ -30,9 +30,7 @@ import { ClusterHostsTab } from '../components/cluster-tabs/ClusterHostsTab'
 import { ClusterNetworksTab } from '../components/cluster-tabs/ClusterNetworksTab'
 import { ClusterPermissionsTab } from '../components/cluster-tabs/ClusterPermissionsTab'
 import { ClusterVmsTab } from '../components/cluster-tabs/ClusterVmsTab'
-import { HistoryCard } from '../components/metrics/HistoryCard'
-import { useRuntimeConfig } from '../config/runtime'
-import { useGrafanaAvailability } from '../hooks/useGrafanaAvailability'
+import { ClusterMonitoringTab } from '../components/cluster-tabs/ClusterMonitoringTab'
 import { useCluster } from '../hooks/useClusterDetail'
 import { clusterDetailRoute } from '../routes/router'
 
@@ -43,12 +41,6 @@ export function ClusterDetailPage() {
   const cluster = useCluster(clusterId)
   const navigate = useNavigate()
   const [activeKey, setActiveKey] = useState<string | number>('general')
-  // History-only Monitoring tab — pure DWH/Grafana, so it only exists when a
-  // cluster query spec is configured AND the availability gate shows the
-  // surface (see HostDetailPage for the same pattern).
-  const grafana = useGrafanaAvailability()
-  const { monitoring } = useRuntimeConfig()
-  const showMonitoring = grafana.visible && monitoring.queries.cluster !== undefined
 
   const notFound = cluster.error instanceof ApiError && cluster.error.status === 404
 
@@ -146,20 +138,18 @@ export function ClusterDetailPage() {
                 <ClusterGeneralTab cluster={cluster.data} />
               </TabContentBody>
             </Tab>
-            {showMonitoring && (
-              <Tab
-                eventKey="monitoring"
-                title={
-                  <TabTitleText>
-                    <FormattedMessage id="clusterDetail.tab.monitoring" />
-                  </TabTitleText>
-                }
-              >
-                <TabContentBody hasPadding>
-                  <HistoryCard entity="cluster" entityId={clusterId} />
-                </TabContentBody>
-              </Tab>
-            )}
+            <Tab
+              eventKey="monitoring"
+              title={
+                <TabTitleText>
+                  <FormattedMessage id="clusterDetail.tab.monitoring" />
+                </TabTitleText>
+              }
+            >
+              <TabContentBody hasPadding>
+                <ClusterMonitoringTab clusterId={clusterId} />
+              </TabContentBody>
+            </Tab>
             <Tab
               eventKey="networks"
               title={<TabTitleText>{t('clusterDetail.tab.networks')}</TabTitleText>}

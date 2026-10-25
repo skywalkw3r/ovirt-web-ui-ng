@@ -111,7 +111,7 @@ podman run --rm -p 8080:8080 --read-only --tmpfs /tmp \
 
 `nginx-sample.conf` serves the static build at the sub-path **and** reverse
 proxies an allowlist of engine API paths (REST, the SSO token grant, the
-token-scoped sign-out, Grafana's query API) to `${ENGINE_ORIGIN}`, so the
+token-scoped sign-out) to `${ENGINE_ORIGIN}`, so the
 browser only ever talks to this one origin for data; the engine's own web UIs
 are deliberately not reachable through it, and the in-browser console opens
 `wss://` straight to the engine's websocket-proxy. The image listens on **8080** and runs
@@ -132,7 +132,7 @@ Both deploys emit the headers documented in `docs/SECURITY-HEADERS.md`. The key
 one that **cannot** be expressed as a `<meta>` CSP is `frame-ancestors 'none'`
 -- it must be an HTTP header, which is why both `ovirt-web-ui-ng.conf` (Apache)
 and `nginx-sample.conf` set the full CSP as a response header. `style-src`
-carries `'unsafe-inline'` because PatternFly 6 and Victory inject inline styles
+carries `'unsafe-inline'` because PatternFly 6 injects inline styles
 at runtime; `script-src` does **not**.
 
 ---

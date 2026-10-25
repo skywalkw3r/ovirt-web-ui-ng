@@ -97,20 +97,20 @@ describe('getRuntimeConfig', () => {
     }
   })
 
-  it('honors a valid injected absolute URL and maps enabled:false to off', () => {
+  it('honors a valid injected absolute URL and enabled:false', () => {
     inject({ monitoring: { grafanaBaseUrl: 'https://grafana.example', enabled: false } })
     const cfg = getRuntimeConfig()
     expect(cfg.monitoring.grafanaBaseUrl).toBe('https://grafana.example')
-    expect(cfg.monitoring.enabled).toBe('off')
+    expect(cfg.monitoring.enabled).toBe(false)
   })
 
-  it('maps enabled:true to on and absence to auto', () => {
+  it('defaults enabled to true when absent', () => {
     inject({ monitoring: { enabled: true } })
-    expect(getRuntimeConfig().monitoring.enabled).toBe('on')
+    expect(getRuntimeConfig().monitoring.enabled).toBe(true)
     inject({ monitoring: {} })
-    expect(getRuntimeConfig().monitoring.enabled).toBe('auto')
+    expect(getRuntimeConfig().monitoring.enabled).toBe(true)
     inject(undefined)
-    expect(getRuntimeConfig().monitoring.enabled).toBe('auto')
+    expect(getRuntimeConfig().monitoring.enabled).toBe(true)
   })
 
   it('accepts a leading-slash same-origin path', () => {
@@ -131,36 +131,6 @@ describe('getRuntimeConfig', () => {
   it('ignores a malformed config object without throwing', () => {
     inject({ monitoring: { grafanaBaseUrl: 42 } })
     expect(getRuntimeConfig().monitoring.grafanaBaseUrl).toBe('/ovirt-engine-grafana')
-  })
-
-  it('defaults the vm query to the stock VM dashboard; host/cluster stay unset', () => {
-    inject(undefined)
-    const { queries } = getRuntimeConfig().monitoring
-    expect(queries.vm.dashboardUid).toBe('VirtualMachineDashboard')
-    expect(queries.vm.idVar).toBe('vm_id')
-    expect(queries.vm.panelIds).toContain(7)
-    expect(queries.host).toBeUndefined()
-    expect(queries.cluster).toBeUndefined()
-  })
-
-  it('passes through per-entity query specs with per-entity idVar defaults', () => {
-    inject({
-      monitoring: {
-        queries: {
-          vm: { dashboardUid: 'CustomVm', panelIds: [1, 2], idVar: 'machine_id' },
-          host: { dashboardUid: 'HostDashboard', panelIds: [3] },
-        },
-      },
-    })
-    const { queries } = getRuntimeConfig().monitoring
-    expect(queries.vm).toEqual({ dashboardUid: 'CustomVm', panelIds: [1, 2], idVar: 'machine_id' })
-    expect(queries.host).toEqual({ dashboardUid: 'HostDashboard', panelIds: [3], idVar: 'host_id' })
-    expect(queries.cluster).toBeUndefined()
-  })
-
-  it('falls back entirely on a malformed query spec (whole config is rejected)', () => {
-    inject({ monitoring: { queries: { vm: { dashboardUid: 42, panelIds: 'x' } } } })
-    expect(getRuntimeConfig().monitoring.queries.vm.dashboardUid).toBe('VirtualMachineDashboard')
   })
 })
 

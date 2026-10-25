@@ -1,24 +1,12 @@
-import {
-  Button,
-  Card,
-  CardBody,
-  CardHeader,
-  CardTitle,
-  Flex,
-  FlexItem,
-  Stack,
-  StackItem,
-} from '@patternfly/react-core'
-import { ExternalLinkAltIcon } from '@patternfly/react-icons'
+import { Card, CardBody, CardHeader, CardTitle, Flex, FlexItem } from '@patternfly/react-core'
 import { FormattedMessage } from 'react-intl'
 import type { Vm } from '../../api/schemas/vm'
-import { useGrafanaAvailability } from '../../hooks/useGrafanaAvailability'
 import { useVmStatistics, type UtilizationSample } from '../../hooks/useVmStatistics'
 import { useVmDisks } from '../../hooks/useVmStorage'
 import { useT } from '../../i18n/useT'
 import type { MessageId } from '../../i18n/messages/en'
 import { formatBytes } from '../../lib/format'
-import { HistoryCard } from '../metrics/HistoryCard'
+import { MonitoringPortalLink } from '../metrics/MonitoringPortalLink'
 import { UtilizationGauge } from '../metrics/UtilizationGauge'
 
 type Metric = 'cpu' | 'memory' | 'network' | 'disk'
@@ -40,36 +28,16 @@ function latest(samples: UtilizationSample[], metric: Metric): number | undefine
   return undefined
 }
 
-// Monitoring tab: live utilization (rung 1) as current-value gauges — always
-// available, no external dependency — plus a DWH/Grafana history surface that
-// degrades gracefully when Grafana is disabled or unreachable. Like GeneralTab's
-// Compute card, this owns the statistics polling; the parent Tabs use
-// unmountOnExit, so leaving the tab unmounts this and stops the poll.
+// Monitoring tab: live utilization as current-value gauges, straight from the
+// engine REST statistics (no external dependency), with the Monitoring Portal
+// link in the card header for history in Grafana. Like GeneralTab's Compute
+// card, this owns the statistics polling; the parent Tabs use unmountOnExit,
+// so leaving the tab unmounts this and stops the poll.
 export function MonitoringTab({ vm }: { vm: Vm }) {
   const t = useT()
   const { query, samples } = useVmStatistics(vm.id)
   const disks = useVmDisks(vm.id)
-  const grafana = useGrafanaAvailability()
   const unavailable = query.isError
-
-  // When Grafana is reachable, surface the "open the full portal" escape hatch
-  // in the utilization card header (top-right) so it's reachable without
-  // scrolling past the history charts. Gated on the same signal that renders
-  // the history card below.
-  const portalLink = grafana.visible ? (
-    <Button
-      variant="link"
-      component="a"
-      href={grafana.grafanaBaseUrl}
-      target="_blank"
-      rel="noopener noreferrer"
-      icon={<ExternalLinkAltIcon />}
-      iconPosition="end"
-      isInline
-    >
-      {t('monitoring.openPortal')}
-    </Button>
-  ) : undefined
 
   // Configured capacity captions under each gauge — the VM's specs. CPU is the
   // vCPU count from its topology (sockets × cores × threads; the engine omits
@@ -91,40 +59,31 @@ export function MonitoringTab({ vm }: { vm: Vm }) {
   }
 
   return (
-    <Stack hasGutter>
-      <StackItem>
-        <Card isCompact>
-          <CardHeader actions={portalLink ? { actions: portalLink, hasNoOffset: true } : undefined}>
-            <CardTitle component="h2">
-              <FormattedMessage id="monitoring.live.heading" />
-            </CardTitle>
-          </CardHeader>
-          <CardBody>
-            <Flex
-              justifyContent={{ default: 'justifyContentSpaceAround' }}
-              flexWrap={{ default: 'wrap' }}
-              spaceItems={{ default: 'spaceItemsLg' }}
-            >
-              {GAUGES.map((gauge) => (
-                <FlexItem key={gauge.metric}>
-                  <UtilizationGauge
-                    title={t(gauge.titleId)}
-                    name={gauge.name}
-                    percent={latest(samples, gauge.metric)}
-                    total={totals[gauge.metric]}
-                    unavailable={unavailable}
-                  />
-                </FlexItem>
-              ))}
-            </Flex>
-          </CardBody>
-        </Card>
-      </StackItem>
-      {grafana.visible && (
-        <StackItem>
-          <HistoryCard entity="vm" entityId={vm.id} />
-        </StackItem>
-      )}
-    </Stack>
+    <Card isCompact>
+      <CardHeader actions={{ actions: <MonitoringPortalLink />, hasNoOffset: true }}>
+        <CardTitle component="h2">
+          <FormattedMessage id="monitoring.live.heading" />
+        </CardTitle>
+      </CardHeader>
+      <CardBody>
+        <Flex
+          justifyContent={{ default: 'justifyContentSpaceAround' }}
+          flexWrap={{ default: 'wrap' }}
+          spaceItems={{ default: 'spaceItemsLg' }}
+        >
+          {GAUGES.map((gauge) => (
+            <FlexItem key={gauge.metric}>
+              <UtilizationGauge
+                title={t(gauge.titleId)}
+                name={gauge.name}
+                percent={latest(samples, gauge.metric)}
+                total={totals[gauge.metric]}
+                unavailable={unavailable}
+              />
+            </FlexItem>
+          ))}
+        </Flex>
+      </CardBody>
+    </Card>
   )
 }

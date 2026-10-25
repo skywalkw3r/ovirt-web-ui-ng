@@ -24,14 +24,8 @@ interface Window {
   ovirtWebUiConfig?: {
     monitoring?: {
       grafanaBaseUrl?: string
-      // true forces the history surface on, false off; absent → auto-detect
-      // via the Grafana health probe (see config/runtime.ts MonitoringMode)
+      // false hides the Monitoring Portal links; absent or true shows them
       enabled?: boolean
-      queries?: {
-        vm?: { dashboardUid: string; panelIds: number[]; idVar?: string }
-        host?: { dashboardUid: string; panelIds: number[]; idVar?: string }
-        cluster?: { dashboardUid: string; panelIds: number[]; idVar?: string }
-      }
     }
     // Multi-engine: the engines this console may connect to (login-page
     // picker). Config-file-only by design — see config/runtime.ts ServerEntry.
@@ -80,6 +74,6 @@ declare const __APP_VERSION__: string
 // Build-time default for the monitoring runtime config (Grafana base URL +
 // enabled flag), injected by Vite `define` (vite.config.ts). `enabled` is
 // omitted unless a deployer sets VITE_GRAFANA_ENABLED at build time, so
-// config/runtime.ts falls through to 'auto' (probe-detected). typeof-guarded
-// there for non-Vite consumers (vitest).
+// config/runtime.ts falls through to true (links shown). typeof-guarded there
+// for non-Vite consumers (vitest).
 declare const __GRAFANA_DEFAULT__: { grafanaBaseUrl?: string; enabled?: boolean }

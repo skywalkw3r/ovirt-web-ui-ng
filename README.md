@@ -55,9 +55,11 @@ can eventually be retired. It shares **no runtime code** with either.
   sessionStorage, never a cookie), strict CSP from day one, no raw HTML
   injected into the DOM. See
   [`docs/SECURITY.md`](docs/SECURITY.md) / [`docs/SECURITY-HEADERS.md`](docs/SECURITY-HEADERS.md).
-- **Grafana / Data-Warehouse history** for monitoring charts — an integration
-  the original portals didn't offer standalone; some DWH-heavy webadmin
-  analytics are still approximated from live REST and deferred (tracked in
+- **Live capacity and monitoring** from the engine REST statistics: Dashboard
+  capacity tiles (free capacity, status, busiest host, per-cluster rows) and
+  VM / host / cluster Monitoring tabs, plus a Monitoring Portal link out to
+  each engine's Grafana for Data Warehouse history. DWH-heavy webadmin
+  analytics stay deferred (tracked in
   [`docs/GAP-ANALYSIS.md`](docs/GAP-ANALYSIS.md)).
 
 ## Status
@@ -83,7 +85,7 @@ gaps are tracked in [`docs/GAP-ANALYSIS.md`](docs/GAP-ANALYSIS.md).
   system permissions, quotas with limit editors, scheduling policies, external
   providers, and errata.
 - **Platform** — the oVirt search DSL, ⌘K command palette, dashboard,
-  Grafana/DWH monitoring history, notification / tasks drawers (with
+  live VM / host / cluster monitoring, notification / tasks drawers (with
   correlation-id), bookmarks, right-click context menus, resizable/persisted
   table columns, admin **Platform Settings** (custom branding, MOTD +
   scheduled announcement banners), optional **multi-engine** server picker, and

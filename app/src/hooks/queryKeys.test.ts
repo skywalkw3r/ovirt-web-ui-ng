@@ -4,10 +4,8 @@ import { clusterKeys, dataCenterKeys, groupKeys, poolKeys, userKeys } from './us
 import { iconKeys, operatingSystemKeys, templateKeys } from './useCatalog'
 import { diskKeys, instanceTypeKeys, vnicProfileKeys } from './useCatalogPages'
 import { affinityLabelKeys } from './useClusterMutations'
-import { dwhKeys } from './useDwhHistory'
 import { eventKeys } from './useEvents'
 import { globalSearchKeys } from './useGlobalSearch'
-import { grafanaKeys } from './useGrafanaAvailability'
 import { hostKeys } from './useHosts'
 import { jobKeys } from './useJobs'
 import { bookmarkKeys } from './useListSearch'
@@ -252,22 +250,6 @@ describe('query-key builders', () => {
     expect(tagKeys.vmAssignPicker(['vm1', 'vm2'])).toEqual(['vm-tags-assign', ['vm1', 'vm2']])
     expect(bookmarkKeys.all).toEqual(['bookmarks'])
     expect(apiInfoKeys.all).toEqual(['apiInfo'])
-    expect(grafanaKeys.health('/ovirt-engine-grafana')).toEqual([
-      'grafana',
-      'health',
-      '/ovirt-engine-grafana',
-    ])
-    expect(
-      dwhKeys.history('vm', 'vm1', '24h', { dashboardUid: 'VmDash', panelIds: [7, 8] }),
-    ).toEqual(['dwh', 'vm', 'vm1', '24h', 'VmDash', [7, 8]])
-    expect(dwhKeys.history('host', 'h1', '6h', undefined)).toEqual([
-      'dwh',
-      'host',
-      'h1',
-      '6h',
-      undefined,
-      undefined,
-    ])
     expect(globalSearchKeys.group('vms', 'name=web*')).toEqual([
       'global-search',
       'vms',

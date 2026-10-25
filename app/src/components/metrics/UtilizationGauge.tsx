@@ -67,7 +67,7 @@ export function UtilizationGauge({
           ariaTitle={`${title} utilization`}
           ariaDesc={
             value === undefined
-              ? `${title} utilization of this virtual machine is not yet available`
+              ? `${title} utilization is not yet available`
               : `${title}: ${Math.round(value)} percent used`
           }
           segments={[

@@ -35,7 +35,7 @@ import { FormattedMessage, useIntl } from 'react-intl'
 import { Link, Outlet, useRouterState } from '@tanstack/react-router'
 import { useBrandedTab } from '../branding/useBrandedTab'
 import { engineWebUiUrl } from '../lib/engineWebUi'
-import { monitoringPortalUrl } from '../lib/monitoringPortal'
+import { monitoringPortalUrl, showMonitoringPortal } from '../lib/monitoringPortal'
 import { useCapabilities } from '../auth/capabilities'
 import { useNavShortcuts } from '../hooks/useNavShortcuts'
 import { useProductBrand } from '../hooks/useProductBrand'
@@ -240,7 +240,7 @@ function SidebarNav({
             Link, so PF's cloned child is a plain <a> that leaves the SPA. The
             href resolves against the active engine, never this console's own
             origin (see lib/monitoringPortal.ts). */}
-        {isAdmin && (
+        {showMonitoringPortal(isAdmin) && (
           <NavItem itemId="monitoring-portal">
             <a href={monitoringPortalUrl()} target="_blank" rel="noopener">
               <MonitoringIcon className="app-nav-group-icon" />
@@ -304,7 +304,7 @@ function MiniRail({
           </Tooltip>
         )
       })}
-      {isAdmin && (
+      {showMonitoringPortal(isAdmin) && (
         <Tooltip content={intl.formatMessage({ id: 'nav.monitoringPortal' })} position="right">
           <a
             href={monitoringPortalUrl()}
