@@ -4471,8 +4471,14 @@ export const ko: LocaleCatalog = {
     'watchdog이 작동할 때의 동작입니다. 없음은 이벤트만 기록하고, 재설정은 VM을 재부팅하며, 전원 끄기는 VM을 중지하고, 일시 정지는 VM을 일시 정지하며, 덤프는 호스트에 메모리 덤프를 기록합니다.',
   'vm.edit.nextRun.watchdogNote':
     '지금 적용을 선택해도 watchdog 변경 사항은 VM을 다음에 시작할 때 적용됩니다.',
-  'vm.edit.watchdog.partialFailure':
-    'VM은 저장되었지만 watchdog 변경에 실패했습니다: {message}. 다시 시도하려면 다시 저장하십시오.',
+  'vm.edit.save.watchdogFailed':
+    'watchdog 변경에 실패하여 아무것도 저장되지 않았습니다: {message}. 다시 시도하려면 다시 저장하십시오.',
+  'vm.edit.save.nextRunRefreshFailed':
+    'watchdog은 저장되었지만 VM의 보류 중인 다음 실행 구성이 갱신되지 않아 다음 종료 시 엔진이 변경 사항을 되돌릴 수 있습니다: {message}. 다시 시도하려면 다시 저장하십시오.',
+  'vm.edit.save.cdFailed':
+    'VM은 저장되었지만 CD 변경에 실패했습니다: {message}. 다시 시도하려면 다시 저장하십시오.',
+  'vm.create.watchdog.templateError':
+    '템플릿의 watchdog을 로드할 수 없습니다: {message}. 새 VM에는 여기에서 선택한 watchdog이 그대로 적용됩니다.',
   'vmNics.filterParams.label': '네트워크 필터 매개변수',
   'fieldHelp.vmNic.filterParams':
     'vNIC 프로필의 네트워크 필터가 읽는 변수입니다(예: clean-traffic의 IP = 10.0.0.1). 이름을 반복하여 필터에 값 목록을 전달할 수 있습니다.',

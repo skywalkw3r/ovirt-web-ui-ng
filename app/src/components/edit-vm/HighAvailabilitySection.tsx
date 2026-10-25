@@ -168,7 +168,7 @@ export function HighAvailabilitySection({
       </FormGroup>
 
       {/* Watchdog device (webadmin's HA tab "Watchdog Model" / "Watchdog
-          Action"). Saved through the watchdogs subcollection after the VM PUT;
+          Action"). Saved through the watchdogs subcollection before the VM PUT;
           a running VM picks it up on its next start. */}
       <FormGroup
         label={t('vm.edit.ha.watchdogModel')}

@@ -4605,8 +4605,14 @@ export const de: LocaleCatalog = {
     'Was passiert, wenn der Watchdog auslöst: Keine protokolliert nur ein Ereignis, Zurücksetzen startet die VM neu, Ausschalten schaltet sie aus, Anhalten pausiert sie und Speicherabbild schreibt ein Speicherabbild auf den Host.',
   'vm.edit.nextRun.watchdogNote':
     'Die Watchdog-Änderung wird beim nächsten Start der VM wirksam, auch mit „Jetzt anwenden“.',
-  'vm.edit.watchdog.partialFailure':
-    'Die VM wurde gespeichert, aber die Watchdog-Änderung ist fehlgeschlagen: {message}. Speichern Sie erneut, um es noch einmal zu versuchen.',
+  'vm.edit.save.watchdogFailed':
+    'Die Watchdog-Änderung ist fehlgeschlagen, daher wurde nichts gespeichert: {message}. Speichern Sie erneut, um es noch einmal zu versuchen.',
+  'vm.edit.save.nextRunRefreshFailed':
+    'Der Watchdog wurde gespeichert, aber die ausstehende Konfiguration der VM für den nächsten Start wurde nicht aktualisiert, sodass die Engine die Änderung beim nächsten Herunterfahren rückgängig machen könnte: {message}. Speichern Sie erneut, um es noch einmal zu versuchen.',
+  'vm.edit.save.cdFailed':
+    'Die VM wurde gespeichert, aber die CD-Änderung ist fehlgeschlagen: {message}. Speichern Sie erneut, um es noch einmal zu versuchen.',
+  'vm.create.watchdog.templateError':
+    'Der Watchdog der Vorlage konnte nicht geladen werden: {message}. Die neue VM erhält genau den hier gewählten Watchdog.',
   'vmNics.filterParams.label': 'Netzwerkfilterparameter',
   'fieldHelp.vmNic.filterParams':
     'Variablen, die der Netzwerkfilter des vNIC Profils liest, etwa IP = 10.0.0.1 für clean-traffic. Ein Name darf sich wiederholen, um dem Filter eine Werteliste zu übergeben.',

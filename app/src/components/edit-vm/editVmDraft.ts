@@ -410,49 +410,51 @@ export function buildWatchdogChange(
   return watchdogChangeFor(current, { model: draft.watchdogModel, action: draft.watchdogAction })
 }
 
-// Keys vmFieldsChanged ignores: the watchdog (its own subcollection) and the
-// CD tray id, which the Boot section seeds into the draft alone on open; a
-// real CD pick is caught by cdTouched instead.
+// Keys vmFieldsChanged ignores: the watchdog and the CD, which each ride their
+// own subcollection (the CD tray id is also seeded into the draft alone on
+// open; a real CD pick is cdTouched + attachedCdId, see buildCdromChange).
 const NON_VM_DRAFT_KEYS: ReadonlySet<keyof EditVmDraft> = new Set([
   'watchdogLoaded',
   'watchdogId',
   'watchdogModel',
   'watchdogAction',
   'attachedCdId',
+  'cdTouched',
 ])
 
-// Did anything OTHER than the watchdog move? When not, a save that only
-// carries a watchdog change skips the vm PUT entirely (nothing to send), which
-// is also what makes a watchdog-only retry after a partial failure cheap.
+// Did anything on the vm PUT body move? When not, a save that only carries a
+// watchdog and/or CD change skips the vm PUT (nothing to send), which is also
+// what keeps a retry after a partial failure to the step that failed.
 export function vmFieldsChanged(draft: EditVmDraft, baseline: EditVmDraft): boolean {
   return (Object.keys(draft) as (keyof EditVmDraft)[]).some(
     (key) => !NON_VM_DRAFT_KEYS.has(key) && changed(draft[key], baseline[key]),
   )
 }
 
-// The staging fields a successful vm save consumes.
-export const SPENT_STAGING: Pick<
-  EditVmDraft,
-  'cdTouched' | 'iconUploadData' | 'iconUploadMediaType'
-> = { cdTouched: false, iconUploadData: '', iconUploadMediaType: '' }
-
-// The baseline after a save whose vm PUT (and CD change) landed but whose
-// watchdog change failed: everything the user edited is now saved EXCEPT the
-// watchdog, which keeps the old baseline's device. The one-shot staging fields
-// (touched CD picker, a pending icon upload) are spent, so they reset; the
-// caller applies the same reset to the draft. A retry then sends only the
-// watchdog change.
-export function baselineAfterWatchdogFailure(
-  draft: EditVmDraft,
+// The baseline once the watchdog step landed: its fields describe the device
+// the engine now holds (watchdogDraftFields of the applied result).
+export function baselineWithWatchdog(
   baseline: EditVmDraft,
+  device: Watchdog | undefined,
 ): EditVmDraft {
+  return { ...baseline, ...watchdogDraftFields(device ? [device] : []) }
+}
+
+// The baseline once the vm PUT landed: every vm field the draft carries is
+// saved. The watchdog and CD keep the baseline's own state (each is settled by
+// its own step), and a pending icon upload is spent (the caller clears it from
+// the draft too) so it is not re-sent.
+export function baselineAfterVmSave(draft: EditVmDraft, baseline: EditVmDraft): EditVmDraft {
   return {
     ...draft,
-    ...SPENT_STAGING,
+    iconUploadData: '',
+    iconUploadMediaType: '',
     watchdogLoaded: baseline.watchdogLoaded,
     watchdogId: baseline.watchdogId,
     watchdogModel: baseline.watchdogModel,
     watchdogAction: baseline.watchdogAction,
+    attachedCdId: baseline.attachedCdId,
+    cdTouched: baseline.cdTouched,
   }
 }
 

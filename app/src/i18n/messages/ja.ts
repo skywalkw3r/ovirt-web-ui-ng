@@ -4524,8 +4524,14 @@ export const ja: LocaleCatalog = {
     'ウォッチドッグが発動したときの動作です。「なし」はイベントを記録するだけ、「リセット」はVMを再起動、「電源オフ」はVMを停止、「一時停止」はVMを一時停止し、「ダンプ」はホスト上にメモリダンプを書き込みます。',
   'vm.edit.nextRun.watchdogNote':
     '「今すぐ適用」を選択しても、ウォッチドッグの変更はVMの次回起動時に有効になります。',
-  'vm.edit.watchdog.partialFailure':
-    'VMは保存されましたが、ウォッチドッグの変更に失敗しました: {message}。再試行するには、もう一度保存してください。',
+  'vm.edit.save.watchdogFailed':
+    'ウォッチドッグの変更に失敗したため、何も保存されませんでした: {message}。再試行するには、もう一度保存してください。',
+  'vm.edit.save.nextRunRefreshFailed':
+    'ウォッチドッグは保存されましたが、VMの保留中の次回起動用設定が更新されなかったため、次回のシャットダウン時にエンジンが変更を元に戻す可能性があります: {message}。再試行するには、もう一度保存してください。',
+  'vm.edit.save.cdFailed':
+    'VMは保存されましたが、CDの変更に失敗しました: {message}。再試行するには、もう一度保存してください。',
+  'vm.create.watchdog.templateError':
+    'テンプレートのウォッチドッグを読み込めませんでした: {message}。新しいVMには、ここで選択したウォッチドッグがそのまま設定されます。',
   'vmNics.filterParams.label': 'ネットワークフィルターパラメーター',
   'fieldHelp.vmNic.filterParams':
     'vNICプロファイルのネットワークフィルターが読み取る変数です（例: clean-traffic の IP = 10.0.0.1）。同じ名前を繰り返して、フィルターに値のリストを渡すことができます。',

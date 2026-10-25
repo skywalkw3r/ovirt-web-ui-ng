@@ -29,10 +29,12 @@ export function useVmWatchdogs(vmId: string, enabled = true) {
   })
 }
 
-// Reconcile the watchdog device after the Edit VM PUT lands (the device lives
-// in the watchdogs subcollection, not the vm PUT body). Silent both ways: the
-// VM save toasts success, and the Edit VM modal reports a failure inline
-// (a toast here would report the same fault twice).
+// Apply the Edit VM watchdog change (the device lives in the watchdogs
+// subcollection, not the vm PUT body). The modal runs it BEFORE the vm PUT so a
+// NEXT_RUN snapshot that PUT creates captures the new device. Resolves to the
+// device as it stands afterwards. Silent both ways: the VM save toasts
+// success, and the Edit VM modal reports a failure inline (a toast here would
+// report the same fault twice).
 export function useApplyVmWatchdog() {
   const queryClient = useQueryClient()
 

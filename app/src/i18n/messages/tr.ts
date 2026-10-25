@@ -4515,8 +4515,14 @@ export const tr: LocaleCatalog = {
     "Watchdog tetiklendiğinde ne olacağı: Yok yalnızca bir olay kaydeder, Sıfırla VM'yi yeniden başlatır, Gücü kes VM'yi durdurur, Duraklat VM'yi duraklatır ve Döküm ana makineye bir bellek dökümü yazar.",
   'vm.edit.nextRun.watchdogNote':
     '"Şimdi uygula" seçilse bile watchdog değişikliği VM’nin bir sonraki başlatılmasında etkili olur.',
-  'vm.edit.watchdog.partialFailure':
-    'VM kaydedildi ancak watchdog değişikliği başarısız oldu: {message}. Yeniden denemek için tekrar kaydedin.',
+  'vm.edit.save.watchdogFailed':
+    'Watchdog değişikliği başarısız olduğu için hiçbir şey kaydedilmedi: {message}. Yeniden denemek için tekrar kaydedin.',
+  'vm.edit.save.nextRunRefreshFailed':
+    'Watchdog kaydedildi ancak VM’nin bekleyen sonraki çalıştırma yapılandırması yenilenmedi; bu nedenle motor değişikliği bir sonraki kapatmada geri alabilir: {message}. Yeniden denemek için tekrar kaydedin.',
+  'vm.edit.save.cdFailed':
+    'VM kaydedildi ancak CD değişikliği başarısız oldu: {message}. Yeniden denemek için tekrar kaydedin.',
+  'vm.create.watchdog.templateError':
+    'Şablonun watchdog’u yüklenemedi: {message}. Yeni VM tam olarak burada seçilen watchdog’u alır.',
   'vmNics.filterParams.label': 'Ağ filtresi parametreleri',
   'fieldHelp.vmNic.filterParams':
     'vNIC profilinin ağ filtresinin okuduğu değişkenler; örneğin clean-traffic için IP = 10.0.0.1. Filtreye bir değer listesi vermek için bir ad tekrarlanabilir.',

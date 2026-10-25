@@ -50,6 +50,18 @@ async function fillGeneral(user: ReturnType<typeof userEvent.setup>, name: strin
   await next(user)
 }
 
+// The model select once the template's watchdog has seeded it (it stays
+// disabled while that read is in flight).
+async function readyModelSelect(): Promise<HTMLSelectElement> {
+  const model = (await screen.findByRole(
+    'combobox',
+    { name: 'Watchdog model' },
+    { timeout: FIND_TIMEOUT_MS },
+  )) as HTMLSelectElement
+  await waitFor(() => expect(model.disabled).toBe(false), { timeout: FIND_TIMEOUT_MS })
+  return model
+}
+
 // The created VM's id, read off the post-create navigation.
 async function createdVmId(): Promise<string> {
   const probe = await screen.findByTestId('harness-location', undefined, {
@@ -104,8 +116,9 @@ describe('CreateVmWizard watchdog', () => {
       />,
     )
     await fillGeneral(user, 'plain-vm')
-    const model = await screen.findByRole('combobox', { name: 'Watchdog model' })
-    expect((model as HTMLSelectElement).value).toBe('')
+    // a template KNOWN to carry no watchdog: nothing to reconcile
+    const model = await readyModelSelect()
+    expect(model.value).toBe('')
     expect(
       (screen.getByRole('combobox', { name: 'Watchdog action' }) as HTMLSelectElement).disabled,
     ).toBe(true)
@@ -135,10 +148,7 @@ describe('CreateVmWizard watchdog', () => {
       />,
     )
     await fillGeneral(user, 'wd-fail')
-    await user.selectOptions(
-      await screen.findByRole('combobox', { name: 'Watchdog model' }),
-      'i6300esb',
-    )
+    await user.selectOptions(await readyModelSelect(), 'i6300esb')
     await next(user)
     await next(user)
     await user.click(screen.getByRole('button', { name: 'Create virtual machine' }))
@@ -158,5 +168,82 @@ describe('CreateVmWizard watchdog', () => {
       ),
     ).toBe(false)
     await expect(listVmWatchdogs(vmId)).resolves.toEqual([])
+  })
+
+  it('shows the template read error with Retry, and Retry seeds the fields', async () => {
+    const user = userEvent.setup()
+    let templateDown = true
+    requestSpy.mockImplementation((path, opts) =>
+      templateDown && path === '/templates/tpl-01/watchdogs'
+        ? Promise.reject(new ApiError(500, 'Operation Failed', 'template read failed'))
+        : passthrough.request!(path, opts),
+    )
+    renderWithProviders(
+      <CreateVmWizardModal
+        initialTemplateName="centos-stream-9"
+        initialClusterName="Default"
+        onClose={() => {}}
+      />,
+    )
+    await fillGeneral(user, 'wd-retry')
+    await screen.findByText(
+      "Could not load the template's watchdog: template read failed. The new VM gets exactly the watchdog chosen here.",
+      undefined,
+      { timeout: FIND_TIMEOUT_MS },
+    )
+    const model = screen.getByRole('combobox', { name: 'Watchdog model' })
+    expect((model as HTMLSelectElement).value).toBe('')
+
+    templateDown = false
+    await user.click(screen.getByRole('button', { name: 'Retry' }))
+    await waitFor(
+      () =>
+        expect(
+          (screen.getByRole('combobox', { name: 'Watchdog model' }) as HTMLSelectElement).value,
+        ).toBe('i6300esb'),
+      { timeout: FIND_TIMEOUT_MS },
+    )
+  })
+
+  it('reconciles after create when the template read failed, removing an inherited device', async () => {
+    const user = userEvent.setup()
+    // The template read fails; the engine copies the template's watchdog onto
+    // the new VM (simulated here: the mock create does not copy devices).
+    const deleted: string[] = []
+    requestSpy.mockImplementation((path, opts) => {
+      const method = (opts as { method?: string } | undefined)?.method ?? 'GET'
+      if (path === '/templates/tpl-01/watchdogs') {
+        return Promise.reject(new ApiError(500, 'Operation Failed', 'template read failed'))
+      }
+      const vmWatchdogs = /^\/vms\/([^/]+)\/watchdogs$/.exec(path)
+      if (vmWatchdogs && method === 'GET') {
+        return Promise.resolve({
+          watchdog: [{ id: 'inherited', model: 'i6300esb', action: 'reset' }],
+        })
+      }
+      if (/^\/vms\/[^/]+\/watchdogs\/inherited$/.test(path) && method === 'DELETE') {
+        deleted.push(path)
+        return Promise.resolve(undefined)
+      }
+      return passthrough.request!(path, opts)
+    })
+    renderWithProviders(
+      <CreateVmWizardModal
+        initialTemplateName="centos-stream-9"
+        initialClusterName="Default"
+        onClose={() => {}}
+      />,
+    )
+    await fillGeneral(user, 'wd-unknown')
+    await screen.findByText(/Could not load the template's watchdog/, undefined, {
+      timeout: FIND_TIMEOUT_MS,
+    })
+    await next(user)
+    await next(user)
+    expect(screen.getByText('No watchdog')).toBeDefined()
+    await user.click(screen.getByRole('button', { name: 'Create virtual machine' }))
+    const vmId = await createdVmId()
+    // the new VM ends as Review showed it: without a watchdog
+    expect(deleted).toEqual([`/vms/${vmId}/watchdogs/inherited`])
   })
 })
