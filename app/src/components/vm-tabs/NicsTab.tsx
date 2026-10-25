@@ -9,6 +9,8 @@ import {
   FormGroup,
   FormSelect,
   FormSelectOption,
+  Grid,
+  GridItem,
   HelperText,
   HelperTextItem,
   MenuToggle,
@@ -24,13 +26,25 @@ import {
   ToolbarGroup,
   ToolbarItem,
 } from '@patternfly/react-core'
-import { EllipsisVIcon, PlugIcon, PluggedIcon } from '@patternfly/react-icons'
+import {
+  EllipsisVIcon,
+  MinusCircleIcon,
+  PlugIcon,
+  PluggedIcon,
+  PlusCircleIcon,
+} from '@patternfly/react-icons'
 import { ActionsColumn, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table'
 import { useQueries, useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import { StatusBadge } from '../StatusBadge'
 import { StatusIcon } from '../StatusIcon'
 import { isValidMac } from '../../api/resources/macPools'
+import {
+  isEmptyPlan,
+  planNetworkFilterParameterChanges,
+  type NetworkFilterParameterPlan,
+  type NetworkFilterParameterRow,
+} from '../../api/resources/nicNetworkFilterParameters'
 import {
   listVmNicStatistics,
   nicThroughput,
@@ -42,6 +56,10 @@ import type { VnicProfile } from '../../api/schemas/vnic-profile'
 import { useColumnPrefs } from '../../hooks/useColumnPrefs'
 import { sortRows, useColumnSort } from '../../hooks/useColumnSort'
 import { useNetworks } from '../../hooks/useNetworks'
+import {
+  useApplyNicNetworkFilterParameters,
+  useNicNetworkFilterParameters,
+} from '../../hooks/useNicNetworkFilterParameters'
 import { useVnicProfiles } from '../../hooks/useCatalogPages'
 import { useVm } from '../../hooks/useVm'
 import { nicLabel, useAddVmNic, useRemoveVmNic, useUpdateVmNic } from '../../hooks/useVmNicActions'
@@ -54,6 +72,7 @@ import type { MessageId } from '../../i18n/messages/en'
 import { ColumnPicker } from '../list-toolbar/ColumnPicker'
 import { ResizableTh, resizableTableProps } from '../list-toolbar/ResizableTh'
 import { ConfirmModal } from '../ConfirmModal'
+import { FieldHelp } from '../forms/FieldHelp'
 import { vmKeys } from '../../hooks/useVms'
 
 // The card models the modal offers — the common NicInterface enum values
@@ -189,6 +208,9 @@ export interface NicFormValues {
   linked: boolean
   plugged: boolean
   macAddress?: string
+  // Network filter parameter changes to apply after the NIC itself is saved
+  // (VM NICs only; undefined = leave the parameters untouched).
+  networkFilterParameterPlan?: NetworkFilterParameterPlan
 }
 
 export function NicsTab({ vmId }: { vmId: string }) {
@@ -220,11 +242,13 @@ export function NicsTab({ vmId }: { vmId: string }) {
   const add = useAddVmNic(vmId)
   const update = useUpdateVmNic(vmId)
   const remove = useRemoveVmNic(vmId)
+  const applyFilterParameters = useApplyNicNetworkFilterParameters(vmId)
   const [isAddOpen, setIsAddOpen] = useState(false)
   const [editing, setEditing] = useState<Nic | null>(null)
   const [confirming, setConfirming] = useState<{ action: ConfirmAction; nic: Nic } | null>(null)
 
-  const mutating = add.isPending || update.isPending || remove.isPending
+  const mutating =
+    add.isPending || update.isPending || remove.isPending || applyFilterParameters.isPending
 
   // Resolve column labels for the active locale; identity is stable per locale
   // (t is memoized on intl) so useColumnPrefs' seeding stays sound.
@@ -495,16 +519,27 @@ export function NicsTab({ vmId }: { vmId: string }) {
 
       {isAddOpen && (
         <NicModal
+          vmId={vmId}
           onSubmit={(values) => {
             setIsAddOpen(false)
-            add.mutate({
-              name: values.name,
-              vnicProfileId: values.vnicProfileId,
-              interface: values.interface,
-              linked: values.linked,
-              plugged: values.plugged,
-              macAddress: values.macAddress,
-            })
+            const plan = values.networkFilterParameterPlan
+            add.mutate(
+              {
+                name: values.name,
+                vnicProfileId: values.vnicProfileId,
+                interface: values.interface,
+                linked: values.linked,
+                plugged: values.plugged,
+                macAddress: values.macAddress,
+              },
+              {
+                // The parameters hang off the NIC, so they can only be created
+                // once the NIC exists.
+                onSuccess: () => {
+                  if (plan) applyFilterParameters.mutate({ nicName: values.name, plan })
+                },
+              },
+            )
           }}
           onClose={() => setIsAddOpen(false)}
         />
@@ -513,6 +548,7 @@ export function NicsTab({ vmId }: { vmId: string }) {
       {editing && (
         <NicModal
           nic={editing}
+          vmId={vmId}
           onSubmit={(values) => {
             const target = editing
             setEditing(null)
@@ -527,7 +563,22 @@ export function NicsTab({ vmId }: { vmId: string }) {
             if (values.macAddress && values.macAddress !== target.mac?.address) {
               patch.macAddress = values.macAddress
             }
-            update.mutate({ nic: target, patch })
+            const plan = values.networkFilterParameterPlan
+            update.mutate(
+              { nic: target, patch },
+              {
+                // parameter changes follow the NIC update (diffed in the modal)
+                onSuccess: () => {
+                  if (plan) {
+                    applyFilterParameters.mutate({
+                      nicId: target.id,
+                      nicName: nicLabel(target),
+                      plan,
+                    })
+                  }
+                },
+              },
+            )
           }}
           onClose={() => setEditing(null)}
         />
@@ -559,13 +610,16 @@ export function NicsTab({ vmId }: { vmId: string }) {
 
 // One modal for both flows: no `nic` means create, a `nic` means edit with the
 // fields prefilled. Exported so the template NICs tab reuses the same field set
-// (name/profile/card model/link/plug/MAC).
+// (name/profile/card model/link/plug/MAC). Passing `vmId` adds the network
+// filter parameter editor: a VM-only subcollection (template NICs have none).
 export function NicModal({
   nic,
+  vmId,
   onSubmit,
   onClose,
 }: {
   nic?: Nic
+  vmId?: string
   onSubmit: (values: NicFormValues) => void
   onClose: () => void
 }) {
@@ -593,6 +647,55 @@ export function NicModal({
   const macValid = macTrimmed === '' || isValidMac(macTrimmed)
   const canSubmit = name.trim() !== '' && macValid
 
+  // Network filter parameters (webadmin's vNIC dialog key/value table, e.g.
+  // IP = 10.0.0.1 for the clean-traffic filter). An existing VM NIC reads its
+  // parameters and seeds the rows once (render-time seed, like EditVmModal);
+  // a new NIC starts empty and gets its rows created after the NIC exists.
+  const supportsFilterParameters = vmId !== undefined
+  const filterParameters = useNicNetworkFilterParameters(
+    vmId ?? '',
+    nic?.id ?? '',
+    supportsFilterParameters && isEdit,
+  )
+  const [parameterRows, setParameterRows] = useState<NetworkFilterParameterRow[]>([])
+  const [parametersSeeded, setParametersSeeded] = useState(!isEdit)
+  if (!parametersSeeded && filterParameters.isSuccess) {
+    setParametersSeeded(true)
+    setParameterRows(
+      filterParameters.data.map((parameter) => ({
+        id: parameter.id,
+        name: parameter.name ?? '',
+        value: parameter.value ?? '',
+      })),
+    )
+  }
+  const loadedParameters = isEdit ? (filterParameters.data ?? []) : []
+  // Webadmin offers the table when the chosen vNIC profile carries a network
+  // filter. Parameters already on the NIC keep it visible regardless, so they
+  // can still be reviewed and removed after a profile change.
+  const selectedProfile = profiles.data?.find((profile) => profile.id === profileId)
+  const profileHasFilter = selectedProfile?.network_filter?.id !== undefined
+  const showFilterParameters =
+    supportsFilterParameters && (profileHasFilter || loadedParameters.length > 0)
+
+  const updateParameterRow = (index: number, patch: Partial<NetworkFilterParameterRow>) => {
+    setParameterRows((rows) => rows.map((row, i) => (i === index ? { ...row, ...patch } : row)))
+  }
+  const addParameterRow = () => {
+    setParameterRows((rows) => [...rows, { name: '', value: '' }])
+  }
+  const removeParameterRow = (index: number) => {
+    setParameterRows((rows) => rows.filter((_row, i) => i !== index))
+  }
+
+  // Only a seeded, visible editor contributes a plan: an unread parameter set
+  // (still loading, or the read failed) is never diffed against an empty list.
+  const parameterPlan = (): NetworkFilterParameterPlan | undefined => {
+    if (!showFilterParameters || !parametersSeeded) return undefined
+    const plan = planNetworkFilterParameterChanges(loadedParameters, parameterRows)
+    return isEmptyPlan(plan) ? undefined : plan
+  }
+
   const submit = () => {
     if (!canSubmit) return
     onSubmit({
@@ -602,6 +705,7 @@ export function NicModal({
       linked,
       plugged,
       macAddress: macTrimmed || undefined,
+      networkFilterParameterPlan: parameterPlan(),
     })
   }
 
@@ -721,6 +825,89 @@ export function NicModal({
               </HelperTextItem>
             </HelperText>
           </FormGroup>
+          {showFilterParameters && (
+            <FormGroup
+              label="Network filter parameters"
+              fieldId="nic-filter-parameters"
+              labelHelp={
+                <FieldHelp
+                  field="Network filter parameters"
+                  content="Variables the vNIC profile's network filter reads, such as IP = 10.0.0.1 for clean-traffic. A name may repeat to give the filter a list of values."
+                />
+              }
+            >
+              {filterParameters.isPending && !parametersSeeded && (
+                <Skeleton height="2.25rem" screenreaderText="Loading network filter parameters" />
+              )}
+              {filterParameters.isError && !parametersSeeded && (
+                <>
+                  <HelperText>
+                    <HelperTextItem variant="error">
+                      {`Could not load network filter parameters: ${
+                        filterParameters.error instanceof Error
+                          ? filterParameters.error.message
+                          : t('common.error.unknown')
+                      }`}
+                    </HelperTextItem>
+                  </HelperText>
+                  <Button variant="link" isInline onClick={() => void filterParameters.refetch()}>
+                    {t('common.action.retry')}
+                  </Button>
+                </>
+              )}
+              {parametersSeeded && (
+                <>
+                  {parameterRows.length === 0 && (
+                    <HelperText>
+                      <HelperTextItem>No network filter parameters.</HelperTextItem>
+                    </HelperText>
+                  )}
+                  {parameterRows.map((row, index) => (
+                    <Grid
+                      hasGutter
+                      key={row.id ?? `new-${index}`}
+                      style={{ marginBottom: '0.5rem' }}
+                    >
+                      <GridItem span={5}>
+                        <TextInput
+                          id={`nic-filter-parameter-name-${index}`}
+                          aria-label={`Network filter parameter ${index + 1} name`}
+                          placeholder={t('common.field.name')}
+                          value={row.name}
+                          onChange={(_event, value) => updateParameterRow(index, { name: value })}
+                        />
+                      </GridItem>
+                      <GridItem span={6}>
+                        <TextInput
+                          id={`nic-filter-parameter-value-${index}`}
+                          aria-label={`Network filter parameter ${index + 1} value`}
+                          placeholder={t('common.field.value')}
+                          value={row.value}
+                          onChange={(_event, value) => updateParameterRow(index, { value })}
+                        />
+                      </GridItem>
+                      <GridItem span={1}>
+                        <Button
+                          variant="plain"
+                          aria-label={`Remove network filter parameter ${index + 1}`}
+                          icon={<MinusCircleIcon />}
+                          onClick={() => removeParameterRow(index)}
+                        />
+                      </GridItem>
+                    </Grid>
+                  ))}
+                  <Button
+                    variant="link"
+                    isInline
+                    icon={<PlusCircleIcon />}
+                    onClick={addParameterRow}
+                  >
+                    Add parameter
+                  </Button>
+                </>
+              )}
+            </FormGroup>
+          )}
         </Form>
       </ModalBody>
       <ModalFooter>
