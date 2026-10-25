@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 import '../../test/env'
-import { screen, waitFor, within } from '@testing-library/react'
+import { act, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { useEffect, useState } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { clusters, dataCenters, hosts, mockRequest } from '../../api/mock/handlers'
 import { ApiError } from '../../api/transport'
@@ -9,6 +10,10 @@ import type { Host } from '../../api/schemas/host'
 import { LOCAL_STORAGE_DEPS } from '../../hooks/useHostActions'
 import { FIND_TIMEOUT_MS, renderWithProviders } from '../../test/render'
 import { ConfigureLocalStorageModal } from './ConfigureLocalStorageModal'
+import {
+  ConfigureLocalStorageProvider,
+  useConfigureLocalStorageLauncher,
+} from './ConfigureLocalStorageProvider'
 import { HostActionsMenu } from './HostActionsMenu'
 
 // Mock fixture: node-03 (host-03) sits in maintenance in cluster-01 (Default,
@@ -187,5 +192,113 @@ describe('HostActionsMenu: Configure local storage', () => {
     )
     await screen.findByRole('menuitem', { name: 'Assign tags' })
     expect(screen.queryByRole('menuitem', { name: 'Configure local storage' })).toBeNull()
+  })
+})
+
+// The run moves the host to another cluster, so a list scoped to the old one
+// drops the row (and its HostActionsMenu) on the next poll. The dialog lives in
+// ConfigureLocalStorageProvider (AppShell) and must outlive the row.
+describe('ConfigureLocalStorageProvider', () => {
+  // handles the test drives the harness through, filled in after each render
+  const handles: {
+    dropRow: () => void
+    launcher: ReturnType<typeof useConfigureLocalStorageLauncher>
+  } = { dropRow: () => {}, launcher: null }
+
+  function Rows() {
+    const [shown, setShown] = useState(true)
+    const launcher = useConfigureLocalStorageLauncher()
+    useEffect(() => {
+      handles.dropRow = () => setShown(false)
+      handles.launcher = launcher
+    })
+    return shown ? <HostActionsMenu host={node03()} /> : null
+  }
+
+  async function startFromKebab() {
+    const user = userEvent.setup()
+    renderWithProviders(
+      <ConfigureLocalStorageProvider>
+        <Rows />
+      </ConfigureLocalStorageProvider>,
+    )
+    await user.click(
+      await screen.findByRole(
+        'button',
+        { name: 'Actions for node-03' },
+        { timeout: FIND_TIMEOUT_MS },
+      ),
+    )
+    await user.click(await screen.findByRole('menuitem', { name: 'Configure local storage' }))
+    await user.type(
+      await screen.findByRole(
+        'textbox',
+        { name: 'Path to local storage' },
+        { timeout: FIND_TIMEOUT_MS },
+      ),
+      '/data/images',
+    )
+    await user.click(configureButton())
+  }
+
+  it('keeps the dialog, progress and outcome when the row unmounts mid-run', async () => {
+    // the row vanishes as soon as the host has moved, like a cluster-scoped pane
+    const updateHost = LOCAL_STORAGE_DEPS.updateHost
+    vi.spyOn(LOCAL_STORAGE_DEPS, 'updateHost').mockImplementation(async (id, body) => {
+      const result = await updateHost(id, body)
+      act(() => handles.dropRow())
+      return result
+    })
+    vi.spyOn(LOCAL_STORAGE_DEPS, 'createLocalStorageDomain').mockRejectedValue(
+      new ApiError(409, 'Operation Failed', 'Cannot add Storage. The path is not empty.'),
+    )
+    await startFromKebab()
+
+    expect(
+      await screen.findByText('Local storage was not configured', {}, { timeout: FIND_TIMEOUT_MS }),
+    ).toBeDefined()
+    // the row and its kebab are gone, the dialog is not
+    expect(screen.queryByRole('button', { name: 'Actions for node-03' })).toBeNull()
+    expect(screen.getByRole('dialog', { name: /Configure local storage on node-03/ })).toBeDefined()
+    expect(screen.getAllByText(/The path is not empty/).length).toBeGreaterThan(0)
+    expect(
+      screen.getByText(
+        'The storage domain was not created. Changes made before the failure: data center node-03-Local created, cluster node-03-Local created, host moved to node-03-Local, and host activated.',
+      ),
+    ).toBeDefined()
+    const stepper = screen.getByRole('list', { name: 'Configure local storage progress' })
+    expect(
+      within(stepper)
+        .getAllByRole('listitem')
+        .map((step) => step.getAttribute('aria-label')),
+    ).toEqual([
+      'Data center node-03-Local: Done',
+      'Cluster node-03-Local: Done',
+      'Move node-03 to node-03-Local: Done',
+      'Activate node-03 and wait until it is up: Done',
+      'Storage domain node-03-Local at /data/images: Failed',
+    ])
+
+    const footerClose = screen
+      .getAllByRole('button', { name: 'Close' })
+      .find((button) => button.textContent === 'Close')
+    await userEvent.setup().click(footerClose as HTMLElement)
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+  })
+
+  it('shows the running dialog again instead of starting a second run', async () => {
+    let finish: (value: { id: string }) => void = () => {}
+    const createDataCenter = vi
+      .spyOn(LOCAL_STORAGE_DEPS, 'createDataCenter')
+      .mockImplementation(() => new Promise((resolve) => (finish = resolve)))
+    await startFromKebab()
+    await waitFor(() => expect(createDataCenter).toHaveBeenCalledTimes(1))
+    expect(screen.getByRole('list', { name: 'Configure local storage progress' })).toBeDefined()
+
+    act(() => handles.launcher?.open(node03()))
+    expect(screen.getAllByRole('dialog')).toHaveLength(1)
+    expect(screen.getByRole('list', { name: 'Configure local storage progress' })).toBeDefined()
+    expect(createDataCenter).toHaveBeenCalledTimes(1)
+    act(() => finish({ id: 'dc-unused' }))
   })
 })

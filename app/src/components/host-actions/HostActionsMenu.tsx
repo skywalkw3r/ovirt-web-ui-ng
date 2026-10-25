@@ -46,6 +46,7 @@ import { ReinstallHostModal } from '../host-form/ReinstallHostModal'
 import { AssignTagsModal } from '../tags/AssignTagsModal'
 import { CreateVmWizardModal } from '../vm-create/CreateVmWizard'
 import { ConfigureLocalStorageModal } from './ConfigureLocalStorageModal'
+import { useConfigureLocalStorageLauncher } from './ConfigureLocalStorageProvider'
 import { CopyHostNetworksModal } from './CopyHostNetworksModal'
 import { DiscoverIscsiModal } from './DiscoverIscsiModal'
 
@@ -102,7 +103,10 @@ export function HostActionsMenu({
   const [discoveringIscsi, setDiscoveringIscsi] = useState(false)
   const [addingVm, setAddingVm] = useState(false)
   const [copyingNetworks, setCopyingNetworks] = useState(false)
+  // Only used outside ConfigureLocalStorageProvider (isolated tests): in the
+  // app the dialog lives in AppShell so it outlives this row.
   const [configuringLocalStorage, setConfiguringLocalStorage] = useState(false)
+  const localStorageLauncher = useConfigureLocalStorageLauncher()
   const action = useHostAction()
   const fence = useFenceHost()
   const manualFence = useConfirmHostRebooted()
@@ -364,7 +368,8 @@ export function HostActionsMenu({
         <DropdownItem
           onClick={() => {
             setIsOpen(false)
-            setConfiguringLocalStorage(true)
+            if (localStorageLauncher) localStorageLauncher.open(host)
+            else setConfiguringLocalStorage(true)
           }}
         >
           {t('host.action.configureLocalStorage')}
