@@ -8,7 +8,18 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    # @types/node tracks the Node runtime (node-version in ci.yml, ubi9/nodejs-24
+    # in packaging/Containerfile); bump its major together with the runtime.
+    ignore:
+      - dependency-name: '@types/node'
+        update-types: ['version-update:semver-major']
+    # A dependency joins the first group it matches, so react must precede
+    # dev-tooling to pull in @types/react*.
     groups:
+      # react and react-dom must be the exact same version or React refuses
+      # to load, so they can never ship in separate PRs.
+      react:
+        patterns: ['react', 'react-dom', '@types/react', '@types/react-dom']
       patternfly:
         patterns: ['@patternfly/*']
       tanstack:
