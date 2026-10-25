@@ -72,13 +72,18 @@ gaps are tracked in [`docs/GAP-ANALYSIS.md`](docs/GAP-ANALYSIS.md).
   staged Edit VM modal with Run Once depth, cluster-depth dialog + affinity
   CRUD, host add/install + fence agents + Discover iSCSI + NUMA/vGPU, pools,
   instance types, data centers, and the _Hosts & Clusters_ / _VMs & Templates_
-  inventory trees.
+  inventory trees. VM watchdog (Edit VM and the New VM wizard), the host VMs
+  subtab's Running / Pinned to host / Both filter, Configure Local Storage, and
+  New Cluster's management network and default network provider.
 - **Network** — host network setup (bonds, SR-IOV, per-attachment QoS, NIC
-  labels), MAC pools, vNIC profiles with custom properties, and network
-  detail subtabs.
-- **Storage** — storage-domain lifecycle (NFS / iSCSI / FC, import + LUN
-  extend/reduce), disk profiles, disk snapshots, register-from-storage with
-  advanced mappings, image import, and Gluster volumes.
+  labels, LLDP information), Copy Host Networks, MAC pools, vNIC profiles with
+  custom properties, vNIC network filter parameters, and network detail
+  subtabs.
+- **Storage** — storage-domain lifecycle (NFS / iSCSI / FC / POSIX /
+  GlusterFS / Local on Host / Managed Block Storage, import + LUN
+  extend/reduce, Discard After Delete), disk profiles, disk snapshots, Enable
+  Discard on VM disks, register-from-storage with advanced mappings, image
+  import, and Gluster volumes.
 - **Administration** — users + directory groups with detail pages, roles,
   system permissions, quotas with limit editors, scheduling policies, external
   providers, and errata.
@@ -89,10 +94,11 @@ gaps are tracked in [`docs/GAP-ANALYSIS.md`](docs/GAP-ANALYSIS.md).
   scheduled announcement banners), optional **multi-engine** server picker, and
   light/dark themes across 11 locales.
 
-Backed by **~2,000 unit tests** plus Playwright e2e with an axe accessibility
+Backed by **~2,500 unit tests** plus Playwright e2e with an axe accessibility
 gate. A few webadmin features are deliberately deferred because oVirt 4.5
 exposes no REST surface for them (Active User Sessions, hosted-engine
-global-HA toggle, SMTP/SNMP notifier transport, Foreman host discovery); the
+global-HA toggle, SMTP/SNMP notifier transport, Foreman host discovery, and the
+CPU type security warnings, whose inputs the engine never serializes); the
 phased roadmap lives in [`docs/PLAN.md`](docs/PLAN.md).
 
 ## Deployment

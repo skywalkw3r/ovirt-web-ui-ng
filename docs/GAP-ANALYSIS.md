@@ -8,6 +8,49 @@
 > have since shipped. Treat README.md §Status as authoritative and this report
 > as the source-backed feature inventory it was audited against.
 
+## 0. Update 2026-10-25: screenshot-based parity wave
+
+A second audit compared the app against the webadmin screenshots in the oVirt
+site repo (`oVirt/ovirt-site`, `source/images/wiki/`), checking each candidate
+against the code rather than this report. Its outcome:
+
+**Shipped in this wave**
+
+| Interface | Reference image(s) |
+|---|---|
+| Edit VM and New VM wizard: Watchdog model and action | `Neweditserverhawatchdogenabled.png`, `Watchdog_ui.png` |
+| Edit Network Interface: Network Filter Parameters | `NetworkFilterParameterGUIMockup.png` |
+| Host > Virtual Machines: Running / Pinned to host / Both | `VMs_on_host_running.png`, `VMs_on_host_pinned.png`, `VMs_on_host_all.png` |
+| Host > Configure Local Storage | `Configure_Local_Storage.png` |
+| New Cluster: Management Network and Default Network Provider | `Create_cluster.png`, `auto-define_create.png` |
+| Setup Host Networks and Network Interfaces: LLDP information | `lldp_ui.png` |
+| Copy Host Networks | `copy_host_networks.png` |
+| New / Manage Domain: Discard After Delete | `Manage_Domain_With_Discard_After_Delete_Bolded.png` |
+| VM disk dialogs: Enable Discard (pass discard) | `New_Vm_Disk_Image_With_Pass_Discard_Bolded.png` |
+| New Domain: Managed Block Storage | `CinderLibStorageDomain.png` |
+
+**Not implementable over REST 4.5**
+
+- **CPU type security warnings** (`secure-cpus-*-warning.png`). webadmin's
+  cluster, host and VM status warnings compare `cpu_verb` with the configured
+  verb, a host's missing CPU flags, and a VM's runtime CPU name. The backend
+  computes these only for webadmin's own search (`SearchQuery.java`), and
+  REST serializes none of them: clusters and hosts expose only `cpu.type`,
+  `/clusterlevels/{v}/cputypes` carries no flags, and VMs expose only
+  `custom_cpu_model`. The feature page says "These changes do not affect the
+  REST API".
+- **Per-device memory Hot Unplug** (`memory-hot-unplug-webadmin.png`). REST
+  only supports lowering a running VM's memory, with the engine choosing the
+  devices; Edit VM already does that, so no separate action was added.
+
+**Still open** (tracked elsewhere in this report or in issues)
+
+- Edit VM NUMA nodes and CPU pinning (section 4, Host tab).
+- Setup Host Networks attachment custom properties and Sync All (section 4).
+- Import VM from OVA (section 6, item 2).
+- Guide Me and the Configure dialog (section 3).
+- UI plugin support and the Cockpit host console: skywalkw3r/ovirt-web-ui-ng#13.
+
 ## 1. Executive summary
 
 The rebuild has reached **read/monitor parity** across every webadmin entity and **deep write parity** on the daily-driver core (VM lifecycle, consoles, snapshots, disks, NICs, migration, folders/tags, host add/install + setup-networks, DC/cluster/network/NFS-domain CRUD). Detail pages exist for all eight entities, and several surfaces (folder tree, ⌘K palette, notification drawer) exceed webadmin. What remains is the **administrative CRUD long-tail** — the "config 80%" of Phase 6. The 3–5 biggest genuine gaps, in order: **(1) VM/Template import** (from export domain, OVA, and external VMware/Xen/KVM providers, plus the register-unregistered-from-storage flow) is entirely absent and is the largest single admin capability missing; **(2) Storage-domain lifecycle** — no Edit/Remove/Destroy and, critically, no Attach/Detach/Activate/Maintenance actions, so domains can be created but never managed day-to-day; **(3) Governance CRUD** — no role editor, no system-permissions surface, no add-user-from-directory, no scheduling-policy editor; **(4) Cluster dialog depth** — the new/edit cluster modal is missing scheduling/migration/fencing/console/MAC-pool tabs; and **(5) affinity + host runtime actions** (create/edit affinity groups & labels; host fence/reinstall/refresh-caps/upgrade/console). Everything deferred (DWH analytics, gluster volume management) is intentional per PLAN.md and MEMORY.
