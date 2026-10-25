@@ -1,5 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { clusterUpgrade, isClusterUpgradeRunning, listClusterAffinityGroupsFull } from './clusters'
+import {
+  clusterUpgrade,
+  getCluster,
+  isClusterUpgradeRunning,
+  listClusterAffinityGroupsFull,
+  listClusterExternalNetworkProviders,
+} from './clusters'
 import type { Cluster } from '../schemas/cluster'
 import { ApiError } from '../transport'
 import { resetFollowDenials } from '../followDegrade'
@@ -169,5 +175,49 @@ describe('listClusterAffinityGroupsFull', () => {
     expect(error).toMatchObject({ status: 403 })
     // 4xx never degrades, so only the follow read was attempted
     expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('cluster create-time networking reads', () => {
+  it('keeps the management_network link the engine adds to every cluster read', async () => {
+    mockFetch(200, {
+      id: 'cluster-01',
+      name: 'Default',
+      management_network: { id: 'net-01', href: '/ovirt-engine/api/networks/net-01' },
+    })
+    const cluster = await getCluster('cluster-01')
+    expect(cluster.management_network?.id).toBe('net-01')
+  })
+
+  it('lists the default network provider from the externalnetworkproviders subcollection', async () => {
+    const fetchMock = mockFetch(200, {
+      external_provider: [
+        { id: 'onp-01', name: 'ovirt-provider-ovn', requires_authentication: 'false' },
+      ],
+    })
+    const providers = await listClusterExternalNetworkProviders('cluster-01')
+
+    const [url] = fetchMock.mock.calls[0] as [string]
+    expect(url).toBe('/ovirt-engine/api/clusters/cluster-01/externalnetworkproviders')
+    expect(providers).toHaveLength(1)
+    expect(providers[0]).toMatchObject({
+      name: 'ovirt-provider-ovn',
+      requires_authentication: false,
+    })
+  })
+
+  it('reads an omitted list key (no provider) as empty', async () => {
+    mockFetch(200, {})
+    await expect(listClusterExternalNetworkProviders('cluster-01')).resolves.toEqual([])
+  })
+
+  it('maps a 404 on the subcollection to an empty list but propagates other errors', async () => {
+    mockFetch(404)
+    await expect(listClusterExternalNetworkProviders('cluster-01')).resolves.toEqual([])
+
+    mockFetch(500, { fault: { reason: 'x', detail: 'boom' } })
+    await expect(listClusterExternalNetworkProviders('cluster-01')).rejects.toMatchObject({
+      status: 500,
+    })
   })
 })

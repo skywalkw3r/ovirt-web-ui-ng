@@ -4,12 +4,15 @@ import {
   Button,
   Form,
   FormGroup,
+  FormHelperText,
   FormSelect,
   FormSelectOption,
   Modal,
   ModalBody,
   ModalFooter,
   ModalHeader,
+  HelperText,
+  HelperTextItem,
   Switch,
   TextInput,
 } from '@patternfly/react-core'
@@ -23,14 +26,21 @@ import {
   type MigrationBandwidthMethod,
 } from '../../api/resources/clusters'
 import { dataCenterKeys } from '../../hooks/useAdminResources'
+import {
+  useClusterExternalNetworkProviders,
+  useClusterNetworksForForm,
+  useManagementNetworkOptions,
+  useNetworkProviderOptions,
+} from '../../hooks/useClusterFormNetworking'
 import { useCreateCluster, useUpdateCluster } from '../../hooks/useClusterMutations'
 import { macPoolKeys } from '../../hooks/useMacPools'
 import { schedulingPolicyKeys } from '../../hooks/useSchedulingPolicies'
 import type { MessageId } from '../../i18n/messages/en'
 import { useT } from '../../i18n/useT'
+import { defaultManagementNetworkId, findManagementNetwork } from '../../lib/clusterNetworking'
 import { FieldHelp } from '../forms/FieldHelp'
 import { ModalVerticalTabs } from '../forms/ModalVerticalTabs'
-import { OptionsSelect } from '../forms/OptionsSelect'
+import { OptionsHelper, OptionsSelect } from '../forms/OptionsSelect'
 import {
   BANDWIDTH_METHODS,
   BIOS_TYPES,
@@ -144,10 +154,15 @@ export function ClusterFormModal({
   // create and edit). Tracking the id we last seeded from and resetting during
   // render keeps the draft in sync without an extra commit/flicker.
   const [seededId, setSeededId] = useState(cluster?.id)
+  // The data center whose default management network the draft was last
+  // preselected from (create mode). Declared before the re-seed below, which
+  // clears it so a reopened create dialog preselects again.
+  const [managementSeededFor, setManagementSeededFor] = useState<string | undefined>(undefined)
   if (seededId !== cluster?.id) {
     setSeededId(cluster?.id)
     setDraft(cluster ? clusterToDraft(cluster) : newDraft())
     setMigrationPolicyId(cluster?.migration?.policy?.id ?? '')
+    setManagementSeededFor(undefined)
   }
 
   const set = <K extends keyof ClusterDraft>(key: K, value: ClusterDraft[K]) => {
@@ -178,6 +193,33 @@ export function ClusterFormModal({
     queryFn: listMacPools,
     enabled: isOpen,
   })
+
+  // Create-time networking (General tab). Management Network lists the chosen
+  // data center's candidates; Default Network Provider lists the network-type
+  // external providers. Both are add-only over REST, so edit mode instead reads
+  // the cluster's current values for a read-only echo.
+  const managementNetworks = useManagementNetworkOptions(draft.dataCenterId, isOpen && !isEdit)
+  const networkProviders = useNetworkProviderOptions(isOpen && !isEdit)
+  const clusterNetworks = useClusterNetworksForForm(cluster?.id, isOpen && isEdit)
+  const clusterProviders = useClusterExternalNetworkProviders(cluster?.id, isOpen && isEdit)
+
+  // Preselect the data center's default management network (ovirtmgmt) once its
+  // candidates load, the way webadmin's ClusterModel does on a data-center
+  // change; '' (Engine default) when no default can be told client-side.
+  // Seeded once per data center, during render (no effect/flicker), so a later
+  // manual pick sticks; the data-center select clears the pick on change.
+  if (
+    !isEdit &&
+    draft.dataCenterId !== '' &&
+    managementNetworks.data &&
+    managementSeededFor !== draft.dataCenterId
+  ) {
+    setManagementSeededFor(draft.dataCenterId)
+    setDraft((current) => ({
+      ...current,
+      managementNetworkId: defaultManagementNetworkId(managementNetworks.data),
+    }))
+  }
 
   const create = useCreateCluster()
   const update = useUpdateCluster()
@@ -225,6 +267,131 @@ export function ClusterFormModal({
     migrationPolicyId !== '' &&
     !MIGRATION_POLICIES.some((policy) => policy.id === migrationPolicyId)
 
+  // Edit mode: the read-only echo of a create-only value, with the hint that it
+  // is fixed at creation, or the read's error line (with Retry) in its place.
+  const createOnlyHelper = (query: Parameters<typeof OptionsHelper>[0]['query']) =>
+    query.isError ? (
+      <OptionsHelper query={query} />
+    ) : (
+      <FormHelperText>
+        <HelperText>
+          <HelperTextItem>
+            Set when the cluster is created; it cannot be changed here.
+          </HelperTextItem>
+        </HelperText>
+      </FormHelperText>
+    )
+  const readOnlyValue = (
+    query: { isPending: boolean; isError: boolean },
+    value: string | undefined,
+    fallback: string,
+  ) => {
+    if (query.isError) return t('viewState.error')
+    if (query.isPending) return t('viewState.loading')
+    return value ?? fallback
+  }
+
+  const managementNetworkGroup = (
+    <FormGroup
+      label="Management network"
+      fieldId="cluster-management-network"
+      labelHelp={
+        <FieldHelp
+          field="Management network"
+          content="The data center network the cluster's hosts use to talk to the engine. It is chosen when the cluster is created."
+        />
+      }
+    >
+      {isEdit ? (
+        <>
+          <TextInput
+            id="cluster-management-network"
+            aria-label="Management network"
+            value={readOnlyValue(
+              clusterNetworks,
+              clusterNetworks.data && findManagementNetwork(cluster, clusterNetworks.data)?.name,
+              'Unknown',
+            )}
+            readOnlyVariant="default"
+          />
+          {createOnlyHelper(clusterNetworks)}
+        </>
+      ) : draft.dataCenterId === '' ? (
+        <FormSelect
+          id="cluster-management-network"
+          aria-label="Management network"
+          value=""
+          isDisabled
+        >
+          <FormSelectOption value="" label="Select a data center first" isDisabled />
+        </FormSelect>
+      ) : (
+        <OptionsSelect
+          id="cluster-management-network"
+          ariaLabel="Management network"
+          value={draft.managementNetworkId}
+          onChange={(value) => set('managementNetworkId', value)}
+          query={managementNetworks}
+          placeholder={{ label: t('clusterForm.inheritable.inherit') }}
+        >
+          {(items) =>
+            items.map((network) => (
+              <FormSelectOption
+                key={network.id}
+                value={network.id}
+                label={network.name ?? network.id}
+              />
+            ))
+          }
+        </OptionsSelect>
+      )}
+    </FormGroup>
+  )
+
+  const networkProviderGroup = (
+    <FormGroup
+      label="Default network provider"
+      fieldId="cluster-network-provider"
+      labelHelp={
+        <FieldHelp
+          field="Default network provider"
+          content="The external network provider deployed on every host added to the cluster. It can only be set when the cluster is created."
+        />
+      }
+    >
+      {isEdit ? (
+        <>
+          <TextInput
+            id="cluster-network-provider"
+            aria-label="Default network provider"
+            value={readOnlyValue(
+              clusterProviders,
+              clusterProviders.data?.[0]?.name,
+              'No default provider',
+            )}
+            readOnlyVariant="default"
+          />
+          {createOnlyHelper(clusterProviders)}
+        </>
+      ) : (
+        <OptionsSelect
+          id="cluster-network-provider"
+          ariaLabel="Default network provider"
+          value={draft.defaultNetworkProviderId}
+          onChange={(value) => set('defaultNetworkProviderId', value)}
+          query={networkProviders}
+          placeholder={{ label: 'No default provider' }}
+        >
+          {(items) =>
+            items.map((provider) => (
+              <FormSelectOption key={provider.id} value={provider.id} label={provider.name} />
+            ))
+          }
+        </OptionsSelect>
+      )}
+    </FormGroup>
+  )
+
   const generalSection = (
     <Form onSubmit={(event) => event.preventDefault()}>
       <FormGroup label={t('common.field.name')} isRequired fieldId="cluster-name">
@@ -255,14 +422,9 @@ export function ClusterFormModal({
         />
       </FormGroup>
 
-      {/* DEFERRED — webadmin's General tab also carries Management Network and
-          Default Network Provider. Both are add-only over REST (api-model:
-          managementNetwork is documented on ClustersService.add only, and
-          externalNetworkProviders "can only be set during adding the cluster"),
-          so the edit dialog cannot change them; the create path defers them
-          until the cluster-networks usage flow lands. The "Change existing
-          VMs/Templates from I440FX to Q35" checkbox is a webadmin-internal mass
-          update with no REST field at all. */}
+      {/* The "Change existing VMs/Templates from I440FX to Q35" checkbox of
+          webadmin's General tab is a webadmin-internal mass update with no REST
+          field at all, so it is not offered. */}
 
       <FormGroup
         label={t('clusterForm.dataCenter')}
@@ -281,7 +443,9 @@ export function ClusterFormModal({
             id="cluster-data-center"
             ariaLabel={t('clusterForm.dataCenter')}
             value={draft.dataCenterId}
-            onChange={(value) => set('dataCenterId', value)}
+            onChange={(value) =>
+              setDraft((current) => ({ ...current, dataCenterId: value, managementNetworkId: '' }))
+            }
             query={dataCenters}
             placeholder={{ label: t('clusterForm.dataCenter.placeholder'), isDisabled: true }}
           >
@@ -297,6 +461,8 @@ export function ClusterFormModal({
           </OptionsSelect>
         )}
       </FormGroup>
+
+      {managementNetworkGroup}
 
       <FormGroup
         label={t('clusterForm.cpuArch')}
@@ -454,6 +620,8 @@ export function ClusterFormModal({
           ))}
         </FormSelect>
       </FormGroup>
+
+      {networkProviderGroup}
 
       <FormGroup
         label={t('clusterForm.virtService')}

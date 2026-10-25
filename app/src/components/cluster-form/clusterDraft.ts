@@ -105,6 +105,11 @@ export interface ClusterDraft {
   description: string
   comment: string
   dataCenterId: string
+  // Create-only (api-model ClustersService.add): '' = omit and let the engine
+  // pick its default. Seeded in edit mode for completeness but never sent.
+  managementNetworkId: string
+  // Create-only: '' = no default network provider (omitted).
+  defaultNetworkProviderId: string
   // 'undefined' = auto-detect (a real Architecture enum value, always sent)
   cpuArchitecture: string
   cpuType: string
@@ -185,6 +190,8 @@ export function clusterToDraft(cluster: Cluster): ClusterDraft {
     description: cluster.description ?? '',
     comment: cluster.comment ?? '',
     dataCenterId: cluster.data_center?.id ?? '',
+    managementNetworkId: cluster.management_network?.id ?? '',
+    defaultNetworkProviderId: '',
     cpuArchitecture: cluster.cpu?.architecture ?? 'undefined',
     cpuType: cluster.cpu?.type ?? '',
     biosType: cluster.bios_type ?? '',
@@ -239,6 +246,8 @@ export function blankDraft(): ClusterDraft {
     description: '',
     comment: '',
     dataCenterId: '',
+    managementNetworkId: '',
+    defaultNetworkProviderId: '',
     cpuArchitecture: 'undefined',
     cpuType: '',
     biosType: '',
@@ -307,6 +316,21 @@ function draftToPayload(draft: ClusterDraft, isEdit: boolean): Record<string, un
   }
   if (!isEdit && draft.dataCenterId) {
     payload.data_center = { id: draft.dataCenterId }
+  }
+  // Management network + default network provider are add-only (api-model
+  // ClustersService.add inputDetail; Cluster.externalNetworkProviders "can only
+  // be set during adding the cluster"), so an edit body never carries them. The
+  // provider is sent by id: restapi ClusterMapper reads only the FIRST entry's
+  // id (BackendExternalProviderHelper resolves a bare name first).
+  if (!isEdit) {
+    if (draft.managementNetworkId) {
+      payload.management_network = { id: draft.managementNetworkId }
+    }
+    if (draft.defaultNetworkProviderId) {
+      payload.external_network_providers = {
+        external_provider: [{ id: draft.defaultNetworkProviderId }],
+      }
+    }
   }
   // cpu: architecture + type pair. 'undefined' arch with no type = full auto
   // detect — omit the block entirely so the engine keeps its own derivation.

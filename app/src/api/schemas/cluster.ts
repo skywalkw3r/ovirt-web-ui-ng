@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { ExternalProviderSchema } from './provider'
 
 // Linked entities the engine returns as bare { id, href } unless the read uses
 // ?follow=; getCluster follows data_center so its name is present. Same pattern
@@ -127,6 +128,12 @@ export const ClusterSchema = z.looseObject({
   // MAC address pool the cluster draws from — a bare { id, href } link; the
   // MAC Pool tab shows its name once resolved client-side against /macpools.
   mac_pool: LinkedEntity.optional(),
+  // The cluster's management network: a bare { id, href } link the engine adds
+  // on every cluster read (BackendClustersResource.doPopulate runs
+  // GetManagementNetwork). Writable only on create (api-model
+  // ClustersService.add `management_network.id|name`); the edit dialog shows it
+  // read-only, its name resolved against /clusters/{id}/networks.
+  management_network: LinkedEntity.optional(),
 })
 
 // JSON quirk: the "cluster" key is omitted when the list is empty.
@@ -135,3 +142,13 @@ export const ClusterListSchema = z.looseObject({
 })
 
 export type Cluster = z.infer<typeof ClusterSchema>
+
+// GET /clusters/{id}/externalnetworkproviders (api-model
+// ClusterExternalProvidersService.list, ExternalProvider[]). The engine stores a
+// single default network provider per cluster, so the list holds at most one
+// entry. JSON quirk: the "external_provider" key is omitted when empty.
+export const ClusterExternalProviderListSchema = z.looseObject({
+  external_provider: z.array(ExternalProviderSchema).optional(),
+})
+
+export type ClusterExternalProvider = z.infer<typeof ExternalProviderSchema>

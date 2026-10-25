@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { renderToStaticMarkup } from 'react-dom/server'
 import type { ReactNode } from 'react'
 import { IntlProvider } from 'react-intl'
@@ -112,31 +112,56 @@ vi.mock('@patternfly/react-core', () => ({
   ),
 }))
 
-// The three useQuery calls the modal makes, keyed by queryKey[0]. Only the
-// four-state fields the modal reads are modeled. Non-pending empty lists keep
-// the option selects settled (placeholder + empty hint, no loading/error
-// branches) for the composition assertions.
+// The useQuery calls the modal makes (directly and through
+// hooks/useClusterFormNetworking), keyed by queryKey. Only the four-state
+// fields the modal reads are modeled; a disabled query reads as pending with no
+// data (as TanStack's would on a cold cache) and `select` is applied like the
+// real observer. Non-pending empty lists keep the option selects settled
+// (placeholder + empty hint, no loading/error branches) for the composition
+// assertions.
 const state = vi.hoisted(() => ({
   datacenters: [] as { id: string; name?: string }[],
   schedulingPolicies: [] as { id: string; name?: string }[],
   macpools: [] as { id: string; name?: string }[],
+  dcNetworks: [] as Record<string, unknown>[],
+  providers: [] as Record<string, unknown>[],
+  clusterNetworks: [] as Record<string, unknown>[],
+  clusterProviders: [] as Record<string, unknown>[],
   pending: false,
 }))
 
 vi.mock('@tanstack/react-query', () => ({
-  useQuery: ({ queryKey }: { queryKey: unknown[] }) => {
-    const key = queryKey[0]
-    const data =
+  useQuery: ({
+    queryKey,
+    enabled,
+    select,
+  }: {
+    queryKey: unknown[]
+    enabled?: boolean
+    select?: (data: unknown[]) => unknown[]
+  }) => {
+    const [key, , slice] = queryKey
+    const raw =
       key === 'datacenters'
         ? state.datacenters
         : key === 'schedulingPolicies'
           ? state.schedulingPolicies
-          : state.macpools
+          : key === 'datacenter' && slice === 'networks'
+            ? state.dcNetworks
+            : key === 'providers'
+              ? state.providers
+              : key === 'cluster' && slice === 'networks'
+                ? state.clusterNetworks
+                : key === 'cluster' && slice === 'externalNetworkProviders'
+                  ? state.clusterProviders
+                  : state.macpools
+    const pending = state.pending || enabled === false
+    const data = pending ? undefined : select ? select(raw) : raw
     return {
       data,
-      isPending: state.pending,
+      isPending: pending,
       isError: false,
-      isSuccess: !state.pending,
+      isSuccess: !pending,
       error: null,
       refetch: () => Promise.resolve(),
     }
@@ -208,10 +233,10 @@ const CLUSTER: Cluster = ClusterSchema.parse({
 // ClusterFormModal reads every label through useT/useIntl, so the render needs
 // an IntlProvider; feeding it the real en catalog keeps the English assertions
 // below meaningful (the section titles and buttons resolve to their en values).
-function renderCreate() {
+function renderCreate(initialDataCenterId?: string) {
   return renderToStaticMarkup(
     <IntlProvider locale="en" messages={enMessages}>
-      <ClusterFormModal isOpen onClose={() => {}} />
+      <ClusterFormModal isOpen onClose={() => {}} initialDataCenterId={initialDataCenterId} />
     </IntlProvider>,
   )
 }
@@ -378,5 +403,75 @@ describe('ClusterFormModal — save payload wiring', () => {
     expect(create.error_handling).toEqual({ on_error: 'migrate' })
     // full auto-detect CPU (no type, undefined arch) omits the cpu block
     expect(create.cpu).toBeUndefined()
+  })
+})
+
+// General tab: Management Network + Default Network Provider. Selects on New
+// (add-only over REST), read-only echoes with a set-at-creation hint on Edit.
+describe('ClusterFormModal: create-time networking', () => {
+  afterEach(() => {
+    state.dcNetworks = []
+    state.providers = []
+    state.clusterNetworks = []
+    state.clusterProviders = []
+  })
+
+  it('asks for a data center before offering management networks', () => {
+    const html = renderCreate()
+    expect(html).toMatch(/aria-label="Management network" data-value=""/)
+    expect(html).toContain('Select a data center first')
+  })
+
+  it("preselects the data center's ovirtmgmt and drops external networks from the list", () => {
+    state.dcNetworks = [
+      { id: 'net-02', name: 'vm-prod' },
+      { id: 'net-01', name: 'ovirtmgmt' },
+      { id: 'net-ovn', name: 'ovn-overlay', external_provider: { id: 'onp-01' } },
+    ]
+    const html = renderCreate('dc-01')
+
+    expect(html).toMatch(/aria-label="Management network" data-value="net-01"/)
+    expect(html).toContain('<option value="net-02">vm-prod</option>')
+    expect(html).not.toContain('ovn-overlay')
+    // '' stays available as the engine-default choice
+    expect(html).toContain('<option value="">Engine default</option>')
+  })
+
+  it('offers only network-type providers, defaulting to none', () => {
+    state.providers = [
+      { id: 'onp-01', name: 'ovirt-provider-ovn', providerType: 'network' },
+      { id: 'ehp-01', name: 'foreman', providerType: 'host' },
+    ]
+    const html = renderCreate('dc-01')
+
+    expect(html).toMatch(/aria-label="Default network provider" data-value=""/)
+    expect(html).toContain('<option value="">No default provider</option>')
+    expect(html).toContain('<option value="onp-01">ovirt-provider-ovn</option>')
+    expect(html).not.toContain('foreman')
+  })
+
+  it('shows both read-only on Edit with the set-at-creation hint', () => {
+    state.clusterNetworks = [
+      { id: 'net-02', name: 'vm-prod', usages: { usage: ['vm'] } },
+      { id: 'net-01', name: 'ovirtmgmt', usages: { usage: ['vm', 'management'] } },
+    ]
+    state.clusterProviders = [{ id: 'onp-01', name: 'ovirt-provider-ovn' }]
+    const html = renderEdit(CLUSTER)
+
+    expect(html).toMatch(
+      /aria-label="Management network" data-readonly="default"[^>]*value="ovirtmgmt"/,
+    )
+    expect(html).toMatch(
+      /aria-label="Default network provider" data-readonly="default"[^>]*value="ovirt-provider-ovn"/,
+    )
+    expect(html).toContain('Set when the cluster is created; it cannot be changed here.')
+    // no selects for either field in edit mode
+    expect(html).not.toMatch(/<select aria-label="Management network"/)
+    expect(html).not.toMatch(/<select aria-label="Default network provider"/)
+  })
+
+  it('reads a cluster without a default provider as "No default provider" on Edit', () => {
+    const html = renderEdit(CLUSTER)
+    expect(html).toMatch(/aria-label="Default network provider"[^>]*value="No default provider"/)
   })
 })
