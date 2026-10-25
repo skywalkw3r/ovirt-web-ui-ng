@@ -1772,6 +1772,7 @@ export const fr: LocaleCatalog = {
   'vmActions.remove.toast.protected':
     'Impossible de supprimer {name} — elle est protégée contre la suppression ou encore utilisée. Désactivez la protection contre la suppression (Modifier) ou résolvez le conflit, puis réessayez.',
   'settings.menu.ariaLabel': '{username} — Menu utilisateur',
+  'settings.menu.ariaLabelNoUser': 'Menu utilisateur',
   'settings.menu.settings': 'Paramètres',
   'settings.menu.shortcuts': 'Raccourcis clavier',
   'settings.menu.about': 'À propos',
@@ -2836,6 +2837,7 @@ export const fr: LocaleCatalog = {
   'affinity.section.vms': 'Machines virtuelles',
   'affinity.select.hosts': 'Sélectionner des hôtes',
   'affinity.select.vms': 'Sélectionner des machines virtuelles',
+  'affinity.select.withCount': '{count} sélectionné(s) — {action}',
   'affinity.selectedCount': '{count} sélectionné(s)',
   'bulk.confirm.stop':
     "La mise hors tension coupe brutalement l'alimentation virtuelle — le système d'exploitation invité ne s'arrête pas proprement et les données non enregistrées peuvent être perdues.",
@@ -4042,6 +4044,9 @@ export const fr: LocaleCatalog = {
   'tasks.action.clearFinished': 'Effacer les tâches terminées',
   'tasks.badge.overCap': 'Tâches — plus de {BADGE_CAP} en cours',
   'tasks.badge.running': 'Tâches — {count} en cours',
+  'notifications.bell.ariaLabel': 'Notifications',
+  'notifications.bell.overCap': 'Notifications — plus de {BADGE_CAP} non lues',
+  'notifications.bell.unread': 'Notifications — {count} non lues',
   'tasks.column.correlationId': 'ID de corrélation',
   'tasks.drawer.empty.body': 'Les tâches du moteur apparaîtront ici au fil des actions.',
   'tasks.drawer.empty.title': 'Aucune tâche',

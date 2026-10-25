@@ -1730,6 +1730,7 @@ export const ko: LocaleCatalog = {
   'vmActions.remove.toast.protected':
     '{name}을(를) 제거할 수 없음 — 삭제 보호되어 있거나 여전히 사용 중입니다. 삭제 보호를 끄거나(편집) 충돌을 해결한 다음 다시 시도하십시오.',
   'settings.menu.ariaLabel': '{username} — 사용자 메뉴',
+  'settings.menu.ariaLabelNoUser': '사용자 메뉴',
   'settings.menu.settings': '설정',
   'settings.menu.shortcuts': '키보드 단축키',
   'settings.menu.about': '정보',
@@ -2767,6 +2768,7 @@ export const ko: LocaleCatalog = {
   'affinity.section.vms': '가상 머신',
   'affinity.select.hosts': '호스트 선택',
   'affinity.select.vms': '가상 머신 선택',
+  'affinity.select.withCount': '{count}개 선택됨 — {action}',
   'affinity.selectedCount': '{count}개 선택됨',
   'bulk.confirm.stop':
     '강제 전원 끄기는 가상 전원을 차단합니다 — 게스트 OS가 정상적으로 종료되지 않으며 저장되지 않은 데이터가 손실될 수 있습니다.',
@@ -3930,6 +3932,9 @@ export const ko: LocaleCatalog = {
   'tasks.action.clearFinished': '완료된 항목 지우기',
   'tasks.badge.overCap': '작업 — {BADGE_CAP}개 이상 실행 중',
   'tasks.badge.running': '작업 — {count}개 실행 중',
+  'notifications.bell.ariaLabel': '알림',
+  'notifications.bell.overCap': '알림 — 읽지 않음 {BADGE_CAP}개 이상',
+  'notifications.bell.unread': '알림 — 읽지 않음 {count}개',
   'tasks.column.correlationId': '상관 ID',
   'tasks.drawer.empty.body': '작업이 실행됨에 따라 엔진 작업이 여기에 표시됩니다.',
   'tasks.drawer.empty.title': '작업 없음',

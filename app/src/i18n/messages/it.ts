@@ -1769,6 +1769,7 @@ export const it: LocaleCatalog = {
   'vmActions.remove.toast.protected':
     "Impossibile rimuovere {name} — è protetta dall'eliminazione o ancora in uso. Disattiva la protezione dall'eliminazione (Modifica) o risolvi il conflitto, quindi riprova.",
   'settings.menu.ariaLabel': '{username} — Menu utente',
+  'settings.menu.ariaLabelNoUser': 'Menu utente',
   'settings.menu.settings': 'Impostazioni',
   'settings.menu.shortcuts': 'Scorciatoie da tastiera',
   'settings.menu.about': 'Informazioni',
@@ -2835,6 +2836,7 @@ export const it: LocaleCatalog = {
   'affinity.section.vms': 'Macchine virtuali',
   'affinity.select.hosts': 'Seleziona host',
   'affinity.select.vms': 'Seleziona macchine virtuali',
+  'affinity.select.withCount': '{count} selezionati — {action}',
   'affinity.selectedCount': '{count} selezionati',
   'bulk.confirm.stop':
     "Lo spegnimento forzato interrompe l'alimentazione virtuale: il sistema operativo guest non si arresta in modo pulito e i dati non salvati potrebbero andare persi.",
@@ -4041,6 +4043,9 @@ export const it: LocaleCatalog = {
   'tasks.action.clearFinished': 'Cancella completati',
   'tasks.badge.overCap': 'Attività — più di {BADGE_CAP} in esecuzione',
   'tasks.badge.running': 'Attività — {count} in esecuzione',
+  'notifications.bell.ariaLabel': 'Notifiche',
+  'notifications.bell.overCap': 'Notifiche — più di {BADGE_CAP} non lette',
+  'notifications.bell.unread': 'Notifiche — {count} non lette',
   'tasks.column.correlationId': 'ID di correlazione',
   'tasks.drawer.empty.body':
     'I processi del motore appariranno qui man mano che le azioni vengono eseguite.',

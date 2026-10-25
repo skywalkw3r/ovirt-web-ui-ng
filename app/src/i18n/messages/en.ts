@@ -2086,6 +2086,7 @@ export const en = {
   // VNC/SPICE labels stay verbatim as product tokens.
   // ==========================================================================
   'settings.menu.ariaLabel': '{username} — User menu',
+  'settings.menu.ariaLabelNoUser': 'User menu',
   'settings.menu.settings': 'Settings',
   'settings.menu.shortcuts': 'Keyboard shortcuts',
   'settings.menu.about': 'About',
@@ -3258,6 +3259,7 @@ export const en = {
   'affinity.section.vms': 'Virtual Machines',
   'affinity.select.hosts': 'Select hosts',
   'affinity.select.vms': 'Select virtual machines',
+  'affinity.select.withCount': '{count} selected — {action}',
   'affinity.selectedCount': '{count} selected',
   // bulk.* --------------------------------------------------------
   'bulk.confirm.stop':
@@ -4530,6 +4532,9 @@ export const en = {
   'tasks.action.clearFinished': 'Clear finished',
   'tasks.badge.overCap': 'Tasks — more than {BADGE_CAP} running',
   'tasks.badge.running': 'Tasks — {count} running',
+  'notifications.bell.ariaLabel': 'Notifications',
+  'notifications.bell.overCap': 'Notifications — more than {BADGE_CAP} unread',
+  'notifications.bell.unread': 'Notifications — {count} unread',
   'tasks.column.correlationId': 'Correlation ID',
   'tasks.drawer.empty.body': 'Engine tasks will appear here as actions run.',
   'tasks.drawer.empty.title': 'No tasks',

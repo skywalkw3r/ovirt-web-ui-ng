@@ -1764,6 +1764,7 @@ export const ru: LocaleCatalog = {
   'vmActions.remove.toast.protected':
     'Не удалось удалить {name} — она защищена от удаления или ещё используется. Отключите защиту от удаления («Изменить») или устраните конфликт, затем повторите попытку.',
   'settings.menu.ariaLabel': '{username} — Меню пользователя',
+  'settings.menu.ariaLabelNoUser': 'Меню пользователя',
   'settings.menu.settings': 'Настройки',
   'settings.menu.shortcuts': 'Сочетания клавиш',
   'settings.menu.about': 'О программе',
@@ -2827,6 +2828,7 @@ export const ru: LocaleCatalog = {
   'affinity.section.vms': 'Виртуальные машины',
   'affinity.select.hosts': 'Выберите хосты',
   'affinity.select.vms': 'Выберите виртуальные машины',
+  'affinity.select.withCount': 'Выбрано: {count} — {action}',
   'affinity.selectedCount': 'Выбрано: {count}',
 
   // bulk
@@ -4171,6 +4173,9 @@ export const ru: LocaleCatalog = {
   'tasks.action.clearFinished': 'Очистить завершённые',
   'tasks.badge.overCap': 'Задачи — выполняется более {BADGE_CAP}',
   'tasks.badge.running': 'Задачи — выполняется: {count}',
+  'notifications.bell.ariaLabel': 'Уведомления',
+  'notifications.bell.overCap': 'Уведомления — непрочитанных более {BADGE_CAP}',
+  'notifications.bell.unread': 'Уведомления — непрочитанных: {count}',
   'tasks.column.correlationId': 'Идентификатор корреляции',
   'tasks.drawer.empty.body': 'Задачи движка появятся здесь по мере выполнения действий.',
   'tasks.drawer.empty.title': 'Нет задач',
