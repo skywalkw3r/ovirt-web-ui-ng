@@ -4723,4 +4723,115 @@ export const ru: LocaleCatalog = {
   'console.rdp.download': 'Скачать файл RDP (.rdp)',
   'console.rdp.description': 'Удалённый рабочий стол к гостевой системе Windows',
   'monitoring.history.noData': 'Нет данных за период',
+
+  // Wave 1 i18n pass: watchdog, vNIC filter parameters, host VMs filter, LLDP,
+  // Copy Host Networks, storage discard / Managed Block Storage / local, cluster networking
+  'vm.edit.ha.watchdogModel': 'Модель watchdog',
+  'vm.edit.ha.watchdogModel.none': 'Без watchdog',
+  'vm.edit.ha.watchdogAction': 'Действие watchdog',
+  'vm.edit.ha.watchdogAction.none': 'Нет',
+  'vm.edit.ha.watchdogAction.reset': 'Сброс',
+  'vm.edit.ha.watchdogAction.poweroff': 'Выключить питание',
+  'vm.edit.ha.watchdogAction.pause': 'Пауза',
+  'vm.edit.ha.watchdogAction.dump': 'Дамп',
+  'vm.edit.ha.watchdog.loading': 'Загрузка watchdog',
+  'vm.edit.ha.watchdog.error':
+    'Не удалось загрузить устройство watchdog; оно остаётся без изменений.',
+  'fieldHelp.vm.watchdogModel':
+    'Виртуальная плата watchdog, которую гостевая система должна постоянно сбрасывать. Если гостевая система зависает и перестаёт её сбрасывать, выполняется действие watchdog. Требуется демон watchdog в гостевой системе. Для работающей ВМ применяется при следующем запуске.',
+  'fieldHelp.vm.watchdogAction':
+    'Что происходит при срабатывании watchdog: «Нет» только записывает событие, «Сброс» перезагружает ВМ, «Выключить питание» останавливает её, «Пауза» приостанавливает её, а «Дамп» записывает дамп памяти на хосте.',
+  'vm.edit.nextRun.watchdogNote':
+    'Изменение watchdog вступит в силу при следующем запуске ВМ, даже при выборе «Применить сейчас».',
+  'vm.edit.watchdog.partialFailure':
+    'ВМ сохранена, но изменить watchdog не удалось: {message}. Сохраните ещё раз, чтобы повторить попытку.',
+  'vmNics.filterParams.label': 'Параметры сетевого фильтра',
+  'fieldHelp.vmNic.filterParams':
+    'Переменные, которые читает сетевой фильтр vNIC профиля, например IP = 10.0.0.1 для clean-traffic. Имя может повторяться, чтобы передать фильтру список значений.',
+  'vmNics.filterParams.loading': 'Загрузка параметров сетевого фильтра',
+  'vmNics.filterParams.error': 'Не удалось загрузить параметры сетевого фильтра: {message}',
+  'vmNics.filterParams.empty': 'Нет параметров сетевого фильтра.',
+  'vmNics.filterParams.nameAria': 'Имя параметра сетевого фильтра {index}',
+  'vmNics.filterParams.valueAria': 'Значение параметра сетевого фильтра {index}',
+  'vmNics.filterParams.removeAria': 'Удалить параметр сетевого фильтра {index}',
+  'vmNics.filterParams.add': 'Добавить параметр',
+  'vmNics.filterParams.partialFailure':
+    'Сетевой интерфейс сохранён, но его параметры сетевого фильтра не сохранены: {message}. Сохраните ещё раз, чтобы повторить попытку.',
+  'hostVms.filter.ariaLabel': 'Фильтровать виртуальные машины по связи с этим хостом',
+  'hostVms.filter.running': 'Запущенные',
+  'hostVms.filter.pinned': 'Закреплённые за хостом',
+  'hostVms.filter.both': 'Оба варианта',
+  'hostVms.empty.pinnedBody': 'Нет виртуальных машин, закреплённых за этим хостом.',
+  'hostVms.empty.bothBody':
+    'Нет виртуальных машин, запущенных на этом хосте или закреплённых за ним.',
+  'hostNics.lldp.loading': 'Загрузка сведений LLDP для {name}',
+  'hostNics.lldp.error.title': 'Не удалось загрузить сведения LLDP',
+  'hostNics.lldp.empty.title': 'Данные LLDP не получены',
+  'hostNics.lldp.empty.body':
+    'Порт коммутатора, подключённый к этому интерфейсу, не передал сведения LLDP.',
+  'hostNics.lldp.listAria': 'Сведения LLDP для {name}',
+  'hostNics.lldp.noProperties': 'Свойства не переданы',
+  'hostNics.lldp.title': 'Сведения LLDP: {name}',
+  'hostNics.lldp.showAria': 'Показать сведения LLDP для {name}',
+  'hostNics.action.viewLldp': 'Просмотреть сведения LLDP',
+  'hostNics.lldp.unknownTlv': 'Неизвестный TLV',
+  'hostNics.lldp.tlv': 'TLV {type}',
+  'hostNics.lldp.tlvOui': 'TLV {type} (OUI {oui})',
+  'hostNics.lldp.tlvOuiSubtype': 'TLV {type} (OUI {oui}, подтип {subtype})',
+  'host.action.copyNetworks': 'Копировать сети хоста',
+  'host.copyNetworks.title': 'Копировать сети хоста на {name}',
+  'host.copyNetworks.body':
+    'Сетевая конфигурация {name} будет заменена конфигурацией исходного хоста. Сетевые подключения и бонды, которых нет на исходном хосте, будут удалены с {name}, а результат сохранён на хосте.',
+  'host.copyNetworks.empty.title': 'В этом кластере нет других хостов',
+  'host.copyNetworks.empty.body': 'Сети можно копировать только с другого хоста того же кластера.',
+  'host.copyNetworks.source': 'Исходный хост',
+  'host.copyNetworks.source.help':
+    'Хосты того же кластера. Интерфейсы сопоставляются по порядку имён, поэтому у источника должна быть та же схема интерфейсов, что и у этого хоста.',
+  'host.copyNetworks.nicMismatch.title': 'Несовпадение числа интерфейсов',
+  'host.copyNetworks.nicMismatch.body':
+    'У {source} {sourceCount, plural, one {# физический интерфейс} few {# физических интерфейса} many {# физических интерфейсов} other {# физического интерфейса}}, а у {name} {count}. Движок требует, чтобы у этого хоста их было не меньше (без учёта интерфейса управления), и может отклонить копирование.',
+  'host.copyNetworks.error.title': 'Не удалось скопировать сети хоста',
+  'host.copyNetworks.confirm': 'Копировать сети',
+  'storageForm.type.managedBlockStorage': 'Управляемое блочное хранилище',
+  'storageForm.function.managedBlockStorage': 'Управляемое блочное хранилище',
+  'storageForm.type.localfs': 'Локально на хосте',
+  'storageForm.localPath.help':
+    'Абсолютный путь к каталогу на выбранном хосте, например /data/images.',
+  'storageForm.driverOptions.label': 'Параметры драйвера',
+  'storageForm.driverOptions.help':
+    'Параметры, передаваемые драйверу Cinder, например volume_driver.',
+  'storageForm.driverSensitiveOptions.label': 'Конфиденциальные параметры драйвера',
+  'storageForm.driverSensitiveOptions.help':
+    'Секреты, например пароли. Движок хранит их в зашифрованном виде и больше никогда не показывает.',
+  'storageForm.driverOptions.nameRequired': 'У каждого параметра должно быть имя.',
+  'storageForm.driverOptions.duplicate': 'Имена параметров должны быть уникальными.',
+  'storageForm.driverOptions.namePlaceholder': 'имя (например, volume_driver)',
+  'storageForm.driverOptions.sensitiveNamePlaceholder': 'имя (например, san_password)',
+  'storageForm.driverOptions.valuePlaceholder': 'значение',
+  'storageForm.driverOptions.nameAria': '{list}: имя {n}',
+  'storageForm.driverOptions.valueAria': '{list}: значение {n}',
+  'storageForm.driverOptions.removeAria': 'Удалить параметр {n} из списка {list}',
+  'storageForm.driverOptions.addAria': 'Добавить параметр в список {list}',
+  'storageForm.driverOptions.add': 'Добавить параметр',
+  'storageForm.discardAfterDelete': 'Discard после удаления',
+  'storageForm.discardAfterDelete.selectLuns':
+    'Выберите LUN, чтобы проверить, поддерживают ли они discard.',
+  'storageForm.discard.unsupported': 'Базовое хранилище не поддерживает discard.',
+  'diskForm.passDiscard': 'Включить discard',
+  'diskForm.passDiscard.interface': 'Выбранный интерфейс не поддерживает discard.',
+  'diskForm.passDiscard.wipe':
+    'Базовое хранилище не поддерживает discard, если включено «Стирать после удаления».',
+  'diskForm.passDiscard.selectLun': 'Выберите LUN, чтобы проверить, поддерживает ли он discard.',
+  'diskForm.wipe.lockedByDiscard':
+    'Базовое хранилище не поддерживает «Стирать после удаления», если включён discard.',
+  'clusterForm.managementNetwork': 'Сеть управления',
+  'fieldHelp.cluster.managementNetwork':
+    'Сеть дата-центра, через которую хосты кластера связываются с движком. Выбирается при создании кластера.',
+  'clusterForm.managementNetwork.selectDataCenterFirst': 'Сначала выберите дата-центр',
+  'clusterForm.managementNetwork.unknown': 'Неизвестно',
+  'clusterForm.networkProvider': 'Сетевой провайдер по умолчанию',
+  'fieldHelp.cluster.networkProvider':
+    'Внешний сетевой провайдер, развёртываемый на каждом хосте, добавляемом в кластер. Задаётся только при создании кластера.',
+  'clusterForm.networkProvider.none': 'Без провайдера по умолчанию',
+  'clusterForm.createOnlyHint': 'Задаётся при создании кластера; здесь изменить нельзя.',
 }

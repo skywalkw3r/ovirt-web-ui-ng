@@ -13,12 +13,14 @@ describe('driverOptionsError', () => {
   })
 
   it('rejects a value without a name', () => {
-    expect(driverOptionsError([row(1, '  ', 'secret')])).toBe('Each option needs a name.')
+    expect(driverOptionsError([row(1, '  ', 'secret')])).toBe(
+      'storageForm.driverOptions.nameRequired',
+    )
   })
 
   it('rejects duplicate names (trimmed)', () => {
     expect(driverOptionsError([row(1, 'san_ip', 'a'), row(2, ' san_ip ', 'b')])).toBe(
-      'Option names must be unique.',
+      'storageForm.driverOptions.duplicate',
     )
   })
 })

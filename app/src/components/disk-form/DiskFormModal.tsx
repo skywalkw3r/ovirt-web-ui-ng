@@ -655,7 +655,7 @@ function EditDiskForm({
             isChecked={wipeAfterDelete}
             onChange={setWipeAfterDelete}
             isDisabled={wipeLocked && !wipeAfterDelete}
-            disabledReason="The underlying storage does not support Wipe After Delete when discard is enabled."
+            disabledReason={t('diskForm.wipe.lockedByDiscard')}
           />
 
           <PassDiscardField

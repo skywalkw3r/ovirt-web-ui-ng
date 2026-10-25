@@ -182,7 +182,7 @@ export function HostNicsTab({ hostId, clusterId }: { hostId: string; clusterId?:
           {canCopy && (
             <ToolbarItem>
               <Button variant="secondary" onClick={() => setCopyingNetworks(true)}>
-                Copy host networks
+                {t('host.action.copyNetworks')}
               </Button>
             </ToolbarItem>
           )}
@@ -279,7 +279,9 @@ export function HostNicsTab({ hostId, clusterId }: { hostId: string; clusterId?:
                           isDisabled={isDisabled}
                         />
                       )}
-                      items={[{ title: 'View LLDP information', onClick: () => setLldpNic(nic) }]}
+                      items={[
+                        { title: t('hostNics.action.viewLldp'), onClick: () => setLldpNic(nic) },
+                      ]}
                     />
                   </Td>
                 </Tr>

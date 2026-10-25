@@ -1,4 +1,5 @@
 import type { LldpElement } from '../../api/schemas/lldp'
+import type { useT } from '../../i18n/useT'
 
 // The rendered text of one LLDP element: its properties as "name: value"
 // lines (an unnamed property renders just its value). An element with no
@@ -11,13 +12,18 @@ export function lldpElementLines(element: LldpElement): string[] {
 }
 
 // Element heading: the engine's human-readable TLV name, else the raw type
-// (plus OUI/subtype for organizationally specific TLVs, type 127).
-export function lldpElementTitle(element: LldpElement): string {
+// (plus OUI/subtype for organizationally specific TLVs, type 127). `t` is the
+// caller's useT() so the fallback headings come from the catalog.
+export function lldpElementTitle(element: LldpElement, t: ReturnType<typeof useT>): string {
   if (element.name) return element.name
-  if (element.type === undefined) return 'Unknown TLV'
+  if (element.type === undefined) return t('hostNics.lldp.unknownTlv')
   if (element.oui !== undefined)
     return element.subtype !== undefined
-      ? `TLV ${element.type} (OUI ${element.oui}, subtype ${element.subtype})`
-      : `TLV ${element.type} (OUI ${element.oui})`
-  return `TLV ${element.type}`
+      ? t('hostNics.lldp.tlvOuiSubtype', {
+          type: element.type,
+          oui: element.oui,
+          subtype: element.subtype,
+        })
+      : t('hostNics.lldp.tlvOui', { type: element.type, oui: element.oui })
+  return t('hostNics.lldp.tlv', { type: element.type })
 }

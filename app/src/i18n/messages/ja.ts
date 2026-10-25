@@ -4504,4 +4504,116 @@ export const ja: LocaleCatalog = {
   'console.rdp.download': 'RDPファイルをダウンロード (.rdp)',
   'console.rdp.description': 'Windowsゲストへのリモートデスクトップ',
   'monitoring.history.noData': '範囲内にデータがありません',
+
+  // Wave 1 i18n pass: watchdog, vNIC filter parameters, host VMs filter, LLDP,
+  // Copy Host Networks, storage discard / Managed Block Storage / local, cluster networking
+  'vm.edit.ha.watchdogModel': 'ウォッチドッグモデル',
+  'vm.edit.ha.watchdogModel.none': 'ウォッチドッグなし',
+  'vm.edit.ha.watchdogAction': 'ウォッチドッグアクション',
+  'vm.edit.ha.watchdogAction.none': 'なし',
+  'vm.edit.ha.watchdogAction.reset': 'リセット',
+  'vm.edit.ha.watchdogAction.poweroff': '電源オフ',
+  'vm.edit.ha.watchdogAction.pause': '一時停止',
+  'vm.edit.ha.watchdogAction.dump': 'ダンプ',
+  'vm.edit.ha.watchdog.loading': 'ウォッチドッグを読み込んでいます',
+  'vm.edit.ha.watchdog.error':
+    'ウォッチドッグデバイスを読み込めませんでした。変更されずにそのまま残ります。',
+  'fieldHelp.vm.watchdogModel':
+    'ゲストが定期的にリセットし続ける必要がある仮想ウォッチドッグカードです。ゲストがハングしてリセットが止まると、ウォッチドッグアクションが実行されます。ゲスト内にウォッチドッグデーモンが必要です。実行中のVMでは次回の起動時に適用されます。',
+  'fieldHelp.vm.watchdogAction':
+    'ウォッチドッグが発動したときの動作です。「なし」はイベントを記録するだけ、「リセット」はVMを再起動、「電源オフ」はVMを停止、「一時停止」はVMを一時停止し、「ダンプ」はホスト上にメモリダンプを書き込みます。',
+  'vm.edit.nextRun.watchdogNote':
+    '「今すぐ適用」を選択しても、ウォッチドッグの変更はVMの次回起動時に有効になります。',
+  'vm.edit.watchdog.partialFailure':
+    'VMは保存されましたが、ウォッチドッグの変更に失敗しました: {message}。再試行するには、もう一度保存してください。',
+  'vmNics.filterParams.label': 'ネットワークフィルターパラメーター',
+  'fieldHelp.vmNic.filterParams':
+    'vNICプロファイルのネットワークフィルターが読み取る変数です（例: clean-traffic の IP = 10.0.0.1）。同じ名前を繰り返して、フィルターに値のリストを渡すことができます。',
+  'vmNics.filterParams.loading': 'ネットワークフィルターパラメーターを読み込んでいます',
+  'vmNics.filterParams.error':
+    'ネットワークフィルターパラメーターを読み込めませんでした: {message}',
+  'vmNics.filterParams.empty': 'ネットワークフィルターパラメーターはありません。',
+  'vmNics.filterParams.nameAria': 'ネットワークフィルターパラメーター {index} の名前',
+  'vmNics.filterParams.valueAria': 'ネットワークフィルターパラメーター {index} の値',
+  'vmNics.filterParams.removeAria': 'ネットワークフィルターパラメーター {index} を削除',
+  'vmNics.filterParams.add': 'パラメーターを追加',
+  'vmNics.filterParams.partialFailure':
+    'ネットワークインターフェイスは保存されましたが、ネットワークフィルターパラメーターは保存されませんでした: {message}。再試行するには、もう一度保存してください。',
+  'hostVms.filter.ariaLabel': 'このホストとの関係で仮想マシンを絞り込む',
+  'hostVms.filter.running': '実行中',
+  'hostVms.filter.pinned': 'ホストに固定',
+  'hostVms.filter.both': '両方',
+  'hostVms.empty.pinnedBody': 'このホストに固定された仮想マシンはありません。',
+  'hostVms.empty.bothBody':
+    'このホストで実行中、またはこのホストに固定された仮想マシンはありません。',
+  'hostNics.lldp.loading': '{name} のLLDP情報を読み込んでいます',
+  'hostNics.lldp.error.title': 'LLDP情報を読み込めませんでした',
+  'hostNics.lldp.empty.title': 'LLDPデータは報告されていません',
+  'hostNics.lldp.empty.body':
+    'このインターフェイスに接続されたスイッチポートはLLDP情報を報告しませんでした。',
+  'hostNics.lldp.listAria': '{name} のLLDP情報',
+  'hostNics.lldp.noProperties': 'プロパティは報告されていません',
+  'hostNics.lldp.title': 'LLDP情報: {name}',
+  'hostNics.lldp.showAria': '{name} のLLDP情報を表示',
+  'hostNics.action.viewLldp': 'LLDP情報を表示',
+  'hostNics.lldp.unknownTlv': '不明なTLV',
+  'hostNics.lldp.tlv': 'TLV {type}',
+  'hostNics.lldp.tlvOui': 'TLV {type} (OUI {oui})',
+  'hostNics.lldp.tlvOuiSubtype': 'TLV {type} (OUI {oui}, サブタイプ {subtype})',
+  'host.action.copyNetworks': 'ホストネットワークをコピー',
+  'host.copyNetworks.title': 'ホストネットワークを {name} にコピー',
+  'host.copyNetworks.body':
+    '{name} のネットワーク構成はソースホストの構成に置き換えられます。ソースホストにないネットワークの接続とボンドは {name} から削除され、結果はホストに保存されます。',
+  'host.copyNetworks.empty.title': 'このクラスターに他のホストはありません',
+  'host.copyNetworks.empty.body':
+    'ネットワークは同じクラスター内の別のホストからのみコピーできます。',
+  'host.copyNetworks.source': 'ソースホスト',
+  'host.copyNetworks.source.help':
+    '同じクラスター内のホストです。インターフェイスは名前の順序で対応付けられるため、ソースはこのホストと同じインターフェイス構成である必要があります。',
+  'host.copyNetworks.nicMismatch.title': 'インターフェイス数の不一致',
+  'host.copyNetworks.nicMismatch.body':
+    '{source} には物理インターフェイスが {sourceCount} 個ありますが、{name} には {count} 個です。エンジンはこのホストに少なくとも同数のインターフェイス（管理インターフェイスを除く）を要求するため、コピーが拒否される可能性があります。',
+  'host.copyNetworks.error.title': 'ホストネットワークをコピーできませんでした',
+  'host.copyNetworks.confirm': 'ネットワークをコピー',
+  'storageForm.type.managedBlockStorage': 'マネージドブロックストレージ',
+  'storageForm.function.managedBlockStorage': 'マネージドブロックストレージ',
+  'storageForm.type.localfs': 'ホスト上のローカル',
+  'storageForm.localPath.help': '選択したホスト上の絶対ディレクトリです（例: /data/images）。',
+  'storageForm.driverOptions.label': 'ドライバーオプション',
+  'storageForm.driverOptions.help': 'Cinderドライバーに渡すオプションです（例: volume_driver）。',
+  'storageForm.driverSensitiveOptions.label': 'ドライバーの機密オプション',
+  'storageForm.driverSensitiveOptions.help':
+    'パスワードなどのシークレットです。エンジンはこれらを暗号化して保存し、二度と表示しません。',
+  'storageForm.driverOptions.nameRequired': '各オプションには名前が必要です。',
+  'storageForm.driverOptions.duplicate': 'オプション名は一意である必要があります。',
+  'storageForm.driverOptions.namePlaceholder': '名前（例: volume_driver）',
+  'storageForm.driverOptions.sensitiveNamePlaceholder': '名前（例: san_password）',
+  'storageForm.driverOptions.valuePlaceholder': '値',
+  'storageForm.driverOptions.nameAria': '{list}: 名前 {n}',
+  'storageForm.driverOptions.valueAria': '{list}: 値 {n}',
+  'storageForm.driverOptions.removeAria': '{list} からオプション {n} を削除',
+  'storageForm.driverOptions.addAria': '{list} にオプションを追加',
+  'storageForm.driverOptions.add': 'オプションを追加',
+  'storageForm.discardAfterDelete': '削除後に破棄',
+  'storageForm.discardAfterDelete.selectLuns':
+    'LUNを選択して、破棄をサポートしているかどうかを確認してください。',
+  'storageForm.discard.unsupported': '基盤となるストレージは破棄をサポートしていません。',
+  'diskForm.passDiscard': '破棄を有効にする',
+  'diskForm.passDiscard.interface': '選択したインターフェイスは破棄をサポートしていません。',
+  'diskForm.passDiscard.wipe':
+    '「削除後にワイプする」が有効な場合、基盤となるストレージは破棄をサポートしていません。',
+  'diskForm.passDiscard.selectLun':
+    'LUNを選択して、破棄をサポートしているかどうかを確認してください。',
+  'diskForm.wipe.lockedByDiscard':
+    '破棄が有効な場合、基盤となるストレージは「削除後にワイプする」をサポートしていません。',
+  'clusterForm.managementNetwork': '管理ネットワーク',
+  'fieldHelp.cluster.managementNetwork':
+    'クラスターのホストがエンジンとの通信に使用するデータセンターネットワークです。クラスターの作成時に選択します。',
+  'clusterForm.managementNetwork.selectDataCenterFirst': '最初にデータセンターを選択してください',
+  'clusterForm.managementNetwork.unknown': '不明',
+  'clusterForm.networkProvider': 'デフォルトのネットワークプロバイダー',
+  'fieldHelp.cluster.networkProvider':
+    'クラスターに追加されるすべてのホストにデプロイされる外部ネットワークプロバイダーです。クラスターの作成時にのみ設定できます。',
+  'clusterForm.networkProvider.none': 'デフォルトのプロバイダーなし',
+  'clusterForm.createOnlyHint': 'クラスターの作成時に設定され、ここでは変更できません。',
 }

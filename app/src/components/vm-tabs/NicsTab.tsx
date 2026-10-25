@@ -635,7 +635,7 @@ export function NicsTab({ vmId }: { vmId: string }) {
           isSaving={add.isPending || update.isPending || applyFilterParameters.isPending}
           saveError={
             filterError !== null
-              ? `The network interface was saved, but its network filter parameters were not: ${filterError}. Save again to retry.`
+              ? t('vmNics.filterParams.partialFailure', { message: filterError })
               : undefined
           }
           onSubmit={submitNic}
@@ -907,27 +907,28 @@ export function NicModal({
           </FormGroup>
           {showFilterParameters && (
             <FormGroup
-              label="Network filter parameters"
+              label={t('vmNics.filterParams.label')}
               fieldId="nic-filter-parameters"
               labelHelp={
                 <FieldHelp
-                  field="Network filter parameters"
-                  content="Variables the vNIC profile's network filter reads, such as IP = 10.0.0.1 for clean-traffic. A name may repeat to give the filter a list of values."
+                  field={t('vmNics.filterParams.label')}
+                  content={t('fieldHelp.vmNic.filterParams')}
                 />
               }
             >
               {filterParameters.isPending && !parametersSeeded && (
-                <Skeleton height="2.25rem" screenreaderText="Loading network filter parameters" />
+                <Skeleton height="2.25rem" screenreaderText={t('vmNics.filterParams.loading')} />
               )}
               {filterParameters.isError && !parametersSeeded && (
                 <>
                   <HelperText>
                     <HelperTextItem variant="error">
-                      {`Could not load network filter parameters: ${
-                        filterParameters.error instanceof Error
-                          ? filterParameters.error.message
-                          : t('common.error.unknown')
-                      }`}
+                      {t('vmNics.filterParams.error', {
+                        message:
+                          filterParameters.error instanceof Error
+                            ? filterParameters.error.message
+                            : t('common.error.unknown'),
+                      })}
                     </HelperTextItem>
                   </HelperText>
                   <Button variant="link" isInline onClick={() => void filterParameters.refetch()}>
@@ -939,7 +940,7 @@ export function NicModal({
                 <>
                   {parameterRows.length === 0 && (
                     <HelperText>
-                      <HelperTextItem>No network filter parameters.</HelperTextItem>
+                      <HelperTextItem>{t('vmNics.filterParams.empty')}</HelperTextItem>
                     </HelperText>
                   )}
                   {parameterRows.map((row, index) => (
@@ -951,7 +952,7 @@ export function NicModal({
                       <GridItem span={5}>
                         <TextInput
                           id={`nic-filter-parameter-name-${index}`}
-                          aria-label={`Network filter parameter ${index + 1} name`}
+                          aria-label={t('vmNics.filterParams.nameAria', { index: index + 1 })}
                           placeholder={t('common.field.name')}
                           value={row.name}
                           onChange={(_event, value) => updateParameterRow(index, { name: value })}
@@ -960,7 +961,7 @@ export function NicModal({
                       <GridItem span={6}>
                         <TextInput
                           id={`nic-filter-parameter-value-${index}`}
-                          aria-label={`Network filter parameter ${index + 1} value`}
+                          aria-label={t('vmNics.filterParams.valueAria', { index: index + 1 })}
                           placeholder={t('common.field.value')}
                           value={row.value}
                           onChange={(_event, value) => updateParameterRow(index, { value })}
@@ -969,7 +970,7 @@ export function NicModal({
                       <GridItem span={1}>
                         <Button
                           variant="plain"
-                          aria-label={`Remove network filter parameter ${index + 1}`}
+                          aria-label={t('vmNics.filterParams.removeAria', { index: index + 1 })}
                           icon={<MinusCircleIcon />}
                           onClick={() => removeParameterRow(index)}
                         />
@@ -982,7 +983,7 @@ export function NicModal({
                     icon={<PlusCircleIcon />}
                     onClick={addParameterRow}
                   >
-                    Add parameter
+                    {t('vmNics.filterParams.add')}
                   </Button>
                 </>
               )}

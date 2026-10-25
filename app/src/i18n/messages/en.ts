@@ -5052,6 +5052,127 @@ export const en = {
   'console.rdp.download': 'Download RDP file (.rdp)',
   'console.rdp.description': 'Remote Desktop to the Windows guest',
   'monitoring.history.noData': 'No data in range',
+  // Wave 1 i18n pass: VM watchdog (HA tab + New VM wizard) -----------------
+  'vm.edit.ha.watchdogModel': 'Watchdog model',
+  'vm.edit.ha.watchdogModel.none': 'No watchdog',
+  'vm.edit.ha.watchdogAction': 'Watchdog action',
+  'vm.edit.ha.watchdogAction.none': 'None',
+  'vm.edit.ha.watchdogAction.reset': 'Reset',
+  'vm.edit.ha.watchdogAction.poweroff': 'Power off',
+  'vm.edit.ha.watchdogAction.pause': 'Pause',
+  'vm.edit.ha.watchdogAction.dump': 'Dump',
+  'vm.edit.ha.watchdog.loading': 'Loading watchdog',
+  'vm.edit.ha.watchdog.error': 'Could not load the watchdog device; it is left unchanged.',
+  'fieldHelp.vm.watchdogModel':
+    'A virtual watchdog card the guest must keep resetting. If the guest hangs and stops resetting it, the watchdog action runs. Requires a watchdog daemon in the guest. Applied on the next start of a running VM.',
+  'fieldHelp.vm.watchdogAction':
+    'What happens when the watchdog fires: None only logs an event, Reset reboots the VM, Power off stops it, Pause pauses it, and Dump writes a memory dump on the host.',
+  'vm.edit.nextRun.watchdogNote':
+    'The watchdog change takes effect at the next start of the VM, even with Apply now.',
+  'vm.edit.watchdog.partialFailure':
+    'The VM was saved, but the watchdog change failed: {message}. Save again to retry.',
+
+  // vNIC network filter parameters (Edit Network Interface dialog) --------
+  'vmNics.filterParams.label': 'Network filter parameters',
+  'fieldHelp.vmNic.filterParams':
+    "Variables the vNIC profile's network filter reads, such as IP = 10.0.0.1 for clean-traffic. A name may repeat to give the filter a list of values.",
+  'vmNics.filterParams.loading': 'Loading network filter parameters',
+  'vmNics.filterParams.error': 'Could not load network filter parameters: {message}',
+  'vmNics.filterParams.empty': 'No network filter parameters.',
+  'vmNics.filterParams.nameAria': 'Network filter parameter {index} name',
+  'vmNics.filterParams.valueAria': 'Network filter parameter {index} value',
+  'vmNics.filterParams.removeAria': 'Remove network filter parameter {index}',
+  'vmNics.filterParams.add': 'Add parameter',
+  'vmNics.filterParams.partialFailure':
+    'The network interface was saved, but its network filter parameters were not: {message}. Save again to retry.',
+
+  // Host VMs subtab: Running / Pinned to host / Both filter ----------------
+  'hostVms.filter.ariaLabel': 'Filter virtual machines by relation to this host',
+  'hostVms.filter.running': 'Running',
+  'hostVms.filter.pinned': 'Pinned to host',
+  'hostVms.filter.both': 'Both',
+  'hostVms.empty.pinnedBody': 'No virtual machines are pinned to this host.',
+  'hostVms.empty.bothBody': 'No virtual machines are running on or pinned to this host.',
+
+  // Host NIC LLDP (Setup Networks popover + Network Interfaces kebab) -----
+  'hostNics.lldp.loading': 'Loading LLDP information for {name}',
+  'hostNics.lldp.error.title': 'Could not load LLDP information',
+  'hostNics.lldp.empty.title': 'No LLDP data reported',
+  'hostNics.lldp.empty.body':
+    'The switch port connected to this interface did not report any LLDP information.',
+  'hostNics.lldp.listAria': 'LLDP information for {name}',
+  'hostNics.lldp.noProperties': 'None reported',
+  'hostNics.lldp.title': 'LLDP information: {name}',
+  'hostNics.lldp.showAria': 'Show LLDP information for {name}',
+  'hostNics.action.viewLldp': 'View LLDP information',
+  'hostNics.lldp.unknownTlv': 'Unknown TLV',
+  'hostNics.lldp.tlv': 'TLV {type}',
+  'hostNics.lldp.tlvOui': 'TLV {type} (OUI {oui})',
+  'hostNics.lldp.tlvOuiSubtype': 'TLV {type} (OUI {oui}, subtype {subtype})',
+
+  // Copy Host Networks (host kebab + Network Interfaces toolbar) -----------
+  'host.action.copyNetworks': 'Copy host networks',
+  'host.copyNetworks.title': 'Copy host networks to {name}',
+  'host.copyNetworks.body':
+    "The network configuration of {name} will be replaced with the source host's. Network attachments and bonds the source host does not have are removed from {name}, and the result is saved on the host.",
+  'host.copyNetworks.empty.title': 'No other hosts in this cluster',
+  'host.copyNetworks.empty.body':
+    'Networks can only be copied from another host in the same cluster.',
+  'host.copyNetworks.source': 'Source host',
+  'host.copyNetworks.source.help':
+    'Hosts in the same cluster. Interfaces are paired by name order, so the source should have the same interface layout as this host.',
+  'host.copyNetworks.nicMismatch.title': 'Interface count mismatch',
+  'host.copyNetworks.nicMismatch.body':
+    '{source} has {sourceCount, plural, one {# physical interface} other {# physical interfaces}} but {name} has {count}. The engine requires this host to have at least as many (not counting the management interface) and may reject the copy.',
+  'host.copyNetworks.error.title': 'Could not copy host networks',
+  'host.copyNetworks.confirm': 'Copy networks',
+
+  // Storage domains: Managed Block Storage, Local on Host, discard ---------
+  'storageForm.type.managedBlockStorage': 'Managed Block Storage',
+  'storageForm.function.managedBlockStorage': 'Managed Block Storage',
+  'storageForm.type.localfs': 'Local on Host',
+  'storageForm.localPath.help':
+    'An absolute directory on the selected host, for example /data/images.',
+  'storageForm.driverOptions.label': 'Driver Options',
+  'storageForm.driverOptions.help':
+    'Options passed to the Cinder driver, for example volume_driver.',
+  'storageForm.driverSensitiveOptions.label': 'Driver Sensitive Options',
+  'storageForm.driverSensitiveOptions.help':
+    'Secrets such as passwords. The engine stores them encrypted and never shows them again.',
+  'storageForm.driverOptions.nameRequired': 'Each option needs a name.',
+  'storageForm.driverOptions.duplicate': 'Option names must be unique.',
+  'storageForm.driverOptions.namePlaceholder': 'name (e.g. volume_driver)',
+  'storageForm.driverOptions.sensitiveNamePlaceholder': 'name (e.g. san_password)',
+  'storageForm.driverOptions.valuePlaceholder': 'value',
+  'storageForm.driverOptions.nameAria': '{list}: Name {n}',
+  'storageForm.driverOptions.valueAria': '{list}: Value {n}',
+  'storageForm.driverOptions.removeAria': 'Remove option {n} from {list}',
+  'storageForm.driverOptions.addAria': 'Add option to {list}',
+  'storageForm.driverOptions.add': 'Add option',
+  'storageForm.discardAfterDelete': 'Discard After Delete',
+  'storageForm.discardAfterDelete.selectLuns': 'Select LUNs to check whether they support discard.',
+  'storageForm.discard.unsupported': 'Discard is not supported by the underlying storage.',
+
+  // VM disk dialogs: Enable Discard (pass_discard) --------------------------
+  'diskForm.passDiscard': 'Enable Discard',
+  'diskForm.passDiscard.interface': 'The selected interface does not support discard.',
+  'diskForm.passDiscard.wipe':
+    'The underlying storage does not support discard when Wipe After Delete is enabled.',
+  'diskForm.passDiscard.selectLun': 'Select a LUN to check whether it supports discard.',
+  'diskForm.wipe.lockedByDiscard':
+    'The underlying storage does not support Wipe After Delete when discard is enabled.',
+
+  // Cluster dialog: create-time networking -----------------------------------
+  'clusterForm.managementNetwork': 'Management network',
+  'fieldHelp.cluster.managementNetwork':
+    "The data center network the cluster's hosts use to talk to the engine. It is chosen when the cluster is created.",
+  'clusterForm.managementNetwork.selectDataCenterFirst': 'Select a data center first',
+  'clusterForm.managementNetwork.unknown': 'Unknown',
+  'clusterForm.networkProvider': 'Default network provider',
+  'fieldHelp.cluster.networkProvider':
+    'The external network provider deployed on every host added to the cluster. It can only be set when the cluster is created.',
+  'clusterForm.networkProvider.none': 'No default provider',
+  'clusterForm.createOnlyHint': 'Set when the cluster is created; it cannot be changed here.',
 } as const
 
 // The id union — source of truth for every typed i18n surface (useT, the

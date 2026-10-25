@@ -42,7 +42,10 @@ export function LldpDetails({
     return (
       <>
         <Skeleton height="1.25rem" style={{ marginBottom: '0.5rem' }} />
-        <Skeleton height="1.25rem" screenreaderText={`Loading LLDP information for ${nicName}`} />
+        <Skeleton
+          height="1.25rem"
+          screenreaderText={t('hostNics.lldp.loading', { name: nicName })}
+        />
       </>
     )
   }
@@ -50,7 +53,7 @@ export function LldpDetails({
   if (lldp.isError) {
     return (
       <EmptyState
-        titleText="Could not load LLDP information"
+        titleText={t('hostNics.lldp.error.title')}
         headingLevel="h4"
         status="danger"
         variant="xs"
@@ -71,26 +74,28 @@ export function LldpDetails({
 
   if (lldp.data.length === 0) {
     return (
-      <EmptyState titleText="No LLDP data reported" headingLevel="h4" variant="xs">
-        <EmptyStateBody>
-          The switch port connected to this interface did not report any LLDP information.
-        </EmptyStateBody>
+      <EmptyState titleText={t('hostNics.lldp.empty.title')} headingLevel="h4" variant="xs">
+        <EmptyStateBody>{t('hostNics.lldp.empty.body')}</EmptyStateBody>
       </EmptyState>
     )
   }
 
   return (
-    <DescriptionList isCompact isHorizontal aria-label={`LLDP information for ${nicName}`}>
+    <DescriptionList
+      isCompact
+      isHorizontal
+      aria-label={t('hostNics.lldp.listAria', { name: nicName })}
+    >
       {lldp.data.map((element, index) => {
         const lines = lldpElementLines(element)
         return (
           // names may repeat (the model says so) and carry no id, so the
           // position disambiguates
           <DescriptionListGroup key={`${element.name ?? element.type ?? ''}-${index}`}>
-            <DescriptionListTerm>{lldpElementTitle(element)}</DescriptionListTerm>
+            <DescriptionListTerm>{lldpElementTitle(element, t)}</DescriptionListTerm>
             <DescriptionListDescription>
               {lines.length === 0
-                ? 'None reported'
+                ? t('hostNics.lldp.noProperties')
                 : lines.map((line, lineIndex) => <div key={lineIndex}>{line}</div>)}
             </DescriptionListDescription>
           </DescriptionListGroup>
@@ -113,12 +118,13 @@ export function NicLldpPopoverButton({
   nicId: string
   nicName: string
 }) {
+  const t = useT()
   const [requested, setRequested] = useState(false)
   return (
     <Popover
       appendTo="inline"
-      aria-label={`LLDP information for ${nicName}`}
-      headerContent={`LLDP information: ${nicName}`}
+      aria-label={t('hostNics.lldp.listAria', { name: nicName })}
+      headerContent={t('hostNics.lldp.title', { name: nicName })}
       onShow={() => setRequested(true)}
       minWidth="20rem"
       bodyContent={
@@ -129,7 +135,7 @@ export function NicLldpPopoverButton({
         variant="plain"
         size="sm"
         icon={<InfoCircleIcon />}
-        aria-label={`Show LLDP information for ${nicName}`}
+        aria-label={t('hostNics.lldp.showAria', { name: nicName })}
       />
     </Popover>
   )
@@ -151,7 +157,10 @@ export function NicLldpModal({
   const t = useT()
   return (
     <Modal variant="small" isOpen onClose={onClose} aria-labelledby="nic-lldp-modal-title">
-      <ModalHeader title={`LLDP information: ${nicName}`} labelId="nic-lldp-modal-title" />
+      <ModalHeader
+        title={t('hostNics.lldp.title', { name: nicName })}
+        labelId="nic-lldp-modal-title"
+      />
       <ModalBody>
         <LldpDetails hostId={hostId} nicId={nicId} nicName={nicName} />
       </ModalBody>

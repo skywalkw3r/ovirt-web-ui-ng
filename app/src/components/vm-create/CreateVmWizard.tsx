@@ -43,7 +43,6 @@ import { ConfirmModal } from '../ConfirmModal'
 import {
   DEFAULT_WATCHDOG_ACTION,
   WATCHDOG_ACTION_OPTIONS,
-  WATCHDOG_COPY,
   isWindowsOsType,
   watchdogModelOptions,
 } from '../edit-vm/editVmDraft'
@@ -201,9 +200,11 @@ export function CreateVmWizardModal({
     clusters.data?.find((cluster) => cluster.name === clusterName)?.cpu?.architecture ??
     selectedTemplate?.cpu?.architecture
   const watchdogModels = watchdogModelOptions(architecture, watchdogModel)
+  const watchdogActionLabelId = WATCHDOG_ACTION_OPTIONS.find(
+    (option) => option.value === watchdogAction,
+  )?.labelId
   const watchdogActionLabel =
-    WATCHDOG_ACTION_OPTIONS.find((option) => option.value === watchdogAction)?.label ??
-    watchdogAction
+    watchdogActionLabelId !== undefined ? t(watchdogActionLabelId) : watchdogAction
 
   const updateNic = (index: number, patch: Partial<CloudInitNicSpec>) => {
     setNics((rows) => rows.map((nic, i) => (i === index ? { ...nic, ...patch } : nic)))
@@ -555,37 +556,43 @@ export function CreateVmWizardModal({
                 <HelperTextItem>{t('vm.create.vcpu.note')}</HelperTextItem>
               </HelperText>
               <FormGroup
-                label={WATCHDOG_COPY.model}
+                label={t('vm.edit.ha.watchdogModel')}
                 fieldId="new-vm-watchdog-model"
                 labelHelp={
-                  <FieldHelp field={WATCHDOG_COPY.model} content={WATCHDOG_COPY.modelHelp} />
+                  <FieldHelp
+                    field={t('vm.edit.ha.watchdogModel')}
+                    content={t('fieldHelp.vm.watchdogModel')}
+                  />
                 }
               >
                 <FormSelect
                   id="new-vm-watchdog-model"
-                  aria-label={WATCHDOG_COPY.model}
+                  aria-label={t('vm.edit.ha.watchdogModel')}
                   value={watchdogModel}
                   onChange={(_event, value) => {
                     setWatchdogModel(value)
                     setWatchdogTouched(true)
                   }}
                 >
-                  <FormSelectOption value="" label={WATCHDOG_COPY.none} />
+                  <FormSelectOption value="" label={t('vm.edit.ha.watchdogModel.none')} />
                   {watchdogModels.map((model) => (
                     <FormSelectOption key={model} value={model} label={model} />
                   ))}
                 </FormSelect>
               </FormGroup>
               <FormGroup
-                label={WATCHDOG_COPY.action}
+                label={t('vm.edit.ha.watchdogAction')}
                 fieldId="new-vm-watchdog-action"
                 labelHelp={
-                  <FieldHelp field={WATCHDOG_COPY.action} content={WATCHDOG_COPY.actionHelp} />
+                  <FieldHelp
+                    field={t('vm.edit.ha.watchdogAction')}
+                    content={t('fieldHelp.vm.watchdogAction')}
+                  />
                 }
               >
                 <FormSelect
                   id="new-vm-watchdog-action"
-                  aria-label={WATCHDOG_COPY.action}
+                  aria-label={t('vm.edit.ha.watchdogAction')}
                   value={watchdogAction}
                   isDisabled={watchdogModel === ''}
                   onChange={(_event, value) => {
@@ -597,7 +604,7 @@ export function CreateVmWizardModal({
                     <FormSelectOption
                       key={option.value}
                       value={option.value}
-                      label={option.label}
+                      label={t(option.labelId)}
                     />
                   ))}
                 </FormSelect>
@@ -904,14 +911,14 @@ export function CreateVmWizardModal({
                 </DescriptionListDescription>
               </DescriptionListGroup>
               <DescriptionListGroup>
-                <DescriptionListTerm>{WATCHDOG_COPY.model}</DescriptionListTerm>
+                <DescriptionListTerm>{t('vm.edit.ha.watchdogModel')}</DescriptionListTerm>
                 <DescriptionListDescription>
-                  {watchdogModel || WATCHDOG_COPY.none}
+                  {watchdogModel || t('vm.edit.ha.watchdogModel.none')}
                 </DescriptionListDescription>
               </DescriptionListGroup>
               {watchdogModel !== '' && (
                 <DescriptionListGroup>
-                  <DescriptionListTerm>{WATCHDOG_COPY.action}</DescriptionListTerm>
+                  <DescriptionListTerm>{t('vm.edit.ha.watchdogAction')}</DescriptionListTerm>
                   <DescriptionListDescription>{watchdogActionLabel}</DescriptionListDescription>
                 </DescriptionListGroup>
               )}

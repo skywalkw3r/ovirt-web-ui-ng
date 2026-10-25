@@ -4562,4 +4562,118 @@ export const fr: LocaleCatalog = {
   'console.rdp.download': 'Télécharger le fichier RDP (.rdp)',
   'console.rdp.description': "Bureau à distance vers l'invité Windows",
   'monitoring.history.noData': 'Aucune donnée dans la plage',
+
+  // Wave 1 i18n pass: watchdog, vNIC filter parameters, host VMs filter, LLDP,
+  // Copy Host Networks, storage discard / Managed Block Storage / local, cluster networking
+  'vm.edit.ha.watchdogModel': 'Modèle de watchdog',
+  'vm.edit.ha.watchdogModel.none': 'Aucun watchdog',
+  'vm.edit.ha.watchdogAction': 'Action du watchdog',
+  'vm.edit.ha.watchdogAction.none': 'Aucune',
+  'vm.edit.ha.watchdogAction.reset': 'Réinitialiser',
+  'vm.edit.ha.watchdogAction.poweroff': 'Mettre hors tension',
+  'vm.edit.ha.watchdogAction.pause': 'Pause',
+  'vm.edit.ha.watchdogAction.dump': 'Vidage',
+  'vm.edit.ha.watchdog.loading': 'Chargement du watchdog',
+  'vm.edit.ha.watchdog.error':
+    'Impossible de charger le périphérique watchdog ; il reste inchangé.',
+  'fieldHelp.vm.watchdogModel':
+    "Une carte watchdog virtuelle que l'invité doit réinitialiser en permanence. Si l'invité se bloque et cesse de la réinitialiser, l'action du watchdog s'exécute. Nécessite un démon watchdog dans l'invité. Sur une VM en cours d'exécution, la modification s'applique au prochain démarrage.",
+  'fieldHelp.vm.watchdogAction':
+    "Ce qui se passe quand le watchdog se déclenche : Aucune enregistre seulement un événement, Réinitialiser redémarre la VM, Mettre hors tension l'arrête, Pause la met en pause et Vidage écrit un vidage mémoire sur l'hôte.",
+  'vm.edit.nextRun.watchdogNote':
+    'La modification du watchdog prend effet au prochain démarrage de la VM, même avec « Appliquer maintenant ».',
+  'vm.edit.watchdog.partialFailure':
+    'La VM a été enregistrée, mais la modification du watchdog a échoué : {message}. Enregistrez de nouveau pour réessayer.',
+  'vmNics.filterParams.label': 'Paramètres du filtre réseau',
+  'fieldHelp.vmNic.filterParams':
+    'Variables lues par le filtre réseau du profil vNIC, par exemple IP = 10.0.0.1 pour clean-traffic. Un nom peut se répéter pour fournir au filtre une liste de valeurs.',
+  'vmNics.filterParams.loading': 'Chargement des paramètres du filtre réseau',
+  'vmNics.filterParams.error': 'Impossible de charger les paramètres du filtre réseau : {message}',
+  'vmNics.filterParams.empty': 'Aucun paramètre de filtre réseau.',
+  'vmNics.filterParams.nameAria': 'Nom du paramètre {index} du filtre réseau',
+  'vmNics.filterParams.valueAria': 'Valeur du paramètre {index} du filtre réseau',
+  'vmNics.filterParams.removeAria': 'Supprimer le paramètre {index} du filtre réseau',
+  'vmNics.filterParams.add': 'Ajouter un paramètre',
+  'vmNics.filterParams.partialFailure':
+    "L'interface réseau a été enregistrée, mais pas ses paramètres de filtre réseau : {message}. Enregistrez de nouveau pour réessayer.",
+  'hostVms.filter.ariaLabel': 'Filtrer les machines virtuelles selon leur relation avec cet hôte',
+  'hostVms.filter.running': "En cours d'exécution",
+  'hostVms.filter.pinned': "Épinglées à l'hôte",
+  'hostVms.filter.both': 'Les deux',
+  'hostVms.empty.pinnedBody': "Aucune machine virtuelle n'est épinglée à cet hôte.",
+  'hostVms.empty.bothBody':
+    "Aucune machine virtuelle ne s'exécute sur cet hôte ou n'y est épinglée.",
+  'hostNics.lldp.loading': 'Chargement des informations LLDP de {name}',
+  'hostNics.lldp.error.title': 'Impossible de charger les informations LLDP',
+  'hostNics.lldp.empty.title': 'Aucune donnée LLDP signalée',
+  'hostNics.lldp.empty.body':
+    "Le port du commutateur connecté à cette interface n'a signalé aucune information LLDP.",
+  'hostNics.lldp.listAria': 'Informations LLDP de {name}',
+  'hostNics.lldp.noProperties': 'Aucune propriété signalée',
+  'hostNics.lldp.title': 'Informations LLDP : {name}',
+  'hostNics.lldp.showAria': 'Afficher les informations LLDP de {name}',
+  'hostNics.action.viewLldp': 'Afficher les informations LLDP',
+  'hostNics.lldp.unknownTlv': 'TLV inconnu',
+  'hostNics.lldp.tlv': 'TLV {type}',
+  'hostNics.lldp.tlvOui': 'TLV {type} (OUI {oui})',
+  'hostNics.lldp.tlvOuiSubtype': 'TLV {type} (OUI {oui}, sous-type {subtype})',
+  'host.action.copyNetworks': "Copier les réseaux de l'hôte",
+  'host.copyNetworks.title': "Copier les réseaux d'hôte vers {name}",
+  'host.copyNetworks.body':
+    "La configuration réseau de {name} sera remplacée par celle de l'hôte source. Les attachements réseau et les bonds absents de l'hôte source sont supprimés de {name}, et le résultat est enregistré sur l'hôte.",
+  'host.copyNetworks.empty.title': 'Aucun autre hôte dans ce cluster',
+  'host.copyNetworks.empty.body':
+    "Les réseaux ne peuvent être copiés qu'à partir d'un autre hôte du même cluster.",
+  'host.copyNetworks.source': 'Hôte source',
+  'host.copyNetworks.source.help':
+    "Hôtes du même cluster. Les interfaces sont appariées dans l'ordre de leurs noms ; la source doit donc avoir la même disposition d'interfaces que cet hôte.",
+  'host.copyNetworks.nicMismatch.title': "Nombre d'interfaces différent",
+  'host.copyNetworks.nicMismatch.body':
+    "{source} possède {sourceCount, plural, one {# interface physique} other {# interfaces physiques}}, mais {name} en possède {count}. Le moteur exige que cet hôte en ait au moins autant (sans compter l'interface de gestion) et peut refuser la copie.",
+  'host.copyNetworks.error.title': "Impossible de copier les réseaux de l'hôte",
+  'host.copyNetworks.confirm': 'Copier les réseaux',
+  'storageForm.type.managedBlockStorage': 'Stockage en mode bloc géré',
+  'storageForm.function.managedBlockStorage': 'Stockage en mode bloc géré',
+  'storageForm.type.localfs': "Local sur l'hôte",
+  'storageForm.localPath.help':
+    "Un répertoire absolu sur l'hôte sélectionné, par exemple /data/images.",
+  'storageForm.driverOptions.label': 'Options du pilote',
+  'storageForm.driverOptions.help':
+    'Options transmises au pilote Cinder, par exemple volume_driver.',
+  'storageForm.driverSensitiveOptions.label': 'Options sensibles du pilote',
+  'storageForm.driverSensitiveOptions.help':
+    'Secrets tels que des mots de passe. Le moteur les stocke chiffrés et ne les affiche plus jamais.',
+  'storageForm.driverOptions.nameRequired': 'Chaque option doit avoir un nom.',
+  'storageForm.driverOptions.duplicate': 'Les noms des options doivent être uniques.',
+  'storageForm.driverOptions.namePlaceholder': 'nom (p. ex. volume_driver)',
+  'storageForm.driverOptions.sensitiveNamePlaceholder': 'nom (p. ex. san_password)',
+  'storageForm.driverOptions.valuePlaceholder': 'valeur',
+  'storageForm.driverOptions.nameAria': '{list} : nom {n}',
+  'storageForm.driverOptions.valueAria': '{list} : valeur {n}',
+  'storageForm.driverOptions.removeAria': "Supprimer l'option {n} de {list}",
+  'storageForm.driverOptions.addAria': 'Ajouter une option à {list}',
+  'storageForm.driverOptions.add': 'Ajouter une option',
+  'storageForm.discardAfterDelete': 'Discard après suppression',
+  'storageForm.discardAfterDelete.selectLuns':
+    "Sélectionnez des LUN pour vérifier s'ils prennent en charge le discard.",
+  'storageForm.discard.unsupported': 'Le stockage sous-jacent ne prend pas en charge le discard.',
+  'diskForm.passDiscard': 'Activer le discard',
+  'diskForm.passDiscard.interface': "L'interface sélectionnée ne prend pas en charge le discard.",
+  'diskForm.passDiscard.wipe':
+    'Le stockage sous-jacent ne prend pas en charge le discard quand « Effacer après suppression » est activé.',
+  'diskForm.passDiscard.selectLun':
+    "Sélectionnez un LUN pour vérifier s'il prend en charge le discard.",
+  'diskForm.wipe.lockedByDiscard':
+    'Le stockage sous-jacent ne prend pas en charge « Effacer après suppression » quand le discard est activé.',
+  'clusterForm.managementNetwork': 'Réseau de gestion',
+  'fieldHelp.cluster.managementNetwork':
+    'Le réseau du centre de données que les hôtes du cluster utilisent pour communiquer avec le moteur. Il est choisi à la création du cluster.',
+  'clusterForm.managementNetwork.selectDataCenterFirst':
+    "Sélectionnez d'abord un centre de données",
+  'clusterForm.managementNetwork.unknown': 'Inconnu',
+  'clusterForm.networkProvider': 'Fournisseur de réseau par défaut',
+  'fieldHelp.cluster.networkProvider':
+    "Le fournisseur de réseau externe déployé sur chaque hôte ajouté au cluster. Il ne peut être défini qu'à la création du cluster.",
+  'clusterForm.networkProvider.none': 'Aucun fournisseur par défaut',
+  'clusterForm.createOnlyHint': 'Défini à la création du cluster ; ne peut pas être modifié ici.',
 }
