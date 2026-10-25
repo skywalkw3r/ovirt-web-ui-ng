@@ -116,6 +116,35 @@ async function apiGetJson(token, path) {
   return response.json()
 }
 
+// Like apiGetJson, but hands back the HTTP status instead of throwing, for the
+// subcollections whose resources read a 404 as "empty". body is undefined for
+// any non-2xx answer.
+async function apiGetStatus(token, path) {
+  const response = await apiGet(token, path)
+  const body = response.ok ? await response.json().catch(() => undefined) : undefined
+  return { status: response.status, body }
+}
+
+// Every list probe below accepts the two empty shapes the app's schemas accept:
+// the list key omitted, or (for subcollection reads) a 404. Returns the array,
+// or undefined when the collection is empty.
+function listOrEmpty(result, key, path) {
+  if (result.status === 404) return undefined
+  assert(result.status >= 200 && result.status < 300, `GET ${path} → HTTP ${result.status}`)
+  assert(isRecord(result.body), `${path} body is not an object`)
+  const list = result.body[key]
+  if (list === undefined) return undefined
+  assert(Array.isArray(list), `${path} '${key}' is not an array`)
+  return list
+}
+
+// The engine lists each entity's actions as links ({ actions: { link: [{ rel,
+// href }] } }), so an action's presence can be checked without invoking it.
+function actionRels(entity) {
+  const links = isRecord(entity) && isRecord(entity.actions) ? entity.actions.link : undefined
+  return Array.isArray(links) ? links.map((link) => (isRecord(link) ? link.rel : undefined)) : []
+}
+
 // --- SSO grant (mirrors auth.ts obtainToken) -------------------------------
 
 async function obtainToken() {
@@ -302,7 +331,220 @@ async function main() {
     return `content-type=${contentType}, ${text.length} bytes`
   })
 
+  await parityWaveProbes(token, sampleVmId)
+
   return summarize()
+}
+
+// --- webadmin parity wave (watchdog, filter params, LLDP, copy networks,
+// cluster networking, discard, MBS, local storage) ---------------------------
+//
+// Read-only: nothing here creates, changes or deletes anything. Each probe
+// checks one assumption the wave's schemas or mock fixtures make. A probe that
+// needs data the engine does not have (no LUN-backed domain, no pinned VM)
+// passes with a note saying the shape went unverified.
+
+const WATCHDOG_MODELS = ['i6300esb', 'diag288']
+const WATCHDOG_ACTIONS = ['none', 'reset', 'poweroff', 'pause', 'dump']
+const BLANK_TEMPLATE_ID = '00000000-0000-0000-0000-000000000000'
+
+async function parityWaveProbes(token, sampleVmId) {
+  // resources/watchdogs.ts: list key 'watchdog' (or omitted / 404 = none) and
+  // the model/action enums the Edit VM selects offer.
+  await probe("GET /vms/{id}/watchdogs 'watchdog' list + enums", async () => {
+    if (!sampleVmId) throw new Error('skipped: no sample VM id from the /vms probe')
+    const path = `/vms/${encodeURIComponent(sampleVmId)}/watchdogs`
+    const list = listOrEmpty(await apiGetStatus(token, path), 'watchdog', path)
+    if (!list)
+      return 'no watchdog on the sample VM (empty shape ok; add one and rerun to check enums)'
+    const wd = list[0]
+    assert(typeof wd.id === 'string', 'watchdog id is not a string')
+    assert(WATCHDOG_MODELS.includes(wd.model), `unexpected watchdog model '${wd.model}'`)
+    assert(WATCHDOG_ACTIONS.includes(wd.action), `unexpected watchdog action '${wd.action}'`)
+    return `model=${wd.model}, action=${wd.action}`
+  })
+
+  // The New VM wizard seeds its watchdog fields from the template's device.
+  await probe('GET /templates/{Blank}/watchdogs reachable', async () => {
+    const path = `/templates/${BLANK_TEMPLATE_ID}/watchdogs`
+    const list = listOrEmpty(await apiGetStatus(token, path), 'watchdog', path)
+    return list ? `${list.length} watchdog(s) on Blank` : 'Blank has no watchdog (empty shape ok)'
+  })
+
+  // resources/nicNetworkFilterParameters.ts: key 'network_filter_parameter',
+  // each { id, name, value } (value may arrive as a number; the schema coerces).
+  await probe("GET vNIC networkfilterparameters 'network_filter_parameter'", async () => {
+    if (!sampleVmId) throw new Error('skipped: no sample VM id from the /vms probe')
+    const nicsPath = `/vms/${encodeURIComponent(sampleVmId)}/nics`
+    const nics = listOrEmpty(await apiGetStatus(token, nicsPath), 'nic', nicsPath)
+    if (!nics || nics.length === 0) return 'sample VM has no vNICs: shape unverified'
+    const path = `${nicsPath}/${encodeURIComponent(nics[0].id)}/networkfilterparameters`
+    const list = listOrEmpty(await apiGetStatus(token, path), 'network_filter_parameter', path)
+    if (!list) return `vNIC ${nics[0].name} has no parameters (empty shape ok)`
+    assert(typeof list[0].name === 'string', 'parameter name is not a string')
+    assert(list[0].value !== undefined, 'parameter value missing')
+    return `${list.length} parameter(s), first ${list[0].name}=${list[0].value}`
+  })
+
+  // Host-side probes share the first host and its first NIC.
+  let host
+  await probe('GET /hosts: sample host for host probes', async () => {
+    const hosts = listOrEmpty(await apiGetStatus(token, '/hosts'), 'host', '/hosts')
+    assert(hosts && hosts.length > 0, 'no hosts on this engine')
+    host = hosts[0]
+    return `host=${host.name}, status=${host.status}`
+  })
+
+  // components/host-network/NicLldp.tsx: key
+  // 'link_layer_discovery_protocol_element', properties nested as
+  // { property: [{ name, value }] }.
+  await probe('GET host NIC linklayerdiscoveryprotocolelements shape', async () => {
+    if (!host) throw new Error('skipped: no sample host')
+    const nicsPath = `/hosts/${encodeURIComponent(host.id)}/nics`
+    const nics = listOrEmpty(await apiGetStatus(token, nicsPath), 'host_nic', nicsPath)
+    assert(nics && nics.length > 0, 'sample host reports no NICs')
+    const reports = []
+    for (const nic of nics) {
+      const path = `${nicsPath}/${encodeURIComponent(nic.id)}/linklayerdiscoveryprotocolelements`
+      const result = await apiGetStatus(token, path)
+      const list = listOrEmpty(result, 'link_layer_discovery_protocol_element', path)
+      if (!list) continue
+      const element = list[0]
+      assert(typeof element.name === 'string', 'LLDP element name is not a string')
+      if (element.properties !== undefined) {
+        assert(
+          isRecord(element.properties) && Array.isArray(element.properties.property),
+          'LLDP properties are not { property: [...] }',
+        )
+      }
+      reports.push(`${nic.name}: ${list.length} TLV(s)`)
+    }
+    return reports.length > 0
+      ? reports.join(', ')
+      : `no NIC reported LLDP data (switch may not send LLDP): shape unverified`
+  })
+
+  // hooks/useHostActions.ts canCopyHostNetworks: the action exists on 4.4+.
+  await probe("host actions include 'copyhostnetworks'", async () => {
+    if (!host) throw new Error('skipped: no sample host')
+    const detail = await apiGetJson(token, `/hosts/${encodeURIComponent(host.id)}`)
+    const rels = actionRels(detail)
+    assert(rels.length > 0, 'host carries no action links (cannot verify)')
+    assert(rels.includes('copyhostnetworks'), `copyhostnetworks not in actions: ${rels.join(', ')}`)
+    return 'copyhostnetworks action advertised'
+  })
+
+  // hooks/useHostDetail.ts useHostPinnedVms: a cluster-scoped VM search returns
+  // placement_policy without a follow.
+  await probe('GET /vms?search=cluster=... carries placement_policy', async () => {
+    if (!host) throw new Error('skipped: no sample host')
+    const cluster = await apiGetJson(token, `/clusters/${encodeURIComponent(host.cluster?.id)}`)
+    const path = `/vms?search=${encodeURIComponent(`cluster=${cluster.name}`)}`
+    const vms = listOrEmpty(await apiGetStatus(token, path), 'vm', path)
+    if (!vms) return `cluster ${cluster.name} has no VMs: unverified`
+    const withPolicy = vms.filter((vm) => isRecord(vm.placement_policy))
+    if (withPolicy.length === 0)
+      return `${vms.length} VM(s), none with placement_policy: unverified`
+    const pinned = withPolicy.filter((vm) => isRecord(vm.placement_policy.hosts))
+    return `${withPolicy.length}/${vms.length} VM(s) carry placement_policy, ${pinned.length} pin host(s)`
+  })
+
+  // cluster-form: management_network link on every cluster read, the
+  // externalnetworkproviders subcollection, and the 'ovirtmgmt' default name.
+  await probe('cluster management_network link + externalnetworkproviders', async () => {
+    if (!host) throw new Error('skipped: no sample host')
+    const clusterPath = `/clusters/${encodeURIComponent(host.cluster?.id)}`
+    const cluster = await apiGetJson(token, clusterPath)
+    assert(
+      isRecord(cluster.management_network) && typeof cluster.management_network.id === 'string',
+      'cluster read has no management_network { id } link',
+    )
+    const path = `${clusterPath}/externalnetworkproviders`
+    const providers = listOrEmpty(await apiGetStatus(token, path), 'external_provider', path)
+    let mgmtName = '(unresolved)'
+    const dcId = cluster.data_center?.id
+    if (dcId) {
+      const netsPath = `/datacenters/${encodeURIComponent(dcId)}/networks`
+      const nets = listOrEmpty(await apiGetStatus(token, netsPath), 'network', netsPath) ?? []
+      mgmtName = nets.find((n) => n.id === cluster.management_network.id)?.name ?? mgmtName
+    }
+    return `management network=${mgmtName}${mgmtName === 'ovirtmgmt' ? '' : ' (not ovirtmgmt: the form will not preselect it)'}, providers=${providers ? providers.map((p) => p.name).join(', ') : 'none'}`
+  })
+
+  // components/provider-form: network providers listed under this key.
+  await probe("GET /openstacknetworkproviders 'openstack_network_provider'", async () => {
+    const path = '/openstacknetworkproviders'
+    const list = listOrEmpty(await apiGetStatus(token, path), 'openstack_network_provider', path)
+    return list ? `${list.length} provider(s): ${list.map((p) => p.name).join(', ')}` : 'none'
+  })
+
+  // storage-domain-form: discard fields on domains, and 'local' on the flat
+  // data center list (New Domain offers Local on Host only for local DCs).
+  await probe('storage domains: discard_after_delete / supports_discard', async () => {
+    const domains =
+      listOrEmpty(
+        await apiGetStatus(token, '/storagedomains'),
+        'storage_domain',
+        '/storagedomains',
+      ) ?? []
+    const block = domains.filter((d) => ['iscsi', 'fcp'].includes(d.storage?.type))
+    const types = [...new Set(domains.map((d) => d.storage?.type))].join(', ')
+    if (block.length === 0) return `no block domains (types: ${types || 'none'}): unverified`
+    const d = block[0]
+    assert(d.discard_after_delete !== undefined, `${d.name} has no discard_after_delete field`)
+    assert(d.supports_discard !== undefined, `${d.name} has no supports_discard field`)
+    return `${d.name}: discard_after_delete=${d.discard_after_delete}, supports_discard=${d.supports_discard}`
+  })
+
+  await probe("GET /datacenters carries 'local'", async () => {
+    const dcs = listOrEmpty(
+      await apiGetStatus(token, '/datacenters'),
+      'data_center',
+      '/datacenters',
+    )
+    assert(dcs && dcs.length > 0, 'no data centers')
+    assert(dcs[0].local !== undefined, `data center ${dcs[0].name} has no 'local' field`)
+    return dcs.map((dc) => `${dc.name}: local=${dc.local}`).join(', ')
+  })
+
+  // disk-form/passDiscard.ts: the attachment carries pass_discard.
+  await probe('VM disk attachments carry pass_discard', async () => {
+    if (!sampleVmId) throw new Error('skipped: no sample VM id from the /vms probe')
+    const path = `/vms/${encodeURIComponent(sampleVmId)}/diskattachments`
+    const list = listOrEmpty(await apiGetStatus(token, path), 'disk_attachment', path)
+    if (!list) return 'sample VM has no disks: unverified'
+    assert(list[0].pass_discard !== undefined, 'disk attachment has no pass_discard field')
+    return `${list.length} attachment(s), first pass_discard=${list[0].pass_discard}`
+  })
+
+  // SanStorageSection / hostStorage.ts: LUNs report discard_max_size. GET
+  // /hosts/{id}/storage asks the host for its device list, so it can be slow.
+  await probe('host LUNs report discard_max_size', async () => {
+    if (!host) throw new Error('skipped: no sample host')
+    if (host.status !== 'up')
+      return `host ${host.name} is ${host.status}: skipped (needs an Up host)`
+    const path = `/hosts/${encodeURIComponent(host.id)}/storage`
+    const storages = listOrEmpty(await apiGetStatus(token, path), 'host_storage', path) ?? []
+    const luns = storages.flatMap((s) => s.logical_units?.logical_unit ?? [])
+    if (luns.length === 0) return 'host sees no LUNs (no iSCSI/FC): unverified'
+    const withField = luns.filter((lun) => lun.discard_max_size !== undefined)
+    assert(withField.length > 0, 'no LUN reports discard_max_size')
+    return `${withField.length}/${luns.length} LUN(s) report discard_max_size`
+  })
+
+  // NewStorageDomainModal: MBS is only usable when the engine knows the type.
+  await probe('Managed Block Storage domains (informational)', async () => {
+    const domains =
+      listOrEmpty(
+        await apiGetStatus(token, '/storagedomains'),
+        'storage_domain',
+        '/storagedomains',
+      ) ?? []
+    const mbs = domains.filter((d) => d.storage?.type === 'managed_block_storage')
+    return mbs.length > 0
+      ? `${mbs.length} MBS domain(s), driver_options ${mbs[0].storage?.driver_options ? 'present' : 'absent'}`
+      : 'no MBS domains defined (creation is checked by hand: see the PR test plan)'
+  })
 }
 
 function summarize() {
