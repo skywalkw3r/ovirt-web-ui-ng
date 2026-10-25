@@ -363,10 +363,6 @@ export const fr: LocaleCatalog = {
   'dashboard.metric.none.title': 'Aucune mesure signalée',
   'dashboard.metric.none.body': "Les hôtes signalent l'utilisation une fois qu'ils sont actifs.",
   'dashboard.metric.noCapacity.title': 'Aucune donnée de capacité',
-  'dashboard.metric.collectingTrend': 'collecte de la tendance…',
-  'dashboard.metric.trendAria': "{title} tendance d'utilisation",
-  'dashboard.metric.trendDesc':
-    "{title} pourcentage utilisé dans les sondages d'actualisation de cette session",
   'dashboard.metric.commitAlloc': 'Engagé : {committed}%, Alloué : {allocated}%',
   'dashboard.vms.title': 'Machines virtuelles',
   'dashboard.vms.loading': 'Chargement des machines virtuelles',

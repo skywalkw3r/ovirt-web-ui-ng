@@ -363,10 +363,6 @@ export const de: LocaleCatalog = {
   'dashboard.metric.none.title': 'Keine Metriken gemeldet',
   'dashboard.metric.none.body': 'Hosts melden die Auslastung, sobald sie hochgefahren sind.',
   'dashboard.metric.noCapacity.title': 'Keine Kapazitätsdaten',
-  'dashboard.metric.collectingTrend': 'Trend wird gesammelt…',
-  'dashboard.metric.trendAria': '{title} Nutzungstrend',
-  'dashboard.metric.trendDesc':
-    '{title} verwendeter Prozentsatz in den Aktualisierungsumfragen dieser Sitzung',
   'dashboard.metric.commitAlloc': 'Zugesichert: {committed}%, Zugewiesen: {allocated}%',
   'dashboard.vms.title': 'Virtuelle Maschinen',
   'dashboard.vms.loading': 'Virtuelle Maschinen werden geladen',

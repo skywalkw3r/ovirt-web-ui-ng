@@ -1551,8 +1551,8 @@ export function DashboardPage() {
         }
         actions={<RefreshControl />}
       />
-      {/* Capacity spans the page first (its three tiles need the width),
-          then a 3/5/4 row (details, VM status, activity) and an even
+      {/* A 3/5/4 row (details, VM status, activity) first, then Capacity
+          spanning the page (its three tiles need the width), then an even
           inventory/storage row. One flat grid (not per-column stacks) so the
           rows line up across columns; every card is isFullHeight and
           stretches to its row's tallest, giving aligned box edges. */}
@@ -1566,17 +1566,6 @@ export function DashboardPage() {
         }}
       >
         {/* Row 1 */}
-        <GridItem>
-          <CapacityCard
-            hosts={hosts}
-            storageDomains={storageDomains}
-            clusters={clusters}
-            utilization={utilization}
-            isAdmin={isAdmin}
-          />
-        </GridItem>
-
-        {/* Row 2 */}
         <GridItem xl={3}>
           <DetailsCard apiInfo={apiInfo} />
         </GridItem>
@@ -1585,6 +1574,17 @@ export function DashboardPage() {
         </GridItem>
         <GridItem xl={4}>
           <ActivityCard events={events} />
+        </GridItem>
+
+        {/* Row 2 */}
+        <GridItem>
+          <CapacityCard
+            hosts={hosts}
+            storageDomains={storageDomains}
+            clusters={clusters}
+            utilization={utilization}
+            isAdmin={isAdmin}
+          />
         </GridItem>
 
         {/* Row 3 */}

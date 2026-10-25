@@ -363,10 +363,6 @@ export const ru: LocaleCatalog = {
   'dashboard.metric.none.title': 'Нет сообщений о показателях',
   'dashboard.metric.none.body': 'Хосты сообщают об использовании, как только они активируются.',
   'dashboard.metric.noCapacity.title': 'Нет данных о ёмкости',
-  'dashboard.metric.collectingTrend': 'сбор данных…',
-  'dashboard.metric.trendAria': '{title} тенденция использования',
-  'dashboard.metric.trendDesc':
-    '{title} использованный процент по опросам об обновлении этой сессии',
   'dashboard.metric.commitAlloc': 'Зафиксировано: {committed}%, распределено: {allocated}%',
   'dashboard.vms.title': 'Виртуальные машины',
   'dashboard.vms.loading': 'Загрузка виртуальных машин',

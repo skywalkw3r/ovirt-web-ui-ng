@@ -359,10 +359,6 @@ export const ptBR: LocaleCatalog = {
   'dashboard.metric.none.title': 'Nenhuma métrica relatada',
   'dashboard.metric.none.body': 'Os hosts relatam a utilização assim que ficam ativos.',
   'dashboard.metric.noCapacity.title': 'Nenhuma capacidade',
-  'dashboard.metric.collectingTrend': 'coletando tendência…',
-  'dashboard.metric.trendAria': '{title} tendência de utilização',
-  'dashboard.metric.trendDesc':
-    '{title} utilizou a percentagem nas sondagens de atualização desta sessão',
   'dashboard.metric.commitAlloc': 'Comprometido: {committed}%, Alocado: {allocated}%',
   'dashboard.vms.title': 'Máquinas virtuais',
   'dashboard.vms.loading': 'Carregando máquinas virtuais',

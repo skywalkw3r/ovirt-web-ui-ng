@@ -362,10 +362,6 @@ export const es: LocaleCatalog = {
   'dashboard.metric.none.title': 'No se han informado métricas',
   'dashboard.metric.none.body': 'Los hosts informan de la utilización una vez que están activos.',
   'dashboard.metric.noCapacity.title': 'Sin datos de capacidad',
-  'dashboard.metric.collectingTrend': 'recopilando tendencia…',
-  'dashboard.metric.trendAria': 'Tendencia de utilización de {title}',
-  'dashboard.metric.trendDesc':
-    'Porcentaje utilizado de {title} en los sondeos de actualización de esta sesión',
   'dashboard.metric.commitAlloc': 'Comprometido: {committed}%, Asignado: {allocated}%',
   'dashboard.vms.title': 'Máquinas virtuales',
   'dashboard.vms.loading': 'Cargando máquinas virtuales',

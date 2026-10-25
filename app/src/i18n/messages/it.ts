@@ -360,10 +360,6 @@ export const it: LocaleCatalog = {
   'dashboard.metric.none.title': 'Nessuna metrica riportata',
   'dashboard.metric.none.body': "Gli host segnalano l'utilizzo una volta attivi.",
   'dashboard.metric.noCapacity.title': 'Nessun dato di capacità',
-  'dashboard.metric.collectingTrend': 'raccolta della tendenza…',
-  'dashboard.metric.trendAria': '{title} trend di utilizzo',
-  'dashboard.metric.trendDesc':
-    '{title} ha utilizzato la percentuale nei sondaggi di aggiornamento di questa sessione',
   'dashboard.metric.commitAlloc': 'Impegnato: {committed}%, Assegnato: {allocated}%',
   'dashboard.vms.title': 'Macchine virtuali',
   'dashboard.vms.loading': 'Caricamento macchine virtuali',
