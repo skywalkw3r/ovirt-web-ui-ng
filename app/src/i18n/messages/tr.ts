@@ -1744,6 +1744,7 @@ export const tr: LocaleCatalog = {
   'vmActions.remove.toast.protected':
     '{name} kaldırılamıyor — silinmeye karşı korumalı veya hâlâ kullanımda. Silme korumasını kapatın (Düzenle) veya çakışmayı çözün, sonra tekrar deneyin.',
   'settings.menu.ariaLabel': '{username} — Kullanıcı menüsü',
+  'settings.menu.ariaLabelNoUser': 'Kullanıcı menüsü',
   'settings.menu.settings': 'Ayarlar',
   'settings.menu.shortcuts': 'Klavye kısayolları',
   'settings.menu.about': 'Hakkında',
@@ -2793,6 +2794,7 @@ export const tr: LocaleCatalog = {
   'affinity.section.vms': 'Sanal Makineler',
   'affinity.select.hosts': 'Ana makine seç',
   'affinity.select.vms': 'Sanal makine seç',
+  'affinity.select.withCount': '{count} seçildi — {action}',
   'affinity.selectedCount': '{count} seçildi',
   'bulk.confirm.stop':
     'Kapatma, sanal gücü zorla keser — konuk işletim sistemi düzgün kapanmaz ve kaydedilmemiş veriler kaybolabilir.',
@@ -3980,6 +3982,9 @@ export const tr: LocaleCatalog = {
   'tasks.action.clearFinished': 'Bitenleri temizle',
   'tasks.badge.overCap': 'Görevler — {BADGE_CAP} taneden fazla çalışıyor',
   'tasks.badge.running': 'Görevler — {count} çalışıyor',
+  'notifications.bell.ariaLabel': 'Bildirimler',
+  'notifications.bell.overCap': 'Bildirimler — {BADGE_CAP} taneden fazla okunmamış',
+  'notifications.bell.unread': 'Bildirimler — {count} okunmamış',
   'tasks.column.correlationId': 'Korelasyon kimliği',
   'tasks.drawer.empty.body': 'Motor görevleri, eylemler çalıştıkça burada görünür.',
   'tasks.drawer.empty.title': 'Görev yok',

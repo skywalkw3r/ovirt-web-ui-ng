@@ -23,16 +23,16 @@ import { removeEvent } from '../api/resources/events'
 import type { OvirtEvent } from '../api/schemas/event'
 import { eventKeys, useEvents } from '../hooks/useEvents'
 import { useNow } from '../hooks/useNow'
+import { useT } from '../i18n/useT'
 import { ANCHORED_PANEL_STYLE, CLAMP_3_LINES } from './anchoredPanelStyle'
 import { useNotify } from './context'
+import { badgeAriaLabel, badgeCount } from './countBadge'
 import { SEVERITY_ICON } from './severityIcons'
 
 // The drawer is a glanceable feed, not the audit log — the full list (with
 // severity filtering) lives at /events. The cap applies per group so a chatty
 // normal-severity stream can never push alerts out of the window.
 const DRAWER_EVENT_LIMIT = 20
-// past this the bell badge reads '20+' instead of an exact count
-const BADGE_CAP = 20
 
 // error and alert are the operator-attention severities (EventSeverityLabel
 // renders both red); any unread one flips the badge to 'attention'. The
@@ -119,6 +119,7 @@ function useEventWatermark(background: boolean) {
 }
 
 export function NotificationBell() {
+  const t = useT()
   const [isOpen, setIsOpen] = useState(false)
   const { events, watermark, unread, markSeen } = useEventWatermark(!isOpen)
   // Watermark snapshot taken when the drawer opens: opening marks everything
@@ -169,20 +170,15 @@ export function NotificationBell() {
 
   return (
     <div ref={rootRef} style={{ position: 'relative' }}>
-      {/* NotificationBadge renders a plain stateful button; count hides at 0.
-          count is typed number but PF only interpolates it into the badge
-          text, so the '20+' overflow string rides through a deliberate cast
-          (same convention as TasksButton, label carries the visible count). */}
+      {/* NotificationBadge renders a plain stateful button; count hides at 0. */}
       <NotificationBadge
-        aria-label={
-          unread.length > BADGE_CAP
-            ? `Notifications — more than ${BADGE_CAP} unread`
-            : unread.length > 0
-              ? `Notifications — ${unread.length} unread`
-              : 'Notifications'
-        }
+        aria-label={badgeAriaLabel(t, unread.length, {
+          idle: 'notifications.bell.ariaLabel',
+          count: 'notifications.bell.unread',
+          overCap: 'notifications.bell.overCap',
+        })}
         variant={variant}
-        count={unread.length > BADGE_CAP ? (`${BADGE_CAP}+` as unknown as number) : unread.length}
+        count={badgeCount(unread.length)}
         isExpanded={isOpen}
         onClick={toggle}
       />

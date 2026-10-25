@@ -116,13 +116,20 @@ export function EntitySelection({
           onToggle(id, !selected.has(id))
         }}
         toggle={(toggleRef: Ref<MenuToggleElement>) => (
+          // The label leads with the visible text (WCAG 2.5.3 label in name).
+          // No count badge: it would repeat '{count} selected' and the chosen
+          // names already render below, and the doubled count could never be
+          // contained in a sensible label.
           <MenuToggle
             ref={toggleRef}
-            aria-label={ariaLabel}
+            aria-label={
+              selectedIds.length === 0
+                ? ariaLabel
+                : t('affinity.select.withCount', { count: selectedIds.length, action: ariaLabel })
+            }
             isExpanded={isOpen}
             onClick={() => setIsOpen(!isOpen)}
             isFullWidth
-            badge={selectedIds.length > 0 ? <Badge isRead>{selectedIds.length}</Badge> : undefined}
           >
             {selectedIds.length === 0
               ? label

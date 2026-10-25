@@ -1768,6 +1768,7 @@ export const es: LocaleCatalog = {
   'vmActions.remove.toast.protected':
     'No se puede eliminar {name} — tiene protección contra eliminación o todavía está en uso. Desactive la protección contra eliminación (Editar) o resuelva el conflicto y vuelva a intentarlo.',
   'settings.menu.ariaLabel': '{username} — Menú de usuario',
+  'settings.menu.ariaLabelNoUser': 'Menú de usuario',
   'settings.menu.settings': 'Configuración',
   'settings.menu.shortcuts': 'Atajos de teclado',
   'settings.menu.about': 'Acerca de',
@@ -2837,6 +2838,7 @@ export const es: LocaleCatalog = {
   'affinity.section.vms': 'Máquinas virtuales',
   'affinity.select.hosts': 'Seleccionar hosts',
   'affinity.select.vms': 'Seleccionar máquinas virtuales',
+  'affinity.select.withCount': '{count} seleccionados — {action}',
   'affinity.selectedCount': '{count} seleccionados',
   'bulk.confirm.stop':
     'El apagado forzado corta la alimentación virtual de golpe: el SO invitado no se apaga de forma limpia y pueden perderse los datos no guardados.',
@@ -4042,6 +4044,9 @@ export const es: LocaleCatalog = {
   'tasks.action.clearFinished': 'Limpiar finalizadas',
   'tasks.badge.overCap': 'Tareas — más de {BADGE_CAP} en ejecución',
   'tasks.badge.running': 'Tareas — {count} en ejecución',
+  'notifications.bell.ariaLabel': 'Notificaciones',
+  'notifications.bell.overCap': 'Notificaciones — más de {BADGE_CAP} sin leer',
+  'notifications.bell.unread': 'Notificaciones — {count} sin leer',
   'tasks.column.correlationId': 'ID de correlación',
   'tasks.drawer.empty.body':
     'Las tareas del motor aparecerán aquí a medida que se ejecuten las acciones.',

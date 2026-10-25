@@ -75,6 +75,29 @@ test('New host dialog has no serious accessibility violations', async ({ page })
   await expectNoSeriousViolations(page)
 })
 
+test('New affinity group dialog with members selected has no serious violations', async ({
+  page,
+}) => {
+  // The entity pickers only show their selection count (and the chosen-member
+  // badges) once something is picked — the state the masthead/list sweeps
+  // never reach, so label-in-name regressions there would otherwise slip by.
+  await login(page, { path: '/clusters/cluster-01' })
+  await page.getByRole('tab', { name: 'Affinity Groups' }).click()
+  await page.getByRole('button', { name: 'New affinity group' }).first().click()
+  const dialog = page.getByRole('dialog')
+  await dialog.getByRole('tab', { name: 'Virtual Machines' }).click()
+  await dialog.getByRole('button', { name: 'Select virtual machines' }).click()
+  const members = page.getByRole('listbox').getByRole('checkbox')
+  await members.nth(0).click()
+  await members.nth(1).click()
+  // close the menu so the scan sees the settled toggle, not the open listbox
+  const toggle = dialog.getByRole('button', { name: '2 selected — Select virtual machines' })
+  await toggle.click()
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false')
+
+  await expectNoSeriousViolations(page)
+})
+
 test('VM list with a folder selected has no serious accessibility violations', async ({ page }) => {
   // Breadcrumb, count badges and the folder empty-state variants all render
   // in this state — the surfaces the folder work added to the VMs page.

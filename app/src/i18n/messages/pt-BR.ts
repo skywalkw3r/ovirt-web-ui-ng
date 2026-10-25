@@ -1761,6 +1761,7 @@ export const ptBR: LocaleCatalog = {
   'vmActions.remove.toast.protected':
     'Não é possível remover {name} — ela está protegida contra exclusão ou ainda em uso. Desative a proteção contra exclusão (Editar) ou resolva o conflito e tente novamente.',
   'settings.menu.ariaLabel': '{username} — Menu do usuário',
+  'settings.menu.ariaLabelNoUser': 'Menu do usuário',
   'settings.menu.settings': 'Configurações',
   'settings.menu.shortcuts': 'Atalhos de teclado',
   'settings.menu.about': 'Sobre',
@@ -2821,6 +2822,7 @@ export const ptBR: LocaleCatalog = {
   'affinity.section.vms': 'Máquinas virtuais',
   'affinity.select.hosts': 'Selecionar hosts',
   'affinity.select.vms': 'Selecionar máquinas virtuais',
+  'affinity.select.withCount': '{count} selecionados — {action}',
   'affinity.selectedCount': '{count} selecionados',
   'bulk.confirm.stop':
     'Desligar força o corte da energia virtual — o sistema operacional convidado não é desligado corretamente e dados não salvos podem ser perdidos.',
@@ -4021,6 +4023,9 @@ export const ptBR: LocaleCatalog = {
   'tasks.action.clearFinished': 'Limpar concluídas',
   'tasks.badge.overCap': 'Tarefas — mais de {BADGE_CAP} em execução',
   'tasks.badge.running': 'Tarefas — {count} em execução',
+  'notifications.bell.ariaLabel': 'Notificações',
+  'notifications.bell.overCap': 'Notificações — mais de {BADGE_CAP} não lidas',
+  'notifications.bell.unread': 'Notificações — {count} não lidas',
   'tasks.column.correlationId': 'ID de correlação',
   'tasks.drawer.empty.body':
     'As tarefas do engine aparecerão aqui à medida que as ações forem executadas.',

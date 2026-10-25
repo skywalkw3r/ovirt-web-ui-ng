@@ -1780,6 +1780,7 @@ export const de: LocaleCatalog = {
   'vmActions.remove.toast.protected':
     '{name} kann nicht entfernt werden — sie ist löschgeschützt oder noch in Verwendung. Deaktivieren Sie den Löschschutz (Bearbeiten) oder lösen Sie den Konflikt und versuchen Sie es erneut.',
   'settings.menu.ariaLabel': '{username} — Benutzermenü',
+  'settings.menu.ariaLabelNoUser': 'Benutzermenü',
   'settings.menu.settings': 'Einstellungen',
   'settings.menu.shortcuts': 'Tastenkürzel',
   'settings.menu.about': 'Über',
@@ -2848,6 +2849,7 @@ export const de: LocaleCatalog = {
   'affinity.section.vms': 'Virtuelle Maschinen',
   'affinity.select.hosts': 'Hosts auswählen',
   'affinity.select.vms': 'Virtuelle Maschinen auswählen',
+  'affinity.select.withCount': '{count} ausgewählt — {action}',
   'affinity.selectedCount': '{count} ausgewählt',
   'bulk.confirm.stop':
     'Das Ausschalten unterbricht die virtuelle Stromzufuhr gewaltsam — das Gast-Betriebssystem wird nicht ordnungsgemäß heruntergefahren und nicht gespeicherte Daten können verloren gehen.',
@@ -4060,6 +4062,9 @@ export const de: LocaleCatalog = {
   'tasks.action.clearFinished': 'Abgeschlossene löschen',
   'tasks.badge.overCap': 'Aufgaben — mehr als {BADGE_CAP} laufen',
   'tasks.badge.running': 'Aufgaben — {count} aktiv',
+  'notifications.bell.ariaLabel': 'Benachrichtigungen',
+  'notifications.bell.overCap': 'Benachrichtigungen — mehr als {BADGE_CAP} ungelesen',
+  'notifications.bell.unread': 'Benachrichtigungen — {count} ungelesen',
   'tasks.column.correlationId': 'Korrelations-ID',
   'tasks.drawer.empty.body':
     'Engine-Aufgaben werden hier angezeigt, während Aktionen ausgeführt werden.',

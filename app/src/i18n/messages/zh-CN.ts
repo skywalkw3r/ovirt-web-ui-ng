@@ -1690,6 +1690,7 @@ export const zhCN: LocaleCatalog = {
   'vmActions.remove.toast.protected':
     '无法移除 {name} — 它已启用删除保护或仍在使用中。请关闭删除保护（编辑）或解决冲突，然后重试。',
   'settings.menu.ariaLabel': '{username} — 用户菜单',
+  'settings.menu.ariaLabelNoUser': '用户菜单',
   'settings.menu.settings': '设置',
   'settings.menu.shortcuts': '键盘快捷键',
   'settings.menu.about': '关于',
@@ -2702,6 +2703,7 @@ export const zhCN: LocaleCatalog = {
   'affinity.section.vms': '虚拟机',
   'affinity.select.hosts': '选择主机',
   'affinity.select.vms': '选择虚拟机',
+  'affinity.select.withCount': '已选择 {count} 项 — {action}',
   'affinity.selectedCount': '已选择 {count} 项',
   'bulk.confirm.stop':
     '关闭电源会强制切断虚拟电源 — 来宾操作系统不会正常关机，未保存的数据可能丢失。',
@@ -3815,6 +3817,9 @@ export const zhCN: LocaleCatalog = {
   'tasks.action.clearFinished': '清除已完成',
   'tasks.badge.overCap': '任务 — 超过 {BADGE_CAP} 个正在运行',
   'tasks.badge.running': '任务 — {count} 个正在运行',
+  'notifications.bell.ariaLabel': '通知',
+  'notifications.bell.overCap': '通知 — 超过 {BADGE_CAP} 条未读',
+  'notifications.bell.unread': '通知 — {count} 条未读',
   'tasks.column.correlationId': '关联 ID',
   'tasks.drawer.empty.body': '引擎任务将在操作运行时显示在此处。',
   'tasks.drawer.empty.title': '无任务',

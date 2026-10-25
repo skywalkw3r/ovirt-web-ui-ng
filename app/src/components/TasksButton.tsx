@@ -28,6 +28,7 @@ import type { MessageId } from '../i18n/messages/en'
 import { useT } from '../i18n/useT'
 import { useNow } from '../hooks/useNow'
 import { ANCHORED_PANEL_STYLE, CLAMP_3_LINES } from '../notifications/anchoredPanelStyle'
+import { badgeAriaLabel, badgeCount } from '../notifications/countBadge'
 
 // Job status → PF list-item variant (drives the unread border color, same
 // mapping philosophy as the notification drawer's SEVERITY_VARIANT).
@@ -39,9 +40,8 @@ const STATUS_VARIANT: Partial<Record<string, 'info' | 'success' | 'danger'>> = {
 }
 
 // The drawer is a glanceable feed — 20 newest jobs; the badge caps its count
-// at '20+' past this (mirrors the notification drawer's per-group cap).
+// at '20+' (BADGE_CAP, mirrors the notification drawer's per-group cap).
 const DRAWER_JOB_LIMIT = 20
-const BADGE_CAP = 20
 
 // Job status → compact Label; 'unknown' (and anything the engine invents)
 // falls through to a grey label showing the raw status.
@@ -128,21 +128,16 @@ export function TasksButton() {
   return (
     <div ref={rootRef} style={{ position: 'relative' }}>
       {/* NotificationBadge renders a plain stateful button; count hides at 0.
-          'unread' highlights the toggle while anything is still running.
-          count is typed number but PF only interpolates it into the badge
-          text, so the '20+' overflow string rides through a deliberate cast.
-          The label carries the visible count (WCAG 2.5.3 label in name). */}
+          'unread' highlights the toggle while anything is still running. */}
       <NotificationBadge
-        aria-label={
-          running > BADGE_CAP
-            ? t('tasks.badge.overCap', { BADGE_CAP })
-            : running > 0
-              ? t('tasks.badge.running', { count: running })
-              : t('tasks.title')
-        }
+        aria-label={badgeAriaLabel(t, running, {
+          idle: 'tasks.title',
+          count: 'tasks.badge.running',
+          overCap: 'tasks.badge.overCap',
+        })}
         icon={<TaskIcon />}
         variant={running > 0 ? 'unread' : 'read'}
-        count={running > BADGE_CAP ? (`${BADGE_CAP}+` as unknown as number) : running}
+        count={badgeCount(running)}
         isExpanded={isOpen}
         onClick={() => setIsOpen((open) => !open)}
       />

@@ -78,4 +78,26 @@ describe('i18n catalog coverage', () => {
       ).toEqual([])
     }
   })
+
+  // Label-in-name (WCAG 2.5.3): these aria-labels restate text the control
+  // shows (a badge count, the username, the selection count), so a translation
+  // that drops the placeholder silently breaks the control's accessible name.
+  it('label-in-name aria-labels keep their placeholders in every catalog', () => {
+    const LABEL_IN_NAME: ReadonlyArray<readonly [MessageId, readonly string[]]> = [
+      ['tasks.badge.running', ['{count}']],
+      ['tasks.badge.overCap', ['{BADGE_CAP}']],
+      ['notifications.bell.unread', ['{count}']],
+      ['notifications.bell.overCap', ['{BADGE_CAP}']],
+      ['common.viewOptions.ariaLabelActive', ['{count}']],
+      ['settings.menu.ariaLabel', ['{username}']],
+      ['affinity.select.withCount', ['{count}', '{action}']],
+    ]
+    for (const [locale, catalog] of [['en', en] as const, ...CATALOGS]) {
+      for (const [id, placeholders] of LABEL_IN_NAME) {
+        for (const placeholder of placeholders) {
+          expect(catalog[id], `${locale} ${id} must contain ${placeholder}`).toContain(placeholder)
+        }
+      }
+    }
+  })
 })

@@ -1749,6 +1749,7 @@ export const ja: LocaleCatalog = {
   'vmActions.remove.toast.protected':
     '{name}を削除できません — 削除保護されているか、まだ使用中です。削除保護をオフにする（編集）か、競合を解決してから再試行してください。',
   'settings.menu.ariaLabel': '{username} — ユーザーメニュー',
+  'settings.menu.ariaLabelNoUser': 'ユーザーメニュー',
   'settings.menu.settings': '設定',
   'settings.menu.shortcuts': 'キーボードショートカット',
   'settings.menu.about': '情報',
@@ -2803,6 +2804,7 @@ export const ja: LocaleCatalog = {
   'affinity.section.vms': '仮想マシン',
   'affinity.select.hosts': 'ホストを選択',
   'affinity.select.vms': '仮想マシンを選択',
+  'affinity.select.withCount': '{count}件を選択しました — {action}',
   'affinity.selectedCount': '{count}件を選択しました',
   'bulk.confirm.stop':
     '電源オフはゲストOSに通知せずに仮想電源を強制的に切断します — ゲストOSは正常にシャットダウンされず、保存されていないデータが失われる可能性があります。',
@@ -3986,6 +3988,9 @@ export const ja: LocaleCatalog = {
   'tasks.action.clearFinished': '完了をクリア',
   'tasks.badge.overCap': 'タスク — {BADGE_CAP}件以上が実行中',
   'tasks.badge.running': 'タスク — {count}件が実行中',
+  'notifications.bell.ariaLabel': '通知',
+  'notifications.bell.overCap': '通知 — 未読 {BADGE_CAP}件以上',
+  'notifications.bell.unread': '通知 — 未読 {count}件',
   'tasks.column.correlationId': '相関ID',
   'tasks.drawer.empty.body': 'アクションの実行に伴い、エンジンタスクがここに表示されます。',
   'tasks.drawer.empty.title': 'タスクがありません',
