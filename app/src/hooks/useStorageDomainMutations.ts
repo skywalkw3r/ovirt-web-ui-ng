@@ -1,4 +1,10 @@
-import { useMutation, useQueryClient, type QueryClient } from '@tanstack/react-query'
+import { useRef } from 'react'
+import {
+  useMutation,
+  useQueryClient,
+  type MutateOptions,
+  type QueryClient,
+} from '@tanstack/react-query'
 import type { StorageDomain } from '../api/schemas/storage-domain'
 import {
   activateStorageDomain,
@@ -17,6 +23,7 @@ import {
   type LocalStorageDomainSpec,
   type ManagedBlockStorageDomainSpec,
   type StorageDomainEditBody,
+  type StorageProperty,
 } from '../api/resources/storageDomains'
 import { attachStorageDomain } from '../api/resources/datacenters'
 import { useNotify } from '../notifications/context'
@@ -58,7 +65,10 @@ type CreateStorageDomainSource =
   | {
       payload?: undefined
       blockSpec?: undefined
-      managedBlockSpec: ManagedBlockStorageDomainSpec
+      // The sensitive driver options are NOT part of the variables (TanStack
+      // keeps variables in the mutation state and its MutationCache entry);
+      // they ride through createManagedBlock's side channel instead.
+      managedBlockSpec: ManagedBlockStorageDomainVariables
       localSpec?: undefined
     }
   | {
@@ -73,9 +83,26 @@ type CreateStorageDomainSource =
 
 export type CreateStorageDomainVariables = CreateStorageDomainSource & { dataCenterId?: string }
 
-function createFromSource(source: CreateStorageDomainSource): Promise<StorageDomain> {
+// A Managed Block Storage spec minus its secrets, the shape that may live in
+// mutation state.
+export type ManagedBlockStorageDomainVariables = Omit<
+  ManagedBlockStorageDomainSpec,
+  'driverSensitiveOptions'
+>
+
+type CreateStorageDomainResult = { created: StorageDomain; attachError?: Error }
+
+function createFromSource(
+  source: CreateStorageDomainSource,
+  sensitiveOptions: StorageProperty[] | undefined,
+): Promise<StorageDomain> {
   if (source.blockSpec) return createBlockStorageDomain(source.blockSpec)
-  if (source.managedBlockSpec) return createManagedBlockStorageDomain(source.managedBlockSpec)
+  if (source.managedBlockSpec) {
+    return createManagedBlockStorageDomain({
+      ...source.managedBlockSpec,
+      driverSensitiveOptions: sensitiveOptions,
+    })
+  }
   if (source.localSpec) return createLocalStorageDomain(source.localSpec)
   return createStorageDomain(source.payload)
 }
@@ -88,16 +115,29 @@ function createFromSource(source: CreateStorageDomainSource): Promise<StorageDom
 // mirrors useCreateNetwork), but an attach failure after a successful create
 // still resolves — the domain exists, so the toast is a warning saying it was
 // created but not attached rather than pretending the whole thing failed.
+//
+// SECURITY (Managed Block Storage): driver sensitive options (SAN passwords,
+// tokens) must not outlive the request. TanStack keeps a mutation's variables
+// in its state and MutationCache entry until reset/GC, so the secrets never go
+// into the variables: createManagedBlock parks them in a ref that mutationFn
+// takes and clears on entry, leaving them only in the in-flight request body.
+// gcTime 0 drops a finished mutation from the cache as soon as nothing observes
+// it. Engine faults reach the toast as ApiError.message, which carries only the
+// engine's own fault reason/detail, never the request body.
 export function useCreateStorageDomain() {
   const queryClient = useQueryClient()
   const { notify } = useNotify()
+  const sensitiveOptionsRef = useRef<StorageProperty[] | undefined>(undefined)
 
-  return useMutation({
+  const mutation = useMutation({
+    gcTime: 0,
     mutationFn: async (
       variables: CreateStorageDomainVariables,
-    ): Promise<{ created: StorageDomain; attachError?: Error }> => {
+    ): Promise<CreateStorageDomainResult> => {
+      const sensitiveOptions = variables.managedBlockSpec ? sensitiveOptionsRef.current : undefined
+      sensitiveOptionsRef.current = undefined
       const { dataCenterId } = variables
-      const created = await createFromSource(variables)
+      const created = await createFromSource(variables, sensitiveOptions)
       // a local domain is already attached by the engine (see localSpec)
       if (!dataCenterId || variables.localSpec) return { created }
       try {
@@ -135,6 +175,19 @@ export function useCreateStorageDomain() {
       }
     },
   })
+
+  // Managed Block Storage create: the spec rides as variables, the secrets
+  // only through the ref (see the SECURITY note above).
+  const createManagedBlock = (
+    variables: { managedBlockSpec: ManagedBlockStorageDomainVariables; dataCenterId?: string },
+    sensitiveOptions: StorageProperty[],
+    options?: MutateOptions<CreateStorageDomainResult, Error, CreateStorageDomainVariables>,
+  ) => {
+    sensitiveOptionsRef.current = sensitiveOptions
+    mutation.mutate(variables, options)
+  }
+
+  return { ...mutation, createManagedBlock }
 }
 
 // The Attach-to-Data-Center action. POST /datacenters/{dcId}/storagedomains

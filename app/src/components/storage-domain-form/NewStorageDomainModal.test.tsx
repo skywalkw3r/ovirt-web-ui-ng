@@ -2,6 +2,7 @@
 import '../../test/env'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import type { QueryClient } from '@tanstack/react-query'
 import { describe, expect, it, vi } from 'vitest'
 import { mockRequest } from '../../api/mock/handlers'
 import { FIND_TIMEOUT_MS, renderWithProviders } from '../../test/render'
@@ -84,6 +85,91 @@ describe('NewStorageDomainModal: Managed Block Storage', () => {
     await user.click(screen.getByRole('button', { name: 'Add option to Driver Options' }))
     await user.type(screen.getByRole('textbox', { name: 'Driver Options: Value 1' }), 'x')
     expect(screen.getByText('Each option needs a name.')).toBeDefined()
+  })
+})
+
+// The driver sensitive options must not outlive the request: TanStack keeps a
+// mutation's variables (and result/error) in its MutationCache entry, and the
+// modal stays mounted on the Storage Domains page.
+describe('NewStorageDomainModal: Managed Block Storage secrets', () => {
+  const SECRET = 'TOP-SECRET-9f2c'
+
+  async function fillManagedBlock(user: ReturnType<typeof userEvent.setup>, name: string) {
+    await user.type(screen.getByRole('textbox', { name: 'Storage domain name' }), name)
+    await user.selectOptions(combobox('Data center'), 'dc-01')
+    await user.selectOptions(combobox('Host to use'), 'node-01')
+    await user.selectOptions(combobox('Storage type'), 'managed_block_storage')
+    await user.click(screen.getByRole('button', { name: 'Add option to Driver Options' }))
+    await user.type(
+      screen.getByRole('textbox', { name: 'Driver Options: Name 1' }),
+      'volume_driver',
+    )
+    await user.click(screen.getByRole('button', { name: 'Add option to Driver Sensitive Options' }))
+    await user.type(
+      screen.getByRole('textbox', { name: 'Driver Sensitive Options: Name 1' }),
+      'san_password',
+    )
+    await user.type(screen.getByLabelText('Driver Sensitive Options: Value 1'), SECRET)
+  }
+
+  // Everything the cache holds for each mutation: variables, data, error
+  // (message included, since JSON drops Error fields) and the observer state.
+  function cacheDump(queryClient: QueryClient): string {
+    return JSON.stringify(
+      queryClient
+        .getMutationCache()
+        .getAll()
+        .map((mutation) => ({
+          state: mutation.state,
+          error: mutation.state.error?.message,
+        })),
+    )
+  }
+
+  async function open() {
+    const onClose = vi.fn()
+    const { queryClient } = renderWithProviders(<NewStorageDomainModal isOpen onClose={onClose} />)
+    await waitFor(() => expect(combobox('Host to use')).not.toHaveProperty('disabled', true), {
+      timeout: FIND_TIMEOUT_MS,
+    })
+    return { onClose, queryClient }
+  }
+
+  it('never puts them in the mutation variables, and leaves nothing cached after a save', async () => {
+    const user = userEvent.setup()
+    const { onClose, queryClient } = await open()
+    await fillManagedBlock(user, 'mbs-secret-ok')
+    await user.click(saveButton())
+
+    // in flight: the request is running, yet the cached variables hold no secret
+    const inFlight = queryClient.getMutationCache().getAll()
+    expect(inFlight).toHaveLength(1)
+    expect(JSON.stringify(inFlight[0].state.variables)).toContain('mbs-secret-ok')
+    expect(cacheDump(queryClient)).not.toContain(SECRET)
+
+    await waitFor(() => expect(onClose).toHaveBeenCalled(), { timeout: FIND_TIMEOUT_MS })
+    await waitFor(() => expect(queryClient.getMutationCache().getAll()).toHaveLength(0))
+    expect(cacheDump(queryClient)).not.toContain(SECRET)
+    // the engine stored the domain without echoing the secret
+    expect(JSON.stringify(await mockRequest('/storagedomains'))).toContain('mbs-secret-ok')
+  })
+
+  it('leaves nothing behind after a failed save and a cancel', async () => {
+    const user = userEvent.setup()
+    const { onClose, queryClient } = await open()
+    // 'data' is taken (sd-01), so the engine refuses the create
+    await fillManagedBlock(user, 'data')
+    await user.click(saveButton())
+    await screen.findByText(/already in use/, undefined, { timeout: FIND_TIMEOUT_MS })
+    // the error toast is the engine fault only, never the request body
+    expect(document.body.textContent).not.toContain(SECRET)
+    expect(cacheDump(queryClient)).not.toContain(SECRET)
+
+    await user.click(screen.getByRole('button', { name: 'Cancel' }))
+    expect(onClose).toHaveBeenCalled()
+    await waitFor(() => expect(queryClient.getMutationCache().getAll()).toHaveLength(0))
+    // the draft's secret rows are scrubbed too (the modal stays mounted)
+    expect(screen.queryByDisplayValue(SECRET)).toBeNull()
   })
 })
 

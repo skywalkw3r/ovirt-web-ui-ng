@@ -426,14 +426,20 @@ export function NewStorageDomainModal({
     setVgDataLoss([])
     setSelectedLuns([])
     setConfirmingVgLoss(false)
+    // drop the finished mutation (its variables and result) from the cache
+    create.reset()
     onClose()
   }
 
   // The modal stays mounted across close/reopen, so a cancel must not leave
   // typed secrets sitting in state: scrub the sensitive driver options (same
-  // discipline as SanStorageSection's CHAP password).
+  // discipline as SanStorageSection's CHAP password) and drop a settled
+  // mutation. The secrets never enter the mutation's variables in the first
+  // place (useCreateStorageDomain.createManagedBlock); the reset is the second
+  // guard. A still-running create is left alone so its callbacks complete.
   const close = () => {
     setDraft((current) => ({ ...current, driverSensitiveOptions: [] }))
+    if (!create.isPending) create.reset()
     onClose()
   }
 
@@ -478,15 +484,16 @@ export function NewStorageDomainModal({
 
   // Managed Block Storage: the resource builds storage.driver_options /
   // driver_sensitive_options from the rows. No wipe/backup/discard flag rides:
-  // AddManagedBlockStorageDomainCommand forces them all off.
+  // AddManagedBlockStorageDomainCommand forces them all off. The sensitive rows
+  // go as createManagedBlock's separate argument so they stay out of the
+  // mutation's cached variables.
   const saveManagedBlock = () => {
-    create.mutate(
+    create.createManagedBlock(
       {
         managedBlockSpec: {
           name: draft.name,
           hostName: draft.hostName,
           driverOptions: toStorageProperties(draft.driverOptions),
-          driverSensitiveOptions: toStorageProperties(draft.driverSensitiveOptions),
           description: draft.description.trim() !== '' ? draft.description : undefined,
           comment: draft.comment.trim() !== '' ? draft.comment : undefined,
           warning_low_space_indicator: advancedWarning,
@@ -494,6 +501,7 @@ export function NewStorageDomainModal({
         },
         dataCenterId: draft.dataCenterId,
       },
+      toStorageProperties(draft.driverSensitiveOptions),
       { onSuccess: onSaved },
     )
   }
