@@ -195,6 +195,8 @@ export function CreateVmWizardModal({
     setWatchdogModel(inherited?.model ?? '')
     setWatchdogAction(inherited?.action ?? DEFAULT_WATCHDOG_ACTION)
   }
+  const watchdogSeedPending =
+    templateWatchdogs.isPending && selectedTemplate !== undefined && !watchdogTouched
   // the chosen cluster's architecture (else the template's) narrows the models
   const architecture =
     clusters.data?.find((cluster) => cluster.name === clusterName)?.cpu?.architecture ??
@@ -308,13 +310,15 @@ export function CreateVmWizardModal({
             }
           : undefined,
     }
-    // The watchdog is a subcollection device, set once the VM exists. Only
-    // touched when there is something to do: a model was picked, or the
-    // template carries a device the new VM inherited (picking "No watchdog"
-    // then removes it).
+    // The watchdog is a subcollection device, set once the VM exists. Skipped
+    // only when the template is KNOWN to carry none and nothing was picked.
+    // A model was picked, the template carries a device the new VM inherits
+    // (picking "No watchdog" then removes it), or the template read did not
+    // succeed (still loading or failed, so the inherited device is unknown):
+    // reconcile, which reads the new VM's actual device first, so the result
+    // always matches what Review showed.
     const reconcile =
-      watchdogModel !== '' ||
-      (templateWatchdogs.data !== undefined && templateWatchdogs.data.length > 0)
+      watchdogModel !== '' || !templateWatchdogs.isSuccess || templateWatchdogs.data.length > 0
     const desiredWatchdog = { model: watchdogModel, action: watchdogAction }
     // useCreateVm toasts both outcomes; on failure the wizard stays open on
     // Review so the spec can be fixed (e.g. a duplicate name)
@@ -565,10 +569,13 @@ export function CreateVmWizardModal({
                   />
                 }
               >
+                {/* the template's device seeds these fields: hold the select
+                    (disabled, so it keeps its place) until it has loaded */}
                 <FormSelect
                   id="new-vm-watchdog-model"
                   aria-label={t('vm.edit.ha.watchdogModel')}
                   value={watchdogModel}
+                  isDisabled={watchdogSeedPending}
                   onChange={(_event, value) => {
                     setWatchdogModel(value)
                     setWatchdogTouched(true)
@@ -579,6 +586,34 @@ export function CreateVmWizardModal({
                     <FormSelectOption key={model} value={model} label={model} />
                   ))}
                 </FormSelect>
+                {watchdogSeedPending && (
+                  <FormHelperText>
+                    <HelperText>
+                      <HelperTextItem>{t('vm.edit.ha.watchdog.loading')}</HelperTextItem>
+                    </HelperText>
+                  </FormHelperText>
+                )}
+                {templateWatchdogs.isError && (
+                  <FormHelperText>
+                    <HelperText>
+                      <HelperTextItem variant="error">
+                        {t('vm.create.watchdog.templateError', {
+                          message:
+                            templateWatchdogs.error instanceof Error
+                              ? templateWatchdogs.error.message
+                              : t('common.error.unknown'),
+                        })}{' '}
+                        <Button
+                          variant="link"
+                          isInline
+                          onClick={() => void templateWatchdogs.refetch()}
+                        >
+                          {t('common.action.retry')}
+                        </Button>
+                      </HelperTextItem>
+                    </HelperText>
+                  </FormHelperText>
+                )}
               </FormGroup>
               <FormGroup
                 label={t('vm.edit.ha.watchdogAction')}
@@ -594,7 +629,7 @@ export function CreateVmWizardModal({
                   id="new-vm-watchdog-action"
                   aria-label={t('vm.edit.ha.watchdogAction')}
                   value={watchdogAction}
-                  isDisabled={watchdogModel === ''}
+                  isDisabled={watchdogSeedPending || watchdogModel === ''}
                   onChange={(_event, value) => {
                     setWatchdogAction(value)
                     setWatchdogTouched(true)
