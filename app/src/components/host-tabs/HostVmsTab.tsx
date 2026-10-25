@@ -17,6 +17,7 @@ import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table'
 import type { Vm } from '../../api/schemas/vm'
 import { sortRows, useColumnSort } from '../../hooks/useColumnSort'
 import { mergeHostVms, useHostPinnedVms, useHostVms } from '../../hooks/useHostDetail'
+import type { MessageId } from '../../i18n/messages/en'
 import { useT } from '../../i18n/useT'
 import { VmStatusLabel } from '../VmStatusLabel'
 
@@ -28,15 +29,16 @@ const HOST_VM_KEYS = ['name', 'status', 'fqdn'] as const
 // whose placement policy pins them here (they may be down), or the union.
 export type HostVmFilter = 'running' | 'pinned' | 'both'
 
-const FILTERS: ReadonlyArray<{ value: HostVmFilter; label: string }> = [
-  { value: 'running', label: 'Running' },
-  { value: 'pinned', label: 'Pinned to host' },
-  { value: 'both', label: 'Both' },
+const FILTERS: ReadonlyArray<{ value: HostVmFilter; labelId: MessageId }> = [
+  { value: 'running', labelId: 'hostVms.filter.running' },
+  { value: 'pinned', labelId: 'hostVms.filter.pinned' },
+  { value: 'both', labelId: 'hostVms.filter.both' },
 ]
 
-const EMPTY_BODY: Record<Exclude<HostVmFilter, 'running'>, string> = {
-  pinned: 'No virtual machines are pinned to this host.',
-  both: 'No virtual machines are running on or pinned to this host.',
+const EMPTY_BODY: Record<HostVmFilter, MessageId> = {
+  running: 'hostVms.empty.body',
+  pinned: 'hostVms.empty.pinnedBody',
+  both: 'hostVms.empty.bothBody',
 }
 
 // The VMs on this host. There is no host→VM subcollection on the engine:
@@ -69,11 +71,11 @@ export function HostVmsTab({ hostName, hostId }: { hostName: string; hostId?: st
     <Toolbar inset={{ default: 'insetNone' }}>
       <ToolbarContent>
         <ToolbarItem>
-          <ToggleGroup aria-label="Filter virtual machines by relation to this host">
+          <ToggleGroup aria-label={t('hostVms.filter.ariaLabel')}>
             {FILTERS.map((option) => (
               <ToggleGroupItem
                 key={option.value}
-                text={option.label}
+                text={t(option.labelId)}
                 buttonId={`host-vms-filter-${option.value}`}
                 isSelected={filter === option.value}
                 onChange={() => setFilter(option.value)}
@@ -127,9 +129,7 @@ export function HostVmsTab({ hostName, hostId }: { hostName: string; hostId?: st
     if (rows.length === 0) {
       return (
         <EmptyState titleText={t('hostVms.empty.title')}>
-          <EmptyStateBody>
-            {filter === 'running' ? t('hostVms.empty.body') : EMPTY_BODY[filter]}
-          </EmptyStateBody>
+          <EmptyStateBody>{t(EMPTY_BODY[filter])}</EmptyStateBody>
         </EmptyState>
       )
     }

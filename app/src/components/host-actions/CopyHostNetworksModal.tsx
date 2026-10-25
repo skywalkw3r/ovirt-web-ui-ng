@@ -86,10 +86,8 @@ export function CopyHostNetworksModal({ host, onClose }: { host: Host; onClose: 
     }
     if (candidates.length === 0) {
       return (
-        <EmptyState titleText="No other hosts in this cluster" headingLevel="h4" variant="sm">
-          <EmptyStateBody>
-            Networks can only be copied from another host in the same cluster.
-          </EmptyStateBody>
+        <EmptyState titleText={t('host.copyNetworks.empty.title')} headingLevel="h4" variant="sm">
+          <EmptyStateBody>{t('host.copyNetworks.empty.body')}</EmptyStateBody>
         </EmptyState>
       )
     }
@@ -99,17 +97,21 @@ export function CopyHostNetworksModal({ host, onClose }: { host: Host; onClose: 
           event.preventDefault()
         }}
       >
-        <FormGroup label="Source host" isRequired fieldId="copy-host-networks-source">
+        <FormGroup
+          label={t('host.copyNetworks.source')}
+          isRequired
+          fieldId="copy-host-networks-source"
+        >
           <FormSelect
             id="copy-host-networks-source"
-            aria-label="Source host"
+            aria-label={t('host.copyNetworks.source')}
             value={sourceId}
             onChange={(_event, value) => {
               setSourceId(value)
               copy.reset()
             }}
           >
-            <FormSelectOption value="" label="Select a host" isPlaceholder />
+            <FormSelectOption value="" label={t('migrate.host.select')} isPlaceholder />
             {candidates.map((candidate) => (
               <FormSelectOption
                 key={candidate.id}
@@ -120,10 +122,7 @@ export function CopyHostNetworksModal({ host, onClose }: { host: Host; onClose: 
           </FormSelect>
           <FormHelperText>
             <HelperText>
-              <HelperTextItem>
-                Hosts in the same cluster. Interfaces are paired by name order, so the source should
-                have the same interface layout as this host.
-              </HelperTextItem>
+              <HelperTextItem>{t('host.copyNetworks.source.help')}</HelperTextItem>
             </HelperText>
           </FormHelperText>
         </FormGroup>
@@ -140,30 +139,29 @@ export function CopyHostNetworksModal({ host, onClose }: { host: Host; onClose: 
       aria-describedby="copy-host-networks-body"
     >
       <ModalHeader
-        title={`Copy host networks to ${hostName}`}
+        title={t('host.copyNetworks.title', { name: hostName })}
         titleIconVariant="warning"
         labelId="copy-host-networks-title"
       />
       <ModalBody id="copy-host-networks-body">
         <Stack hasGutter>
-          <StackItem>
-            The network configuration of {hostName} will be replaced with the source host's. Network
-            attachments and bonds the source host does not have are removed from {hostName}, and the
-            result is saved on the host.
-          </StackItem>
+          <StackItem>{t('host.copyNetworks.body', { name: hostName })}</StackItem>
           <StackItem>{picker}</StackItem>
           {source !== undefined && nicShortfall && (
             <StackItem>
-              <Alert variant="warning" isInline title="Interface count mismatch">
-                {source.name ?? source.id} has {sourceCount} physical interfaces but {hostName} has{' '}
-                {destinationCount}. The engine requires this host to have at least as many (not
-                counting the management interface) and may reject the copy.
+              <Alert variant="warning" isInline title={t('host.copyNetworks.nicMismatch.title')}>
+                {t('host.copyNetworks.nicMismatch.body', {
+                  source: source.name ?? source.id,
+                  sourceCount: sourceCount ?? 0,
+                  name: hostName,
+                  count: destinationCount ?? 0,
+                })}
               </Alert>
             </StackItem>
           )}
           {copy.isError && (
             <StackItem>
-              <Alert variant="danger" isInline title="Could not copy host networks">
+              <Alert variant="danger" isInline title={t('host.copyNetworks.error.title')}>
                 {copy.error.message}
               </Alert>
             </StackItem>
@@ -180,7 +178,7 @@ export function CopyHostNetworksModal({ host, onClose }: { host: Host; onClose: 
             copy.mutate({ host, sourceHost: source }, { onSuccess: onClose })
           }}
         >
-          Copy networks
+          {t('host.copyNetworks.confirm')}
         </Button>
         <Button variant="link" onClick={onClose}>
           {t('common.action.cancel')}
