@@ -84,6 +84,25 @@ function findParameter(key: string, parameterId: string): MockNetworkFilterParam
 }
 
 export const vmRoutes: MockRoute[] = [
+  // GET /templates/{id}/watchdogs (TemplateWatchdogsService): read-only here;
+  // tpl-01 carries a watchdog so the New VM wizard seeds a non-default pick.
+  {
+    method: 'GET',
+    pattern: /^\/templates\/([^/]+)\/watchdogs$/,
+    handle: ([templateId]) =>
+      templateId === 'tpl-01'
+        ? {
+            watchdog: [
+              {
+                id: 'tpl-01-watchdog',
+                model: 'i6300esb',
+                action: 'reset',
+                template: { id: 'tpl-01' },
+              },
+            ],
+          }
+        : {},
+  },
   // GET /vms/{id}/watchdogs: the engine omits the "watchdog" key when empty.
   {
     method: 'GET',

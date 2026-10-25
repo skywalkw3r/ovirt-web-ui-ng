@@ -1,4 +1,12 @@
-import { Button, Modal, ModalBody, ModalFooter, ModalHeader } from '@patternfly/react-core'
+import {
+  Button,
+  HelperText,
+  HelperTextItem,
+  Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+} from '@patternfly/react-core'
 import { FormattedMessage } from 'react-intl'
 import { useT } from '../../i18n/useT'
 
@@ -7,15 +15,20 @@ import { useT } from '../../i18n/useT'
 // take effect after a restart. "Apply after restart" PUTs with ?next_run=true
 // (the engine stages the whole config for the next boot); "Apply now" does a
 // plain PUT — the engine hot-applies what it can and stages the rest itself.
+// A watchdog change is the exception to "Apply now": the engine only edits the
+// device table, so it lands at the next start either way, and the dialog says
+// so when the edit carries one.
 export function NextRunDialog({
   vmName,
   isSaving,
+  watchdogChanged = false,
   onApplyLater,
   onApplyNow,
   onCancel,
 }: {
   vmName: string
   isSaving: boolean
+  watchdogChanged?: boolean
   onApplyLater: () => void
   onApplyNow: () => void
   onCancel: () => void
@@ -32,6 +45,13 @@ export function NextRunDialog({
       <ModalHeader title={t('vm.edit.nextRun.title')} labelId="next-run-title" />
       <ModalBody id="next-run-body">
         <FormattedMessage id="vm.edit.nextRun.body" values={{ name: vmName }} />
+        {watchdogChanged && (
+          <HelperText style={{ marginBlockStart: 'var(--pf-t--global--spacer--md)' }}>
+            <HelperTextItem variant="warning">
+              The watchdog change takes effect at the next start of the VM, even with Apply now.
+            </HelperTextItem>
+          </HelperText>
+        )}
       </ModalBody>
       <ModalFooter>
         <Button variant="primary" onClick={onApplyLater} isLoading={isSaving} isDisabled={isSaving}>

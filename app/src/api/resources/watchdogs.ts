@@ -34,6 +34,21 @@ export async function listVmWatchdogs(vmId: string): Promise<Watchdog[]> {
   }
 }
 
+// The template's watchdog devices (ovirt-engine-api-model
+// services/TemplateWatchdogsService, same shape). A VM created from the
+// template inherits its devices, so the New VM wizard seeds from this list.
+export async function listTemplateWatchdogs(templateId: string): Promise<Watchdog[]> {
+  try {
+    const data = WatchdogListSchema.parse(
+      await request(`/templates/${encodeURIComponent(templateId)}/watchdogs`),
+    )
+    return data.watchdog ?? []
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) return []
+    throw error
+  }
+}
+
 // Add a watchdog. The response echoes the created device (with its id).
 export async function addVmWatchdog(vmId: string, spec: WatchdogSpec): Promise<Watchdog> {
   return WatchdogSchema.parse(
@@ -70,6 +85,31 @@ export type WatchdogChange =
   | { kind: 'add'; model: string; action: string }
   | { kind: 'update'; id: string; model: string; action: string }
   | { kind: 'remove'; id: string }
+
+// The operation that turns the current device (or none) into the desired one.
+// An empty desired model means "No watchdog". undefined when nothing moves.
+export function watchdogChangeFor(
+  current: { id: string; model?: string; action?: string } | undefined,
+  desired: WatchdogSpec,
+): WatchdogChange | undefined {
+  if (desired.model === '') {
+    return current ? { kind: 'remove', id: current.id } : undefined
+  }
+  if (!current) return { kind: 'add', model: desired.model, action: desired.action }
+  if (current.model !== desired.model || current.action !== desired.action) {
+    return { kind: 'update', id: current.id, model: desired.model, action: desired.action }
+  }
+  return undefined
+}
+
+// Bring a VM's watchdog to the desired state, reading what it has first. The
+// New VM wizard uses this after the VM POST: the new VM may already carry a
+// watchdog inherited from its template, so a blind add could 409.
+export async function reconcileVmWatchdog(vmId: string, desired: WatchdogSpec): Promise<void> {
+  const [current] = await listVmWatchdogs(vmId)
+  const change = watchdogChangeFor(current, desired)
+  if (change) await applyWatchdogChange(vmId, change)
+}
 
 export async function applyWatchdogChange(vmId: string, change: WatchdogChange): Promise<void> {
   switch (change.kind) {

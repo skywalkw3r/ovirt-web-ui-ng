@@ -36,10 +36,17 @@ import { useNavigate } from '@tanstack/react-router'
 import type { CloudInitNicSpec, NewVmSpec } from '../../api/resources/vms'
 import { useClusters, useTemplates } from '../../hooks/useCatalog'
 import { useCreateVm } from '../../hooks/useCreateVm'
+import { useReconcileVmWatchdog, useTemplateWatchdogs } from '../../hooks/useVmWatchdogs'
 import { useT } from '../../i18n/useT'
 import { formatBytes } from '../../lib/format'
 import { ConfirmModal } from '../ConfirmModal'
-import { isWindowsOsType } from '../edit-vm/editVmDraft'
+import {
+  DEFAULT_WATCHDOG_ACTION,
+  WATCHDOG_ACTION_OPTIONS,
+  WATCHDOG_COPY,
+  isWindowsOsType,
+  watchdogModelOptions,
+} from '../edit-vm/editVmDraft'
 import { FieldHelp } from '../forms/FieldHelp'
 
 const GiB = 1024 ** 3
@@ -150,6 +157,13 @@ export function CreateVmWizardModal({
   const [sysprepAdminPassword, setSysprepAdminPassword] = useState('')
   const [sysprepCustomScript, setSysprepCustomScript] = useState('')
   const [confirmingCancel, setConfirmingCancel] = useState(false)
+  // Watchdog (webadmin keeps it on the HA tab, which this wizard has no step
+  // for; it sits on Resources beside the other virtual hardware). '' = No
+  // watchdog. Seeded from the selected template's device until the user picks.
+  const [watchdogModel, setWatchdogModel] = useState('')
+  const [watchdogAction, setWatchdogAction] = useState(DEFAULT_WATCHDOG_ACTION)
+  const [watchdogTouched, setWatchdogTouched] = useState(false)
+  const reconcileWatchdog = useReconcileVmWatchdog()
 
   // Blank pinned first (the start-from-scratch path), the rest alphabetical.
   const sortedTemplates = useMemo(() => {
@@ -165,6 +179,31 @@ export function CreateVmWizardModal({
   // template surfaces sysprep, everything else cloud-init.
   const selectedTemplate = sortedTemplates.find((template) => template.name === templateName)
   const windows = isWindowsOsType(selectedTemplate?.os?.type)
+
+  // A VM inherits its template's devices, so the watchdog fields start from
+  // the template's (render-time seed per template, the EditVmModal idiom) and
+  // stop following template switches once the user picks for themselves.
+  const templateWatchdogs = useTemplateWatchdogs(selectedTemplate?.id)
+  const [watchdogSeededFor, setWatchdogSeededFor] = useState<string | null>(null)
+  if (
+    !watchdogTouched &&
+    templateWatchdogs.isSuccess &&
+    selectedTemplate !== undefined &&
+    watchdogSeededFor !== selectedTemplate.id
+  ) {
+    setWatchdogSeededFor(selectedTemplate.id)
+    const inherited = templateWatchdogs.data[0]
+    setWatchdogModel(inherited?.model ?? '')
+    setWatchdogAction(inherited?.action ?? DEFAULT_WATCHDOG_ACTION)
+  }
+  // the chosen cluster's architecture (else the template's) narrows the models
+  const architecture =
+    clusters.data?.find((cluster) => cluster.name === clusterName)?.cpu?.architecture ??
+    selectedTemplate?.cpu?.architecture
+  const watchdogModels = watchdogModelOptions(architecture, watchdogModel)
+  const watchdogActionLabel =
+    WATCHDOG_ACTION_OPTIONS.find((option) => option.value === watchdogAction)?.label ??
+    watchdogAction
 
   const updateNic = (index: number, patch: Partial<CloudInitNicSpec>) => {
     setNics((rows) => rows.map((nic, i) => (i === index ? { ...nic, ...patch } : nic)))
@@ -195,8 +234,10 @@ export function CreateVmWizardModal({
     sysprepAdminPassword !== '' ||
     sysprepCustomScript !== ''
 
+  const isCreating = create.isPending || reconcileWatchdog.isPending
+
   const requestClose = () => {
-    if (create.isPending) return
+    if (isCreating) return
     if (isDirty) {
       setConfirmingCancel(true)
     } else {
@@ -223,7 +264,7 @@ export function CreateVmWizardModal({
   }
 
   const submit = () => {
-    if (!templateName || !generalStepValid || !memoryValid || create.isPending) return
+    if (!templateName || !generalStepValid || !memoryValid || isCreating) return
     const namedNics = nics.filter((nic) => nic.name.trim() !== '')
     // the switch alone doesn't warrant an initialization block — only send one
     // when a field actually carries a value. The template OS picks the branch.
@@ -266,10 +307,25 @@ export function CreateVmWizardModal({
             }
           : undefined,
     }
+    // The watchdog is a subcollection device, set once the VM exists. Only
+    // touched when there is something to do: a model was picked, or the
+    // template carries a device the new VM inherited (picking "No watchdog"
+    // then removes it).
+    const reconcile =
+      watchdogModel !== '' ||
+      (templateWatchdogs.data !== undefined && templateWatchdogs.data.length > 0)
+    const desiredWatchdog = { model: watchdogModel, action: watchdogAction }
     // useCreateVm toasts both outcomes; on failure the wizard stays open on
     // Review so the spec can be fixed (e.g. a duplicate name)
     create.mutate(spec, {
-      onSuccess: (vm) => {
+      onSuccess: async (vm) => {
+        if (reconcile) {
+          // useReconcileVmWatchdog toasts a failure; the VM is never rolled
+          // back, so the wizard still closes onto it
+          await reconcileWatchdog
+            .mutateAsync({ vmId: vm.id, vmName: vm.name, desired: desiredWatchdog })
+            .catch(() => undefined)
+        }
         onClose()
         void navigate({ to: '/vms/$vmId', params: { vmId: vm.id } })
       },
@@ -498,6 +554,54 @@ export function CreateVmWizardModal({
               <HelperText>
                 <HelperTextItem>{t('vm.create.vcpu.note')}</HelperTextItem>
               </HelperText>
+              <FormGroup
+                label={WATCHDOG_COPY.model}
+                fieldId="new-vm-watchdog-model"
+                labelHelp={
+                  <FieldHelp field={WATCHDOG_COPY.model} content={WATCHDOG_COPY.modelHelp} />
+                }
+              >
+                <FormSelect
+                  id="new-vm-watchdog-model"
+                  aria-label={WATCHDOG_COPY.model}
+                  value={watchdogModel}
+                  onChange={(_event, value) => {
+                    setWatchdogModel(value)
+                    setWatchdogTouched(true)
+                  }}
+                >
+                  <FormSelectOption value="" label={WATCHDOG_COPY.none} />
+                  {watchdogModels.map((model) => (
+                    <FormSelectOption key={model} value={model} label={model} />
+                  ))}
+                </FormSelect>
+              </FormGroup>
+              <FormGroup
+                label={WATCHDOG_COPY.action}
+                fieldId="new-vm-watchdog-action"
+                labelHelp={
+                  <FieldHelp field={WATCHDOG_COPY.action} content={WATCHDOG_COPY.actionHelp} />
+                }
+              >
+                <FormSelect
+                  id="new-vm-watchdog-action"
+                  aria-label={WATCHDOG_COPY.action}
+                  value={watchdogAction}
+                  isDisabled={watchdogModel === ''}
+                  onChange={(_event, value) => {
+                    setWatchdogAction(value)
+                    setWatchdogTouched(true)
+                  }}
+                >
+                  {WATCHDOG_ACTION_OPTIONS.map((option) => (
+                    <FormSelectOption
+                      key={option.value}
+                      value={option.value}
+                      label={option.label}
+                    />
+                  ))}
+                </FormSelect>
+              </FormGroup>
             </Form>
           </WizardStep>
 
@@ -772,9 +876,8 @@ export function CreateVmWizardModal({
             id="new-vm-step-review"
             footer={{
               nextButtonText: t('vm.create.title'),
-              isNextDisabled:
-                !templateStepValid || !generalStepValid || !memoryValid || create.isPending,
-              nextButtonProps: { isLoading: create.isPending },
+              isNextDisabled: !templateStepValid || !generalStepValid || !memoryValid || isCreating,
+              nextButtonProps: { isLoading: isCreating },
             }}
           >
             <DescriptionList isHorizontal>
@@ -800,6 +903,18 @@ export function CreateVmWizardModal({
                   {memoryValid ? formatBytes(memoryGib * GiB) : '—'}
                 </DescriptionListDescription>
               </DescriptionListGroup>
+              <DescriptionListGroup>
+                <DescriptionListTerm>{WATCHDOG_COPY.model}</DescriptionListTerm>
+                <DescriptionListDescription>
+                  {watchdogModel || WATCHDOG_COPY.none}
+                </DescriptionListDescription>
+              </DescriptionListGroup>
+              {watchdogModel !== '' && (
+                <DescriptionListGroup>
+                  <DescriptionListTerm>{WATCHDOG_COPY.action}</DescriptionListTerm>
+                  <DescriptionListDescription>{watchdogActionLabel}</DescriptionListDescription>
+                </DescriptionListGroup>
+              )}
               <DescriptionListGroup>
                 <DescriptionListTerm>
                   {windows

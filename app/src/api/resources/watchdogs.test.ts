@@ -2,9 +2,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   addVmWatchdog,
   applyWatchdogChange,
+  listTemplateWatchdogs,
   listVmWatchdogs,
+  reconcileVmWatchdog,
   removeVmWatchdog,
   updateVmWatchdog,
+  watchdogChangeFor,
 } from './watchdogs'
 import { ApiError } from '../transport'
 import { clearSessionToken, setSessionToken } from '../session'
@@ -116,6 +119,55 @@ describe('watchdog writes', () => {
     expect(call(fetchMock)).toMatchObject({
       url: '/ovirt-engine/api/vms/vm-01/watchdogs/w1',
       method: 'DELETE',
+    })
+  })
+})
+
+describe('template watchdogs + reconcile', () => {
+  it('GETs /templates/{id}/watchdogs, 404 as empty', async () => {
+    const fetchMock = mockFetch(200, { watchdog: [{ id: 't1', model: 'i6300esb' }] })
+    await expect(listTemplateWatchdogs('tpl-01')).resolves.toHaveLength(1)
+    expect(call(fetchMock).url).toBe('/ovirt-engine/api/templates/tpl-01/watchdogs')
+    mockFetch(404, { fault: { reason: 'Not Found' } })
+    await expect(listTemplateWatchdogs('tpl-01')).resolves.toEqual([])
+  })
+
+  it('watchdogChangeFor maps current vs desired to one operation', () => {
+    const current = { id: 'w1', model: 'i6300esb', action: 'reset' }
+    expect(watchdogChangeFor(undefined, { model: '', action: 'none' })).toBeUndefined()
+    expect(watchdogChangeFor(current, { model: 'i6300esb', action: 'reset' })).toBeUndefined()
+    expect(watchdogChangeFor(current, { model: '', action: 'none' })).toEqual({
+      kind: 'remove',
+      id: 'w1',
+    })
+    expect(watchdogChangeFor(undefined, { model: 'i6300esb', action: 'none' })).toEqual({
+      kind: 'add',
+      model: 'i6300esb',
+      action: 'none',
+    })
+    expect(watchdogChangeFor(current, { model: 'i6300esb', action: 'dump' })).toMatchObject({
+      kind: 'update',
+      id: 'w1',
+    })
+  })
+
+  it('reconcile reads first, then updates an inherited device instead of adding', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: () =>
+          Promise.resolve({ watchdog: [{ id: 'w1', model: 'i6300esb', action: 'reset' }] }),
+      })
+      .mockResolvedValueOnce({ ok: true, status: 200, json: () => Promise.resolve({ id: 'w1' }) })
+    vi.stubGlobal('fetch', fetchMock)
+    await reconcileVmWatchdog('vm-01', { model: 'i6300esb', action: 'pause' })
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    expect(call(fetchMock, 1)).toEqual({
+      url: '/ovirt-engine/api/vms/vm-01/watchdogs/w1',
+      method: 'PUT',
+      body: { model: 'i6300esb', action: 'pause' },
     })
   })
 })

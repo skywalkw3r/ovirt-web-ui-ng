@@ -18,6 +18,7 @@ import { FieldHelp } from '../forms/FieldHelp'
 import {
   STORAGE_ERROR_RESUME_OPTIONS,
   WATCHDOG_ACTION_OPTIONS,
+  WATCHDOG_COPY,
   watchdogModelOptions,
   type EditVmDraft,
 } from './editVmDraft'
@@ -171,26 +172,21 @@ export function HighAvailabilitySection({
           Action"). Saved through the watchdogs subcollection after the VM PUT;
           a running VM picks it up on its next start. */}
       <FormGroup
-        label="Watchdog model"
+        label={WATCHDOG_COPY.model}
         fieldId="edit-vm-watchdog-model"
-        labelHelp={
-          <FieldHelp
-            field="Watchdog model"
-            content="A virtual watchdog card the guest must keep resetting. If the guest hangs and stops resetting it, the watchdog action runs. Requires a watchdog daemon in the guest. Applied on the next start of a running VM."
-          />
-        }
+        labelHelp={<FieldHelp field={WATCHDOG_COPY.model} content={WATCHDOG_COPY.modelHelp} />}
       >
         {watchdogs.isPending && !watchdogReady ? (
           <Skeleton height="2.25rem" screenreaderText="Loading watchdog" />
         ) : (
           <FormSelect
             id="edit-vm-watchdog-model"
-            aria-label="Watchdog model"
+            aria-label={WATCHDOG_COPY.model}
             value={draft.watchdogModel}
             isDisabled={!watchdogReady}
             onChange={(_event, value) => set('watchdogModel', value)}
           >
-            <FormSelectOption value="" label="No watchdog" />
+            <FormSelectOption value="" label={WATCHDOG_COPY.none} />
             {modelOptions.map((model) => (
               <FormSelectOption key={model} value={model} label={model} />
             ))}
@@ -211,18 +207,13 @@ export function HighAvailabilitySection({
       </FormGroup>
 
       <FormGroup
-        label="Watchdog action"
+        label={WATCHDOG_COPY.action}
         fieldId="edit-vm-watchdog-action"
-        labelHelp={
-          <FieldHelp
-            field="Watchdog action"
-            content="What happens when the watchdog fires: None only logs an event, Reset reboots the VM, Power off stops it, Pause pauses it, and Dump writes a memory dump on the host."
-          />
-        }
+        labelHelp={<FieldHelp field={WATCHDOG_COPY.action} content={WATCHDOG_COPY.actionHelp} />}
       >
         <FormSelect
           id="edit-vm-watchdog-action"
-          aria-label="Watchdog action"
+          aria-label={WATCHDOG_COPY.action}
           value={draft.watchdogAction}
           // the action only means something once a model is chosen
           isDisabled={!watchdogReady || draft.watchdogModel === ''}

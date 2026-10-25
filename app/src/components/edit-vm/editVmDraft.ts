@@ -1,5 +1,5 @@
 import { vmLargeIconId } from '../../api/resources/icons'
-import type { WatchdogChange } from '../../api/resources/watchdogs'
+import { watchdogChangeFor, type WatchdogChange } from '../../api/resources/watchdogs'
 import type { Vm } from '../../api/schemas/vm'
 import type { Watchdog } from '../../api/schemas/watchdog'
 import type { MessageId } from '../../i18n/messages/en'
@@ -399,25 +399,61 @@ export function buildWatchdogChange(
   baseline: EditVmDraft,
 ): WatchdogChange | undefined {
   if (!baseline.watchdogLoaded || !draft.watchdogLoaded) return undefined
-  const hadDevice = baseline.watchdogId !== ''
-  if (draft.watchdogModel === '') {
-    return hadDevice ? { kind: 'remove', id: baseline.watchdogId } : undefined
+  const current =
+    baseline.watchdogId !== ''
+      ? {
+          id: baseline.watchdogId,
+          model: baseline.watchdogModel,
+          action: baseline.watchdogAction,
+        }
+      : undefined
+  return watchdogChangeFor(current, { model: draft.watchdogModel, action: draft.watchdogAction })
+}
+
+// Keys vmFieldsChanged ignores: the watchdog (its own subcollection) and the
+// CD tray id, which the Boot section seeds into the draft alone on open; a
+// real CD pick is caught by cdTouched instead.
+const NON_VM_DRAFT_KEYS: ReadonlySet<keyof EditVmDraft> = new Set([
+  'watchdogLoaded',
+  'watchdogId',
+  'watchdogModel',
+  'watchdogAction',
+  'attachedCdId',
+])
+
+// Did anything OTHER than the watchdog move? When not, a save that only
+// carries a watchdog change skips the vm PUT entirely (nothing to send), which
+// is also what makes a watchdog-only retry after a partial failure cheap.
+export function vmFieldsChanged(draft: EditVmDraft, baseline: EditVmDraft): boolean {
+  return (Object.keys(draft) as (keyof EditVmDraft)[]).some(
+    (key) => !NON_VM_DRAFT_KEYS.has(key) && changed(draft[key], baseline[key]),
+  )
+}
+
+// The staging fields a successful vm save consumes.
+export const SPENT_STAGING: Pick<
+  EditVmDraft,
+  'cdTouched' | 'iconUploadData' | 'iconUploadMediaType'
+> = { cdTouched: false, iconUploadData: '', iconUploadMediaType: '' }
+
+// The baseline after a save whose vm PUT (and CD change) landed but whose
+// watchdog change failed: everything the user edited is now saved EXCEPT the
+// watchdog, which keeps the old baseline's device. The one-shot staging fields
+// (touched CD picker, a pending icon upload) are spent, so they reset; the
+// caller applies the same reset to the draft. A retry then sends only the
+// watchdog change.
+export function baselineAfterWatchdogFailure(
+  draft: EditVmDraft,
+  baseline: EditVmDraft,
+): EditVmDraft {
+  return {
+    ...draft,
+    ...SPENT_STAGING,
+    watchdogLoaded: baseline.watchdogLoaded,
+    watchdogId: baseline.watchdogId,
+    watchdogModel: baseline.watchdogModel,
+    watchdogAction: baseline.watchdogAction,
   }
-  if (!hadDevice) {
-    return { kind: 'add', model: draft.watchdogModel, action: draft.watchdogAction }
-  }
-  if (
-    draft.watchdogModel !== baseline.watchdogModel ||
-    draft.watchdogAction !== baseline.watchdogAction
-  ) {
-    return {
-      kind: 'update',
-      id: baseline.watchdogId,
-      model: draft.watchdogModel,
-      action: draft.watchdogAction,
-    }
-  }
-  return undefined
 }
 
 // Structural inequality via JSON — the draft's new-section values are plain
@@ -1165,6 +1201,19 @@ export function watchdogModelOptions(architecture: string | undefined, current: 
   const models = matching.length > 0 ? matching : WATCHDOG_MODELS.map((model) => model.value)
   return current !== '' && !models.includes(current) ? [current, ...models] : models
 }
+
+// Watchdog field copy shared by the Edit VM HA tab and the New VM wizard so
+// both read the same. i18n: plain English pending the catalog pass (see the
+// wave handoff); one place to convert.
+export const WATCHDOG_COPY = {
+  model: 'Watchdog model',
+  action: 'Watchdog action',
+  none: 'No watchdog',
+  modelHelp:
+    'A virtual watchdog card the guest must keep resetting. If the guest hangs and stops resetting it, the watchdog action runs. Requires a watchdog daemon in the guest. Applied on the next start of a running VM.',
+  actionHelp:
+    'What happens when the watchdog fires: None only logs an event, Reset reboots the VM, Power off stops it, Pause pauses it, and Dump writes a memory dump on the host.',
+} as const
 
 // Watchdog actions (api-model types/WatchdogAction), in webadmin's order.
 // i18n: plain English pending the catalog pass (see the wave handoff).
