@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   approveHost,
+  copyHostNetworks,
   fenceHost,
   forceSelectSpm,
   hostAction,
@@ -152,6 +153,22 @@ export function canCheckForUpgrade(status: string | undefined): boolean {
 // UpgradeHostCommand, which auto-maintenances an Up host.
 export function canUpgrade(host: Host): boolean {
   return host.update_available === true && (host.status === 'up' || host.status === 'maintenance')
+}
+
+// Copy Host Networks (POST /hosts/{id}/copyhostnetworks) runs an internal
+// HostSetupNetworks on the destination, whose HostValidator only accepts Up,
+// Maintenance or NonOperational hosts (ovirt-engine
+// bll/network/host/HostValidator.LEGAL_STATUSES). The other engine-side
+// preconditions (same cluster, enough NICs) depend on the chosen source and are
+// checked in CopyHostNetworksModal; the engine stays the final arbiter.
+const COPY_NETWORKS_STATES = new Set(['up', 'maintenance', 'non_operational'])
+
+export function canCopyHostNetworks(host: Host): boolean {
+  return (
+    host.status !== undefined &&
+    COPY_NETWORKS_STATES.has(host.status) &&
+    (host.cluster?.id ?? '') !== ''
+  )
 }
 
 // Empty-body lifecycle verbs (maintenance/activate/refresh/enroll). Shared by
@@ -346,6 +363,34 @@ export function useUpgradeHost() {
       upgradeHost(host.id, spec ?? {}),
     onSuccess: (_data, { host }) => {
       notify({ title: t('host.upgrade.success', { name: host.name }), variant: 'success' })
+    },
+    onError: (error) => {
+      notify({ title: error.message, variant: 'danger' })
+    },
+    onSettled: (_data, _error, { host }) => {
+      void queryClient.invalidateQueries({ queryKey: hostKeys.all })
+      void queryClient.invalidateQueries({ queryKey: hostKeys.detail(host.id) })
+    },
+  })
+}
+
+// Copy Host Networks from `sourceHost` onto `host`. The engine replaces the
+// destination's attachments and bonds and commits them, so every per-host slice
+// (NICs, attachments, NIC details, LLDP) refetches via the ['host', id] prefix.
+// The engine's fault detail (wrong cluster, NIC count mismatch, illegal status)
+// surfaces verbatim in the error toast; the modal shows it inline as well.
+export function useCopyHostNetworks() {
+  const queryClient = useQueryClient()
+  const { notify } = useNotify()
+
+  return useMutation({
+    mutationFn: ({ host, sourceHost }: { host: Host; sourceHost: Host }) =>
+      copyHostNetworks(host.id, sourceHost.id),
+    onSuccess: (_data, { host, sourceHost }) => {
+      notify({
+        title: `Copied network configuration from ${sourceHost.name ?? sourceHost.id} to ${host.name ?? host.id}`,
+        variant: 'success',
+      })
     },
     onError: (error) => {
       notify({ title: error.message, variant: 'danger' })

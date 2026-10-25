@@ -5,6 +5,7 @@ import {
   canApprove,
   canCheckForUpgrade,
   canConfirmRebooted,
+  canCopyHostNetworks,
   canEnterMaintenance,
   canSelectSpm,
   canSshManage,
@@ -293,5 +294,26 @@ describe('host-ops batch i18n ids', () => {
       const rendered = intl.formatMessage({ id }, { name: 'node-07' })
       expect(rendered.length, id).toBeGreaterThan(0)
     }
+  })
+})
+
+// Copy host networks runs an internal HostSetupNetworks, whose HostValidator
+// accepts only Up / Maintenance / NonOperational; it also needs a cluster to
+// pick a same-cluster source from.
+describe('canCopyHostNetworks', () => {
+  it('offers it on the setup-networks legal statuses with a cluster link', () => {
+    for (const status of ['up', 'maintenance', 'non_operational']) {
+      expect(canCopyHostNetworks(host({ status, cluster: { id: 'c1' } })), status).toBe(true)
+    }
+  })
+
+  it('hides it on other statuses or without a cluster', () => {
+    for (const status of ['installing', 'non_responsive', 'down', 'reboot', undefined]) {
+      expect(canCopyHostNetworks(host({ status, cluster: { id: 'c1' } })), String(status)).toBe(
+        false,
+      )
+    }
+    expect(canCopyHostNetworks(host({ status: 'up' }))).toBe(false)
+    expect(canCopyHostNetworks(host({ status: 'up', cluster: { id: '' } }))).toBe(false)
   })
 })

@@ -32,6 +32,10 @@ export const HostNicSchema = z.looseObject({
   // members (a common misread the engine's model bears out). Bond membership
   // is read from a master's bonding.slaves above; see pickableNics.
   base_interface: z.string().optional(),
+  // present on a VLAN device (api-model types/HostNic.java `Vlan vlan()`); the
+  // id is a JSON string on the live engine. Copy Host Networks reads it to
+  // count the physical (non-bond, non-VLAN) interfaces the engine matches.
+  vlan: z.looseObject({ id: z.coerce.number().optional() }).optional(),
 })
 
 // JSON quirk: the "host_nic" key is omitted when the list is empty.
@@ -40,3 +44,11 @@ export const HostNicListSchema = z.looseObject({
 })
 
 export type HostNic = z.infer<typeof HostNicSchema>
+
+// A physical interface: neither a bond master nor a VLAN device. Mirrors the
+// engine's InterfaceConfigurationMapper.noBondAndVlanPredicate, which is what
+// CopyHostNetworksCommand counts (minus the management interface) when it
+// requires the destination to have at least as many NICs as the source.
+export function isPhysicalHostNic(nic: HostNic): boolean {
+  return nic.bonding === undefined && nic.vlan === undefined
+}

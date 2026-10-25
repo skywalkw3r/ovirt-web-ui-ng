@@ -3,6 +3,7 @@ import {
   addVfAllowedLabel,
   addVfAllowedNetwork,
   approveHost,
+  copyHostNetworks,
   fenceHost,
   forceSelectSpm,
   getHost,
@@ -10,6 +11,7 @@ import {
   hostUpgradeCheck,
   listHostNetworkAttachments,
   listHostNicDetails,
+  listHostNicLldp,
   listHostsUsage,
   listHostsWithStats,
   listVfAllowedLabels,
@@ -692,5 +694,81 @@ describe('VF allowed networks', () => {
       '/ovirt-engine/api/hosts/host-01/nics/nic-sriov/virtualfunctionallowednetworks/net-05',
     )
     expect(delInit.method).toBe('DELETE')
+  })
+})
+
+describe('copyHostNetworks', () => {
+  beforeEach(() => setSessionToken('tok-123'))
+  afterEach(() => {
+    clearSessionToken()
+    vi.unstubAllGlobals()
+  })
+
+  it('POSTs the source host id to /hosts/{id}/copyhostnetworks', async () => {
+    const fetchMock = mockFetch(200, { status: 'complete' })
+    await expect(copyHostNetworks('host-02', 'host-01')).resolves.toBeUndefined()
+
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit]
+    expect(url).toBe('/ovirt-engine/api/hosts/host-02/copyhostnetworks')
+    expect(init.method).toBe('POST')
+    expect(JSON.parse(init.body as string)).toEqual({ source_host: { id: 'host-01' } })
+  })
+
+  it('surfaces the engine fault detail verbatim', async () => {
+    mockFetch(409, {
+      fault: {
+        reason: 'Operation Failed',
+        detail: '[Cannot copy networks to Host. Hosts are not in the same cluster.]',
+      },
+    })
+    const error = await copyHostNetworks('host-02', 'gluster-01').catch((e: unknown) => e)
+    expect(error).toBeInstanceOf(ApiError)
+    expect(error).toMatchObject({
+      status: 409,
+      message: '[Cannot copy networks to Host. Hosts are not in the same cluster.]',
+    })
+  })
+})
+
+describe('listHostNicLldp', () => {
+  beforeEach(() => setSessionToken('tok-123'))
+  afterEach(() => {
+    clearSessionToken()
+    vi.unstubAllGlobals()
+  })
+
+  it('reads the NIC subcollection and parses the elements', async () => {
+    const fetchMock = mockFetch(200, {
+      link_layer_discovery_protocol_element: [
+        {
+          name: 'Port Description',
+          type: '4',
+          properties: { property: [{ name: 'port description', value: 'Port 1001' }] },
+        },
+      ],
+    })
+    const elements = await listHostNicLldp('host-01', 'nic-1')
+    const [url] = fetchMock.mock.calls[0] as [string, RequestInit]
+    expect(url).toBe(
+      '/ovirt-engine/api/hosts/host-01/nics/nic-1/linklayerdiscoveryprotocolelements',
+    )
+    expect(elements).toHaveLength(1)
+    expect(elements[0]).toMatchObject({ name: 'Port Description', type: 4 })
+  })
+
+  it('maps the empty-list quirk and a 404 to an empty list', async () => {
+    mockFetch(200, {})
+    await expect(listHostNicLldp('host-01', 'nic-1')).resolves.toEqual([])
+    vi.unstubAllGlobals()
+    mockFetch(404, { fault: { reason: 'Not Found', detail: 'no such collection' } })
+    await expect(listHostNicLldp('host-01', 'nic-1')).resolves.toEqual([])
+  })
+
+  it('propagates other faults (e.g. VDSM unreachable)', async () => {
+    mockFetch(409, { fault: { reason: 'Operation Failed', detail: 'Host is not responding' } })
+    await expect(listHostNicLldp('host-01', 'nic-1')).rejects.toMatchObject({
+      status: 409,
+      message: 'Host is not responding',
+    })
   })
 })

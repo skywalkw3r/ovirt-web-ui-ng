@@ -47,6 +47,7 @@ import { useClusterNetworks } from '../../hooks/useClusterDetail'
 import { useHostNetworkAttachments, useHostNics } from '../../hooks/useHostDetail'
 import { useSetupHostNetworks } from '../../hooks/useHostMutations'
 import { statusText } from '../../lib/format'
+import { NicLldpPopoverButton } from './NicLldp'
 import { SriovVfModal } from './SriovVfModal'
 import {
   BOND_MODES,
@@ -654,9 +655,11 @@ function NicLabelsEditor({
 }
 
 // One card per physical NIC (bond members are folded into their bond and not
-// shown): identity line, an SR-IOV editor entry for SR-IOV NICs, the networks
-// attached to it, an attach picker, and its network labels.
+// shown): identity line, an LLDP info popover, an SR-IOV editor entry for
+// SR-IOV NICs, the networks attached to it, an attach picker, and its network
+// labels.
 function NicCard({
+  hostId,
   nic,
   draft,
   targetNames,
@@ -669,6 +672,7 @@ function NicCard({
   onRemoveLabel,
   onOpenSriov,
 }: {
+  hostId: string
   nic: HostNic
   draft: SetupNetworksDraft
   targetNames: string[]
@@ -700,6 +704,9 @@ function NicCard({
                 <StatusBadge color={nic.status?.toLowerCase() === 'up' ? 'green' : 'grey'}>
                   {statusText(nic.status ?? 'unknown')}
                 </StatusBadge>
+              </FlexItem>
+              <FlexItem>
+                <NicLldpPopoverButton hostId={hostId} nicId={nic.id} nicName={nicName} />
               </FlexItem>
               {sriov && (
                 <FlexItem align={{ default: 'alignRight' }}>
@@ -746,6 +753,7 @@ function NicCard({
 // down to a two-member floor), a Break action, then the same attachment UI as
 // a NIC card. Members carry no attachments of their own (folded onto the bond).
 function BondCard({
+  hostId,
   bond,
   nics,
   freeForBond,
@@ -759,6 +767,7 @@ function BondCard({
   onRemoveMember,
   onBreak,
 }: {
+  hostId: string
   bond: BondDraft
   nics: HostNic[]
   freeForBond: HostNic[]
@@ -836,6 +845,9 @@ function BondCard({
                   >
                     {member.name}
                   </Label>
+                  {/* LLDP is reported per physical port, so each member gets
+                      its own trigger (the bond itself has none) */}
+                  <NicLldpPopoverButton hostId={hostId} nicId={member.id} nicName={member.name} />
                 </FlexItem>
               ))}
             </Flex>
@@ -1213,6 +1225,7 @@ export function SetupNetworksModal({
               {draft.bonds.map((bond) => (
                 <StackItem key={bond.name}>
                   <BondCard
+                    hostId={hostId}
                     bond={bond}
                     nics={allNics}
                     freeForBond={free}
@@ -1238,6 +1251,7 @@ export function SetupNetworksModal({
               {free.map((nic) => (
                 <StackItem key={nic.id}>
                   <NicCard
+                    hostId={hostId}
                     nic={nic}
                     draft={draft}
                     targetNames={targetNames}

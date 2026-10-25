@@ -21,6 +21,7 @@ import {
   canApprove,
   canCheckForUpgrade,
   canConfirmRebooted,
+  canCopyHostNetworks,
   canEnrollCertificate,
   canEnterMaintenance,
   canFence,
@@ -43,6 +44,7 @@ import { ContextMenu, type ContextMenuPosition } from '../context-menu/ContextMe
 import { ReinstallHostModal } from '../host-form/ReinstallHostModal'
 import { AssignTagsModal } from '../tags/AssignTagsModal'
 import { CreateVmWizardModal } from '../vm-create/CreateVmWizard'
+import { CopyHostNetworksModal } from './CopyHostNetworksModal'
 import { DiscoverIscsiModal } from './DiscoverIscsiModal'
 
 // Destructive/irreversible-enough actions confirm first (docs/COMPONENTS.md);
@@ -97,6 +99,7 @@ export function HostActionsMenu({
   const [assigningTags, setAssigningTags] = useState(false)
   const [discoveringIscsi, setDiscoveringIscsi] = useState(false)
   const [addingVm, setAddingVm] = useState(false)
+  const [copyingNetworks, setCopyingNetworks] = useState(false)
   const action = useHostAction()
   const fence = useFenceHost()
   const manualFence = useConfirmHostRebooted()
@@ -125,6 +128,10 @@ export function HostActionsMenu({
   // Discover iSCSI is a host-scoped diagnostic; the engine only runs discovery
   // from an Up host and 409s otherwise, so the item shows only for Up hosts.
   const showDiscoverIscsi = host.status === 'up'
+  // Copy host networks overwrites this host's network config from a same-
+  // cluster peer; gated on the statuses the engine's setup-networks validator
+  // accepts (the source/NIC-count checks happen inside the modal).
+  const showCopyNetworks = canCopyHostNetworks(host)
 
   // Assign tags applies in every host state, so the kebab always offers at
   // least it — no all-hidden "disable the toggle" branch is needed anymore.
@@ -143,7 +150,12 @@ export function HostActionsMenu({
   // toast from useMutation callbacks, which are lost if this unmounts before
   // the response lands.
   const modalActive =
-    confirm !== null || reinstalling || assigningTags || discoveringIscsi || addingVm
+    confirm !== null ||
+    reinstalling ||
+    assigningTags ||
+    discoveringIscsi ||
+    addingVm ||
+    copyingNetworks
   const onContextClose = contextMenu?.onClose
   useEffect(() => {
     if (!onContextClose || isOpen || modalActive || pending) return
@@ -330,6 +342,16 @@ export function HostActionsMenu({
           {t('host.action.discoverIscsi')}
         </DropdownItem>
       )}
+      {showCopyNetworks && (
+        <DropdownItem
+          onClick={() => {
+            setIsOpen(false)
+            setCopyingNetworks(true)
+          }}
+        >
+          Copy host networks
+        </DropdownItem>
+      )}
 
       {(showCheckUpgrade || showUpgrade || showReinstall || showEnroll) && (
         <Divider component="li" />
@@ -500,6 +522,11 @@ export function HostActionsMenu({
       {/* Mounted only while open so a typed CHAP password never lingers. */}
       {discoveringIscsi && (
         <DiscoverIscsiModal host={host} onClose={() => setDiscoveringIscsi(false)} />
+      )}
+
+      {/* Mounted only while open so each opening starts with no source picked. */}
+      {copyingNetworks && (
+        <CopyHostNetworksModal host={host} onClose={() => setCopyingNetworks(false)} />
       )}
 
       {/* Remounted per open (like every modal here) so a cancelled wizard
