@@ -6,7 +6,8 @@ import {
   buildLargeIcon,
   buildRngDevice,
   buildSerialNumber,
-  baselineAfterWatchdogFailure,
+  baselineAfterVmSave,
+  baselineWithWatchdog,
   buildWatchdogChange,
   deriveMemoryOnCommit,
   draftToPayload,
@@ -1170,16 +1171,31 @@ describe('partial-save helpers', () => {
     ...watchdogDraftFields([{ id: 'w1', model: 'i6300esb', action: 'reset' }]),
   }
 
-  it('vmFieldsChanged ignores the watchdog and the seeded CD tray id', () => {
+  it('vmFieldsChanged ignores the watchdog and the CD (their own subcollections)', () => {
     expect(vmFieldsChanged(baseline, baseline)).toBe(false)
     expect(vmFieldsChanged({ ...baseline, watchdogAction: 'dump' }, baseline)).toBe(false)
     // the Boot section seeds the tray id into the draft alone on open
     expect(vmFieldsChanged({ ...baseline, attachedCdId: 'iso-1' }, baseline)).toBe(false)
-    expect(vmFieldsChanged({ ...baseline, cdTouched: true }, baseline)).toBe(true)
+    expect(vmFieldsChanged({ ...baseline, cdTouched: true }, baseline)).toBe(false)
     expect(vmFieldsChanged({ ...baseline, name: 'renamed' }, baseline)).toBe(true)
   })
 
-  it('re-baselines to the saved draft except the failed watchdog change', () => {
+  it('baselineWithWatchdog records the device the engine now holds', () => {
+    const added = baselineWithWatchdog(
+      { ...baseline, ...watchdogDraftFields([]) },
+      { id: 'w9', model: 'i6300esb', action: 'pause' },
+    )
+    expect(added).toMatchObject({ watchdogId: 'w9', watchdogAction: 'pause' })
+    expect(
+      buildWatchdogChange({ ...added, watchdogId: '', watchdogAction: 'pause' }, added),
+    ).toBeUndefined()
+    expect(baselineWithWatchdog(baseline, undefined)).toMatchObject({
+      watchdogId: '',
+      watchdogModel: '',
+    })
+  })
+
+  it('baselineAfterVmSave saves the vm fields but leaves the CD and watchdog to their steps', () => {
     const draft = {
       ...baseline,
       name: 'renamed',
@@ -1189,19 +1205,20 @@ describe('partial-save helpers', () => {
       iconUploadMediaType: 'image/png',
       watchdogModel: '',
     }
-    const next = baselineAfterWatchdogFailure(draft, baseline)
+    const next = baselineAfterVmSave(draft, baseline)
     expect(next).toMatchObject({
       name: 'renamed',
-      attachedCdId: 'iso-1',
       cdTouched: false,
+      attachedCdId: '',
       iconUploadData: '',
       iconUploadMediaType: '',
       watchdogId: 'w1',
       watchdogModel: 'i6300esb',
     })
-    // the retry carries only the watchdog change
-    const retryDraft = { ...draft, cdTouched: false, iconUploadData: '', iconUploadMediaType: '' }
+    // a retry carries no vm field, but still the CD pick and the watchdog
+    const retryDraft = { ...draft, iconUploadData: '', iconUploadMediaType: '' }
     expect(vmFieldsChanged(retryDraft, next)).toBe(false)
+    expect(buildCdromChange(retryDraft)).toBe('iso-1')
     expect(buildWatchdogChange(retryDraft, next)).toEqual({ kind: 'remove', id: 'w1' })
   })
 })

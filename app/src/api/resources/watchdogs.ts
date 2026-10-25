@@ -111,16 +111,21 @@ export async function reconcileVmWatchdog(vmId: string, desired: WatchdogSpec): 
   if (change) await applyWatchdogChange(vmId, change)
 }
 
-export async function applyWatchdogChange(vmId: string, change: WatchdogChange): Promise<void> {
+// Returns the device as it stands afterwards (undefined once removed), so a
+// caller can re-baseline on it: the add echoes the created device with its id;
+// an update keeps its id and takes the sent model/action.
+export async function applyWatchdogChange(
+  vmId: string,
+  change: WatchdogChange,
+): Promise<Watchdog | undefined> {
   switch (change.kind) {
     case 'add':
-      await addVmWatchdog(vmId, { model: change.model, action: change.action })
-      return
+      return addVmWatchdog(vmId, { model: change.model, action: change.action })
     case 'update':
       await updateVmWatchdog(vmId, change.id, { model: change.model, action: change.action })
-      return
+      return { id: change.id, model: change.model, action: change.action }
     case 'remove':
       await removeVmWatchdog(vmId, change.id)
-      return
+      return undefined
   }
 }

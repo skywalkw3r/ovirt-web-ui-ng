@@ -4332,8 +4332,13 @@ export const zhCN: LocaleCatalog = {
   'fieldHelp.vm.watchdogAction':
     '看门狗触发时的处理方式：“无”仅记录事件，“重置”重启虚拟机，“关闭电源”停止虚拟机，“暂停”暂停虚拟机，“转储”在主机上写入内存转储。',
   'vm.edit.nextRun.watchdogNote': '即使选择“立即应用”，看门狗更改也会在虚拟机下次启动时生效。',
-  'vm.edit.watchdog.partialFailure':
-    '虚拟机已保存，但看门狗更改失败：{message}。请再次保存以重试。',
+  'vm.edit.save.watchdogFailed':
+    '看门狗更改失败，因此未保存任何内容：{message}。请再次保存以重试。',
+  'vm.edit.save.nextRunRefreshFailed':
+    '看门狗已保存，但虚拟机待处理的下次运行配置未刷新，因此引擎可能会在下次关机时撤消该更改：{message}。请再次保存以重试。',
+  'vm.edit.save.cdFailed': '虚拟机已保存，但 CD 更改失败：{message}。请再次保存以重试。',
+  'vm.create.watchdog.templateError':
+    '无法加载模板的看门狗：{message}。新虚拟机将完全使用此处选择的看门狗。',
   'vmNics.filterParams.label': '网络过滤器参数',
   'fieldHelp.vmNic.filterParams':
     'vNIC 配置文件的网络过滤器读取的变量，例如 clean-traffic 的 IP = 10.0.0.1。名称可以重复，以便为过滤器提供一组值。',

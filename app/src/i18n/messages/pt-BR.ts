@@ -4560,8 +4560,14 @@ export const ptBR: LocaleCatalog = {
     'O que acontece quando o watchdog dispara: Nenhuma apenas registra um evento, Redefinir reinicia a VM, Desligar a interrompe, Pausar a pausa e Despejo grava um despejo de memória no host.',
   'vm.edit.nextRun.watchdogNote':
     'A alteração do watchdog entra em vigor na próxima inicialização da VM, mesmo com “Aplicar agora”.',
-  'vm.edit.watchdog.partialFailure':
-    'A VM foi salva, mas a alteração do watchdog falhou: {message}. Salve novamente para tentar outra vez.',
+  'vm.edit.save.watchdogFailed':
+    'A alteração do watchdog falhou, portanto nada foi salvo: {message}. Salve novamente para tentar outra vez.',
+  'vm.edit.save.nextRunRefreshFailed':
+    'O watchdog foi salvo, mas a configuração pendente da VM para a próxima inicialização não foi atualizada, então o engine pode desfazer a alteração no próximo desligamento: {message}. Salve novamente para tentar outra vez.',
+  'vm.edit.save.cdFailed':
+    'A VM foi salva, mas a alteração do CD falhou: {message}. Salve novamente para tentar outra vez.',
+  'vm.create.watchdog.templateError':
+    'Não foi possível carregar o watchdog do modelo: {message}. A nova VM recebe exatamente o watchdog escolhido aqui.',
   'vmNics.filterParams.label': 'Parâmetros do filtro de rede',
   'fieldHelp.vmNic.filterParams':
     'Variáveis lidas pelo filtro de rede do perfil de vNIC, como IP = 10.0.0.1 para clean-traffic. Um nome pode se repetir para fornecer ao filtro uma lista de valores.',

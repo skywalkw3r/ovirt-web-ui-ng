@@ -4582,8 +4582,14 @@ export const es: LocaleCatalog = {
     'Qué ocurre cuando salta el watchdog: Ninguna solo registra un evento, Restablecer reinicia la VM, Apagar la detiene, Pausar la pausa y Volcado escribe un volcado de memoria en el host.',
   'vm.edit.nextRun.watchdogNote':
     'El cambio de watchdog se aplica en el siguiente inicio de la VM, incluso con «Aplicar ahora».',
-  'vm.edit.watchdog.partialFailure':
-    'La VM se guardó, pero el cambio de watchdog falló: {message}. Guarde de nuevo para reintentar.',
+  'vm.edit.save.watchdogFailed':
+    'El cambio de watchdog falló, por lo que no se guardó nada: {message}. Guarde de nuevo para reintentar.',
+  'vm.edit.save.nextRunRefreshFailed':
+    'El watchdog se guardó, pero la configuración pendiente de la VM para el siguiente inicio no se actualizó, por lo que el motor podría deshacer el cambio en el siguiente apagado: {message}. Guarde de nuevo para reintentar.',
+  'vm.edit.save.cdFailed':
+    'La VM se guardó, pero el cambio de CD falló: {message}. Guarde de nuevo para reintentar.',
+  'vm.create.watchdog.templateError':
+    'No se pudo cargar el watchdog de la plantilla: {message}. La nueva VM obtiene exactamente el watchdog elegido aquí.',
   'vmNics.filterParams.label': 'Parámetros del filtro de red',
   'fieldHelp.vmNic.filterParams':
     'Variables que lee el filtro de red del perfil vNIC, como IP = 10.0.0.1 para clean-traffic. Un nombre puede repetirse para dar al filtro una lista de valores.',

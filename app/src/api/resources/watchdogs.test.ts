@@ -101,21 +101,28 @@ describe('watchdog writes', () => {
   })
 
   it('applyWatchdogChange routes each change kind to its call', async () => {
-    let fetchMock = mockFetch(201, { id: 'w1' })
-    await applyWatchdogChange('vm-01', { kind: 'add', model: 'i6300esb', action: 'none' })
+    let fetchMock = mockFetch(201, { id: 'w1', model: 'i6300esb', action: 'none' })
+    // each resolves to the device as it stands afterwards
+    await expect(
+      applyWatchdogChange('vm-01', { kind: 'add', model: 'i6300esb', action: 'none' }),
+    ).resolves.toMatchObject({ id: 'w1', model: 'i6300esb' })
     expect(call(fetchMock).method).toBe('POST')
 
     fetchMock = mockFetch(200, { id: 'w1' })
-    await applyWatchdogChange('vm-01', {
-      kind: 'update',
-      id: 'w1',
-      model: 'i6300esb',
-      action: 'dump',
-    })
+    await expect(
+      applyWatchdogChange('vm-01', {
+        kind: 'update',
+        id: 'w1',
+        model: 'i6300esb',
+        action: 'dump',
+      }),
+    ).resolves.toEqual({ id: 'w1', model: 'i6300esb', action: 'dump' })
     expect(call(fetchMock)).toMatchObject({ method: 'PUT', body: { action: 'dump' } })
 
     fetchMock = mockFetch(200, {})
-    await applyWatchdogChange('vm-01', { kind: 'remove', id: 'w1' })
+    await expect(applyWatchdogChange('vm-01', { kind: 'remove', id: 'w1' })).resolves.toBe(
+      undefined,
+    )
     expect(call(fetchMock)).toMatchObject({
       url: '/ovirt-engine/api/vms/vm-01/watchdogs/w1',
       method: 'DELETE',

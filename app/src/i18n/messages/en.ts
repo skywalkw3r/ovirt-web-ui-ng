@@ -5069,8 +5069,14 @@ export const en = {
     'What happens when the watchdog fires: None only logs an event, Reset reboots the VM, Power off stops it, Pause pauses it, and Dump writes a memory dump on the host.',
   'vm.edit.nextRun.watchdogNote':
     'The watchdog change takes effect at the next start of the VM, even with Apply now.',
-  'vm.edit.watchdog.partialFailure':
-    'The VM was saved, but the watchdog change failed: {message}. Save again to retry.',
+  'vm.edit.save.watchdogFailed':
+    'The watchdog change failed, so nothing was saved: {message}. Save again to retry.',
+  'vm.edit.save.nextRunRefreshFailed':
+    "The watchdog was saved, but the VM's pending next-run configuration was not refreshed, so the engine could undo the change at the next shutdown: {message}. Save again to retry.",
+  'vm.edit.save.cdFailed':
+    'The VM was saved, but the CD change failed: {message}. Save again to retry.',
+  'vm.create.watchdog.templateError':
+    "Could not load the template's watchdog: {message}. The new VM gets exactly the watchdog chosen here.",
 
   // vNIC network filter parameters (Edit Network Interface dialog) --------
   'vmNics.filterParams.label': 'Network filter parameters',
