@@ -1,7 +1,13 @@
 import { z } from 'zod'
 import { ApiError, request } from '../transport'
 import { fetchWithFollowFallback } from '../followDegrade'
-import { ClusterListSchema, ClusterSchema, type Cluster } from '../schemas/cluster'
+import {
+  ClusterExternalProviderListSchema,
+  ClusterListSchema,
+  ClusterSchema,
+  type Cluster,
+  type ClusterExternalProvider,
+} from '../schemas/cluster'
 import { NetworkListSchema, type Network } from '../schemas/network'
 
 export async function listClusters(
@@ -109,6 +115,26 @@ export async function listClusterNetworks(id: string): Promise<Network[]> {
     await request(`/clusters/${encodeURIComponent(id)}/networks`),
   )
   return data.network ?? []
+}
+
+// The cluster's default external network provider (the Edit dialog shows it
+// read-only: api-model Cluster.externalNetworkProviders "can only be set during
+// adding the cluster"). Served by BackendClusterExternalNetworkProvidersResource,
+// which lists at most the one provider the cluster's
+// default_network_provider_id names. 404-tolerant: an engine or mock without
+// the subcollection means no provider, not an error.
+export async function listClusterExternalNetworkProviders(
+  id: string,
+): Promise<ClusterExternalProvider[]> {
+  try {
+    const data = ClusterExternalProviderListSchema.parse(
+      await request(`/clusters/${encodeURIComponent(id)}/externalnetworkproviders`),
+    )
+    return data.external_provider ?? []
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) return []
+    throw error
+  }
 }
 
 // The scheduling-policy options the cluster form's Scheduling Policy select

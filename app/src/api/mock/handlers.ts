@@ -3383,7 +3383,7 @@ const templatePermissions: Record<string, MockHostPermission[]> = {
   ],
 }
 
-const clusters: MockCluster[] = [
+export const clusters: MockCluster[] = [
   {
     id: 'cluster-01',
     name: 'Default',
@@ -4847,7 +4847,7 @@ let fenceAgentSeq = 0
 // External providers mutate via the typed provider CRUD handlers, so `let`
 // bindings restored by resetMockVms, sharing one id sequence.
 let openStackImageProviders = initialOpenStackImageProviders()
-let openStackNetworkProviders = initialOpenStackNetworkProviders()
+export let openStackNetworkProviders = initialOpenStackNetworkProviders()
 let openStackVolumeProviders = initialOpenStackVolumeProviders()
 let externalHostProviders = initialExternalHostProviders()
 let providerSeq = 0
