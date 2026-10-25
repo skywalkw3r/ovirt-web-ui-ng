@@ -38,6 +38,7 @@ import { engineWebUiUrl } from '../lib/engineWebUi'
 import { monitoringPortalUrl } from '../lib/monitoringPortal'
 import { useCapabilities } from '../auth/capabilities'
 import { useNavShortcuts } from '../hooks/useNavShortcuts'
+import { ConfigureLocalStorageProvider } from './host-actions/ConfigureLocalStorageProvider'
 import { useProductBrand } from '../hooks/useProductBrand'
 import { NotificationBell } from '../notifications/NotificationDrawerPanel'
 import { getActiveServer } from '../servers/registry'
@@ -532,7 +533,11 @@ export function AppShell() {
       {/* Admin-authored announcement (MOTD): dismissable per session, returns
           at each sign-in while enabled (platform settings). */}
       <MotdBanner />
-      <Outlet />
+      {/* Configure Local Storage moves its host out of the list it was
+          started from, so its dialog lives here rather than in the row. */}
+      <ConfigureLocalStorageProvider>
+        <Outlet />
+      </ConfigureLocalStorageProvider>
     </Page>
   )
 }
