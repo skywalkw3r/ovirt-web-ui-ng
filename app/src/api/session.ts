@@ -80,13 +80,45 @@ export function getSessionServerBase(): string | null {
   return storageGet(SERVER_KEY)
 }
 
+// A random, NON-SECRET label for the session the token belongs to. Tabs that
+// share one token (the cross-tab handoff, auth/sessionHandoff.ts) share this
+// id too, which lets them recognise each other: a sign-out broadcast names the
+// session it revoked (so a sibling holding the same token does not revoke it
+// a second time), and the activity pulse only keeps alive tabs on the SAME
+// session. It reveals nothing about the token and is never sent to the engine.
+const SESSION_ID_KEY = 'console-session-id'
+
+let sessionId: string | null = storageGet(SESSION_ID_KEY)
+
+function newSessionId(): string {
+  return typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+    ? crypto.randomUUID()
+    : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`
+}
+
+// Starts a fresh session id (a new sign-in), or adopts a sibling's (handoff).
+export function setSessionId(value: string = newSessionId()): void {
+  sessionId = value
+  storageSet(SESSION_ID_KEY, value)
+}
+
+// The id of the live session, or null with no token. A session restored from
+// before ids existed gets one lazily, so callers never see a token without one.
+export function getSessionId(): string | null {
+  if (token === null) return null
+  if (sessionId === null) setSessionId()
+  return sessionId
+}
+
 export function clearSessionToken(): void {
   token = null
   adminSession = false
+  sessionId = null
   storageRemove(TOKEN_KEY)
   storageRemove(USERNAME_KEY)
   storageRemove(TIER_KEY)
   storageRemove(SERVER_KEY)
+  storageRemove(SESSION_ID_KEY)
   clearSessionScopedStorage()
 }
 

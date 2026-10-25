@@ -5,16 +5,18 @@ import { fetchCapabilityProfile } from '../api/resources/users'
 import {
   clearSessionToken,
   getPersistedUsername,
+  getSessionId,
   getSessionToken,
   isSessionAdmin,
   setSessionAdmin,
+  setSessionId,
   setSessionServerBase,
   setSessionToken,
   setSessionUsername,
 } from '../api/session'
 import { setUnauthorizedHandler } from '../api/transport'
 import { clearMotdDismissal } from '../lib/motd'
-import { getActiveBase, setActiveBase } from '../servers/registry'
+import { getActiveBase, getRequestBase, isConfiguredBase, setActiveBase } from '../servers/registry'
 import { useSettings } from '../settings/SettingsProvider'
 import { readInjectedSession } from './bootstrap'
 import { CapabilitiesContext, DEFAULT_CAPABILITIES, type CapabilitiesValue } from './capabilities'
@@ -22,6 +24,12 @@ import { AuthContext, type AuthContextValue } from './context'
 import { startKeepalive, type KeepaliveController } from './keepalive'
 import { markSignOutUnconfirmed } from './logoutNotice'
 import { broadcastLogout, onLogoutBroadcast } from './sessionChannel'
+import {
+  isHandoffSupported,
+  requestSiblingSession,
+  serveSiblingSessions,
+  type HandoffSession,
+} from './sessionHandoff'
 import { useIdleLogout } from './useIdleLogout'
 
 // Mock mode short-circuits the real engine (transport/auth import the same
@@ -52,6 +60,7 @@ function seedInjectedSession(): string | null {
     // one left in sessionStorage by a previous session on this tab.
     setSessionToken(injected.token)
     setSessionUsername(injected.username)
+    setSessionId()
     // The engine-injected session always belongs to the engine that served
     // the page — the same-origin ('') base — regardless of which server this
     // browser last picked. Stamp the binding and align the active selection
@@ -83,9 +92,27 @@ function seedInjectedSession(): string | null {
   return null
 }
 
+// The VM console tab authenticates itself through its opener
+// (pages/VmConsolePage.tsx) and deliberately runs with no username, so the
+// sibling handoff must not sign it in as a full app tab. AuthProvider sits
+// above the router, hence the path test rather than a route match.
+function isConsoleTab(): boolean {
+  return /\/vms\/[^/]+\/console\/?$/.test(window.location.pathname)
+}
+
+// A tab that booted with no session asks its signed-in siblings for theirs
+// (auth/sessionHandoff.ts) before the login page is shown.
+function shouldAskSiblings(): boolean {
+  return isHandoffSupported() && !isConsoleTab()
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient()
   const [username, setUsername] = useState<string | null>(seedInjectedSession)
+  // True while a session-less tab waits on the sibling handoff: Protected and
+  // LoginPage hold a spinner instead of redirecting to (or rendering) the
+  // login form, so a tab that is about to receive a session never flashes it.
+  const [resolving, setResolving] = useState(() => username === null && shouldAskSiblings())
   // Seeded sessions (engine-injected or sessionStorage-restored) start with
   // capabilities still loading; the mount effect below fetches them. The
   // login-form path seeds them via login() instead, so remember whether we
@@ -129,6 +156,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async (user: string, password: string) => {
       const token = await obtainToken(user, password)
       setSessionToken(token)
+      // a fresh sign-in is a new session (see getSessionId in api/session.ts)
+      setSessionId()
       // persisted beside the token so a refresh can restore the session
       setSessionUsername(user)
       // ...and the engine the token was issued by (multi-engine): a refresh
@@ -157,13 +186,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   // `broadcast` is false when we are REACTING to another tab's sign-out —
-  // each tab still revokes its own token (they differ per tab), but must not
-  // echo the message back and bounce it around the origin forever.
+  // each tab still revokes its own token (they usually differ per tab), but
+  // must not echo the message back and bounce it around the origin forever.
+  // `alreadyRevoked` is true when the signer was on this very session (the
+  // sibling handoff shares one token): it revoked the token already, and a
+  // second revoke would only come back refused and raise a false "sign-out
+  // not confirmed" notice.
   const logout = useCallback(
-    async (broadcast = true) => {
-      const token = getSessionToken()
+    async (broadcast = true, alreadyRevoked = false) => {
+      const token = alreadyRevoked ? null : getSessionToken()
+      const sessionId = getSessionId() ?? undefined
       resetSession()
-      if (broadcast) broadcastLogout()
+      if (broadcast) broadcastLogout(sessionId)
       try {
         // Best-effort, but no longer blind: revokeToken reports (and warns)
         // when the engine does not confirm, so a token left alive server-side
@@ -216,13 +250,73 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [username, handleSessionExpired])
 
   // Another tab signed out → sign this one out too, revoking this tab's own
-  // token, without re-broadcasting.
+  // token (unless the signer shared it, see logout), without re-broadcasting.
   useEffect(() => {
     if (username === null) return
-    return onLogoutBroadcast(() => {
-      void logout(false)
+    return onLogoutBroadcast((signerSessionId) => {
+      void logout(false, signerSessionId !== undefined && signerSessionId === getSessionId())
     })
   }, [username, logout])
+
+  // Signed in: answer sibling tabs that boot without a session, and share
+  // activity with the tabs on this session (auth/sessionHandoff.ts). The
+  // snapshot is read per request so a sign-out mid-life stops answering at
+  // once.
+  useEffect(() => {
+    if (username === null) return
+    return serveSiblingSessions(() => {
+      const token = getSessionToken()
+      const sessionId = getSessionId()
+      if (token === null || sessionId === null) return null
+      return {
+        token,
+        username,
+        isAdmin: isSessionAdmin(),
+        // the engine the token belongs to, never the mutable picker
+        serverBase: getRequestBase(),
+        sessionId,
+      }
+    })
+  }, [username])
+
+  // Booted with no session: ask the signed-in siblings before giving up to
+  // the login page. Adopted exactly like a refresh-restored session (bind the
+  // engine first, then the token), and the capability profile is re-verified
+  // server-side below. The offered admin flag is only the same Filter hint a
+  // restored session carries (docs/SECURITY.md §3).
+  useEffect(() => {
+    if (!resolving) return
+    let cancelled = false
+    const adopt = (session: HandoffSession) => {
+      setActiveBase(session.serverBase)
+      setSessionServerBase(session.serverBase)
+      setSessionToken(session.token)
+      setSessionId(session.sessionId)
+      setSessionUsername(session.username)
+      setSessionAdmin(session.isAdmin)
+      if (session.isAdmin) setCapabilities({ tier: 'admin', isAdmin: true, loaded: false })
+      setUsername(session.username)
+      // mock mode: the fixtures' capability tier follows the mock username,
+      // which login() would otherwise have set (see api/mock/handlers.ts)
+      if (IS_MOCK) {
+        void import('../api/mock/handlers').then((mock) => {
+          mock.setMockUsername(session.username)
+          void loadCapabilities()
+        })
+      } else {
+        void loadCapabilities()
+      }
+    }
+    void requestSiblingSession({ isAllowedBase: isConfiguredBase }).then((session) => {
+      // StrictMode's discarded first mount, or a sign-in that won the race
+      if (cancelled) return
+      if (session && getSessionToken() === null) adopt(session)
+      setResolving(false)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [resolving, loadCapabilities])
 
   // Engine-injected session (production): the token + username were seeded
   // synchronously in the useState initializer (seedInjectedSession) so render
@@ -288,8 +382,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const value = useMemo<AuthContextValue>(
-    () => ({ username, isAuthenticated: username !== null, login, logout }),
-    [username, login, logout],
+    () => ({
+      username,
+      isAuthenticated: username !== null,
+      isResolving: resolving,
+      login,
+      logout,
+    }),
+    [username, resolving, login, logout],
   )
 
   return (

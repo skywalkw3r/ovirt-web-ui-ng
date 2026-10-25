@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { Bullseye, Spinner } from '@patternfly/react-core'
 import { useLocation, useNavigate } from '@tanstack/react-router'
 import { AppShell } from '../components/AppShell'
 import { useAuth } from '../auth/context'
@@ -8,7 +9,7 @@ import { loginRedirectSearch } from '../auth/capabilities'
 // rather than beforeLoad: unauthenticated users are redirected to /login,
 // carrying the intended destination so LoginPage can restore it after sign-in.
 export function Protected() {
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, isResolving } = useAuth()
   const { pathname, searchStr } = useLocation()
   const navigate = useNavigate()
 
@@ -23,13 +24,23 @@ export function Protected() {
   // mid-transition with pathname already '/login' — which looped and replaced
   // the redirect param with '/login'. The pathname guard stops the effect
   // once the transition to /login is underway.
-  const mustRedirect = !isAuthenticated && pathname !== '/login'
+  // isResolving: a fresh tab is still asking its signed-in siblings for a
+  // session (auth/sessionHandoff.ts); redirecting now would bounce a deep
+  // link to /login just before the session arrives.
+  const mustRedirect = !isAuthenticated && !isResolving && pathname !== '/login'
   useEffect(() => {
     if (mustRedirect) {
       void navigate({ to: '/login', search: loginRedirectSearch(intended), replace: true })
     }
   }, [mustRedirect, navigate, intended])
 
+  if (isResolving) {
+    return (
+      <Bullseye style={{ height: '100vh' }}>
+        <Spinner aria-label="Restoring session" />
+      </Bullseye>
+    )
+  }
   if (!isAuthenticated) return null
   return <AppShell />
 }

@@ -97,9 +97,22 @@ describe('sessionChannel — BroadcastChannel transport', () => {
     const received: unknown[] = []
     otherTab.addEventListener('message', (e) => received.push(e.data))
 
-    broadcastLogout()
+    broadcastLogout('sid-a')
 
-    expect(received).toEqual(['logout'])
+    expect(received).toEqual([{ type: 'logout', sessionId: 'sid-a' }])
+  })
+
+  it("passes the signer's session id to the subscriber (and undefined for the bare legacy message)", () => {
+    vi.stubGlobal('BroadcastChannel', FakeChannel)
+    const handler = vi.fn()
+    onLogoutBroadcast(handler)
+    const otherTab = new FakeChannel('console-session')
+
+    otherTab.postMessage({ type: 'logout', sessionId: 'sid-a' })
+    otherTab.postMessage({ type: 'logout' })
+    otherTab.postMessage('logout')
+
+    expect(handler.mock.calls).toEqual([['sid-a'], [undefined], [undefined]])
   })
 
   it('does NOT echo a broadcast back to the signing tab itself', () => {
@@ -160,8 +173,22 @@ describe('sessionChannel — localStorage fallback', () => {
     env.fireStorage(LOGOUT_STORAGE_KEY, null) // a clear / removeItem
     expect(handler).not.toHaveBeenCalled()
 
-    env.fireStorage(LOGOUT_STORAGE_KEY, '123.456') // a real ping
+    env.fireStorage(LOGOUT_STORAGE_KEY, '123.456') // a real ping (no session id)
     expect(handler).toHaveBeenCalledTimes(1)
+    expect(handler).toHaveBeenLastCalledWith(undefined)
+  })
+
+  it('carries the session id through the storage ping', () => {
+    vi.stubGlobal('BroadcastChannel', undefined)
+    const env = fakeStorageEnv()
+    env.install()
+    const handler = vi.fn()
+    onLogoutBroadcast(handler)
+
+    broadcastLogout('sid-a')
+    env.fireStorage(LOGOUT_STORAGE_KEY, env.read(LOGOUT_STORAGE_KEY))
+
+    expect(handler).toHaveBeenCalledWith('sid-a')
   })
 
   it('removes the storage listener on unsubscribe', () => {
