@@ -25,8 +25,8 @@ import type { MockRoute } from './types'
 //   PUT  /storagedomains/{id}                 core updateStorageDomainMock
 //   PUT  /vms/{id}/diskattachments/{aid}      core updateDiskAttachment
 // POST /vms/{id}/diskattachments is deliberately NOT shadowed (its core handler
-// owns private sequence/LUN-claim state), so the mock does not echo or check
-// pass_discard on add/attach; PUT does both.
+// owns private sequence/LUN-claim state); the core add stores and echoes
+// pass_discard but does not check it, PUT does both.
 //
 // METHOD-LESS READS: the app's GETs call request() without a method, and
 // mockRequest lets a method-less call match ANY entry by path, first one wins.
@@ -144,9 +144,14 @@ function lunDiscardSizes(): Map<string, number> {
 }
 
 // Flip a created domain to the attached view, exactly like the core attach
-// handler (status active, external_status dropped, data_centers inlined).
+// handler (status active, external_status dropped, data_centers inlined). The
+// first data domain initializes an empty pool, so an Uninitialized data center
+// turns Up (flat row and detail alike).
 function markAttached(id: string, dataCenterId: string) {
   const dataCenter = dataCenters.find((dc) => dc.id === dataCenterId)
+  if (dataCenter?.status === 'uninitialized') dataCenter.status = 'up'
+  const dataCenterDetail = dataCenterDetails[dataCenterId]
+  if (dataCenterDetail?.status === 'uninitialized') dataCenterDetail.status = 'up'
   const link = { data_center: [{ id: dataCenterId, name: dataCenter?.name }] }
   const summary = storageDomains.find((sd) => sd.id === id)
   if (summary) {

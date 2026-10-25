@@ -19,6 +19,7 @@ import {
   StackItem,
   TextInput,
 } from '@patternfly/react-core'
+import { listClusters } from '../../api/resources/clusters'
 import { listDataCenters } from '../../api/resources/datacenters'
 import { listHosts } from '../../api/resources/hosts'
 import { lunSupportsDiscard, type DiscoveredLun } from '../../api/schemas/host-storage'
@@ -35,7 +36,7 @@ import {
   toStorageProperties,
   type DriverOptionRow,
 } from './driverOptions'
-import { dataCenterKeys } from '../../hooks/useAdminResources'
+import { clusterKeys, dataCenterKeys } from '../../hooks/useAdminResources'
 import { hostKeys } from '../../hooks/useHosts'
 
 // The flat, always-defined draft the modal owns — every input stays controlled.
@@ -169,7 +170,9 @@ function coerceDomainFunction(storageType: StorageDomainDraft['storageType'], cu
 // acronyms NFS / iSCSI stay verbatim.
 // "Local on Host" (localfs) only exists in a LOCAL data center
 // (data_center.local; the engine refuses it elsewhere with
-// ACTION_TYPE_FAILED_STORAGE_POOL_IS_NOT_LOCAL), so it is offered only then.
+// ACTION_TYPE_FAILED_STORAGE_POOL_IS_NOT_LOCAL), so it is offered only then;
+// and a local data center takes nothing else, so it is then the ONLY kind
+// (webadmin StorageModel limits a local pool's storage types to LOCALFS).
 const STORAGE_TYPES: {
   value: StorageDomainDraft['storageType']
   label?: string
@@ -219,6 +222,19 @@ function parseExportPath(raw: string): { address: string; path: string } | undef
   const path = trimmed.slice(colon + 1)
   if (!path.startsWith('/')) return undefined
   return { address: trimmed.slice(0, colon), path }
+}
+
+// The hosts whose cluster belongs to `dataCenterId` (the host read carries
+// only its cluster link; the flat cluster list carries the data center).
+function hostsInDataCenter<H extends { cluster?: { id?: string } }>(
+  hosts: H[],
+  clusters: { id: string; data_center?: { id?: string } }[],
+  dataCenterId: string,
+): H[] {
+  const clusterIds = new Set(
+    clusters.filter((cluster) => cluster.data_center?.id === dataCenterId).map((c) => c.id),
+  )
+  return hosts.filter((host) => host.cluster?.id !== undefined && clusterIds.has(host.cluster.id))
 }
 
 // A local domain's directory: absolute and whitespace-free (webadmin
@@ -299,6 +315,13 @@ export function NewStorageDomainModal({
     queryFn: () => listHosts(),
     enabled: isOpen,
   })
+  // Host -> data center goes through the host's cluster; only a local data
+  // center narrows the host list (see hostOptions below).
+  const clusters = useQuery({
+    queryKey: clusterKeys.list(),
+    queryFn: () => listClusters(),
+    enabled: isOpen,
+  })
 
   const create = useCreateStorageDomain()
   const pending = create.isPending
@@ -315,9 +338,17 @@ export function NewStorageDomainModal({
   const parsedLocalPath = parseLocalPath(draft.localPath)
   const selectedDataCenter = (dataCenters.data ?? []).find((dc) => dc.id === draft.dataCenterId)
   const localDataCenter = selectedDataCenter?.local === true
-  const storageTypeOptions = STORAGE_TYPES.filter(
-    (option) => !option.localDataCenterOnly || localDataCenter,
+  const storageTypeOptions = STORAGE_TYPES.filter((option) =>
+    localDataCenter ? option.value === 'localfs' : !option.localDataCenterOnly,
   )
+  // A local data center's domain is created through its one host, so only
+  // hosts of that data center are offered (webadmin filters the host list by
+  // the selected pool). Shared data centers keep the full list.
+  const hostOptions = localDataCenter
+    ? hostsInDataCenter(hosts.data ?? [], clusters.data ?? [], draft.dataCenterId)
+    : (hosts.data ?? [])
+  const hostOptionsPending = hosts.isPending || (localDataCenter && clusters.isPending)
+  const hostOptionsError = hosts.isError || (localDataCenter && clusters.isError)
   const nameEmpty = draft.name.trim() === ''
   const dataCenterMissing = draft.dataCenterId === ''
   const hostMissing = draft.hostName === ''
@@ -717,11 +748,23 @@ export function NewStorageDomainModal({
                   setDraft((current) => {
                     const switchToLocal = local && current.storageType !== 'localfs'
                     const leaveLocal = !local && current.storageType === 'localfs'
-                    if (!switchToLocal && !leaveLocal) return { ...current, dataCenterId: value }
+                    // a host outside the newly picked local data center cannot
+                    // serve its domain, so the pick is dropped
+                    const hostName =
+                      local &&
+                      !hostsInDataCenter(hosts.data ?? [], clusters.data ?? [], value).some(
+                        (host) => host.name === current.hostName,
+                      )
+                        ? ''
+                        : current.hostName
+                    if (!switchToLocal && !leaveLocal) {
+                      return { ...current, dataCenterId: value, hostName }
+                    }
                     const nextStorageType = switchToLocal ? 'localfs' : 'nfs'
                     return {
                       ...current,
                       dataCenterId: value,
+                      hostName,
                       storageType: nextStorageType,
                       lunIds: [],
                       exportPath: '',
@@ -782,26 +825,35 @@ export function NewStorageDomainModal({
                 id="storage-domain-host"
                 aria-label={t('storageForm.field.host')}
                 value={draft.hostName}
-                isDisabled={hosts.isPending || hosts.isError}
+                isDisabled={hostOptionsPending || hostOptionsError}
                 onChange={(_event, value) => set('hostName', value)}
               >
                 <FormSelectOption
                   value=""
                   label={
-                    hosts.isPending ? t('storageForm.host.loading') : t('storageForm.host.select')
+                    hostOptionsPending
+                      ? t('storageForm.host.loading')
+                      : t('storageForm.host.select')
                   }
                   isDisabled
                 />
-                {(hosts.data ?? []).map((host) => (
+                {hostOptions.map((host) => (
                   <FormSelectOption key={host.id} value={host.name} label={host.name} />
                 ))}
               </FormSelect>
-              {hosts.isError && (
+              {hostOptionsError && (
                 <FormHelperText>
                   <HelperText>
                     <HelperTextItem variant="error">
                       {t('storageForm.host.error')}{' '}
-                      <Button variant="link" isInline onClick={() => void hosts.refetch()}>
+                      <Button
+                        variant="link"
+                        isInline
+                        onClick={() => {
+                          if (hosts.isError) void hosts.refetch()
+                          if (clusters.isError) void clusters.refetch()
+                        }}
+                      >
                         {t('common.action.retry')}
                       </Button>
                     </HelperTextItem>

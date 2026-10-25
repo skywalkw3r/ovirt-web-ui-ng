@@ -194,6 +194,9 @@ interface MockDiskAttachment {
   // attachment-level read-only flag — api-model DiskAttachment.readOnly. Echoed
   // from the add body so the VM Disks tab's Read-Only column round-trips.
   read_only?: boolean | string
+  // api-model DiskAttachment.passDiscard. Stored from the add body (and by the
+  // storage route's PUT) so the list read echoes it.
+  pass_discard?: boolean | string
   disk?: {
     id?: string
     name?: string
@@ -957,6 +960,10 @@ interface MockDataCenter {
   status?: string
   storage_format?: string
   description?: string
+  // the live engine reports the local-storage flag (and the compatibility
+  // version) on the flat /datacenters list too, not only on the detail read
+  local?: boolean | string
+  version?: { major?: number | string; minor?: number | string }
 }
 
 // The enriched body GET /datacenters/{id} returns — scalars mix string/number
@@ -5985,7 +5992,27 @@ export function setMockUsername(name: string): void {
 }
 
 // Test hook — restores pristine fixtures between test cases.
+// Data centers and clusters are exported const bindings other modules import
+// by reference, so their reset restores the module-load snapshot in place.
+const pristineDataCenters = structuredClone(dataCenters)
+const pristineDataCenterDetails = structuredClone(dataCenterDetails)
+const pristineClusters = structuredClone(clusters)
+const pristineClusterDetails = structuredClone(clusterDetails)
+
+function restoreInPlace<T>(target: T[], pristine: T[]): void {
+  target.splice(0, target.length, ...structuredClone(pristine))
+}
+
+function restoreRecordInPlace<T>(target: Record<string, T>, pristine: Record<string, T>): void {
+  for (const key of Object.keys(target)) delete target[key]
+  Object.assign(target, structuredClone(pristine))
+}
+
 export function resetMockVms(): void {
+  restoreInPlace(dataCenters, pristineDataCenters)
+  restoreRecordInPlace(dataCenterDetails, pristineDataCenterDetails)
+  restoreInPlace(clusters, pristineClusters)
+  restoreRecordInPlace(clusterDetails, pristineClusterDetails)
   vms = allInitialVms()
   snapshots = initialSnapshots()
   disks = initialDisks()
@@ -6658,6 +6685,8 @@ function addDiskAttachment(vmId: string, body: unknown): unknown {
     active?: boolean
     // attachment-level read-only flag (api-model DiskAttachment.readOnly)
     read_only?: boolean
+    // api-model DiskAttachment.passDiscard, echoed like read_only
+    pass_discard?: boolean | string
     disk?: {
       id?: string
       alias?: string
@@ -6685,6 +6714,7 @@ function addDiskAttachment(vmId: string, body: unknown): unknown {
       // echo read_only only when sent (false is meaningful, so keep it distinct
       // from an absent flag)
       ...(spec.read_only !== undefined ? { read_only: spec.read_only } : {}),
+      ...(spec.pass_discard !== undefined ? { pass_discard: spec.pass_discard } : {}),
       disk: { ...existing },
     }
     disks.set(vmId, [...(disks.get(vmId) ?? []), attached])
@@ -6722,6 +6752,7 @@ function addDiskAttachment(vmId: string, body: unknown): unknown {
       bootable: spec.bootable ?? false,
       interface: spec.interface ?? 'virtio_scsi',
       active: spec.active ?? true,
+      ...(spec.pass_discard !== undefined ? { pass_discard: spec.pass_discard } : {}),
       disk,
     }
     disks.set(vmId, [...(disks.get(vmId) ?? []), created])
@@ -6753,6 +6784,7 @@ function addDiskAttachment(vmId: string, body: unknown): unknown {
     active: spec.active ?? true,
     // echo read_only only when sent (false is meaningful)
     ...(spec.read_only !== undefined ? { read_only: spec.read_only } : {}),
+    ...(spec.pass_discard !== undefined ? { pass_discard: spec.pass_discard } : {}),
     disk,
   }
   disks.set(vmId, [...(disks.get(vmId) ?? []), created])
@@ -6931,13 +6963,43 @@ function requireHost(id: string): MockHost {
 // via requireHost. Mirrors updateTemplate otherwise.
 function updateHost(id: string, body: unknown): unknown {
   const host = requireHost(id)
-  const { power_management, spm, display, os, ...rest } = (body ?? {}) as Partial<MockHost>
+  const { power_management, spm, display, os, cluster, ...rest } = (body ?? {}) as Partial<MockHost>
+  if (cluster?.id && cluster.id !== host.cluster?.id) moveHostToCluster(host, cluster.id)
   if (power_management) host.power_management = { ...host.power_management, ...power_management }
   if (spm) host.spm = { ...host.spm, ...spm }
   if (display) host.display = { ...host.display, ...display }
   if (os) host.os = { ...host.os, ...os }
   Object.assign(host, rest)
   return host
+}
+
+// A cluster change on PUT /hosts/{id} runs ChangeVDSCluster on the engine:
+// only a host in maintenance may move (VDS_STATUS_NOT_VALID_FOR_UPDATE), the
+// target must exist (VDS_CLUSTER_IS_NOT_VALID), and a cluster of a LOCAL data
+// center takes one host only (VDS_CANNOT_ADD_MORE_THEN_ONE_HOST_TO_LOCAL_STORAGE).
+// The stored link carries the cluster name the way a followed read would.
+function moveHostToCluster(host: MockHost, clusterId: string): void {
+  if (host.status !== 'maintenance') {
+    throw new ApiError(
+      409,
+      'Operation Failed',
+      `Cannot edit Host. Host ${host.name} must be in maintenance mode to change its cluster.`,
+    )
+  }
+  const target = clusters.find((c) => c.id === clusterId)
+  if (!target) {
+    throw new ApiError(409, 'Operation Failed', 'Cannot edit Host. Cluster ID is not valid.')
+  }
+  const dataCenterId = target.data_center?.id
+  const local = dataCenterId ? dataCenterDetails[dataCenterId]?.local : undefined
+  if ((local === true || local === 'true') && hosts.some((h) => h.cluster?.id === clusterId)) {
+    throw new ApiError(
+      409,
+      'Operation Failed',
+      'Cannot edit Host. Cannot add more than one host to a local storage data center.',
+    )
+  }
+  host.cluster = { id: target.id, name: target.name }
 }
 
 // DELETE /hosts/{id} — webadmin-style remove. The engine only removes hosts
@@ -9665,7 +9727,9 @@ function addDataCenter(body: unknown): unknown {
   const detail: MockDataCenterDetail = {
     id,
     name: spec.name,
-    status: 'up',
+    // AddEmptyStoragePool creates the pool Uninitialized; it turns Up once a
+    // first data domain is attached (see the storage route's markAttached)
+    status: 'uninitialized',
     storage_format: 'v5',
     description: spec.description,
     comment: spec.comment,
@@ -9679,6 +9743,10 @@ function addDataCenter(body: unknown): unknown {
     status: detail.status,
     storage_format: detail.storage_format,
     description: detail.description,
+    // the live engine carries `local` on the flat list, which is what the New
+    // Storage Domain dialog keys "Local on Host" off
+    local: detail.local,
+    version: detail.version,
   })
   dataCenterDetails[id] = detail
   return detail
@@ -10336,6 +10404,9 @@ export function addCluster(body: unknown): unknown {
     version: detail.version,
     // virt-only: the glustervolumes subcollection answers 404 for it
     gluster_service: false,
+    // the bare DC link the live flat list carries (the tree and the local
+    // storage checks resolve a cluster's data center through it)
+    data_center: detail.data_center?.id ? { id: detail.data_center.id } : undefined,
   })
   clusterDetails[id] = detail
   return detail
