@@ -32,6 +32,13 @@ afterEach(() => {
   resetVmRouteMocks()
 })
 
+// "METHOD path" of every request so far, for asserting what a save sent
+const sent = () =>
+  requestSpy.mock.calls.map(
+    ([path, opts]) => `${(opts as { method?: string } | undefined)?.method ?? 'GET'} ${path}`,
+  )
+const writes = () => sent().filter((call) => !call.startsWith('GET'))
+
 const VM03_NIC: Nic = { id: 'vm-03-nic-1', name: 'nic1', interface: 'virtio' }
 
 const nameInput = (index: number) =>
@@ -176,5 +183,129 @@ describe('NicsTab add with network filter parameters', () => {
       },
       { timeout: FIND_TIMEOUT_MS },
     )
+  })
+})
+
+describe('NicsTab partial save failures', () => {
+  const PARAMS = '/vms/vm-03/nics/vm-03-nic-1/networkfilterparameters'
+
+  it('keeps Edit open when the NIC saved but a parameter did not, then retries only that', async () => {
+    const user = userEvent.setup()
+    let failParameters = true
+    requestSpy.mockImplementation((path, opts) =>
+      failParameters && path === `${PARAMS}/nfp-01`
+        ? Promise.reject(new ApiError(500, 'Operation Failed', 'nwfilter busy'))
+        : passthrough.request!(path, opts),
+    )
+    renderWithProviders(<NicsTab vmId="vm-03" />)
+    await user.click(
+      await screen.findByRole('button', { name: 'Actions for nic1' }, { timeout: FIND_TIMEOUT_MS }),
+    )
+    await user.click(await screen.findByRole('menuitem', { name: 'Edit' }))
+    const dialog = await screen.findByRole('dialog')
+    await within(dialog).findByRole(
+      'textbox',
+      { name: 'Network filter parameter 1 name' },
+      { timeout: FIND_TIMEOUT_MS },
+    )
+    // a NIC field and a parameter
+    await user.click(within(dialog).getByRole('switch', { name: /Linked/ }))
+    await user.clear(valueInput(1))
+    await user.type(valueInput(1), '10.0.0.99')
+    requestSpy.mockClear()
+    await user.click(within(dialog).getByRole('button', { name: 'Save' }))
+
+    await within(dialog).findByText(
+      'The network interface was saved, but its network filter parameters were not: nwfilter busy. Save again to retry.',
+      undefined,
+      { timeout: FIND_TIMEOUT_MS },
+    )
+    expect(writes()).toEqual(['PUT /vms/vm-03/nics/vm-03-nic-1', `PUT ${PARAMS}/nfp-01`])
+
+    failParameters = false
+    requestSpy.mockClear()
+    await waitFor(() =>
+      expect(
+        (within(dialog).getByRole('button', { name: 'Save' }) as HTMLButtonElement).disabled,
+      ).toBe(false),
+    )
+    await user.click(within(dialog).getByRole('button', { name: 'Save' }))
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull(), {
+      timeout: FIND_TIMEOUT_MS,
+    })
+    // the NIC patch is not re-sent
+    expect(writes()).toEqual([`PUT ${PARAMS}/nfp-01`])
+    const parameters = await listNicNetworkFilterParameters('vm-03', 'vm-03-nic-1')
+    expect(parameters.find((p) => p.id === 'nfp-01')?.value).toBe('10.0.0.99')
+  })
+
+  it('flips a failed Add to editing the created NIC, so a retry never duplicates it', async () => {
+    const user = userEvent.setup()
+    let failSecond = true
+    requestSpy.mockImplementation((path, opts) => {
+      const request = opts as { method?: string; body?: { name?: string } } | undefined
+      return failSecond &&
+        request?.method === 'POST' &&
+        path.endsWith('/networkfilterparameters') &&
+        request.body?.name === 'DHCPSERVER'
+        ? Promise.reject(new ApiError(400, 'Bad Request', 'bad DHCPSERVER'))
+        : passthrough.request!(path, opts)
+    })
+    renderWithProviders(<NicsTab vmId="vm-01" />)
+    await user.click(
+      await screen.findByRole(
+        'button',
+        { name: 'Add network interface' },
+        { timeout: FIND_TIMEOUT_MS },
+      ),
+    )
+    const dialog = await screen.findByRole('dialog')
+    await user.type(within(dialog).getByRole('textbox', { name: 'Name' }), 'nic-filtered')
+    await user.selectOptions(
+      await within(dialog).findByRole(
+        'combobox',
+        { name: 'vNIC profile' },
+        { timeout: FIND_TIMEOUT_MS },
+      ),
+      'vnic-03',
+    )
+    await user.click(within(dialog).getByRole('button', { name: 'Add parameter' }))
+    await user.type(nameInput(1), 'IP')
+    await user.type(valueInput(1), '10.0.0.50')
+    await user.click(within(dialog).getByRole('button', { name: 'Add parameter' }))
+    await user.type(nameInput(2), 'DHCPSERVER')
+    await user.type(valueInput(2), '10.0.0.254')
+    await user.click(within(dialog).getByRole('button', { name: 'Add' }))
+
+    await within(dialog).findByText(
+      'The network interface was saved, but its network filter parameters were not: bad DHCPSERVER. Save again to retry.',
+      undefined,
+      { timeout: FIND_TIMEOUT_MS },
+    )
+    // the same dialog now edits the created NIC, typed rows intact
+    expect(within(dialog).getByText('Edit nic-filtered')).toBeDefined()
+    expect((nameInput(2) as HTMLInputElement).value).toBe('DHCPSERVER')
+
+    failSecond = false
+    requestSpy.mockClear()
+    const save = within(dialog).getByRole('button', { name: 'Save' })
+    await waitFor(() => expect((save as HTMLButtonElement).disabled).toBe(false), {
+      timeout: FIND_TIMEOUT_MS,
+    })
+    await user.click(save)
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull(), {
+      timeout: FIND_TIMEOUT_MS,
+    })
+    // no second NIC POST, and the landed IP row is not re-added
+    expect(writes()).toEqual([
+      expect.stringMatching(/^POST \/vms\/vm-01\/nics\/[^/]+\/networkfilterparameters$/),
+    ])
+    const created = (await listVmNics('vm-01')).filter((nic) => nic.name === 'nic-filtered')
+    expect(created).toHaveLength(1)
+    const parameters = await listNicNetworkFilterParameters('vm-01', created[0]!.id)
+    expect(parameters.map((p) => [p.name, p.value])).toEqual([
+      ['IP', '10.0.0.50'],
+      ['DHCPSERVER', '10.0.0.254'],
+    ])
   })
 })

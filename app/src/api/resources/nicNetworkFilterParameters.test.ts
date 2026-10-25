@@ -107,6 +107,21 @@ describe('planNetworkFilterParameterChanges', () => {
     })
   })
 
+  it('adopts a landed twin instead of re-adding it (retry after a partial apply)', () => {
+    // the engine already holds the first add from a failed earlier attempt
+    const landed = [...loaded, { id: 'p4', name: 'IP', value: '10.0.0.3' }]
+    const rows = [
+      ...loaded.map((p) => ({ id: p.id, name: p.name, value: p.value })),
+      { name: 'IP', value: '10.0.0.3' },
+      { name: 'IP', value: '10.0.0.4' },
+    ]
+    expect(planNetworkFilterParameterChanges(landed, rows)).toEqual({
+      remove: [],
+      update: [],
+      add: [{ name: 'IP', value: '10.0.0.4' }],
+    })
+  })
+
   it('treats every named row as an add for a new NIC', () => {
     const plan = planNetworkFilterParameterChanges([], [{ name: 'IP', value: '10.0.0.1' }])
     expect(plan).toEqual({ remove: [], update: [], add: [{ name: 'IP', value: '10.0.0.1' }] })

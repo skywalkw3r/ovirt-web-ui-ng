@@ -5,7 +5,7 @@ import {
   type NetworkFilterParameterPlan,
 } from '../api/resources/nicNetworkFilterParameters'
 import { listVmNics } from '../api/resources/nics'
-import { useNotify } from '../notifications/context'
+import type { Nic } from '../api/schemas/nic'
 
 // Nested under the VM NICs key (['vm', id, 'nics', ...], like
 // vmKeys.nicStatistics) so every NIC add/edit/remove invalidation reaches the
@@ -24,14 +24,26 @@ export function useNicNetworkFilterParameters(vmId: string, nicId: string, enabl
   })
 }
 
+// A failed parameter apply. `nic` is the NIC the plan targeted when it was
+// resolved by name (the Add flow), so the caller can switch its dialog to
+// editing that NIC instead of offering to create it again.
+export class NicFilterParametersError extends Error {
+  readonly nic?: Nic
+
+  constructor(message: string, nic?: Nic) {
+    super(message)
+    this.name = 'NicFilterParametersError'
+    this.nic = nic
+  }
+}
+
 // Apply a parameter plan to a vNIC. On Add the dialog only knows the new NIC's
-// name (POST /nics answers through a void resource call), so the id resolves by
-// name from a fresh NIC list; names are unique per VM (the engine rejects a
-// duplicate). Success is silent (the NIC mutation already toasted); a failure
-// toasts the engine fault verbatim.
+// name (POST /nics answers through a void resource call), so the NIC resolves
+// by name from a fresh NIC list; names are unique per VM (the engine rejects a
+// duplicate). Silent both ways: the NIC mutation toasts the save, and the NIC
+// dialog reports a parameter failure inline (a toast would double-report it).
 export function useApplyNicNetworkFilterParameters(vmId: string) {
   const queryClient = useQueryClient()
-  const { notify } = useNotify()
 
   return useMutation({
     mutationFn: async ({
@@ -42,22 +54,34 @@ export function useApplyNicNetworkFilterParameters(vmId: string) {
       nicId?: string
       nicName: string
       plan: NetworkFilterParameterPlan
-    }) => {
-      const id = nicId ?? (await listVmNics(vmId)).find((nic) => nic.name === nicName)?.id
-      if (id === undefined) throw new Error(`network interface ${nicName} not found`)
-      await applyNetworkFilterParameterPlan(vmId, id, plan)
+    }): Promise<string> => {
+      let resolved: Nic | undefined
+      if (nicId === undefined) {
+        resolved = (await listVmNics(vmId)).find((nic) => nic.name === nicName)
+        if (resolved === undefined) {
+          throw new NicFilterParametersError(`network interface ${nicName} not found`)
+        }
+      }
+      const id = nicId ?? resolved!.id
+      try {
+        await applyNetworkFilterParameterPlan(vmId, id, plan)
+      } catch (error) {
+        throw new NicFilterParametersError(
+          error instanceof Error ? error.message : String(error),
+          resolved,
+        )
+      }
       return id
     },
-    onError: (error, { nicName }) => {
-      notify({
-        title: `Network filter parameters on ${nicName} not saved: ${error.message}`,
-        variant: 'danger',
-      })
-    },
-    onSettled: (nicId) => {
-      if (nicId !== undefined) {
+    // A partly applied plan still moved the engine, so refresh on failure too.
+    onSettled: (resolvedId, error, { nicId }) => {
+      const target =
+        resolvedId ??
+        nicId ??
+        (error instanceof NicFilterParametersError ? error.nic?.id : undefined)
+      if (target !== undefined) {
         void queryClient.invalidateQueries({
-          queryKey: nicNetworkFilterParameterKeys.nic(vmId, nicId),
+          queryKey: nicNetworkFilterParameterKeys.nic(vmId, target),
         })
       }
     },

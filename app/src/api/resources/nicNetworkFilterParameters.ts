@@ -92,26 +92,36 @@ export interface NetworkFilterParameterPlan {
 // Diff the editor rows against the loaded parameters. A loaded parameter whose
 // row was deleted, or whose name was blanked, is removed; a loaded row whose
 // name/value moved is updated; an unnamed new row is UI noise and dropped.
-// Names are trimmed (a stray space would make libvirt ignore the variable);
-// values are sent verbatim.
+// A new row that matches a loaded parameter no row claims (same name and
+// value) adopts it instead of adding a twin: the end state is the same, and it
+// is what keeps a retry after a partly applied plan (or after an Add whose NIC
+// landed) from creating duplicates. Names are trimmed (a stray space would make
+// libvirt ignore the variable); values are sent verbatim.
 export function planNetworkFilterParameterChanges(
   loaded: NetworkFilterParameter[],
   rows: NetworkFilterParameterRow[],
 ): NetworkFilterParameterPlan {
   const plan: NetworkFilterParameterPlan = { remove: [], update: [], add: [] }
   const kept = new Map<string, NetworkFilterParameterRow>()
+  const fresh: NetworkFilterParameterSpec[] = []
   for (const row of rows) {
     const name = row.name.trim()
-    if (row.id !== undefined) {
-      if (name !== '') kept.set(row.id, { ...row, name })
-    } else if (name !== '') {
-      plan.add.push({ name, value: row.value })
-    }
+    if (name === '') continue
+    if (row.id !== undefined) kept.set(row.id, { ...row, name })
+    else fresh.push({ name, value: row.value })
+  }
+  const unclaimed = loaded.filter((parameter) => !kept.has(parameter.id))
+  for (const spec of fresh) {
+    const twin = unclaimed.findIndex(
+      (parameter) => (parameter.name ?? '') === spec.name && (parameter.value ?? '') === spec.value,
+    )
+    if (twin === -1) plan.add.push(spec)
+    else unclaimed.splice(twin, 1)
   }
   for (const parameter of loaded) {
     const row = kept.get(parameter.id)
     if (row === undefined) {
-      plan.remove.push(parameter.id)
+      if (unclaimed.includes(parameter)) plan.remove.push(parameter.id)
     } else if (row.name !== (parameter.name ?? '') || row.value !== (parameter.value ?? '')) {
       plan.update.push({ id: parameter.id, name: row.name, value: row.value })
     }

@@ -1,5 +1,6 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import {
+  Alert,
   Button,
   EmptyState,
   EmptyStateActions,
@@ -57,6 +58,7 @@ import { useColumnPrefs } from '../../hooks/useColumnPrefs'
 import { sortRows, useColumnSort } from '../../hooks/useColumnSort'
 import { useNetworks } from '../../hooks/useNetworks'
 import {
+  NicFilterParametersError,
   useApplyNicNetworkFilterParameters,
   useNicNetworkFilterParameters,
 } from '../../hooks/useNicNetworkFilterParameters'
@@ -201,6 +203,36 @@ const COLUMNS: {
 
 type ConfirmAction = 'unplug' | 'remove'
 
+// Partial update: only the fields the user actually changed reach the wire,
+// which also keeps useUpdateVmNic's toast wording (plug/unplug vs. "updated")
+// keyed off whether plugged moved. An empty patch means the NIC is unchanged.
+function nicPatchFor(target: Nic, values: NicFormValues): NicPatch {
+  const patch: NicPatch = {}
+  if (values.vnicProfileId && values.vnicProfileId !== target.vnic_profile?.id) {
+    patch.vnicProfileId = values.vnicProfileId
+  }
+  if (values.interface !== target.interface) patch.interface = values.interface
+  if (values.linked !== isLinked(target)) patch.linked = values.linked
+  if (values.plugged !== isPlugged(target)) patch.plugged = values.plugged
+  if (values.macAddress && values.macAddress !== target.mac?.address) {
+    patch.macAddress = values.macAddress
+  }
+  return patch
+}
+
+// The NIC as it stands after `patch` landed.
+function patchedNic(target: Nic, patch: NicPatch): Nic {
+  return {
+    ...target,
+    interface: patch.interface ?? target.interface,
+    linked: patch.linked ?? target.linked,
+    plugged: patch.plugged ?? target.plugged,
+    mac: patch.macAddress !== undefined ? { address: patch.macAddress } : target.mac,
+    vnic_profile:
+      patch.vnicProfileId !== undefined ? { id: patch.vnicProfileId } : target.vnic_profile,
+  }
+}
+
 export interface NicFormValues {
   name: string
   vnicProfileId?: string
@@ -243,9 +275,87 @@ export function NicsTab({ vmId }: { vmId: string }) {
   const update = useUpdateVmNic(vmId)
   const remove = useRemoveVmNic(vmId)
   const applyFilterParameters = useApplyNicNetworkFilterParameters(vmId)
-  const [isAddOpen, setIsAddOpen] = useState(false)
-  const [editing, setEditing] = useState<Nic | null>(null)
+  // One NIC dialog at a time: no `nic` = Add, a `nic` = Edit. It stays open
+  // while the save runs and closes on success. When the NIC saved but its
+  // network filter parameters did not, it stays open with an inline alert; an
+  // Add in that state flips the SAME dialog instance (same key) to editing the
+  // created NIC, so the typed rows survive and a retry never re-creates it.
+  const [nicDialog, setNicDialog] = useState<{ key: number; nic?: Nic } | null>(null)
+  const [dialogSeq, setDialogSeq] = useState(0)
+  const [filterError, setFilterError] = useState<string | null>(null)
   const [confirming, setConfirming] = useState<{ action: ConfirmAction; nic: Nic } | null>(null)
+
+  const openNicDialog = (nic?: Nic) => {
+    setDialogSeq((seq) => seq + 1)
+    setFilterError(null)
+    setNicDialog({ key: dialogSeq + 1, nic })
+  }
+  const closeNicDialog = () => {
+    setNicDialog(null)
+    setFilterError(null)
+  }
+
+  // Parameters hang off the NIC, so they always follow a successful NIC save.
+  const applyParameters = (nicName: string, plan: NetworkFilterParameterPlan, nicId?: string) => {
+    applyFilterParameters.mutate(
+      { nicId, nicName, plan },
+      {
+        onSuccess: closeNicDialog,
+        onError: (error) => {
+          const created = error instanceof NicFilterParametersError ? error.nic : undefined
+          if (created) setNicDialog((dialog) => dialog && { ...dialog, nic: created })
+          setFilterError(error.message)
+        },
+      },
+    )
+  }
+
+  const submitNic = (values: NicFormValues) => {
+    const target = nicDialog?.nic
+    const plan = values.networkFilterParameterPlan
+    setFilterError(null)
+    if (target === undefined) {
+      add.mutate(
+        {
+          name: values.name,
+          vnicProfileId: values.vnicProfileId,
+          interface: values.interface,
+          linked: values.linked,
+          plugged: values.plugged,
+          macAddress: values.macAddress,
+        },
+        {
+          onSuccess: () => (plan ? applyParameters(values.name, plan) : closeNicDialog()),
+          // useAddVmNic toasts the fault; closing mirrors the pre-existing flow
+          onError: closeNicDialog,
+        },
+      )
+      return
+    }
+    const patch = nicPatchFor(target, values)
+    // Nothing on the NIC itself moved (e.g. a retry after a parameter
+    // failure): send only the parameter changes.
+    if (plan && Object.keys(patch).length === 0) {
+      applyParameters(nicLabel(target), plan, target.id)
+      return
+    }
+    update.mutate(
+      { nic: target, patch },
+      {
+        onSuccess: () => {
+          if (!plan) {
+            closeNicDialog()
+            return
+          }
+          // the dialog now diffs against the saved NIC, so a retry after a
+          // parameter failure does not re-send the NIC patch
+          setNicDialog((dialog) => dialog && { ...dialog, nic: patchedNic(target, patch) })
+          applyParameters(nicLabel(target), plan, target.id)
+        },
+        onError: closeNicDialog,
+      },
+    )
+  }
 
   const mutating =
     add.isPending || update.isPending || remove.isPending || applyFilterParameters.isPending
@@ -391,7 +501,7 @@ export function NicsTab({ vmId }: { vmId: string }) {
       <Toolbar>
         <ToolbarContent>
           <ToolbarItem>
-            <Button variant="primary" onClick={() => setIsAddOpen(true)} isDisabled={mutating}>
+            <Button variant="primary" onClick={() => openNicDialog()} isDisabled={mutating}>
               {t('vmNics.add')}
             </Button>
           </ToolbarItem>
@@ -489,7 +599,7 @@ export function NicsTab({ vmId }: { vmId: string }) {
                         />
                       )}
                       items={[
-                        { title: t('common.action.edit'), onClick: () => setEditing(nic) },
+                        { title: t('common.action.edit'), onClick: () => openNicDialog(nic) },
                         {
                           title: isPlugged(nic)
                             ? t('vmNics.action.unplug')
@@ -517,70 +627,19 @@ export function NicsTab({ vmId }: { vmId: string }) {
         </div>
       )}
 
-      {isAddOpen && (
+      {nicDialog && (
         <NicModal
+          key={nicDialog.key}
+          nic={nicDialog.nic}
           vmId={vmId}
-          onSubmit={(values) => {
-            setIsAddOpen(false)
-            const plan = values.networkFilterParameterPlan
-            add.mutate(
-              {
-                name: values.name,
-                vnicProfileId: values.vnicProfileId,
-                interface: values.interface,
-                linked: values.linked,
-                plugged: values.plugged,
-                macAddress: values.macAddress,
-              },
-              {
-                // The parameters hang off the NIC, so they can only be created
-                // once the NIC exists.
-                onSuccess: () => {
-                  if (plan) applyFilterParameters.mutate({ nicName: values.name, plan })
-                },
-              },
-            )
-          }}
-          onClose={() => setIsAddOpen(false)}
-        />
-      )}
-
-      {editing && (
-        <NicModal
-          nic={editing}
-          vmId={vmId}
-          onSubmit={(values) => {
-            const target = editing
-            setEditing(null)
-            // Partial update: only the fields the user actually changed reach
-            // the wire, which also keeps useUpdateVmNic's toast wording
-            // (plug/unplug vs. "updated") keyed off whether plugged moved.
-            const patch: NicPatch = {}
-            if (values.vnicProfileId) patch.vnicProfileId = values.vnicProfileId
-            if (values.interface !== target.interface) patch.interface = values.interface
-            if (values.linked !== isLinked(target)) patch.linked = values.linked
-            if (values.plugged !== isPlugged(target)) patch.plugged = values.plugged
-            if (values.macAddress && values.macAddress !== target.mac?.address) {
-              patch.macAddress = values.macAddress
-            }
-            const plan = values.networkFilterParameterPlan
-            update.mutate(
-              { nic: target, patch },
-              {
-                // parameter changes follow the NIC update (diffed in the modal)
-                onSuccess: () => {
-                  if (plan) {
-                    applyFilterParameters.mutate({
-                      nicId: target.id,
-                      nicName: nicLabel(target),
-                      plan,
-                    })
-                  }
-                },
-              },
-            )
-          }}
-          onClose={() => setEditing(null)}
+          isSaving={add.isPending || update.isPending || applyFilterParameters.isPending}
+          saveError={
+            filterError !== null
+              ? `The network interface was saved, but its network filter parameters were not: ${filterError}. Save again to retry.`
+              : undefined
+          }
+          onSubmit={submitNic}
+          onClose={closeNicDialog}
         />
       )}
 
@@ -615,11 +674,17 @@ export function NicsTab({ vmId }: { vmId: string }) {
 export function NicModal({
   nic,
   vmId,
+  isSaving = false,
+  saveError,
   onSubmit,
   onClose,
 }: {
   nic?: Nic
   vmId?: string
+  // the owner keeps the dialog open through its save (VM NICs tab)
+  isSaving?: boolean
+  // inline danger alert for a partial save (NIC saved, parameters not)
+  saveError?: string
   onSubmit: (values: NicFormValues) => void
   onClose: () => void
 }) {
@@ -692,12 +757,19 @@ export function NicModal({
   // (still loading, or the read failed) is never diffed against an empty list.
   const parameterPlan = (): NetworkFilterParameterPlan | undefined => {
     if (!showFilterParameters || !parametersSeeded) return undefined
+    // an edited NIC diffs against what the engine holds now (an Add flipped
+    // to Edit after a partial failure reads the landed rows first)
+    if (isEdit && !filterParameters.isSuccess) return undefined
     const plan = planNetworkFilterParameterChanges(loadedParameters, parameterRows)
     return isEmptyPlan(plan) ? undefined : plan
   }
 
+  // Hold Save while the owner saves, and while an edited NIC's parameter list
+  // is (re)loading after a partial failure, so a retry never diffs stale rows.
+  const saveBlocked = isSaving || (isEdit && showFilterParameters && filterParameters.isFetching)
+
   const submit = () => {
-    if (!canSubmit) return
+    if (!canSubmit || saveBlocked) return
     onSubmit({
       name: name.trim(),
       vnicProfileId: profileId || undefined,
@@ -722,6 +794,14 @@ export function NicModal({
         labelId="nic-modal-title"
       />
       <ModalBody id="nic-modal-body">
+        {saveError !== undefined && (
+          <Alert
+            variant="danger"
+            isInline
+            title={saveError}
+            style={{ marginBottom: 'var(--pf-t--global--spacer--md)' }}
+          />
+        )}
         <Form
           id="nic-form"
           onSubmit={(event) => {
@@ -911,7 +991,13 @@ export function NicModal({
         </Form>
       </ModalBody>
       <ModalFooter>
-        <Button variant="primary" type="submit" form="nic-form" isDisabled={!canSubmit}>
+        <Button
+          variant="primary"
+          type="submit"
+          form="nic-form"
+          isLoading={isSaving}
+          isDisabled={!canSubmit || saveBlocked}
+        >
           {isEdit ? t('common.action.save') : t('common.action.add')}
         </Button>
         <Button variant="link" onClick={onClose}>
