@@ -258,7 +258,7 @@ export function HostDetailPage() {
             )}
             <Tab eventKey="vms" title={<TabTitleText>{t('hostDetail.tab.vms')}</TabTitleText>}>
               <TabContentBody hasPadding>
-                <HostVmsTab hostName={host.data.name ?? ''} />
+                <HostVmsTab hostName={host.data.name ?? ''} hostId={hostId} />
               </TabContentBody>
             </Tab>
             <Tab eventKey="nics" title={<TabTitleText>{t('hostDetail.tab.nics')}</TabTitleText>}>
