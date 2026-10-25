@@ -130,10 +130,15 @@ export function TasksButton() {
       {/* NotificationBadge renders a plain stateful button; count hides at 0.
           'unread' highlights the toggle while anything is still running.
           count is typed number but PF only interpolates it into the badge
-          text, so the '20+' overflow string rides through a deliberate cast. */}
+          text, so the '20+' overflow string rides through a deliberate cast.
+          The label carries the visible count (WCAG 2.5.3 label in name). */}
       <NotificationBadge
         aria-label={
-          running > BADGE_CAP ? t('tasks.badge.overCap', { BADGE_CAP }) : t('tasks.title')
+          running > BADGE_CAP
+            ? t('tasks.badge.overCap', { BADGE_CAP })
+            : running > 0
+              ? t('tasks.badge.running', { count: running })
+              : t('tasks.title')
         }
         icon={<TaskIcon />}
         variant={running > 0 ? 'unread' : 'read'}

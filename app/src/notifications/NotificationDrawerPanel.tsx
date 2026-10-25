@@ -172,12 +172,14 @@ export function NotificationBell() {
       {/* NotificationBadge renders a plain stateful button; count hides at 0.
           count is typed number but PF only interpolates it into the badge
           text, so the '20+' overflow string rides through a deliberate cast
-          (same convention as TasksButton). */}
+          (same convention as TasksButton, label carries the visible count). */}
       <NotificationBadge
         aria-label={
           unread.length > BADGE_CAP
             ? `Notifications — more than ${BADGE_CAP} unread`
-            : 'Notifications'
+            : unread.length > 0
+              ? `Notifications — ${unread.length} unread`
+              : 'Notifications'
         }
         variant={variant}
         count={unread.length > BADGE_CAP ? (`${BADGE_CAP}+` as unknown as number) : unread.length}
