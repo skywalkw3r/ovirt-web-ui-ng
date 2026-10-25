@@ -31,7 +31,7 @@
     "cmdk": "^1.1.1",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
-    "react-intl": "^10.2.2",
+    "react-intl": "^12.1.5",
     "victory-area": "^37.3.6",
     "victory-axis": "^37.3.6",
     "victory-bar": "^37.3.6",
