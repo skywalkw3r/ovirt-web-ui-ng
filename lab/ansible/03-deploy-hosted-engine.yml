@@ -1,0 +1,174 @@
+---
+# 03-deploy-hosted-engine.yml
+#
+# Deploys the oVirt self-hosted engine on the node prepared by
+# 02-bootstrap-node.yml, using the ovirt.ovirt.hosted_engine_setup role.
+# The engine VM is first built locally under /var/tmp on a NATed libvirt
+# network, then moved onto the NFS hosted_storage domain -- expect the play
+# to run 30-60 minutes. Keep the SSH session alive (ssh keepalives or tmux).
+#
+# Run:
+#   export HE_ADMIN_PASSWORD=... HE_ROOT_PASSWORD=...
+#   ansible-playbook -i inventory.ini 03-deploy-hosted-engine.yml -e @vars.yml
+#
+# Controller requirements:
+#   ansible-galaxy collection install ovirt.ovirt
+#
+# Variables consumed (see vars.example.yml): node_fqdn, node_ip, engine_fqdn,
+# engine_ip, lab_ip_prefix, lab_gateway, lab_dns, he_root_password
+# (he_admin_password is picked up by the role from the contract vars file).
+
+- name: Deploy the oVirt self-hosted engine
+  hosts: ovirt_node
+  become: true
+
+  vars:
+    # --- contract -> hosted_engine_setup role variable mapping ---
+    # All names below are verified against the role's defaults/main.yml.
+    he_fqdn: "{{ engine_fqdn }}"
+
+    # Static IP for the engine VM. Note the exact role names:
+    # it is he_gateway, NOT he_default_gateway.
+    he_vm_ip_addr: "{{ engine_ip }}"
+    he_vm_ip_prefix: "{{ lab_ip_prefix }}"
+    he_gateway: "{{ lab_gateway }}"
+    he_dns_addr: "{{ lab_dns }}"
+
+    # DNS-less lab: push the engine ip+fqdn into /etc/hosts on both the host
+    # and the engine VM, and replace the default 'dns' reachability test
+    # (which would fail for .lab.local names) with a plain ping.
+    he_vm_etc_hosts: true
+    he_network_test: ping
+
+    # The role builds the ovirtmgmt bridge on this NIC and briefly moves its
+    # IP config onto the bridge. Derive it from facts instead of hardcoding
+    # eth0 so the play survives predictable-interface-name images.
+    he_bridge_if: "{{ ansible_default_ipv4.interface }}"
+
+    # Storage: the NFS export served by the node itself (playbook 02).
+    # he_storage_domain_addr must be a routable name/IP -- never localhost --
+    # because it is persisted in the storage domain and mounted over the
+    # ovirtmgmt bridge.
+    he_domain_type: nfs
+    he_storage_domain_addr: "{{ node_fqdn }}"
+    he_storage_domain_path: /exports/he
+    he_nfs_version: auto
+
+    # Lab sizing. The role defaults are 'max', which would hand ALL host
+    # RAM/CPUs to the engine VM. 4096 MB is the role's hard floor
+    # (he_minimal_mem_size_MB).
+    he_mem_size_MB: "4096" # noqa: var-naming[pattern] -- exact role variable name
+    he_vcpus: "2"
+
+    # Keep the appliance RPM after deploy (role default removes it) so a
+    # re-run of 02/03 does not re-download ~1.5 GB.
+    he_remove_appliance_rpm: false
+
+    # We run the role from a controller against the node (not locally on the
+    # node), so tell the role which inventory host to delegate to; its
+    # default is 'localhost'.
+    he_ansible_host_name: "{{ inventory_hostname }}"
+
+    # Engine VM root password. he_admin_password (admin@ovirt portal/API
+    # password) comes straight from the contract vars file; both originate
+    # from environment variables -- never from files on disk.
+    he_appliance_password: "{{ he_root_password }}"
+
+    # Upstream bug workaround (ovirt.ovirt 3.2.2): the role's back-compat
+    # task 'Set he_appliance from he_appliance_ova' runs whenever
+    # he_appliance is '' (the default) and then resolves he_appliance_ova —
+    # a legacy variable with NO default — so the deploy dies with
+    # "'he_appliance_ova' is undefined". Defining it empty lets the role
+    # fall through to its normal path: use the ovirt-engine-appliance RPM
+    # that 02-bootstrap already installed.
+    he_appliance_ova: ''
+
+  pre_tasks:
+    # ------------------------------------------------------------------
+    # Fail fast, before a 30+ minute deploy gets going.
+    # ------------------------------------------------------------------
+    - name: Assert the secret environment variables are set on the controller
+      # lookup('env', ...) evaluates on the controller and silently returns
+      # '' when unset -- which would send empty passwords into the deploy and
+      # fail it partway through. Catch that here instead.
+      ansible.builtin.assert:
+        that:
+          - lookup('env', 'HE_ADMIN_PASSWORD') | length > 0
+          - lookup('env', 'HE_ROOT_PASSWORD') | length > 0
+        fail_msg: >-
+          HE_ADMIN_PASSWORD and/or HE_ROOT_PASSWORD are not set in the
+          controller environment. Export both before running this playbook;
+          they are intentionally never stored in vars files.
+
+    - name: Assert engine and node identities are distinct
+      # hosted-engine setup refuses (late, and confusingly) when the engine
+      # FQDN equals or resolves to the host itself.
+      ansible.builtin.assert:
+        that:
+          - engine_fqdn != node_fqdn
+          - engine_ip != node_ip
+        fail_msg: >-
+          engine_fqdn/engine_ip must differ from node_fqdn/node_ip -- the
+          engine is a separate VM with its own identity.
+
+    - name: Check free space in /var/tmp
+      # No -P here: GNU df rejects -P together with --output ("options are
+      # mutually exclusive"). --output=avail gives the fixed one-column
+      # layout the parsing below expects; -k pins the unit to KiB.
+      ansible.builtin.command:
+        cmd: df -k --output=avail /var/tmp
+      register: var_tmp_df
+      changed_when: false
+
+    - name: Assert /var/tmp has at least 5 GiB free
+      # The bootstrap engine VM image is built under /var/tmp before being
+      # moved to NFS; the role needs >= 5 GB there.
+      ansible.builtin.assert:
+        that:
+          - (var_tmp_df.stdout_lines | last | trim | int) > (5 * 1024 * 1024)
+        fail_msg: >-
+          /var/tmp has less than 5 GiB free
+          ({{ var_tmp_df.stdout_lines | last | trim }} KiB). The hosted-engine
+          bootstrap VM is built there; free up space or grow the disk.
+
+    # ------------------------------------------------------------------
+    # Idempotence guard: the hosted_engine_setup role itself is NOT
+    # idempotent -- re-running it over a live deployment fails destructively.
+    # ------------------------------------------------------------------
+    - name: Check whether the hosted engine is already deployed
+      ansible.builtin.command:
+        cmd: hosted-engine --check-deployed
+      register: he_deployed
+      changed_when: false
+      failed_when: false # rc 0 = already deployed, non-zero = not yet
+
+  tasks:
+    - name: Report an existing deployment
+      ansible.builtin.debug:
+        msg: >-
+          Hosted engine is already deployed on {{ node_fqdn }} -- skipping the
+          hosted_engine_setup role. Wipe the node (or 'ovirt-hosted-engine-cleanup')
+          to redeploy.
+      when: he_deployed.rc == 0
+
+    - name: Deploy the self-hosted engine (30-60 minutes)
+      # include_role (dynamic) rather than import_role so the whole role is
+      # skipped in one step when the engine already exists.
+      ansible.builtin.include_role:
+        name: ovirt.ovirt.hosted_engine_setup
+      when: he_deployed.rc != 0
+
+  post_tasks:
+    - name: Confirm the deployment is registered
+      ansible.builtin.command:
+        cmd: hosted-engine --check-deployed
+      register: he_verify
+      changed_when: false
+
+    - name: Show where to go next
+      ansible.builtin.debug:
+        msg: >-
+          Hosted engine deployed. Portal: https://{{ engine_fqdn }}/ovirt-engine
+          (login admin@ovirt with HE_ADMIN_PASSWORD; Keycloak shows it as
+          admin@ovirt@internalsso). Next: 04-post-deploy.yml adds the 'data'
+          storage domain.

@@ -1,0 +1,481 @@
+import { useRef } from 'react'
+import {
+  useMutation,
+  useQueryClient,
+  type MutateOptions,
+  type QueryClient,
+} from '@tanstack/react-query'
+import type { StorageDomain } from '../api/schemas/storage-domain'
+import {
+  activateStorageDomain,
+  createBlockStorageDomain,
+  createLocalStorageDomain,
+  createManagedBlockStorageDomain,
+  createStorageDomain,
+  deactivateStorageDomain,
+  destroyStorageDomain,
+  detachStorageDomain,
+  registerStorageDomainTemplate,
+  registerStorageDomainVm,
+  removeStorageDomain,
+  updateStorageDomain,
+  type BlockStorageDomainSpec,
+  type LocalStorageDomainSpec,
+  type ManagedBlockStorageDomainSpec,
+  type StorageDomainEditBody,
+  type StorageProperty,
+} from '../api/resources/storageDomains'
+import { attachStorageDomain } from '../api/resources/datacenters'
+import { useNotify } from '../notifications/context'
+import { vmKeys } from './useVms'
+import { dataCenterKeys } from './useAdminResources'
+import { templateKeys } from './useCatalog'
+import { storageDomainKeys } from './useStorageDomains'
+
+// The invalidation fan every storage-domain mutation shares. ['storagedomains']
+// is the prefix every ['storagedomains', search] entry useStorageDomains
+// registers; ['storagedomain', id] is the prefix the whole detail slice shares
+// (useStorageDomain and its sub-hooks), so one invalidate refreshes the domain
+// wholesale. Keep in sync with useCreateStorageDomain's onSettled keys.
+function invalidateStorageDomain(queryClient: QueryClient, id: string) {
+  void queryClient.invalidateQueries({ queryKey: storageDomainKeys.all })
+  void queryClient.invalidateQueries({ queryKey: storageDomainKeys.detail(id) })
+}
+
+// The create step accepts either a pre-built body (the NFS path builds its own
+// storage block) OR a typed spec: block (iSCSI/FCP, whose storage block the
+// resource builds from LUN ids), managed block storage (cinderlib driver
+// options) or local (localfs on one host). Exactly one is set per call; the
+// typed paths route through their resource builders so the modal never
+// hand-assembles an envelope. `payload` stays a plain Record so the NFS path
+// keeps working unchanged.
+type CreateStorageDomainSource =
+  | {
+      payload: Record<string, unknown>
+      blockSpec?: undefined
+      managedBlockSpec?: undefined
+      localSpec?: undefined
+    }
+  | {
+      payload?: undefined
+      blockSpec: BlockStorageDomainSpec
+      managedBlockSpec?: undefined
+      localSpec?: undefined
+    }
+  | {
+      payload?: undefined
+      blockSpec?: undefined
+      // The sensitive driver options are NOT part of the variables (TanStack
+      // keeps variables in the mutation state and its MutationCache entry);
+      // they ride through createManagedBlock's side channel instead.
+      managedBlockSpec: ManagedBlockStorageDomainVariables
+      localSpec?: undefined
+    }
+  | {
+      payload?: undefined
+      blockSpec?: undefined
+      managedBlockSpec?: undefined
+      // AddLocalStorageDomain attaches the domain to the host's local data
+      // center itself, so the attach step never runs for it; dataCenterId (when
+      // given) only scopes the cache invalidation.
+      localSpec: LocalStorageDomainSpec
+    }
+
+export type CreateStorageDomainVariables = CreateStorageDomainSource & { dataCenterId?: string }
+
+// A Managed Block Storage spec minus its secrets, the shape that may live in
+// mutation state.
+export type ManagedBlockStorageDomainVariables = Omit<
+  ManagedBlockStorageDomainSpec,
+  'driverSensitiveOptions'
+>
+
+type CreateStorageDomainResult = { created: StorageDomain; attachError?: Error }
+
+function createFromSource(
+  source: CreateStorageDomainSource,
+  sensitiveOptions: StorageProperty[] | undefined,
+): Promise<StorageDomain> {
+  if (source.blockSpec) return createBlockStorageDomain(source.blockSpec)
+  if (source.managedBlockSpec) {
+    return createManagedBlockStorageDomain({
+      ...source.managedBlockSpec,
+      driverSensitiveOptions: sensitiveOptions,
+    })
+  }
+  if (source.localSpec) return createLocalStorageDomain(source.localSpec)
+  return createStorageDomain(source.payload)
+}
+
+// The Create Storage Domain modal's save mutation. Engine semantics make this
+// a two-step orchestration: POST /storagedomains creates the domain (the named
+// host mounts/formats the storage), then — when a data center is chosen —
+// POST /datacenters/{id}/storagedomains attaches (activates) it there. The
+// steps fail separately: a create failure rejects the mutation (danger toast,
+// mirrors useCreateNetwork), but an attach failure after a successful create
+// still resolves — the domain exists, so the toast is a warning saying it was
+// created but not attached rather than pretending the whole thing failed.
+//
+// SECURITY (Managed Block Storage): driver sensitive options (SAN passwords,
+// tokens) must not outlive the request. TanStack keeps a mutation's variables
+// in its state and MutationCache entry until reset/GC, so the secrets never go
+// into the variables: createManagedBlock parks them in a ref that mutationFn
+// takes and clears on entry, leaving them only in the in-flight request body.
+// gcTime 0 drops a finished mutation from the cache as soon as nothing observes
+// it. Engine faults reach the toast as ApiError.message, which carries only the
+// engine's own fault reason/detail, never the request body.
+export function useCreateStorageDomain() {
+  const queryClient = useQueryClient()
+  const { notify } = useNotify()
+  const sensitiveOptionsRef = useRef<StorageProperty[] | undefined>(undefined)
+
+  const mutation = useMutation({
+    gcTime: 0,
+    mutationFn: async (
+      variables: CreateStorageDomainVariables,
+    ): Promise<CreateStorageDomainResult> => {
+      const sensitiveOptions = variables.managedBlockSpec ? sensitiveOptionsRef.current : undefined
+      sensitiveOptionsRef.current = undefined
+      const { dataCenterId } = variables
+      const created = await createFromSource(variables, sensitiveOptions)
+      // a local domain is already attached by the engine (see localSpec)
+      if (!dataCenterId || variables.localSpec) return { created }
+      try {
+        await attachStorageDomain(dataCenterId, created.id)
+        return { created }
+      } catch (error) {
+        // create succeeded — surface the attach failure separately (warning
+        // toast in onSuccess) instead of rejecting the whole mutation
+        return { created, attachError: error instanceof Error ? error : new Error(String(error)) }
+      }
+    },
+    onSuccess: ({ created, attachError }) => {
+      if (attachError) {
+        notify({
+          title: `Storage domain ${created.name} created but not attached: ${attachError.message}`,
+          variant: 'warning',
+        })
+      } else {
+        notify({ title: `Storage domain ${created.name} created`, variant: 'success' })
+      }
+    },
+    onError: (error) => {
+      // ApiError.message carries the engine fault detail verbatim
+      notify({ title: error.message, variant: 'danger' })
+    },
+    onSettled: (_data, _error, { dataCenterId }) => {
+      // ['storagedomains'] is the prefix every ['storagedomains', search] entry
+      // useStorageDomains registers; the datacenter slice key is the one
+      // useDataCenterStorageDomains registers in useDataCenterDetail.
+      void queryClient.invalidateQueries({ queryKey: storageDomainKeys.all })
+      if (dataCenterId) {
+        void queryClient.invalidateQueries({
+          queryKey: dataCenterKeys.storageDomains(dataCenterId),
+        })
+      }
+    },
+  })
+
+  // Managed Block Storage create: the spec rides as variables, the secrets
+  // only through the ref (see the SECURITY note above).
+  const createManagedBlock = (
+    variables: { managedBlockSpec: ManagedBlockStorageDomainVariables; dataCenterId?: string },
+    sensitiveOptions: StorageProperty[],
+    options?: MutateOptions<CreateStorageDomainResult, Error, CreateStorageDomainVariables>,
+  ) => {
+    sensitiveOptionsRef.current = sensitiveOptions
+    mutation.mutate(variables, options)
+  }
+
+  return { ...mutation, createManagedBlock }
+}
+
+// The Attach-to-Data-Center action. POST /datacenters/{dcId}/storagedomains
+// activates the domain in that data center (reuses attachStorageDomain from
+// resources/datacenters.ts). Invalidates the domain (its status/data_centers
+// change) and the target data center's storage-domain slice.
+export function useAttachStorageDomain() {
+  const queryClient = useQueryClient()
+  const { notify } = useNotify()
+
+  return useMutation({
+    mutationFn: ({
+      dataCenterId,
+      storageDomainId,
+    }: {
+      dataCenterId: string
+      storageDomainId: string
+      name: string
+    }) => attachStorageDomain(dataCenterId, storageDomainId),
+    onSuccess: (_data, { name }) => {
+      notify({ title: `Storage domain ${name} attached`, variant: 'success' })
+    },
+    onError: (error) => {
+      // ApiError.message carries the engine fault detail verbatim
+      notify({ title: error.message, variant: 'danger' })
+    },
+    onSettled: (_data, _error, { dataCenterId, storageDomainId }) => {
+      invalidateStorageDomain(queryClient, storageDomainId)
+      void queryClient.invalidateQueries({
+        queryKey: dataCenterKeys.storageDomains(dataCenterId),
+      })
+    },
+  })
+}
+
+// The Detach action. DELETE /datacenters/{dcId}/storagedomains/{id} removes the
+// domain from its data center (data kept). Invalidates the domain and the
+// former data center's storage-domain slice.
+export function useDetachStorageDomain() {
+  const queryClient = useQueryClient()
+  const { notify } = useNotify()
+
+  return useMutation({
+    mutationFn: ({
+      dataCenterId,
+      storageDomainId,
+    }: {
+      dataCenterId: string
+      storageDomainId: string
+      name: string
+    }) => detachStorageDomain(dataCenterId, storageDomainId),
+    onSuccess: (_data, { name }) => {
+      notify({ title: `Storage domain ${name} detached`, variant: 'success' })
+    },
+    onError: (error) => {
+      notify({ title: error.message, variant: 'danger' })
+    },
+    onSettled: (_data, _error, { dataCenterId, storageDomainId }) => {
+      invalidateStorageDomain(queryClient, storageDomainId)
+      void queryClient.invalidateQueries({
+        queryKey: dataCenterKeys.storageDomains(dataCenterId),
+      })
+    },
+  })
+}
+
+// The Activate action. POST .../activate brings an Inactive/Maintenance domain
+// back to Active in its data center.
+export function useActivateStorageDomain() {
+  const queryClient = useQueryClient()
+  const { notify } = useNotify()
+
+  return useMutation({
+    mutationFn: ({
+      dataCenterId,
+      storageDomainId,
+    }: {
+      dataCenterId: string
+      storageDomainId: string
+      name: string
+    }) => activateStorageDomain(dataCenterId, storageDomainId),
+    onSuccess: (_data, { name }) => {
+      notify({ title: `Storage domain ${name} activated`, variant: 'success' })
+    },
+    onError: (error) => {
+      notify({ title: error.message, variant: 'danger' })
+    },
+    onSettled: (_data, _error, { dataCenterId, storageDomainId }) => {
+      invalidateStorageDomain(queryClient, storageDomainId)
+      void queryClient.invalidateQueries({
+        queryKey: dataCenterKeys.storageDomains(dataCenterId),
+      })
+    },
+  })
+}
+
+// The Maintenance (deactivate) action. POST .../deactivate moves an Active
+// domain to Maintenance; `force` pushes a master-domain deactivation through
+// (rides in the action body, per the contract).
+export function useDeactivateStorageDomain() {
+  const queryClient = useQueryClient()
+  const { notify } = useNotify()
+
+  return useMutation({
+    mutationFn: ({
+      dataCenterId,
+      storageDomainId,
+      force,
+    }: {
+      dataCenterId: string
+      storageDomainId: string
+      name: string
+      force?: boolean
+    }) => deactivateStorageDomain(dataCenterId, storageDomainId, { force }),
+    onSuccess: (_data, { name }) => {
+      notify({ title: `Storage domain ${name} moved to maintenance`, variant: 'success' })
+    },
+    onError: (error) => {
+      notify({ title: error.message, variant: 'danger' })
+    },
+    onSettled: (_data, _error, { dataCenterId, storageDomainId }) => {
+      invalidateStorageDomain(queryClient, storageDomainId)
+      void queryClient.invalidateQueries({
+        queryKey: dataCenterKeys.storageDomains(dataCenterId),
+      })
+    },
+  })
+}
+
+// The Edit / Manage Domain modal's save mutation. PUT the changed fields and
+// re-read the echoed domain. Invalidates the domain (list + detail).
+export function useUpdateStorageDomain() {
+  const queryClient = useQueryClient()
+  const { notify } = useNotify()
+
+  return useMutation({
+    mutationFn: ({ id, body }: { id: string; body: StorageDomainEditBody }) =>
+      updateStorageDomain(id, body),
+    onSuccess: (domain) => {
+      notify({ title: `Changes to ${domain.name} saved`, variant: 'success' })
+    },
+    onError: (error) => {
+      notify({ title: error.message, variant: 'danger' })
+    },
+    onSettled: (_data, _error, { id }) => {
+      invalidateStorageDomain(queryClient, id)
+    },
+  })
+}
+
+// The Remove action. DELETE /storagedomains/{id}?host=&format= detaches,
+// optionally formats, and deletes the domain via a named host. The domain is
+// gone, so the caller navigates back to the list on success; the list
+// invalidation drops it from the table.
+export function useRemoveStorageDomain() {
+  const queryClient = useQueryClient()
+  const { notify } = useNotify()
+
+  return useMutation({
+    mutationFn: ({
+      id,
+      host,
+      format,
+    }: {
+      id: string
+      name: string
+      host: string
+      format?: boolean
+    }) => removeStorageDomain(id, { host, format }),
+    onSuccess: (_data, { name }) => {
+      notify({ title: `Storage domain ${name} removed`, variant: 'success' })
+    },
+    onError: (error) => {
+      notify({ title: error.message, variant: 'danger' })
+    },
+    onSettled: (_data, _error, { id }) => {
+      invalidateStorageDomain(queryClient, id)
+    },
+  })
+}
+
+// The Register-VM action (RegisterEntityModal, kind='vm'). POST
+// /storagedomains/{id}/vms/{vmId}/register imports the unregistered VM from the
+// domain's OVF store into the chosen cluster. name/clusterId/allowPartialImport
+// ride in the variables; name feeds the toast, the rest the wire body. On
+// settle: invalidateStorageDomain(id) refreshes the domain slice (the entity
+// leaves the unregistered-vms subtab) AND ['vms'] refreshes the VM catalog
+// prefix (every ['vms', search] entry useVms registers) so the now-imported VM
+// appears there.
+export function useRegisterStorageDomainVm() {
+  const queryClient = useQueryClient()
+  const { notify } = useNotify()
+
+  return useMutation({
+    mutationFn: ({
+      id,
+      vmId,
+      clusterId,
+      allowPartialImport,
+      registration,
+    }: {
+      id: string
+      vmId: string
+      name: string
+      clusterId: string
+      allowPartialImport?: boolean
+      // Pre-built registration_configuration + reassign_bad_macs fragment from
+      // buildRegistrationBody (storage-domain-tabs/registrationConfiguration).
+      // Empty {} on the simple path; spread verbatim into the register action.
+      registration?: Record<string, unknown>
+    }) => registerStorageDomainVm(id, vmId, { clusterId, allowPartialImport, registration }),
+    onSuccess: (_data, { name }) => {
+      notify({ title: `${name} registered`, variant: 'success' })
+    },
+    onError: (error) => {
+      // ApiError.message carries the engine fault detail verbatim
+      notify({ title: error.message, variant: 'danger' })
+    },
+    onSettled: (_data, _error, { id }) => {
+      invalidateStorageDomain(queryClient, id)
+      void queryClient.invalidateQueries({ queryKey: vmKeys.all })
+    },
+  })
+}
+
+// The Register-Template action (RegisterEntityModal, kind='template'). POST
+// /storagedomains/{id}/templates/{templateId}/register imports the unregistered
+// template into the chosen cluster. Sibling of useRegisterStorageDomainVm; on
+// settle invalidates the domain slice and the ['templates'] catalog prefix
+// (every ['templates', search] entry useTemplates registers) so the imported
+// template appears in the catalog.
+export function useRegisterStorageDomainTemplate() {
+  const queryClient = useQueryClient()
+  const { notify } = useNotify()
+
+  return useMutation({
+    mutationFn: ({
+      id,
+      templateId,
+      clusterId,
+      allowPartialImport,
+      registration,
+    }: {
+      id: string
+      templateId: string
+      name: string
+      clusterId: string
+      allowPartialImport?: boolean
+      // Pre-built registration_configuration + reassign_bad_macs fragment from
+      // buildRegistrationBody (storage-domain-tabs/registrationConfiguration).
+      // Empty {} on the simple path; spread verbatim into the register action.
+      registration?: Record<string, unknown>
+    }) =>
+      registerStorageDomainTemplate(id, templateId, {
+        clusterId,
+        allowPartialImport,
+        registration,
+      }),
+    onSuccess: (_data, { name }) => {
+      notify({ title: `${name} registered`, variant: 'success' })
+    },
+    onError: (error) => {
+      notify({ title: error.message, variant: 'danger' })
+    },
+    onSettled: (_data, _error, { id }) => {
+      invalidateStorageDomain(queryClient, id)
+      void queryClient.invalidateQueries({ queryKey: templateKeys.all })
+    },
+  })
+}
+
+// The Destroy action. DELETE /storagedomains/{id}?destroy=true force-removes an
+// unreachable domain from the engine DB (no host contacted). The domain is
+// gone, so the caller navigates back to the list on success.
+export function useDestroyStorageDomain() {
+  const queryClient = useQueryClient()
+  const { notify } = useNotify()
+
+  return useMutation({
+    mutationFn: ({ id }: { id: string; name: string }) => destroyStorageDomain(id),
+    onSuccess: (_data, { name }) => {
+      notify({ title: `Storage domain ${name} destroyed`, variant: 'success' })
+    },
+    onError: (error) => {
+      notify({ title: error.message, variant: 'danger' })
+    },
+    onSettled: (_data, _error, { id }) => {
+      invalidateStorageDomain(queryClient, id)
+    },
+  })
+}

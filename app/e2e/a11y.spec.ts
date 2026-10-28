@@ -1,0 +1,229 @@
+import AxeBuilder from '@axe-core/playwright'
+import { expect, test, type Page } from '@playwright/test'
+import { login } from './helpers'
+
+// Gate: 'critical' and 'serious' violations fail the suite; 'moderate' and
+// 'minor' still show up in axe's report locally but do not block. Each scan
+// waits for page-specific content first so axe sees the real page, not the
+// loading skeletons.
+async function expectNoSeriousViolations(page: Page): Promise<void> {
+  // Park the pointer and let any hover/focus tooltip close before scanning —
+  // an open .pf-v6-c-tooltip intermittently failed color-contrast on CI (the
+  // events page), and the transient tooltip is not the page under test.
+  await page.mouse.move(0, 0)
+  await expect(page.locator('.pf-v6-c-tooltip')).toHaveCount(0)
+  const results = await new AxeBuilder({ page }).analyze()
+  const gating = results.violations.filter(
+    (violation) => violation.impact === 'critical' || violation.impact === 'serious',
+  )
+  // Flattened to readable strings so a failure names the rule and the nodes.
+  expect(
+    gating.map(
+      (violation) =>
+        `${violation.impact}: ${violation.id} — ` +
+        violation.nodes.map((node) => node.target.join(' ')).join(', '),
+    ),
+  ).toEqual([])
+}
+
+test('login page has no serious accessibility violations', async ({ page }) => {
+  await page.goto('/login')
+  await expect(page.getByRole('button', { name: 'Sign in' })).toBeVisible()
+
+  await expectNoSeriousViolations(page)
+})
+
+test('dashboard has no serious accessibility violations', async ({ page }) => {
+  await login(page)
+  await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible()
+  // Wait for the inventory and the capacity tiles plus the by-cluster table,
+  // so their counts, status labels, threshold bars and inline links are
+  // scanned populated
+  await expect(page.getByRole('grid', { name: 'Resource inventory' })).toBeVisible()
+  await expect(page.getByRole('grid', { name: 'Utilization by cluster' })).toBeVisible()
+  await expect(page.getByRole('region', { name: 'CPU' }).getByText(/free$/)).toBeVisible()
+
+  await expectNoSeriousViolations(page)
+})
+
+test('VM Monitoring tab has no serious accessibility violations', async ({ page }) => {
+  await login(page, { path: '/vms/vm-01' })
+  await page.getByRole('tab', { name: 'Monitoring' }).click()
+  await expect(page.getByRole('heading', { name: 'Current utilization' })).toBeVisible()
+
+  await expectNoSeriousViolations(page)
+})
+
+test('host Monitoring tab has no serious accessibility violations', async ({ page }) => {
+  await login(page, { path: '/hosts/host-01' })
+  await page.getByRole('tab', { name: 'Monitoring' }).click()
+  await expect(page.getByText(/^Busiest NIC/)).toBeVisible()
+
+  await expectNoSeriousViolations(page)
+})
+
+test('cluster Monitoring tab has no serious accessibility violations', async ({ page }) => {
+  await login(page, { path: '/clusters/cluster-01' })
+  await page.getByRole('tab', { name: 'Monitoring' }).click()
+  await expect(page.getByRole('grid', { name: 'Host utilization in this cluster' })).toBeVisible()
+
+  await expectNoSeriousViolations(page)
+})
+
+test('VM list has no serious accessibility violations', async ({ page }) => {
+  await login(page, { path: '/vms' })
+  const rows = page.locator('table[aria-label="Virtual machines"] tbody tr')
+  await expect(rows.first()).toBeVisible()
+
+  await expectNoSeriousViolations(page)
+})
+
+test('VM details page has no serious accessibility violations', async ({ page }) => {
+  // web-01 (vm-01) carries snapshots, disks, NICs and labels, so the scan
+  // covers every populated details panel.
+  await login(page, { path: '/vms/vm-01' })
+  await expect(page.getByRole('heading', { name: 'web-01', exact: true })).toBeVisible()
+
+  await expectNoSeriousViolations(page)
+})
+
+test('New host dialog has no serious accessibility violations', async ({ page }) => {
+  await login(page, { path: '/hosts' })
+  const rows = page.locator('table[aria-label="Hosts"] tbody tr')
+  await expect(rows.first()).toBeVisible()
+
+  // Scan with the create dialog open so its form fields, tab rail and helper
+  // texts are in the tree (the modal renders in a portal on the same page).
+  await page.getByRole('button', { name: 'New host' }).click()
+  const dialog = page.getByRole('dialog')
+  await expect(dialog.getByRole('textbox', { name: 'Host name' })).toBeVisible()
+
+  await expectNoSeriousViolations(page)
+})
+
+test('New affinity group dialog with members selected has no serious violations', async ({
+  page,
+}) => {
+  // The entity pickers only show their selection count (and the chosen-member
+  // badges) once something is picked — the state the masthead/list sweeps
+  // never reach, so label-in-name regressions there would otherwise slip by.
+  await login(page, { path: '/clusters/cluster-01' })
+  await page.getByRole('tab', { name: 'Affinity Groups' }).click()
+  await page.getByRole('button', { name: 'New affinity group' }).first().click()
+  const dialog = page.getByRole('dialog')
+  await dialog.getByRole('tab', { name: 'Virtual Machines' }).click()
+  await dialog.getByRole('button', { name: 'Select virtual machines' }).click()
+  const members = page.getByRole('listbox').getByRole('checkbox')
+  await members.nth(0).click()
+  await members.nth(1).click()
+  // close the menu so the scan sees the settled toggle, not the open listbox
+  const toggle = dialog.getByRole('button', { name: '2 selected — Select virtual machines' })
+  await toggle.click()
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false')
+
+  await expectNoSeriousViolations(page)
+})
+
+test('VM list with a folder selected has no serious accessibility violations', async ({ page }) => {
+  // Breadcrumb, count badges and the folder empty-state variants all render
+  // in this state — the surfaces the folder work added to the VMs page.
+  await login(page, { path: '/vms?folder=tag-web' })
+  const rows = page.locator('table[aria-label="Virtual machines"] tbody tr')
+  await expect(rows).toHaveCount(2)
+  await expect(page.getByLabel('Folder path')).toBeVisible()
+
+  await expectNoSeriousViolations(page)
+})
+
+test('Label manager with the edit dialog open has no serious violations', async ({ page }) => {
+  await login(page, { path: '/vms' })
+  await page.getByRole('button', { name: 'Labels', exact: true }).click()
+  const manager = page.getByRole('dialog', { name: 'Manage labels' })
+  await expect(manager).toBeVisible()
+
+  // Scan with the edit dialog (rename + recolor) stacked on the manager, so
+  // both the create form and the nested modal's fields are in the tree.
+  await manager.getByRole('button', { name: 'Edit label pci-dss' }).click()
+  await expect(page.getByRole('dialog', { name: "Edit label 'pci-dss'" })).toBeVisible()
+
+  await expectNoSeriousViolations(page)
+})
+
+test('VMs & Templates view has no serious accessibility violations', async ({ page }) => {
+  await login(page, { path: '/vms-templates' })
+  const rows = page.locator('table[aria-label="VMs and templates"] tbody tr')
+  // 10 fixture VMs (incl. the HostedEngine VM) + 3 non-Blank templates
+  await expect(rows).toHaveCount(13)
+
+  await expectNoSeriousViolations(page)
+})
+
+test('Hosts & Clusters view has no serious accessibility violations', async ({ page }) => {
+  await login(page, { path: '/hosts-clusters' })
+  // role=tree, not getByLabel: the pane's Tabs carry the same aria-label, so
+  // getByLabel('Infrastructure tree') is ambiguous
+  await expect(
+    page.getByRole('tree', { name: 'Infrastructure tree' }).getByText('Default').first(),
+  ).toBeVisible()
+
+  await expectNoSeriousViolations(page)
+})
+
+// The facet filter menus are open-only surfaces the scans above never reach:
+// a checkbox Select defaults to role="listbox" while its hasCheckbox rows
+// render role="menuitem", an invalid ARIA pairing (FacetFilters passes
+// role="menu" for exactly this reason). Scanned with a menu open AND filters
+// applied, so the toolbar's label group is in the tree too.
+test('VMs & Templates facet menus have no serious accessibility violations', async ({ page }) => {
+  await login(page, { path: '/vms-templates?filters=status%3Aup' })
+  await expect(page.getByRole('button', { name: 'Close Running' })).toBeVisible()
+
+  // scoped to the filter group: 'Status' also names a column header button
+  // and the applied-labels group's remove button
+  await page
+    .locator('.pf-v6-c-toolbar__group.pf-m-filter-group')
+    .getByRole('button', { name: 'Status' })
+    .click()
+  await expect(page.getByRole('menuitem', { name: /^Powered off/ })).toBeVisible()
+
+  await expectNoSeriousViolations(page)
+})
+
+// The PaneHeader identity banner (icon tile, h2, meta line, inline Open
+// details) renders only once something is SELECTED — the root pane has no
+// entity to identify — so the root scans above never reach it. This is the
+// scan that covers it, and it is the same primitive all four panes render.
+test('VMs & Templates with a folder selected has no serious violations', async ({ page }) => {
+  await login(page, { path: '/vms-templates?folder=tag-web' })
+  await expect(page.getByRole('heading', { name: 'web', exact: true })).toBeVisible()
+
+  await expectNoSeriousViolations(page)
+})
+
+test('events page has no serious accessibility violations as admin', async ({ page }) => {
+  await login(page, { path: '/events' })
+  await expect(page.getByRole('heading', { name: 'Events' })).toBeVisible()
+  await expect(page.getByText('User admin@internal logged in.')).toBeVisible()
+
+  await expectNoSeriousViolations(page)
+})
+
+test('Users list has no serious accessibility violations as admin', async ({ page }) => {
+  // The redesigned Users list: initials avatars (aria-hidden), composed
+  // identity cells, domain chips, mailto email links and the column picker all
+  // render here, so the scan covers the whole surface.
+  await login(page, { path: '/users' })
+  const rows = page.locator('table[aria-label="Users"] tbody tr')
+  await expect(rows.first()).toBeVisible()
+
+  await expectNoSeriousViolations(page)
+})
+
+test('User detail page has no serious accessibility violations as admin', async ({ page }) => {
+  // user-04 (jdoe) carries a full name, email, domain and group membership, so
+  // the header meta line and every populated tab are in the tree.
+  await login(page, { path: '/users/user-04' })
+  await expect(page.getByRole('heading', { name: 'Jane Doe', exact: true })).toBeVisible()
+
+  await expectNoSeriousViolations(page)
+})

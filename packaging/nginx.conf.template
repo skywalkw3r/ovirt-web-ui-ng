@@ -1,0 +1,91 @@
+# nginx.conf.template -- main/global nginx config for the container image.
+#
+# The entrypoint (nginx-entrypoint.sh) substitutes ${RESOLVER} and writes
+# /tmp/nginx/nginx.conf, then runs `nginx -c /tmp/nginx/nginx.conf -e stderr`.
+# Everything here is chosen so nginx runs unprivileged under OpenShift's
+# restricted SCC (an arbitrary non-root UID in group 0) AND on a read-only
+# root filesystem: no `user` directive, pid + all temp paths under /tmp -- the
+# one writable path the container needs -- and logs to stdout/stderr (no
+# writes to /var/log/nginx).
+
+worker_processes  auto;
+error_log         /dev/stderr warn;
+pid               /tmp/nginx.pid;
+
+events {
+    worker_connections  1024;
+}
+
+http {
+    include       /etc/nginx/mime.types;
+    default_type  application/octet-stream;
+
+    log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+                      '$status $body_bytes_sent "$http_referer" "$http_user_agent" '
+                      '"$http_x_forwarded_for"';
+    access_log  /dev/stdout  main;
+
+    server_tokens   off;
+    sendfile        on;
+    tcp_nopush      on;
+    keepalive_timeout  65;
+
+    # Compress text assets. The entry JS chunk alone is ~3 MB raw (~700 KB
+    # gzipped) and the OpenShift router does not compress, so without this
+    # every image roll re-ships multi-MB pulls to every browser — on the WAN
+    # user populations that is the difference between a ~2s and a ~20s first
+    # paint. sub_filter (single-engine index.html CSP substitution) runs
+    # before the gzip filter, so substitution is unaffected. text/html is
+    # always compressed once gzip is on; gzip_types adds the rest.
+    gzip              on;
+    gzip_comp_level   5;
+    gzip_min_length   1024;
+    gzip_vary         on;
+    gzip_proxied      any;
+    gzip_types        text/css text/plain application/javascript application/json image/svg+xml;
+
+    # Temp/scratch paths writable by the container's (possibly random) UID.
+    client_body_temp_path  /tmp/nginx-client-body;
+    proxy_temp_path        /tmp/nginx-proxy;
+    fastcgi_temp_path      /tmp/nginx-fastcgi;
+    uwsgi_temp_path        /tmp/nginx-uwsgi;
+    scgi_temp_path         /tmp/nginx-scgi;
+
+    # DNS resolver for DYNAMIC (variable) upstreams. The multi-engine proxy
+    # blocks use `proxy_pass https://$var/...` so nginx re-resolves each engine
+    # at request time (per this TTL) instead of at startup — one unreachable
+    # engine can never keep nginx from starting. Substituted by the entrypoint
+    # from the pod's /etc/resolv.conf. Unused by static single-engine
+    # proxy_pass, so harmless when no engine blocks are mounted.
+    resolver          ${RESOLVER} valid=30s ipv6=off;
+    resolver_timeout  5s;
+
+    # Upload ceiling; the API proxies inherit it.
+    client_max_body_size  64m;
+
+    # Real client address behind a router/ingress that sets X-Forwarded-For.
+    # Nothing is trusted here by default: a deployment adds
+    # `set_real_ip_from <router or pod CIDR>;` in its mounted server config,
+    # and only then does $remote_addr (logs, rate limits) become the client.
+    real_ip_header    X-Forwarded-For;
+    real_ip_recursive on;
+
+    # Login abuse control. The key is the client address ONLY for SSO token
+    # requests and empty for everything else — nginx never counts an empty
+    # key — so a server block can `limit_req zone=sso_login ...` inside its
+    # engine proxy location without throttling ordinary API traffic. 10/min
+    # per client is far above human typing speed; excess gets 429.
+    map $uri $sso_login_client {
+        ~/ovirt-engine/sso/oauth/token$  $binary_remote_addr;
+        default                          "";
+    }
+    limit_req_zone    $sso_login_client zone=sso_login:10m rate=10r/m;
+    limit_req_status  429;
+
+    # Server config: a deployer's mounted multi-engine default.conf under
+    # /etc/nginx/conf.d, or the single-engine block the entrypoint renders
+    # under /tmp/nginx/conf.d -- never both, the entrypoint renders only when
+    # nothing is mounted. An empty glob is harmless.
+    include  /etc/nginx/conf.d/*.conf;
+    include  /tmp/nginx/conf.d/*.conf;
+}

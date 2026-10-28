@@ -1,0 +1,26 @@
+# Build context excludes for packaging/Containerfile (OpenShift + podman builds).
+# The image does its own `npm ci` + `npm run build`, so host artifacts must not
+# leak in: they would be wrong-arch, stale, or huge.
+**/node_modules
+**/dist
+**/coverage
+**/playwright-report
+**/test-results
+**/.vite
+# .git is out except the three files packaging/Containerfile reads the build
+# commit from (HEAD + refs: a few bytes, no history, no remotes or config).
+.git/*
+!.git/HEAD
+!.git/refs
+!.git/packed-refs
+lab
+docs
+*.log
+
+# Never ship deploy config or local env files into a build context.
+# deploy/ holds the live OpenShift manifests plus (git-ignored) key material;
+# app/.env is a developer's dev-proxy target.
+deploy
+**/.env
+**/.env.*
+!**/.env.example
