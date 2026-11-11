@@ -13,12 +13,20 @@ import {
   draftToPayload,
   type EditVmDraft,
   editRequiresRestart,
+  editTpmGate,
+  effectiveTpmEnabled,
+  gatedTpmDraft,
   gibToMib,
   graphicsConsoleRemovalNeeded,
   guaranteedForMemory,
   isCpuSharesPreset,
   isWindowsOsType,
   mibToGib,
+  tpmAvailability,
+  tpmCreateValue,
+  tpmDraftFields,
+  tpmLevelWarning,
+  tpmRemovalPending,
   vmIsRunning,
   vmMemoryError,
   vmFieldsChanged,
@@ -1220,6 +1228,157 @@ describe('partial-save helpers', () => {
     expect(vmFieldsChanged(retryDraft, next)).toBe(false)
     expect(buildCdromChange(retryDraft)).toBe('iso-1')
     expect(buildWatchdogChange(retryDraft, next)).toEqual({ kind: 'remove', id: 'w1' })
+  })
+})
+
+describe('TPM device: gate, payload and next-run', () => {
+  // an x86_64 VM on a 4.7 cluster with UEFI firmware and a guest OS that
+  // allows a TPM: the editable baseline each case varies one input of
+  const gate = (overrides: Partial<Parameters<typeof tpmAvailability>[0]> = {}) =>
+    tpmAvailability({
+      clusterVersion: { major: 4, minor: 7 },
+      architecture: 'x86_64',
+      biosType: 'q35_ovmf',
+      clusterBiosType: 'q35_sea_bios',
+      osTpmSupport: 'supported',
+      ...overrides,
+    })
+  const loaded = (enabled: boolean, overrides: Partial<EditVmDraft> = {}) =>
+    draft({ ...tpmDraftFields(enabled), ...overrides })
+
+  it('vmToDraft seeds the device as not loaded; tpmDraftFields marks it loaded', () => {
+    expect(draft()).toMatchObject({ tpmLoaded: false, tpmEnabled: false })
+    expect(tpmDraftFields(true)).toEqual({ tpmLoaded: true, tpmEnabled: true })
+  })
+
+  it('is editable on UEFI x86 at level 4.5 and up, with secure boot too', () => {
+    expect(gate()).toEqual({ state: 'editable' })
+    expect(gate({ biosType: 'q35_secure_boot' })).toEqual({ state: 'editable' })
+    expect(gate({ clusterVersion: { major: 4, minor: 5 } })).toEqual({ state: 'editable' })
+  })
+
+  it('walks the gate in order: level, guest OS, architecture, firmware, required', () => {
+    // level below 4.5 wins over everything else
+    expect(gate({ clusterVersion: { major: 4, minor: 4 }, osTpmSupport: 'unsupported' })).toEqual({
+      state: 'unavailable',
+      reasonId: 'vm.edit.resources.tpm.reason.version',
+    })
+    expect(gate({ osTpmSupport: 'unsupported', biosType: 'i440fx_sea_bios' })).toEqual({
+      state: 'unavailable',
+      reasonId: 'vm.edit.resources.tpm.reason.os',
+    })
+    expect(gate({ architecture: 's390x', biosType: 'i440fx_sea_bios' })).toEqual({
+      state: 'unavailable',
+      reasonId: 'vm.edit.resources.tpm.reason.architecture',
+    })
+    expect(gate({ biosType: 'q35_sea_bios' })).toEqual({
+      state: 'unavailable',
+      reasonId: 'vm.edit.resources.tpm.reason.uefi',
+    })
+    // a required TPM without UEFI says why it cannot be turned on
+    expect(gate({ biosType: 'i440fx_sea_bios', osTpmSupport: 'required' })).toEqual({
+      state: 'unavailable',
+      reasonId: 'vm.edit.resources.tpm.reason.requiredUefi',
+    })
+    expect(gate({ osTpmSupport: 'required' })).toEqual({
+      state: 'required',
+      reasonId: 'vm.edit.resources.tpm.reason.required',
+    })
+  })
+
+  it('resolves cluster_default firmware through the cluster; ppc needs no UEFI', () => {
+    expect(gate({ biosType: 'cluster_default', clusterBiosType: 'q35_ovmf' }).state).toBe(
+      'editable',
+    )
+    expect(gate({ biosType: 'cluster_default' }).state).toBe('unavailable')
+    expect(gate({ biosType: '', clusterBiosType: 'q35_secure_boot' }).state).toBe('editable')
+    expect(gate({ architecture: 'ppc64', biosType: 'i440fx_sea_bios' }).state).toBe('editable')
+  })
+
+  it('never blocks on an input it does not know', () => {
+    expect(tpmAvailability({ biosType: 'cluster_default', architecture: undefined }).state).toBe(
+      'editable',
+    )
+    expect(gate({ clusterVersion: undefined, osTpmSupport: undefined }).state).toBe('editable')
+    expect(gate({ architecture: undefined, biosType: 'q35_sea_bios' }).state).toBe('editable')
+    expect(gate({ biosType: 'cluster_default', clusterBiosType: undefined }).state).toBe('editable')
+  })
+
+  it('flags level 4.5 exactly, where the engine default refuses a TPM', () => {
+    expect(tpmLevelWarning({ major: 4, minor: 5 })).toBe(true)
+    expect(tpmLevelWarning({ major: 4, minor: 6 })).toBe(false)
+    expect(tpmLevelWarning(undefined)).toBe(false)
+  })
+
+  it('effectiveTpmEnabled forces off when unavailable and on when required', () => {
+    expect(effectiveTpmEnabled(true, gate({ biosType: 'q35_sea_bios' }))).toBe(false)
+    expect(effectiveTpmEnabled(false, gate({ osTpmSupport: 'required' }))).toBe(true)
+    expect(effectiveTpmEnabled(true, gate())).toBe(true)
+    expect(effectiveTpmEnabled(false, gate())).toBe(false)
+  })
+
+  it('gatedTpmDraft sends a forced value explicitly and leaves an unread device alone', () => {
+    const on = loaded(true)
+    // switching away from UEFI must send tpm_enabled false: the engine refuses
+    // the save when the body leaves out a device the VM can no longer hold
+    expect(gatedTpmDraft(on, gate({ biosType: 'q35_sea_bios' })).tpmEnabled).toBe(false)
+    expect(gatedTpmDraft(loaded(false), gate({ osTpmSupport: 'required' })).tpmEnabled).toBe(true)
+    expect(gatedTpmDraft(on, gate())).toBe(on)
+    const unread = draft({ tpmEnabled: true })
+    expect(gatedTpmDraft(unread, gate({ biosType: 'q35_sea_bios' }))).toBe(unread)
+  })
+
+  it('editTpmGate trusts the engine when the VM as loaded already has a TPM the gate rejects', () => {
+    const unavailable = gate({ biosType: 'q35_sea_bios' })
+    expect(editTpmGate(unavailable, unavailable, loaded(true))).toEqual({ state: 'editable' })
+    // an edit that makes it unavailable stands
+    expect(editTpmGate(unavailable, gate(), loaded(true))).toBe(unavailable)
+    // and so does a gate on a VM without a TPM, or with the device unread
+    expect(editTpmGate(unavailable, unavailable, loaded(false))).toBe(unavailable)
+    expect(editTpmGate(unavailable, unavailable, draft({ tpmEnabled: true }))).toBe(unavailable)
+  })
+
+  it('tpmRemovalPending: an untick or a gate that turns an existing TPM off', () => {
+    const baseline = loaded(true)
+    expect(tpmRemovalPending(loaded(false), baseline, gate())).toBe(true)
+    expect(tpmRemovalPending(loaded(true), baseline, gate({ biosType: 'q35_sea_bios' }))).toBe(true)
+    expect(tpmRemovalPending(loaded(true), baseline, gate())).toBe(false)
+    // nothing to remove: no device, or the device was never read
+    expect(tpmRemovalPending(loaded(false), loaded(false), gate())).toBe(false)
+    expect(tpmRemovalPending(draft(), draft({ tpmEnabled: true }), gate())).toBe(false)
+  })
+
+  it('emits tpm_enabled only when the loaded device changed', () => {
+    const baseline = loaded(false)
+    expect(draftToPayload(baseline, baseline)).not.toHaveProperty('tpm_enabled')
+    expect(draftToPayload(loaded(true), baseline)).toMatchObject({ tpm_enabled: true })
+    expect(draftToPayload(loaded(false), loaded(true))).toMatchObject({ tpm_enabled: false })
+    // an unread device is never written, whatever the draft holds
+    expect(draftToPayload(draft({ tpmEnabled: true }), draft())).not.toHaveProperty('tpm_enabled')
+  })
+
+  it('a TPM change is next-run on a running VM; the loaded marker alone is not a change', () => {
+    const baseline = loaded(false)
+    expect(editRequiresRestart(loaded(true), baseline)).toBe(true)
+    expect(vmFieldsChanged(loaded(true), baseline)).toBe(true)
+    expect(vmFieldsChanged({ ...baseline, tpmLoaded: false }, baseline)).toBe(false)
+    expect(editRequiresRestart({ ...baseline, tpmLoaded: false }, baseline)).toBe(false)
+  })
+
+  it('baselineAfterVmSave takes the saved TPM state', () => {
+    expect(baselineAfterVmSave(loaded(true), loaded(false))).toMatchObject({
+      tpmLoaded: true,
+      tpmEnabled: true,
+    })
+  })
+
+  it('tpmCreateValue sends only a difference from a known template device', () => {
+    expect(tpmCreateValue(true, true, true)).toBeUndefined()
+    expect(tpmCreateValue(false, true, false)).toBe(false)
+    expect(tpmCreateValue(true, false, false)).toBe(true)
+    // the template's device unknown: sent only when decided here
+    expect(tpmCreateValue(true, undefined, false)).toBeUndefined()
+    expect(tpmCreateValue(false, undefined, true)).toBe(false)
   })
 })
 

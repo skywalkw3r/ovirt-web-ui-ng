@@ -5092,4 +5092,34 @@ export const fr: LocaleCatalog = {
   'about.extensions.status.loading': 'Chargement',
   'about.extensions.status.skipped': 'Non chargée pour ce moteur',
   'about.extensions.status.failed': 'Échec : {reason}',
+  // VM TPM device (Edit VM Resource Allocation, New VM wizard, General tab)
+  'vm.edit.resources.tpm': 'Périphérique TPM activé',
+  'vm.edit.resources.tpm.loading': 'Chargement du périphérique TPM',
+  'vm.edit.resources.tpm.error': 'Impossible de charger le périphérique TPM ; il reste inchangé.',
+  'vm.edit.resources.tpm.reason.version':
+    'Disponible à partir de la version de compatibilité 4.5 du cluster',
+  'vm.edit.resources.tpm.reason.os':
+    "La version du système d'exploitation invité n'est pas prise en charge",
+  'vm.edit.resources.tpm.reason.architecture': 'Non pris en charge sur cette architecture CPU',
+  'vm.edit.resources.tpm.reason.uefi': 'Disponible uniquement avec un firmware UEFI',
+  'vm.edit.resources.tpm.reason.required':
+    "Le système d'exploitation invité exige un périphérique TPM",
+  'vm.edit.resources.tpm.reason.requiredUefi':
+    "Le système d'exploitation invité exige un périphérique TPM, disponible uniquement avec un micrologiciel UEFI",
+  'vm.edit.resources.tpm.levelWarning':
+    "Avec la version de compatibilité de cluster 4.5, le moteur n'active les périphériques TPM que s'il est configuré pour cela ; par défaut, il refuse l'enregistrement.",
+  'vm.edit.nextRun.tpmNote':
+    'La modification du TPM prend effet au prochain démarrage de la VM, même avec « Appliquer maintenant ».',
+  'vm.edit.resources.tpm.removalWarning':
+    "L'enregistrement supprime le périphérique TPM et efface définitivement ses données TPM.",
+  'vm.edit.resources.tpm.removeConfirm.title': 'Supprimer les données TPM de la VM',
+  'vm.edit.resources.tpm.removeConfirm.body':
+    "Le périphérique TPM de {name} sera supprimé et ses données TPM actuelles seront définitivement effacées. Pour conserver les données, annulez et défaites la modification avant d'enregistrer.",
+  'vm.edit.resources.tpm.removeConfirm.confirm': 'Supprimer les données TPM',
+  'fieldHelp.vm.tpm':
+    "Ajoute à la VM un module de plateforme sécurisée (TPM) émulé. Les invités l'utilisent pour sceller les clés de chiffrement de disque et pour le démarrage mesuré, et certains (Windows 11) l'exigent. Sur x86, un firmware UEFI est nécessaire. Retirer le périphérique efface les données TPM stockées.",
+  'vmGeneral.term.tpmEnabled': 'Périphérique TPM activé',
+  'vm.create.tpm.templateError':
+    'Impossible de charger le périphérique TPM du modèle : {message}. Tant que vous ne modifiez pas le réglage ici, la nouvelle VM reçoit le périphérique TPM du modèle tel quel.',
+  'vm.create.tpm.review.inherited': 'Comme dans le modèle',
 }

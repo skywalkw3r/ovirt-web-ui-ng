@@ -81,8 +81,10 @@ const { GeneralTab } = await import('./GeneralTab')
 // never fetches (no effects run), so the queries stay pending unless `vmTags`
 // seeds the cache — for user tier, pending means the Tags row is simply
 // omitted (absence-beats-dash); admins always keep the row (the ⊕ lives there).
-function renderTab(vm: Vm, vmTags?: Tag[], opts: { admin?: boolean } = {}): string {
+function renderTab(vm: Vm, vmTags?: Tag[], opts: { admin?: boolean; tpm?: boolean } = {}): string {
   const queryClient = new QueryClient()
+  // the TPM row reads its own all_content query (useVmTpm)
+  if (opts.tpm !== undefined) queryClient.setQueryData(['vm', vm.id, 'tpm'], opts.tpm)
   if (vmTags !== undefined) {
     queryClient.setQueryData(['vm', vm.id, 'tags'], vmTags)
     queryClient.setQueryData(['tags'], vmTags)
@@ -274,5 +276,18 @@ describe('chipset/firmware mismatch warning', () => {
     expect(renderTab(vmWith('q35_ovmf', 'q35_ovmf'))).not.toContain('does not match')
     expect(renderTab(vmWith('cluster_default', 'q35_ovmf'))).not.toContain('does not match')
     expect(renderTab(vmWith('i440fx_sea_bios', undefined))).not.toContain('does not match')
+  })
+})
+
+describe('TPM Device Enabled row', () => {
+  it('renders the all_content read on the Hardware card', () => {
+    const on = renderTab(fullVm, undefined, { tpm: true })
+    expect(on).toContain('<dt>TPM Device Enabled</dt><dd>Yes</dd>')
+    const off = renderTab(fullVm, undefined, { tpm: false })
+    expect(off).toContain('<dt>TPM Device Enabled</dt><dd>No</dd>')
+  })
+
+  it('drops the row while the read is pending (or failed)', () => {
+    expect(renderTab(fullVm)).not.toContain('TPM Device Enabled')
   })
 })

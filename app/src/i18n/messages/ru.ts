@@ -5239,4 +5239,31 @@ export const ru: LocaleCatalog = {
   'about.extensions.status.loading': 'Загрузка',
   'about.extensions.status.skipped': 'Не загружается для этого движка',
   'about.extensions.status.failed': 'Ошибка: {reason}',
+  // VM TPM device (Edit VM Resource Allocation, New VM wizard, General tab)
+  'vm.edit.resources.tpm': 'Устройство TPM включено',
+  'vm.edit.resources.tpm.loading': 'Загрузка устройства TPM',
+  'vm.edit.resources.tpm.error': 'Не удалось загрузить устройство TPM; оно остаётся без изменений.',
+  'vm.edit.resources.tpm.reason.version': 'Доступно начиная с версии совместимости кластера 4.5',
+  'vm.edit.resources.tpm.reason.os': 'Версия гостевой ОС не поддерживается',
+  'vm.edit.resources.tpm.reason.architecture': 'Не поддерживается на этой архитектуре ЦП',
+  'vm.edit.resources.tpm.reason.uefi': 'Доступно только с прошивкой UEFI',
+  'vm.edit.resources.tpm.reason.required': 'Гостевой ОС требуется устройство TPM',
+  'vm.edit.resources.tpm.reason.requiredUefi':
+    'Гостевой ОС требуется устройство TPM, а оно доступно только с микропрограммой UEFI',
+  'vm.edit.resources.tpm.levelWarning':
+    'При версии совместимости кластера 4.5 движок включает устройства TPM, только если это настроено; по умолчанию он отклоняет сохранение.',
+  'vm.edit.nextRun.tpmNote':
+    'Изменение TPM вступит в силу при следующем запуске ВМ, даже при выборе «Применить сейчас».',
+  'vm.edit.resources.tpm.removalWarning':
+    'При сохранении устройство TPM будет удалено, а его данные TPM безвозвратно стёрты.',
+  'vm.edit.resources.tpm.removeConfirm.title': 'Удаление данных TPM ВМ',
+  'vm.edit.resources.tpm.removeConfirm.body':
+    'Устройство TPM ВМ {name} будет удалено, а его текущие данные TPM безвозвратно стёрты. Чтобы сохранить данные, отмените действие и верните изменение перед сохранением.',
+  'vm.edit.resources.tpm.removeConfirm.confirm': 'Удалить данные TPM',
+  'fieldHelp.vm.tpm':
+    'Добавляет в ВМ эмулируемый доверенный платформенный модуль (TPM). Гостевые системы используют его для защиты ключей шифрования дисков и измеряемой загрузки, а некоторым (Windows 11) он обязателен. На x86 требуется прошивка UEFI. При удалении устройства сохранённые данные TPM стираются.',
+  'vmGeneral.term.tpmEnabled': 'Устройство TPM включено',
+  'vm.create.tpm.templateError':
+    'Не удалось загрузить устройство TPM шаблона: {message}. Если вы не измените настройку здесь, новая ВМ получит устройство TPM шаблона без изменений.',
+  'vm.create.tpm.review.inherited': 'Как в шаблоне',
 }

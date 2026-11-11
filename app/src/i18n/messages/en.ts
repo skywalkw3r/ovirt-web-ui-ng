@@ -5562,6 +5562,34 @@ export const en = {
   'about.extensions.status.loading': 'Loading',
   'about.extensions.status.skipped': 'Not loaded for this engine',
   'about.extensions.status.failed': 'Failed: {reason}',
+  // VM TPM device (Edit VM Resource Allocation, New VM wizard, General tab)
+  'vm.edit.resources.tpm': 'TPM Device Enabled',
+  'vm.edit.resources.tpm.loading': 'Loading TPM device',
+  'vm.edit.resources.tpm.error': 'Could not load the TPM device; it is left unchanged.',
+  'vm.edit.resources.tpm.reason.version':
+    'Available in cluster compatibility version 4.5 or higher',
+  'vm.edit.resources.tpm.reason.os': 'Guest OS version is not supported',
+  'vm.edit.resources.tpm.reason.architecture': 'Not supported on this CPU architecture',
+  'vm.edit.resources.tpm.reason.uefi': 'Available only with UEFI firmware',
+  'vm.edit.resources.tpm.reason.required': 'TPM device is required by the guest OS',
+  'vm.edit.resources.tpm.reason.requiredUefi':
+    'The guest OS requires a TPM device, which is available only with UEFI firmware',
+  'vm.edit.resources.tpm.levelWarning':
+    'At cluster compatibility version 4.5 the engine enables TPM devices only when configured to; by default it refuses the save.',
+  'vm.edit.nextRun.tpmNote':
+    'The TPM change takes effect at the next start of the VM, even with Apply now.',
+  'vm.edit.resources.tpm.removalWarning':
+    'Saving removes the TPM device and irrecoverably deletes its TPM data.',
+  'vm.edit.resources.tpm.removeConfirm.title': 'Remove VM TPM data',
+  'vm.edit.resources.tpm.removeConfirm.body':
+    'The TPM device of {name} will be removed and its current TPM data irrecoverably deleted. To keep the data, cancel and undo the change before saving.',
+  'vm.edit.resources.tpm.removeConfirm.confirm': 'Remove TPM data',
+  'fieldHelp.vm.tpm':
+    'Adds an emulated Trusted Platform Module (TPM) to the VM. Guests use it to seal disk-encryption keys and for measured boot, and some (Windows 11) require one. On x86 it needs UEFI firmware. Removing the device deletes its stored TPM data.',
+  'vmGeneral.term.tpmEnabled': 'TPM Device Enabled',
+  'vm.create.tpm.templateError':
+    "Could not load the template's TPM device: {message}. Unless you change the setting here, the new VM gets the template's TPM device as it is.",
+  'vm.create.tpm.review.inherited': 'As in the template',
 } as const
 
 // The id union — source of truth for every typed i18n surface (useT, the

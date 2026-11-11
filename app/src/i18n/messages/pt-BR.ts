@@ -5052,4 +5052,34 @@ export const ptBR: LocaleCatalog = {
   'about.extensions.status.loading': 'Carregando',
   'about.extensions.status.skipped': 'Não carregada para este engine',
   'about.extensions.status.failed': 'Falhou: {reason}',
+  // VM TPM device (Edit VM Resource Allocation, New VM wizard, General tab)
+  'vm.edit.resources.tpm': 'Dispositivo TPM habilitado',
+  'vm.edit.resources.tpm.loading': 'Carregando dispositivo TPM',
+  'vm.edit.resources.tpm.error':
+    'Não foi possível carregar o dispositivo TPM; ele permanece inalterado.',
+  'vm.edit.resources.tpm.reason.version':
+    'Disponível a partir da versão de compatibilidade 4.5 do cluster',
+  'vm.edit.resources.tpm.reason.os': 'A versão do sistema operacional convidado não é compatível',
+  'vm.edit.resources.tpm.reason.architecture': 'Não compatível com esta arquitetura de CPU',
+  'vm.edit.resources.tpm.reason.uefi': 'Disponível apenas com firmware UEFI',
+  'vm.edit.resources.tpm.reason.required':
+    'O sistema operacional convidado exige um dispositivo TPM',
+  'vm.edit.resources.tpm.reason.requiredUefi':
+    'O sistema operacional convidado exige um dispositivo TPM, que só está disponível com firmware UEFI',
+  'vm.edit.resources.tpm.levelWarning':
+    'Na versão de compatibilidade de cluster 4.5, o mecanismo só habilita dispositivos TPM quando configurado para isso; por padrão, ele recusa o salvamento.',
+  'vm.edit.nextRun.tpmNote':
+    'A alteração do TPM entra em vigor na próxima inicialização da VM, mesmo com “Aplicar agora”.',
+  'vm.edit.resources.tpm.removalWarning':
+    'Salvar remove o dispositivo TPM e exclui seus dados TPM de forma irrecuperável.',
+  'vm.edit.resources.tpm.removeConfirm.title': 'Remover dados TPM da VM',
+  'vm.edit.resources.tpm.removeConfirm.body':
+    'O dispositivo TPM de {name} será removido e seus dados TPM atuais serão excluídos de forma irrecuperável. Para manter os dados, cancele e desfaça a alteração antes de salvar.',
+  'vm.edit.resources.tpm.removeConfirm.confirm': 'Remover dados TPM',
+  'fieldHelp.vm.tpm':
+    'Adiciona à VM um Trusted Platform Module (TPM) emulado. Os convidados o usam para selar chaves de criptografia de disco e para a inicialização medida, e alguns (Windows 11) o exigem. Em x86 é necessário firmware UEFI. Remover o dispositivo exclui os dados TPM armazenados.',
+  'vmGeneral.term.tpmEnabled': 'Dispositivo TPM habilitado',
+  'vm.create.tpm.templateError':
+    'Não foi possível carregar o dispositivo TPM do modelo: {message}. A menos que você altere a configuração aqui, a nova VM recebe o dispositivo TPM do modelo como está.',
+  'vm.create.tpm.review.inherited': 'Como no modelo',
 }

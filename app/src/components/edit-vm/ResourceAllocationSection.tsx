@@ -3,6 +3,7 @@ import {
   Button,
   Form,
   FormGroup,
+  FormHelperText,
   FormSelect,
   FormSelectOption,
   HelperText,
@@ -15,18 +16,51 @@ import type { UseQueryResult } from '@tanstack/react-query'
 import type { ClusterCpuProfile } from '../../api/resources/clusters'
 import { useT } from '../../i18n/useT'
 import { FieldHelp } from '../forms/FieldHelp'
-import { CPU_SHARES_CUSTOM, CPU_SHARES_PRESETS, isCpuSharesPreset } from './editVmDraft'
-import { fieldSetter, type ResourceAllocationFields, type SectionChange } from './vmBaseDraft'
+import {
+  CPU_SHARES_CUSTOM,
+  CPU_SHARES_PRESETS,
+  effectiveTpmEnabled,
+  isCpuSharesPreset,
+  type TpmAvailability,
+} from './editVmDraft'
+import {
+  fieldSetter,
+  type ResourceAllocationFields,
+  type SectionChange,
+  type TpmFields,
+} from './vmBaseDraft'
+
+// VM-only part of the section: the TPM device (tpm_enabled) is filled on an
+// all_content VM read only, and templates and instance types do not edit it, so
+// a form opts in by passing it (absent ⇒ the field is left out).
+export interface TpmContext {
+  draft: TpmFields
+  onChange: SectionChange<TpmFields>
+  // The VM's TPM read the form seeds the draft from, here only for the
+  // loading/error states: the toggle stays disabled until the draft holds the
+  // loaded value (draft.tpmLoaded), so a pick can never race the seed.
+  query: UseQueryResult<boolean>
+  // Whether the firmware / guest OS / cluster allow the toggle (the form
+  // derives it from the draft), and whether this save would remove a TPM
+  // device the VM has.
+  availability: TpmAvailability
+  removalPending: boolean
+  // The save would add a TPM at cluster level 4.5, which the engine's default
+  // config refuses (tpmLevelWarning in editVmDraft).
+  levelWarning?: boolean
+}
 
 // Resource Allocation section, one of the shared VmBase sections (contract in
 // vmBaseDraft.ts): CPU profile (fed by the cluster's cpuprofiles query, all
 // four states designed), CPU shares (preset buckets + custom integer), memory
-// balloon, IO threads and VirtIO-SCSI. Presentational — the form owns the
-// draft and the query (useCpuProfileOptions).
+// balloon, the TPM device when `tpm` is passed, IO threads and VirtIO-SCSI.
+// Presentational — the form owns the draft and the queries
+// (useCpuProfileOptions).
 export function ResourceAllocationSection({
   draft,
   onChange,
   cpuProfiles,
+  tpm,
   hiddenFields,
   idPrefix = 'edit-vm',
 }: {
@@ -35,6 +69,8 @@ export function ResourceAllocationSection({
   // The cluster's CPU profiles. Omit it for a form with no cluster and no CPU
   // profile (an instance type): the CPU profile field is then left out.
   cpuProfiles?: UseQueryResult<ClusterCpuProfile[]>
+  // The VM's TPM device (VM-only, opt-in; see TpmContext).
+  tpm?: TpmContext
   // Fields this form does not offer (e.g. an instance type has no CPU shares
   // or queue settings over REST). Absent ⇒ every field shows.
   hiddenFields?: readonly (keyof ResourceAllocationFields)[]
@@ -184,6 +220,72 @@ export function ResourceAllocationSection({
           onChange={(_event, checked) => set('memoryBalloonEnabled', checked)}
         />
       </FormGroup>
+
+      {/* TPM device (webadmin's Resource Allocation "TPM Device Enabled"),
+          VM forms only. Rides the vm PUT as tpm_enabled; disabled with the
+          reason when the firmware, guest OS or cluster level cannot hold one. */}
+      {tpm !== undefined && (
+        <FormGroup
+          label={t('vm.edit.resources.tpm')}
+          fieldId={`${idPrefix}-tpm`}
+          labelHelp={
+            <FieldHelp field={t('vm.edit.resources.tpm')} content={t('fieldHelp.vm.tpm')} />
+          }
+        >
+          {!tpm.draft.tpmLoaded && !tpm.query.isError ? (
+            <Skeleton
+              height="1.5rem"
+              width="3rem"
+              screenreaderText={t('vm.edit.resources.tpm.loading')}
+            />
+          ) : (
+            <Switch
+              id={`${idPrefix}-tpm`}
+              aria-label={t('vm.edit.resources.tpm')}
+              isChecked={effectiveTpmEnabled(tpm.draft.tpmEnabled, tpm.availability)}
+              isDisabled={!tpm.draft.tpmLoaded || tpm.availability.state !== 'editable'}
+              onChange={(_event, checked) => tpm.onChange({ tpmEnabled: checked })}
+            />
+          )}
+          {tpm.draft.tpmLoaded && tpm.availability.state !== 'editable' && (
+            <FormHelperText>
+              <HelperText>
+                <HelperTextItem>{t(tpm.availability.reasonId)}</HelperTextItem>
+              </HelperText>
+            </FormHelperText>
+          )}
+          {tpm.levelWarning === true && (
+            <FormHelperText>
+              <HelperText>
+                <HelperTextItem variant="warning">
+                  {t('vm.edit.resources.tpm.levelWarning')}
+                </HelperTextItem>
+              </HelperText>
+            </FormHelperText>
+          )}
+          {tpm.removalPending && (
+            <FormHelperText>
+              <HelperText>
+                <HelperTextItem variant="warning" data-testid="tpm-removal-warning">
+                  {t('vm.edit.resources.tpm.removalWarning')}
+                </HelperTextItem>
+              </HelperText>
+            </FormHelperText>
+          )}
+          {tpm.query.isError && !tpm.draft.tpmLoaded && (
+            <FormHelperText>
+              <HelperText>
+                <HelperTextItem variant="error">
+                  {t('vm.edit.resources.tpm.error')}{' '}
+                  <Button variant="link" isInline onClick={() => void tpm.query.refetch()}>
+                    {t('common.action.retry')}
+                  </Button>
+                </HelperTextItem>
+              </HelperText>
+            </FormHelperText>
+          )}
+        </FormGroup>
+      )}
 
       <FormGroup
         label={t('vm.edit.resources.ioThreads')}

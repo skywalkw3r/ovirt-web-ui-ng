@@ -5009,4 +5009,32 @@ export const ja: LocaleCatalog = {
   'about.extensions.status.loading': '読み込み中',
   'about.extensions.status.skipped': 'このエンジンでは読み込まれません',
   'about.extensions.status.failed': '失敗: {reason}',
+  // VM TPM device (Edit VM Resource Allocation, New VM wizard, General tab)
+  'vm.edit.resources.tpm': 'TPMデバイスを有効化',
+  'vm.edit.resources.tpm.loading': 'TPMデバイスを読み込んでいます',
+  'vm.edit.resources.tpm.error':
+    'TPMデバイスを読み込めませんでした。変更されずにそのまま残ります。',
+  'vm.edit.resources.tpm.reason.version': 'クラスター互換バージョン4.5以降で利用できます',
+  'vm.edit.resources.tpm.reason.os': 'ゲストOSのバージョンはサポートされていません',
+  'vm.edit.resources.tpm.reason.architecture': 'このCPUアーキテクチャーではサポートされていません',
+  'vm.edit.resources.tpm.reason.uefi': 'UEFIファームウェアでのみ利用できます',
+  'vm.edit.resources.tpm.reason.required': 'ゲストOSにTPMデバイスが必要です',
+  'vm.edit.resources.tpm.reason.requiredUefi':
+    'ゲストOSにTPMデバイスが必要ですが、TPMデバイスはUEFIファームウェアでのみ使用できます',
+  'vm.edit.resources.tpm.levelWarning':
+    'クラスター互換バージョン4.5では、エンジンは設定されている場合にのみTPMデバイスを有効にします。デフォルトでは保存が拒否されます。',
+  'vm.edit.nextRun.tpmNote':
+    '「今すぐ適用」を選択しても、TPMの変更はVMの次回起動時に有効になります。',
+  'vm.edit.resources.tpm.removalWarning':
+    '保存するとTPMデバイスが削除され、そのTPMデータは復元できない形で削除されます。',
+  'vm.edit.resources.tpm.removeConfirm.title': 'VMのTPMデータを削除',
+  'vm.edit.resources.tpm.removeConfirm.body':
+    '{name} のTPMデバイスが削除され、現在のTPMデータは復元できない形で削除されます。データを保持するには、キャンセルして、保存する前に変更を元に戻してください。',
+  'vm.edit.resources.tpm.removeConfirm.confirm': 'TPMデータを削除',
+  'fieldHelp.vm.tpm':
+    'エミュレートされたTrusted Platform Module（TPM）をVMに追加します。ゲストはディスク暗号化キーの封印やメジャードブートに使用し、一部のゲスト（Windows 11）では必須です。x86ではUEFIファームウェアが必要です。デバイスを削除すると、保存されているTPMデータも削除されます。',
+  'vmGeneral.term.tpmEnabled': 'TPMデバイス有効',
+  'vm.create.tpm.templateError':
+    'テンプレートのTPMデバイスを読み込めませんでした: {message}。ここで設定を変更しない限り、新しいVMにはテンプレートのTPMデバイスがそのまま引き継がれます。',
+  'vm.create.tpm.review.inherited': 'テンプレートと同じ',
 }

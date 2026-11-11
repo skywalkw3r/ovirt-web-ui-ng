@@ -21,6 +21,7 @@ import { VmTagsField } from '../tags/VmTagsField'
 import type { Vm } from '../../api/schemas/vm'
 import { folderPathOf, folderTagsOf, labelTagsOf, useTags, useVmTags } from '../../hooks/useTags'
 import { useVmReportedDevices } from '../../hooks/useVmDetail'
+import { useVmTpm } from '../../hooks/useVmTpm'
 import { flattenReportedIps } from '../../lib/vmIps'
 import { useT } from '../../i18n/useT'
 import { formatBytes, formatUptime, vmUptimeSeconds } from '../../lib/format'
@@ -313,6 +314,10 @@ export function GeneralTab({ vm }: { vm: Vm }) {
   // the row drops out (absence-beats-dash) rather than showing an em dash
   const reportedDevices = useVmReportedDevices(vm.id)
   const reportedIps = flattenReportedIps(reportedDevices.data ?? [])
+  // The TPM device for the Hardware card. The polled vm read never carries
+  // tpm_enabled (all_content only), so it has its own one-off read; until that
+  // lands (or when it fails) the row drops out (absence-beats-dash).
+  const tpm = useVmTpm(vm.id)
   const assignedTags = vmTags.data ?? []
   const all = allTags.data ?? []
   const labelCount = labelTagsOf(assignedTags, all).length
@@ -379,6 +384,7 @@ export function GeneralTab({ vm }: { vm: Vm }) {
     textRow(t('vmGeneral.term.graphicsProtocol'), vm.display?.type),
     textRow(t('vmGeneral.term.monitors'), vm.display?.monitors),
     boolRow(t('vmGeneral.term.usbEnabled'), vm.usb?.enabled, t),
+    boolRow(t('vmGeneral.term.tpmEnabled'), tpm.data, t),
     textRow(t('vmGeneral.term.clockOffset'), vm.time_zone?.name),
     textRow(t('vmGeneral.term.customProperties'), formatCustomProperties(vm)),
   )

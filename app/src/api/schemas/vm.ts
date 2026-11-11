@@ -195,6 +195,10 @@ export const VmSchema = z.looseObject({
   virtio_scsi: z
     .looseObject({ enabled: z.union([z.boolean(), z.stringbool()]).optional() })
     .optional(),
+  // TPM device toggle (Resource Allocation; VmBase.tpm_enabled, api-model
+  // 4.4.5+). The engine only fills it on an all_content read, so it is absent
+  // from the polled detail read (see resources/vms.ts getVmTpmEnabled).
+  tpm_enabled: z.union([z.boolean(), z.stringbool()]).optional(),
   // Random Number Generator device (Random Generator section). Absent when no
   // device is attached; rate scalars are JSON-strings on the live engine.
   rng_device: z

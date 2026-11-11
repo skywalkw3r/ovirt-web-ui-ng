@@ -93,6 +93,9 @@ export const TemplateSchema = z.looseObject({
     })
     .optional(),
   usb: z.looseObject({ enabled: BooleanishSchema.optional() }).optional(),
+  // TPM device toggle (VmBase.tpm_enabled, api-model 4.4.5+). Only filled on an
+  // all_content read (see resources/templates.ts getTemplateTpmEnabled).
+  tpm_enabled: BooleanishSchema.optional(),
   high_availability: z
     .looseObject({
       enabled: BooleanishSchema.optional(),

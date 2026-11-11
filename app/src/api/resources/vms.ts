@@ -136,6 +136,17 @@ export async function getVm(id: string): Promise<Vm> {
   throw lastError
 }
 
+// Does the VM carry a TPM device? The engine fills VmBase.tpm_enabled only when
+// the read asks for all content (BackendVmResource.doPopulate; api-model:
+// "only visible when fetching if All-Content=true"), and that read also builds
+// the VM's OVF, so it stays off the polled detail read and is fetched once
+// where it is needed (the Edit VM modal, the General tab). An engine older
+// than 4.4.5 omits the key, which reads as "no TPM".
+export async function getVmTpmEnabled(id: string): Promise<boolean> {
+  const vm = VmSchema.parse(await request(`/vms/${encodeURIComponent(id)}?all_content=true`))
+  return vm.tpm_enabled ?? false
+}
+
 // Installed guest packages the guest agent reports; empty (and often absent)
 // without a running agent.
 export async function listVmApplications(id: string): Promise<VmApplication[]> {
@@ -323,6 +334,9 @@ export interface NewVmSpec {
   // template's OS calls for. Both map to the VM's `initialization` block.
   cloudInit?: CloudInitSpec
   sysprep?: SysprepSpec
+  // TPM device. Omitted (undefined) lets the engine copy the template's device
+  // (BackendVmsResource: an unset tpm_enabled inherits the template's).
+  tpmEnabled?: boolean
 }
 
 // Turn the wire NIC rows into the api-model nic_configurations block (static
@@ -391,6 +405,7 @@ export async function createVm(spec: NewVmSpec): Promise<Vm> {
     cluster: { name: spec.clusterName },
     memory: spec.memoryBytes,
     initialization: buildCreateInitialization(spec),
+    tpm_enabled: spec.tpmEnabled,
   }
   return VmSchema.parse(await request('/vms', { method: 'POST', body }))
 }
@@ -418,13 +433,22 @@ export async function updateVm(
 
 const OperatingSystemListSchema = z.looseObject({
   operating_system: z
-    .array(z.looseObject({ name: z.string(), description: z.string().optional() }))
+    .array(
+      z.looseObject({
+        name: z.string(),
+        description: z.string().optional(),
+        tpm_support: z.string().optional(),
+      }),
+    )
     .optional(),
 })
 
 export interface OperatingSystemInfo {
   name: string
   description?: string
+  // api-model TpmSupport (4.5.2+): 'supported' | 'unsupported' | 'required'.
+  // Absent on older engines, which the TPM toggle treats as "supported".
+  tpm_support?: string
 }
 
 // The OS Type select's option source. Some engines answer 404 for the

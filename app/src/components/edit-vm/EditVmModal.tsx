@@ -13,12 +13,14 @@ import { useCapabilities } from '../../auth/capabilities'
 import { useClusters, useOperatingSystems } from '../../hooks/useCatalog'
 import { useHosts } from '../../hooks/useHosts'
 import { useUpdateVm } from '../../hooks/useUpdateVm'
+import { useVmTpm } from '../../hooks/useVmTpm'
 import { usePlacementHostNumaNodes, useVmNumaNodes, vmNumaKeys } from '../../hooks/useVmNumaNodes'
 import { useApplyVmWatchdog, useVmWatchdogs } from '../../hooks/useVmWatchdogs'
 import { vmKeys } from '../../hooks/useVms'
 import type { MessageId } from '../../i18n/messages/en'
 import { useT } from '../../i18n/useT'
 import { useNotify } from '../../notifications/context'
+import { ConfirmModal } from '../ConfirmModal'
 import { ModalVerticalTabs } from '../forms/ModalVerticalTabs'
 import { OptionsHelper } from '../forms/OptionsSelect'
 import { BootOptionsSection } from './BootOptionsSection'
@@ -32,6 +34,13 @@ import {
   buildWatchdogChange,
   draftToPayload,
   editRequiresRestart,
+  editTpmGate,
+  effectiveTpmEnabled,
+  gatedTpmDraft,
+  tpmAvailability,
+  tpmDraftFields,
+  tpmLevelWarning,
+  tpmRemovalPending,
   vmIsRunning,
   vmMemoryError,
   vmNameError,
@@ -141,6 +150,22 @@ export function EditVmModal({
     setDraft((current) => ({ ...current, ...fields }))
   }
 
+  // The TPM device is not on the polled vm read either (the engine fills
+  // tpm_enabled on an all_content read only): fold the dedicated read into
+  // BOTH baseline and draft once it lands, the watchdog idiom above. A failed
+  // read leaves tpmLoaded false, which keeps the toggle disabled and
+  // tpm_enabled out of the save. The seed waits out a fetch in flight: after
+  // a save the cached value is invalidated (it nests under the vm detail key)
+  // but still isSuccess, and seeding from it would show the old device.
+  const tpm = useVmTpm(vm.id)
+  const [tpmSeededId, setTpmSeededId] = useState<string | null>(null)
+  if (tpm.isSuccess && !tpm.isFetching && tpmSeededId !== vm.id) {
+    setTpmSeededId(vm.id)
+    const fields = tpmDraftFields(tpm.data)
+    setBaseline((current) => ({ ...current, ...fields }))
+    setDraft((current) => ({ ...current, ...fields }))
+  }
+
   // The virtual NUMA nodes live in their own subcollection too: same seeding
   // idiom as the watchdog. Only the admin-only Host section edits them, so the
   // read is admin-gated (an unread topology is never part of a save).
@@ -223,6 +248,40 @@ export function EditVmModal({
   // The Resource Allocation CPU-profile select, for the VM's chosen cluster.
   const cpuProfiles = useCpuProfileOptions(draft.clusterId)
 
+  // The TPM gate for the draft as it stands: the picked cluster's level,
+  // default firmware and architecture, the picked chipset and the picked guest
+  // OS. The draft a save sends is the gated one (a required TPM rides as on, an
+  // unavailable one as off), and a save that would remove a TPM the VM has is
+  // confirmed first. The gate for the VM as loaded (baseline) lets editTpmGate
+  // spot a gate that disagrees with the engine.
+  const draftCluster = clusters.data?.find((cluster) => cluster.id === draft.clusterId)
+  const tpmGateFor = (d: EditVmDraft) => {
+    const cluster = clusters.data?.find((c) => c.id === d.clusterId)
+    return tpmAvailability({
+      clusterVersion: cluster?.version,
+      // the engine checks the cluster's architecture (the VM runs on it)
+      architecture: cluster?.cpu?.architecture ?? vm.cpu?.architecture,
+      // a PUT with cluster_default keeps the VM's current firmware
+      // (UpdateVmCommand: an unset bios type stays as it is)
+      biosType:
+        d.biosType === 'cluster_default' && baseline.biosType !== 'cluster_default'
+          ? baseline.biosType
+          : d.biosType,
+      clusterBiosType:
+        cluster?.bios_type ?? (d.clusterId === vm.cluster?.id ? vm.cluster?.bios_type : undefined),
+      osTpmSupport: operatingSystems.data?.find((os) => os.name === d.osType)?.tpm_support,
+    })
+  }
+  const tpmGate = editTpmGate(tpmGateFor(draft), tpmGateFor(baseline), baseline)
+  const tpmLevelNotice =
+    tpmLevelWarning(draftCluster?.version) &&
+    tpmGate.state !== 'unavailable' &&
+    effectiveTpmEnabled(draft.tpmEnabled, tpmGate) &&
+    !(baseline.tpmLoaded && baseline.tpmEnabled)
+  const saveDraft = gatedTpmDraft(draft, tpmGate)
+  const tpmRemoval = tpmRemovalPending(draft, baseline, tpmGate)
+  const [confirmingTpmRemoval, setConfirmingTpmRemoval] = useState(false)
+
   const update = useUpdateVm()
   const applyWatchdog = useApplyVmWatchdog()
   const queryClient = useQueryClient()
@@ -251,7 +310,7 @@ export function EditVmModal({
     // The vNUMA calls, split around the vm PUT (numaDraft.buildNumaPlan says
     // why). Down VMs only, see numaEditable.
     const numaPlan = numaEditable ? buildNumaPlan(draft, baseline) : undefined
-    const vmChanged = vmFieldsChanged(draft, baseline)
+    const vmChanged = vmFieldsChanged(saveDraft, baseline)
     // A save with nothing pending at all still PUTs, as it always has.
     const putVm =
       vmChanged ||
@@ -322,7 +381,7 @@ export function EditVmModal({
     // 3. The vm PUT (or the minimal next-run refresh).
     if (putVm) {
       try {
-        await update.mutateAsync({ vm, payload: draftToPayload(draft, baseline), nextRun })
+        await update.mutateAsync({ vm, payload: draftToPayload(saveDraft, baseline), nextRun })
       } catch (error) {
         // useUpdateVm toasts the fault; the modal (and an open Next-Run
         // dialog) stays up on the draft, as before. A watchdog that already
@@ -340,7 +399,7 @@ export function EditVmModal({
         }
         return
       }
-      saved = baselineAfterVmSave(draft, saved)
+      saved = baselineAfterVmSave(saveDraft, saved)
       anythingSaved = true
       setDraft((current) => ({ ...current, iconUploadData: '', iconUploadMediaType: '' }))
     } else if (refreshNextRun) {
@@ -408,16 +467,27 @@ export function EditVmModal({
     }
   }
 
-  const save = () => {
-    // A running VM with reboot-only changes detours through the Next-Run
-    // dialog; a down VM (or a hot-applicable edit) saves straight through —
-    // the simple path is unchanged. A retry after a partial failure compares
-    // against the re-baselined draft, so steps that landed do not ask again.
-    if (vmIsRunning(vm.status) && editRequiresRestart(draft, baseline)) {
+  // A running VM with reboot-only changes detours through the Next-Run
+  // dialog; a down VM (or a hot-applicable edit) saves straight through —
+  // the simple path is unchanged. A retry after a partial failure compares
+  // against the re-baselined draft, so steps that landed do not ask again.
+  const saveOrAskNextRun = () => {
+    if (vmIsRunning(vm.status) && editRequiresRestart(saveDraft, baseline)) {
       setConfirmingNextRun(true)
       return
     }
     void mutate(false)
+  }
+
+  const save = () => {
+    // Removing the TPM device deletes the VM's TPM data for good, so that
+    // save is confirmed first (webadmin's "Remove VM TPM data" dialog), ahead
+    // of the Next-Run question.
+    if (tpmRemoval) {
+      setConfirmingTpmRemoval(true)
+      return
+    }
+    saveOrAskNextRun()
   }
 
   // GeneralSection renders the matching inline error for the same validator.
@@ -430,12 +500,11 @@ export function EditVmModal({
   // never blocked by them.
   const pinningInvalid =
     isAdmin && (cpuPinningDraftError(draft) !== undefined || numaDraftError !== undefined)
-  const currentClusterData = clusters.data?.find((cluster) => cluster.id === draft.clusterId)
   // The cluster's CPU architecture backs the watchdog model list when the vm
   // read does not carry its own cpu.architecture.
-  const currentClusterArchitecture = currentClusterData?.cpu?.architecture
+  const currentClusterArchitecture = draftCluster?.cpu?.architecture
   // The VM's cluster over-commit % drives the guaranteed derivation in System.
-  const overcommitPercent = currentClusterData?.memory_policy?.over_commit?.percent
+  const overcommitPercent = draftCluster?.memory_policy?.over_commit?.percent
 
   return (
     <Modal
@@ -545,7 +614,7 @@ export function EditVmModal({
                         numaNodes={numaNodes}
                         hostNuma={hostNuma}
                         vmIsDown={vmIsDown}
-                        dedicatedSupported={clusterSupportsDedicated(currentClusterData?.version)}
+                        dedicatedSupported={clusterSupportsDedicated(draftCluster?.version)}
                         numaError={numaDraftError}
                       />
                     ),
@@ -576,6 +645,14 @@ export function EditVmModal({
                   draft={draft}
                   onChange={patch}
                   cpuProfiles={cpuProfiles}
+                  tpm={{
+                    draft,
+                    onChange: patch,
+                    query: tpm,
+                    availability: tpmGate,
+                    removalPending: tpmRemoval,
+                    levelWarning: tpmLevelNotice,
+                  }}
                 />
               ),
             },
@@ -611,11 +688,26 @@ export function EditVmModal({
         </Button>
       </ModalFooter>
 
+      {/* Stacked on the edit modal like the Next-Run dialog below; confirming
+          falls through to the Next-Run question for a running VM. */}
+      <ConfirmModal
+        title={t('vm.edit.resources.tpm.removeConfirm.title')}
+        body={t('vm.edit.resources.tpm.removeConfirm.body', { name: vm.name })}
+        confirmLabel={t('vm.edit.resources.tpm.removeConfirm.confirm')}
+        isOpen={confirmingTpmRemoval}
+        onConfirm={() => {
+          setConfirmingTpmRemoval(false)
+          saveOrAskNextRun()
+        }}
+        onCancel={() => setConfirmingTpmRemoval(false)}
+      />
+
       {confirmingNextRun && (
         <NextRunDialog
           vmName={vm.name}
           isSaving={saving}
           watchdogChanged={buildWatchdogChange(draft, baseline) !== undefined}
+          tpmChanged={saveDraft.tpmLoaded && saveDraft.tpmEnabled !== baseline.tpmEnabled}
           onApplyLater={() => void mutate(true)}
           onApplyNow={() => void mutate(false)}
           onCancel={() => setConfirmingNextRun(false)}

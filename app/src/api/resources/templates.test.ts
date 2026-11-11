@@ -5,6 +5,7 @@ import {
   deleteTemplate,
   exportTemplateToDomain,
   exportTemplateToOva,
+  getTemplateTpmEnabled,
   removeTemplateNic,
   updateTemplate,
   updateTemplateNic,
@@ -222,5 +223,20 @@ describe('createTemplate', () => {
     expect(withOpts.mock.calls[0]?.[0]).toBe(
       '/ovirt-engine/api/templates?clone_permissions=true&seal=true',
     )
+  })
+})
+
+describe('getTemplateTpmEnabled', () => {
+  it('reads the template with all_content=true', async () => {
+    const fetchMock = mockFetch(200, { id: 'tpl-1', name: 't', tpm_enabled: true })
+    await expect(getTemplateTpmEnabled('tpl 1')).resolves.toBe(true)
+    expect(fetchMock.mock.calls[0]![0]).toMatch(/\/templates\/tpl%201\?all_content=true$/)
+  })
+
+  it('reads a missing key as no TPM', async () => {
+    mockFetch(200, { id: 'tpl-1', name: 't', tpm_enabled: 'false' })
+    await expect(getTemplateTpmEnabled('tpl-1')).resolves.toBe(false)
+    mockFetch(200, { id: 'tpl-1', name: 't' })
+    await expect(getTemplateTpmEnabled('tpl-1')).resolves.toBe(false)
   })
 })

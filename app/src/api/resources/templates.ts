@@ -56,6 +56,17 @@ export async function getTemplate(id: string): Promise<Template> {
   )
 }
 
+// Does the template carry a TPM device? Like the VM read, the engine fills
+// tpm_enabled only on an all_content read (BackendTemplateResource.doPopulate).
+// The New VM wizard seeds its TPM toggle from it: a VM created without an
+// explicit tpm_enabled inherits the template's device.
+export async function getTemplateTpmEnabled(id: string): Promise<boolean> {
+  const template = TemplateSchema.parse(
+    await request(`/templates/${encodeURIComponent(id)}?all_content=true`),
+  )
+  return template.tpm_enabled ?? false
+}
+
 // Webadmin-style "Make Template": POST /templates with { name, description?,
 // vm: { id } } — the engine snapshots the (down) source VM's disks into a new
 // template. The body may also carry comment, cluster: { id },

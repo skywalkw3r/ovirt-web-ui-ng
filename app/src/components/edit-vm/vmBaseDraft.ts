@@ -10,7 +10,8 @@ import type { MessageId } from '../../i18n/messages/en'
 //   SystemSection             SystemFields            (+ overcommitPercent, topologyLocked)
 //   ConsoleSection            ConsoleFields           (+ allowHeadless)
 //   HighAvailabilitySection   HighAvailabilityFields  (+ watchdog: VM-only, opt-in)
-//   ResourceAllocationSection ResourceAllocationFields (+ cpuProfiles query)
+//   ResourceAllocationSection ResourceAllocationFields (+ cpuProfiles query,
+//                                                       + tpm: VM-only, opt-in)
 //   CustomPropertiesSection   CustomPropertiesFields
 //   IconSection               IconFields
 //
@@ -121,6 +122,16 @@ export interface WatchdogFields {
   watchdogId: string
   watchdogModel: string
   watchdogAction: string
+}
+
+// VM only: the TPM device (tpm_enabled) is filled on an all_content VM read
+// only, never on the polled one. The draft seeds it "not loaded" and the modal
+// folds the dedicated read into both draft and baseline once it lands;
+// tpmLoaded gates the toggle and the payload so an unread device is never
+// written. Templates and instance types do not edit it.
+export interface TpmFields {
+  tpmLoaded: boolean
+  tpmEnabled: boolean
 }
 
 export interface ResourceAllocationFields {
