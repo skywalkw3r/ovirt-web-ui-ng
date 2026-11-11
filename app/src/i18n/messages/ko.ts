@@ -4877,4 +4877,13 @@ export const ko: LocaleCatalog = {
     '클러스터가 VM을 배치할 때 사용하는 필터, 가중치, 밸런싱 규칙을 관리합니다.',
   'configure.card.instanceTypes': '새 가상 머신에 재사용할 하드웨어 프로필을 정의합니다.',
   'configure.card.macPools': '가상 NIC에 할당되는 MAC 주소 범위를 관리합니다.',
+  // EDIT VM: Foreman/Satellite section (provider picker)
+  'vm.edit.section.foreman': 'Foreman/Satellite',
+  'vm.edit.foreman.provider': '공급자',
+  'vm.edit.foreman.none': '공급자 없음',
+  'vm.edit.foreman.unknown': '알 수 없는 공급자 ({id})',
+  'vm.edit.foreman.loading': 'Foreman/Satellite 공급자 로드 중',
+  'vm.edit.foreman.empty':
+    '등록된 Foreman/Satellite 공급자가 없습니다. 이 VM을 바인딩하려면 공급자 페이지에서 공급자를 추가하십시오.',
+  'vm.edit.foreman.help': '엔진은 선택한 Foreman/Satellite 공급자에서 이 VM의 정오표를 가져옵니다.',
 }

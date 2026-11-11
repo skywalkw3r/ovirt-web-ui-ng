@@ -5024,4 +5024,14 @@ export const fr: LocaleCatalog = {
   'configure.card.instanceTypes':
     'Définir des profils matériels réutilisables pour les nouvelles machines virtuelles.',
   'configure.card.macPools': "Gérer les plages d'adresses MAC attribuées aux NIC virtuelles.",
+  // EDIT VM: Foreman/Satellite section (provider picker)
+  'vm.edit.section.foreman': 'Foreman/Satellite',
+  'vm.edit.foreman.provider': 'Fournisseur',
+  'vm.edit.foreman.none': 'Aucun fournisseur',
+  'vm.edit.foreman.unknown': 'Fournisseur inconnu ({id})',
+  'vm.edit.foreman.loading': 'Chargement des fournisseurs Foreman/Satellite',
+  'vm.edit.foreman.empty':
+    'Aucun fournisseur Foreman/Satellite n’est enregistré. Ajoutez-en un sur la page Fournisseurs pour y rattacher cette VM.',
+  'vm.edit.foreman.help':
+    'Le moteur récupère les errata de cette VM auprès du fournisseur Foreman/Satellite choisi.',
 }

@@ -4985,4 +4985,14 @@ export const ptBR: LocaleCatalog = {
   'configure.card.instanceTypes':
     'Defina perfis de hardware reutilizáveis para novas máquinas virtuais.',
   'configure.card.macPools': 'Gerencie os intervalos de endereços MAC atribuídos às NICs virtuais.',
+  // EDIT VM: Foreman/Satellite section (provider picker)
+  'vm.edit.section.foreman': 'Foreman/Satellite',
+  'vm.edit.foreman.provider': 'Provedor',
+  'vm.edit.foreman.none': 'Nenhum provedor',
+  'vm.edit.foreman.unknown': 'Provedor desconhecido ({id})',
+  'vm.edit.foreman.loading': 'Carregando provedores Foreman/Satellite',
+  'vm.edit.foreman.empty':
+    'Nenhum provedor Foreman/Satellite está registrado. Adicione um na página Fornecedores para vincular esta VM a ele.',
+  'vm.edit.foreman.help':
+    'O mecanismo obtém as errata desta VM do provedor Foreman/Satellite escolhido.',
 }

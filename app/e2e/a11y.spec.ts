@@ -271,3 +271,18 @@ test('Configure page has no serious accessibility violations as admin', async ({
 
   await expectNoSeriousViolations(page)
 })
+
+test('Edit VM Foreman/Satellite tab has no serious accessibility violations', async ({ page }) => {
+  // vm-01 is bound to the mock Foreman provider, so the picker is scanned
+  // loaded, with the bound provider selected.
+  await login(page, { path: '/vms/vm-01' })
+  await page.getByRole('button', { name: 'Edit', exact: true }).click()
+  const dialog = page.getByRole('dialog', { name: 'Edit virtual machine — web-01' })
+  await expect(dialog).toBeVisible()
+  await dialog.getByRole('tab', { name: 'Foreman/Satellite' }).click()
+  const provider = dialog.getByRole('combobox', { name: 'Provider' })
+  await expect(provider).toBeEnabled()
+  await expect(provider).toHaveValue('ehp-01')
+
+  await expectNoSeriousViolations(page)
+})

@@ -5049,4 +5049,14 @@ export const de: LocaleCatalog = {
     'Wiederverwendbare Hardwareprofile für neue virtuelle Maschinen festlegen.',
   'configure.card.macPools':
     'Die MAC-Adressbereiche verwalten, die virtuellen NICs zugewiesen werden.',
+  // EDIT VM: Foreman/Satellite section (provider picker)
+  'vm.edit.section.foreman': 'Foreman/Satellite',
+  'vm.edit.foreman.provider': 'Anbieter',
+  'vm.edit.foreman.none': 'Kein Anbieter',
+  'vm.edit.foreman.unknown': 'Unbekannter Anbieter ({id})',
+  'vm.edit.foreman.loading': 'Foreman/Satellite-Anbieter werden geladen',
+  'vm.edit.foreman.empty':
+    'Es sind keine Foreman/Satellite-Anbieter registriert. Fügen Sie auf der Seite „Anbieter“ einen hinzu, um diese VM daran zu binden.',
+  'vm.edit.foreman.help':
+    'Die Engine bezieht die Errata dieser VM vom ausgewählten Foreman/Satellite-Anbieter.',
 }

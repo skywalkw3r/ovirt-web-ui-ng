@@ -4695,4 +4695,13 @@ export const zhCN: LocaleCatalog = {
   'configure.card.schedulingPolicies': '管理集群放置 VM 时使用的过滤、权重和均衡规则。',
   'configure.card.instanceTypes': '为新虚拟机定义可重用的硬件配置文件。',
   'configure.card.macPools': '管理分配给虚拟 NIC 的 MAC 地址范围。',
+  // EDIT VM: Foreman/Satellite section (provider picker)
+  'vm.edit.section.foreman': 'Foreman/Satellite',
+  'vm.edit.foreman.provider': '提供商',
+  'vm.edit.foreman.none': '无提供商',
+  'vm.edit.foreman.unknown': '未知提供商 ({id})',
+  'vm.edit.foreman.loading': '正在加载 Foreman/Satellite 提供商',
+  'vm.edit.foreman.empty':
+    '尚未注册任何 Foreman/Satellite 提供商。请在“提供商”页面添加一个，以便将此虚拟机绑定到它。',
+  'vm.edit.foreman.help': '引擎从所选的 Foreman/Satellite 提供商读取此虚拟机的勘误表。',
 }

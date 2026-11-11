@@ -5176,4 +5176,14 @@ export const ru: LocaleCatalog = {
   'configure.card.instanceTypes':
     'Определение многократно используемых профилей оборудования для новых виртуальных машин.',
   'configure.card.macPools': 'Управление диапазонами MAC-адресов, назначаемых виртуальным NIC.',
+  // EDIT VM: Foreman/Satellite section (provider picker)
+  'vm.edit.section.foreman': 'Foreman/Satellite',
+  'vm.edit.foreman.provider': 'Провайдер',
+  'vm.edit.foreman.none': 'Без провайдера',
+  'vm.edit.foreman.unknown': 'Неизвестный провайдер ({id})',
+  'vm.edit.foreman.loading': 'Загрузка провайдеров Foreman/Satellite',
+  'vm.edit.foreman.empty':
+    'Провайдеры Foreman/Satellite не зарегистрированы. Добавьте провайдера на странице «Провайдеры», чтобы привязать к нему эту ВМ.',
+  'vm.edit.foreman.help':
+    'Движок получает errata для этой ВМ от выбранного провайдера Foreman/Satellite.',
 }

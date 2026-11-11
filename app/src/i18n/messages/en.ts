@@ -5500,6 +5500,16 @@ export const en = {
     'Manage the filter, weight and balancing rules clusters use to place VMs.',
   'configure.card.instanceTypes': 'Define reusable hardware profiles for new virtual machines.',
   'configure.card.macPools': 'Manage the MAC address ranges assigned to virtual NICs.',
+  // EDIT VM: Foreman/Satellite section (provider picker)
+  'vm.edit.section.foreman': 'Foreman/Satellite',
+  'vm.edit.foreman.provider': 'Provider',
+  'vm.edit.foreman.none': 'No provider',
+  'vm.edit.foreman.unknown': 'Unknown provider ({id})',
+  'vm.edit.foreman.loading': 'Loading Foreman/Satellite providers',
+  'vm.edit.foreman.empty':
+    'No Foreman/Satellite providers are registered. Add one on the Providers page to bind this VM to it.',
+  'vm.edit.foreman.help':
+    'The engine reads the errata for this VM from the chosen Foreman/Satellite provider.',
 } as const
 
 // The id union — source of truth for every typed i18n surface (useT, the

@@ -4934,4 +4934,14 @@ export const tr: LocaleCatalog = {
   'configure.card.instanceTypes':
     'Yeni sanal makineler için yeniden kullanılabilir donanım profilleri tanımlayın.',
   'configure.card.macPools': 'Sanal NIC’lere atanan MAC adres aralıklarını yönetin.',
+  // EDIT VM: Foreman/Satellite section (provider picker)
+  'vm.edit.section.foreman': 'Foreman/Satellite',
+  'vm.edit.foreman.provider': 'Sağlayıcı',
+  'vm.edit.foreman.none': 'Sağlayıcı yok',
+  'vm.edit.foreman.unknown': 'Bilinmeyen sağlayıcı ({id})',
+  'vm.edit.foreman.loading': 'Foreman/Satellite sağlayıcıları yükleniyor',
+  'vm.edit.foreman.empty':
+    'Kayıtlı Foreman/Satellite sağlayıcısı yok. Bu VM’yi bağlamak için Sağlayıcılar sayfasından bir sağlayıcı ekleyin.',
+  'vm.edit.foreman.help':
+    'Motor, bu VM’nin errata bilgilerini seçilen Foreman/Satellite sağlayıcısından okur.',
 }

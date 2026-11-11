@@ -105,6 +105,9 @@ interface MockVm {
   // The pool this VM belongs to (VmPoolService has no vms subcollection, so the
   // pool VMs tab filters the global /vms feed on vm_pool.id).
   vm_pool?: { id?: string; name?: string }
+  // Edit VM — Foreman/Satellite: the bound external host provider (bare
+  // { id } link; an empty object on PUT clears it, see updateVm)
+  external_host_provider?: { id?: string }
   delete_protected?: boolean | string
   high_availability?: { enabled?: boolean | string; priority?: number | string }
   time_zone?: { name?: string; utc_offset?: string }
@@ -1223,6 +1226,8 @@ const initialVms = (): MockVm[] => [
     virtio_scsi_multi_queues: '4',
     // Edit VM — HA: VM lease on the data domain (also feeds sd-01 Leases tab)
     lease: { storage_domain: { id: 'sd-01' } },
+    // Edit VM — Foreman/Satellite: bound to the mock Foreman provider
+    external_host_provider: { id: 'ehp-01' },
     high_availability: { enabled: 'true', priority: '50' },
     time_zone: { name: 'Etc/GMT', utc_offset: '+00:00' },
     custom_properties: {
@@ -6380,6 +6385,20 @@ function updateVm(id: string, body: unknown, query?: URLSearchParams): unknown {
   if (patch.rng_device !== undefined && Object.keys(patch.rng_device).length === 0) {
     delete vm.rng_device
     delete patch.rng_device
+  }
+  // external_host_provider: VmMapper sets providerId from the element's id, so
+  // an element without one ({}) unbinds the VM; UpdateVmCommand rejects an id
+  // that names no provider (ACTION_TYPE_FAILED_PROVIDER_DOESNT_EXIST).
+  if (patch.external_host_provider !== undefined) {
+    const providerId = patch.external_host_provider.id
+    if (providerId === undefined || providerId === '') {
+      delete vm.external_host_provider
+      delete patch.external_host_provider
+    } else if (!externalHostProviders.some((provider) => provider.id === providerId)) {
+      throw new ApiError(409, 'Operation Failed', '[Cannot edit VM. Provider does not exist.]')
+    } else {
+      patch.external_host_provider = { id: providerId }
+    }
   }
   // The engine applies each cpu element only when it is set (VmBaseMapper isSet
   // guards), so a PUT carrying cpu.topology alone keeps the stored cpu_tune and
