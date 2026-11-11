@@ -1921,7 +1921,15 @@ export const tr: LocaleCatalog = {
   'hostNuma.empty.body': 'Bu ana makine hiçbir NUMA düğümü bildirmiyor.',
   'hostNuma.error.title': 'NUMA topolojisi yüklenemedi',
   'hostNuma.loading': 'NUMA topolojisi yükleniyor',
-  'host.cockpit.open': 'Cockpit',
+  'host.console.open': 'Ana makine konsolu',
+  'host.console.newTab': 'Cockpit’i yeni sekmede açar',
+  'host.console.body':
+    'Cockpit, ana makinenin kendisinde çalışan web konsoludur. {name} üzerindeki günlükleri, depolamayı, ağı ve hizmetleri denetlemek veya orada bir terminal açmak için kullanın.',
+  'host.console.openButton': 'Ana makine konsolunu aç',
+  'host.console.sso.note': 'Konsol yeni sekmede açılır ve geçerli oturumunuzla oturum açar.',
+  'host.console.direct.title': 'Konsol {url} adresini yeni sekmede açar',
+  'host.console.direct.body':
+    'Ana makinedeki bir hesapla oturum açın. Cockpit ana makinenin sertifikasını kullanır; bu sertifikaya güvenilene kadar tarayıcınız bir uyarı gösterebilir.',
   'datacenters.forceRemove.action': 'Zorla kaldır',
   'datacenters.forceRemove.confirm.title': "''{name}'' veri merkezi zorla kaldırılsın mı?",
   'datacenters.forceRemove.confirm.body':

@@ -1920,7 +1920,15 @@ export const ja: LocaleCatalog = {
   'hostNuma.empty.body': 'このホストはNUMAノードを報告していません。',
   'hostNuma.error.title': 'NUMAトポロジーを読み込めませんでした',
   'hostNuma.loading': 'NUMAトポロジーを読み込んでいます',
-  'host.cockpit.open': 'Cockpit',
+  'host.console.open': 'ホストコンソール',
+  'host.console.newTab': '新しいタブで Cockpit を開きます',
+  'host.console.body':
+    'Cockpit はホスト自体で動作する Web コンソールです。{name} のログ、ストレージ、ネットワーク、サービスの確認や、ターミナルを開く操作に使用します。',
+  'host.console.openButton': 'ホストコンソールを開く',
+  'host.console.sso.note': 'コンソールは新しいタブで開き、現在のセッションでサインインします。',
+  'host.console.direct.title': 'コンソールは新しいタブで {url} を開きます',
+  'host.console.direct.body':
+    'ホスト上のアカウントでサインインしてください。Cockpit はホストの証明書を使用するため、その証明書が信頼されるまでブラウザーに警告が表示されることがあります。',
   'datacenters.forceRemove.action': '強制削除',
   'datacenters.forceRemove.confirm.title': 'データセンター「{name}」を強制削除しますか？',
   'datacenters.forceRemove.confirm.body':

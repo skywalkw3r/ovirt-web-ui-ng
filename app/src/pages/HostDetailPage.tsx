@@ -19,7 +19,6 @@ import {
   TextInput,
   Tooltip,
 } from '@patternfly/react-core'
-import { ExternalLinkAltIcon } from '@patternfly/react-icons'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { ApiError } from '../api/transport'
 import { useT } from '../i18n/useT'
@@ -31,6 +30,7 @@ import { ListPageHeader } from '../components/ListPageHeader'
 import { HostActionsMenu } from '../components/host-actions/HostActionsMenu'
 import { NotPermitted } from '../components/NotPermitted'
 import { HostFormModal } from '../components/host-form/HostFormModal'
+import { HostConsoleTab } from '../components/host-tabs/HostConsoleTab'
 import { HostAffinityLabelsTab } from '../components/host-tabs/HostAffinityLabelsTab'
 import { HostDevicesTab } from '../components/host-tabs/HostDevicesTab'
 import { HostErrataTab } from '../components/host-tabs/HostErrataTab'
@@ -44,6 +44,7 @@ import { HostVmsTab } from '../components/host-tabs/HostVmsTab'
 import { HostMonitoringTab } from '../components/host-tabs/HostMonitoringTab'
 import { useHost } from '../hooks/useHost'
 import { useDeleteHost } from '../hooks/useHostMutations'
+import { hostConsoleInfo } from '../lib/hostConsole'
 import { hostDetailRoute } from '../routes/router'
 
 export function HostDetailPage() {
@@ -220,12 +221,7 @@ export function HostDetailPage() {
               query observers would otherwise keep their refetchInterval alive */}
           <Tabs
             activeKey={activeKey}
-            // The Cockpit tab is an external link (opens in a new browser tab),
-            // not a content panel — never make it the active key, so the
-            // current tab's content stays put when it is clicked.
-            onSelect={(_event, tabKey) => {
-              if (tabKey !== 'cockpit') setActiveKey(tabKey)
-            }}
+            onSelect={(_event, tabKey) => setActiveKey(tabKey)}
             mountOnEnter
             unmountOnExit
             aria-label={t('hostDetail.tabs.ariaLabel')}
@@ -308,21 +304,15 @@ export function HostDetailPage() {
                 <HostEventsTab hostName={host.data.name ?? ''} />
               </TabContentBody>
             </Tab>
-            {/* Cockpit is the host's local web console (:9090). Rendered as a
-                link tab — no content panel — that opens in a new browser tab;
-                offered only when the host address is known. */}
-            {host.data.address ? (
-              <Tab
-                eventKey="cockpit"
-                href={`https://${host.data.address}:9090`}
-                target="_blank"
-                rel="noopener noreferrer"
-                title={
-                  <TabTitleText>
-                    {t('host.cockpit.open')} <ExternalLinkAltIcon />
-                  </TabTitleText>
-                }
-              />
+            {/* Host console: launches the host's Cockpit web console in a new
+                browser tab. Offered only when a console URL can be formed
+                (see lib/hostConsole.ts). */}
+            {hostConsoleInfo(host.data) ? (
+              <Tab eventKey="console" title={<TabTitleText>{t('host.console.open')}</TabTitleText>}>
+                <TabContentBody hasPadding>
+                  <HostConsoleTab host={host.data} />
+                </TabContentBody>
+              </Tab>
             ) : null}
           </Tabs>
         </>

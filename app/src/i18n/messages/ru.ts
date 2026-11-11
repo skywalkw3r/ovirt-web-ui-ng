@@ -1942,7 +1942,16 @@ export const ru: LocaleCatalog = {
   'hostNuma.empty.body': 'Этот хост не сообщает об узлах NUMA.',
   'hostNuma.error.title': 'Не удалось загрузить топологию NUMA',
   'hostNuma.loading': 'Загрузка топологии NUMA',
-  'host.cockpit.open': 'Cockpit',
+  'host.console.open': 'Консоль хоста',
+  'host.console.newTab': 'Открывает Cockpit в новой вкладке',
+  'host.console.body':
+    'Cockpit является веб-консолью, работающей на самом хосте. С её помощью можно проверить журналы, хранилище, сеть и службы на {name} или открыть там терминал.',
+  'host.console.openButton': 'Открыть консоль хоста',
+  'host.console.sso.note':
+    'Консоль откроется в новой вкладке и выполнит вход с вашим текущим сеансом.',
+  'host.console.direct.title': 'Консоль откроет {url} в новой вкладке',
+  'host.console.direct.body':
+    'Войдите с учётной записью хоста. Cockpit использует сертификат хоста, поэтому браузер может показывать предупреждение, пока этот сертификат не станет доверенным.',
   'datacenters.forceRemove.action': 'Принудительно удалить',
   'datacenters.forceRemove.confirm.title': "Принудительно удалить дата-центр ''{name}''?",
   'datacenters.forceRemove.confirm.body':

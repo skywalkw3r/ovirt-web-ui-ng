@@ -49,7 +49,9 @@ against the code rather than this report. Its outcome:
 - Setup Host Networks attachment custom properties and Sync All (section 4).
 - Import VM from OVA (section 6, item 2).
 - Guide Me and the Configure dialog (section 3).
-- UI plugin support and the Cockpit host console: skywalkw3r/ovirt-web-ui-ng#13.
+- UI plugin support: skywalkw3r/ovirt-web-ui-ng#13. The design is in
+  [ADR-0001](ADR-0001-UI-EXTENSIONS.md); the Cockpit host console part has
+  landed (see [HOST-CONSOLE.md](HOST-CONSOLE.md)).
 
 ## 1. Executive summary
 
@@ -112,7 +114,6 @@ Ranked by importance within each area. Niche, deferred, and out-of-scope items a
 | **Host — Reinstall / Install (re-deploy)** *(common)* | `HostListModel.installCommand` | Kernel/hosted-engine sections say "applies on next reinstall" but the reinstall action is absent. | **M** |
 | **Host — Refresh Capabilities** *(common)* | `refreshCapabilitiesCommand` | Can't re-detect host hardware. | **S** |
 | **Host — Fence agent CRUD** *(common)* | `FenceAgentListModel` / `FenceAgentModel` | PM flags round-trip but agents (type/address/creds/proxy) must be added via raw REST. | **M** |
-| **Host — Host Console (Cockpit)** *(common)* | `hostConsoleCommand` | No SSO link to the host's Cockpit console. | **S** |
 | **Host — Restart/Reboot (fence)** + **Start/Stop** + **SSH Restart/Stop** *(common)* | `restart/start/stop/sshRestart/sshStopCommand` | No fence- or SSH-based power actions on a host. | **M** |
 | **Host — Check for Upgrade / Upgrade** *(common)* | `checkForUpgrade/upgradeCommand` | No per-host package upgrade path. | **M** |
 | **Cluster — Upgrade** *(common)* | cluster upgrade manager | No rolling cluster upgrade. | **M** |

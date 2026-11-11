@@ -1938,7 +1938,15 @@ export const ptBR: LocaleCatalog = {
   'hostNuma.empty.body': 'Este host não informa nós NUMA.',
   'hostNuma.error.title': 'Não foi possível carregar a topologia NUMA',
   'hostNuma.loading': 'Carregando topologia NUMA',
-  'host.cockpit.open': 'Cockpit',
+  'host.console.open': 'Console do host',
+  'host.console.newTab': 'Abre o Cockpit em uma nova aba',
+  'host.console.body':
+    'O Cockpit é o console web executado no próprio host. Use-o para verificar logs, armazenamento, rede e serviços em {name} ou para abrir um terminal nele.',
+  'host.console.openButton': 'Abrir console do host',
+  'host.console.sso.note': 'O console abre em uma nova aba e entra com a sua sessão atual.',
+  'host.console.direct.title': 'O console abre {url} em uma nova aba',
+  'host.console.direct.body':
+    'Entre com uma conta do host. O Cockpit usa o certificado do host, então o navegador pode exibir um aviso até que esse certificado seja confiável.',
   'datacenters.forceRemove.action': 'Forçar remoção',
   'datacenters.forceRemove.confirm.title': "Forçar a remoção do data center ''{name}''?",
   'datacenters.forceRemove.confirm.body':

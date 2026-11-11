@@ -85,6 +85,28 @@ window.ovirtWebUiConfig = {
   //   url: 'https://support.example.com/virtualization',
   // },
 
+  // Host console: the "Host console" action on every host (list kebab,
+  // right-click menu, host detail tab) opens the host's Cockpit web console
+  // in a new browser tab. By default that is https://<host address>:9090 and
+  // the administrator signs in to Cockpit with an account on the host. See
+  // docs/HOST-CONSOLE.md.
+  //
+  // `enabled: false` hides every host console entry point.
+  // `port` changes the Cockpit port (default 9090).
+  // `ssoUrl` turns on single sign-on through the legacy ovirt-cockpit-sso
+  // service (oVirt 4.2/4.3 engines; normally https://<engine-fqdn>:9986).
+  // The console then opens <ssoUrl>/=<host id>/<ssoPage> and hands the
+  // signed-in session token to that service, so it must be an https origin
+  // you operate. On a multi-engine deploy set `cockpitSsoUrl` on each engine
+  // in servers.list instead (a token is only valid on its own engine).
+  // `ssoPage` is the Cockpit page the SSO link lands on (default 'machines').
+  //
+  // cockpit: {
+  //   enabled: true,
+  //   port: 9090,
+  //   ssoUrl: 'https://engine.example.com:9986',
+  // },
+
   // Monitoring Portal: the admin links (sidebar and Monitoring tabs) that open
   // the engine's bundled Grafana / Data Warehouse dashboards in a new tab.
   // Live utilization on the Dashboard and the Monitoring tabs comes from the

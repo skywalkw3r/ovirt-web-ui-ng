@@ -62,6 +62,14 @@ test('host Monitoring tab has no serious accessibility violations', async ({ pag
   await expectNoSeriousViolations(page)
 })
 
+test('host console tab has no serious accessibility violations', async ({ page }) => {
+  await login(page, { path: '/hosts/host-01' })
+  await page.getByRole('tab', { name: 'Host console' }).click()
+  await expect(page.getByRole('button', { name: 'Open host console' })).toBeVisible()
+
+  await expectNoSeriousViolations(page)
+})
+
 test('cluster Monitoring tab has no serious accessibility violations', async ({ page }) => {
   await login(page, { path: '/clusters/cluster-01' })
   await page.getByRole('tab', { name: 'Monitoring' }).click()

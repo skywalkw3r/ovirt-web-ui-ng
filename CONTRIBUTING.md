@@ -16,8 +16,9 @@ rules) — link to them, don't duplicate them.
 - `lab/` — Ansible automation that builds a single-node oVirt 4.5 lab on
   Proxmox (nested-virt node + self-hosted engine). See `lab/ansible/README.md`.
 - `docs/` — `PLAN.md`, `COMPONENTS.md`, `GAP-ANALYSIS.md` (webadmin parity
-  audit; status may lag README), `DEPLOY.md`, and `LAB-SETUP.md` (the manual
-  lab build the Ansible pipeline automates).
+  audit; status may lag README), `DEPLOY.md`, `LAB-SETUP.md` (the manual
+  lab build the Ansible pipeline automates), `ADR-0001-UI-EXTENSIONS.md`
+  (plugin model design) and `HOST-CONSOLE.md` (Cockpit host console).
 
 ## App architecture (`app/src/`)
 
