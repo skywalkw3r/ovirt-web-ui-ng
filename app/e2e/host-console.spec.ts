@@ -44,20 +44,13 @@ test('host list kebab opens the host Cockpit console in a new tab', async ({ pag
   ])
 })
 
-test('host detail header button explains the direct sign-in and opens the console', async ({
-  page,
-}) => {
+test('host detail header button opens the host Cockpit console in a new tab', async ({ page }) => {
   const openCalls = await recordWindowOpen(page)
   await login(page, { path: '/hosts/host-01' })
   const button = page.getByRole('button', { name: 'Host console' })
 
-  // the documented fallback: where it goes, and the certificate note
   await button.hover()
-  const tooltip = page.getByRole('tooltip')
-  await expect(tooltip).toContainText(
-    'The console opens https://node-01.lab.local:9090 in a new tab',
-  )
-  await expect(tooltip).toContainText('Sign in with an account on the host')
+  await expect(page.getByRole('tooltip')).toHaveText('Open the Cockpit interface for node-01')
 
   await button.click()
   expect(await openCalls()).toEqual([
@@ -74,11 +67,6 @@ test('with SSO configured the console opens the SSO service with the session tok
   await withConfig(page, { cockpit: { ssoUrl: 'https://engine.lab.local:9986' } })
   await login(page, { path: '/hosts/host-01' })
   const button = page.getByRole('button', { name: 'Host console' })
-
-  await button.hover()
-  const tooltip = page.getByRole('tooltip')
-  await expect(tooltip).toContainText('signs you in with your current session')
-  await expect(tooltip).not.toContainText('Sign in with an account on the host')
 
   await button.click()
   const [[url, target, features]] = await openCalls()

@@ -5,6 +5,7 @@ import type { Watchdog } from '../../api/schemas/watchdog'
 import type { MessageId } from '../../i18n/messages/en'
 import { statusKind } from '../../lib/vm-status'
 import { cpuTuneBody, effectiveCpuPinning, formatCpuPinning } from './cpuPinning'
+import { buildExternalHostProvider, vmExternalHostProviderId } from './foremanDraft'
 import type { NumaNodeDraft } from './numaDraft'
 
 // Memory is stored in bytes on the wire (see schemas/vm.ts) but edited in MiB
@@ -178,6 +179,9 @@ export interface EditVmDraft {
   rngPeriod: number
   // Custom Properties — key/value rows mapping to custom_properties
   customProperties: CustomPropertyRow[]
+  // Foreman/Satellite — the bound external host provider's id ('' = none).
+  // external_host_provider.id; see foremanDraft.ts.
+  externalHostProviderId: string
   // Icon — the referenced catalog icon id (seeded from vm.large_icon.id) plus an
   // optional custom upload (base64 data + media type). A custom upload wins;
   // picking a catalog icon clears the upload. Both map to large_icon on save.
@@ -402,6 +406,7 @@ export function vmToDraft(vm: Vm): EditVmDraft {
     rngBytes: vm.rng_device?.rate?.bytes ?? 0,
     rngPeriod: vm.rng_device?.rate?.period ?? 0,
     customProperties: customPropertyRows(vm),
+    externalHostProviderId: vmExternalHostProviderId(vm),
     // The VM's current large-icon reference (a bare { id } link on a plain
     // read). No upload staged until the user picks/uploads in the Icon section.
     iconId: vmLargeIconId(vm) ?? '',
@@ -854,6 +859,13 @@ function applyChangedSections(
   // key) since the icon is pure metadata. Absent when nothing changed.
   const icon = buildLargeIcon(draft, baseline)
   if (icon !== undefined) payload.large_icon = icon
+
+  // Foreman/Satellite — the bound provider, only when the pick moved.
+  const provider = buildExternalHostProvider(
+    draft.externalHostProviderId,
+    baseline.externalHostProviderId,
+  )
+  if (provider !== undefined) payload.external_host_provider = provider
 }
 
 // The large_icon body for save, or undefined when the icon is unchanged. A

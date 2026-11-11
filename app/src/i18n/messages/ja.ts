@@ -1050,6 +1050,41 @@ export const ja: LocaleCatalog = {
   'permissions.add.role.none': 'このエンジンで利用できる割り当て可能な役割はありません。',
   'permissions.add.role.userGroup': 'ユーザーの役割',
   'permissions.add.role.adminGroup': '管理者の役割',
+  // Add Permission picker depth (issue #31): multi-select, My groups,
+  // Everyone, and directory search.
+  'permissions.add.kind.myGroups': 'マイグループ',
+  'permissions.add.kind.everyone': '全員',
+  'permissions.add.source.label': '検索対象',
+  'permissions.add.source.engine': 'エンジンデータベース',
+  'permissions.add.source.directory': 'ディレクトリ: {domain}',
+  'permissions.add.source.domainsLoading': 'ディレクトリを読み込み中...',
+  'permissions.add.source.domainsError': 'ディレクトリを読み込めませんでした: {message}',
+  'permissions.add.source.directoryHint':
+    'ディレクトリで見つかったプリンシパルのうちエンジンに未登録のものは、役割の付与時にエンジンに追加されます。',
+  'permissions.add.empty.directory.users': 'このディレクトリはユーザーを返しませんでした。',
+  'permissions.add.empty.directory.groups': 'このディレクトリはグループを返しませんでした。',
+  'permissions.add.myGroups.loading': 'グループを読み込み中...',
+  'permissions.add.myGroups.error': 'グループを読み込めませんでした: {message}',
+  'permissions.add.myGroups.empty.title': 'グループがありません',
+  'permissions.add.myGroups.empty.body':
+    'このアカウントはどのディレクトリグループのメンバーでもありません。',
+  'permissions.add.myGroups.table.ariaLabel': 'マイグループ',
+  'permissions.add.everyone.body':
+    '役割は組み込みの Everyone グループに付与されるため、すべてのユーザーがこの{noun}でその役割を持ちます。',
+  'permissions.add.selectMany.user': '役割を付与するユーザーを 1 人以上選択します。',
+  'permissions.add.selectMany.group': '役割を付与するグループを 1 つ以上選択します。',
+  'permissions.add.selected.count': '{count, plural, other {# 件のプリンシパルを選択済み}}',
+  'permissions.add.selected.ariaLabel': '選択したプリンシパル',
+  'permissions.add.selected.remove': '{name} を選択から削除',
+  'permissions.add.result.failed.title':
+    '{count, plural, other {# 件のプリンシパルに役割を付与できませんでした}}',
+  'permissions.add.result.failed.body':
+    '失敗したプリンシパルは選択されたままです。原因を解決して再試行するか、選択から削除してください。',
+  'permissions.add.result.failed.item': '{name}: {message}',
+  'permissions.add.submit.retry': '失敗分を再試行',
+  'permissions.add.toast.granted': '{role} を {name} に付与しました',
+  'permissions.add.toast.grantedMany':
+    '{role} を {count, plural, other {# 件のプリンシパル}}に付与しました',
   'users.notPermitted': 'ユーザー',
   'users.title': 'ユーザー',
   'users.search.hint': 'usrname = jdoe * —またはプレーンテキスト',
@@ -1928,10 +1963,7 @@ export const ja: LocaleCatalog = {
   'hostNuma.loading': 'NUMAトポロジーを読み込んでいます',
   'host.console.open': 'ホストコンソール',
   'host.console.newTab': '新しいタブで Cockpit を開きます',
-  'host.console.sso.note': 'コンソールは新しいタブで開き、現在のセッションでサインインします。',
-  'host.console.direct.title': 'コンソールは新しいタブで {url} を開きます',
-  'host.console.direct.body':
-    'ホスト上のアカウントでサインインしてください。Cockpit はホストの証明書を使用するため、その証明書が信頼されるまでブラウザーに警告が表示されることがあります。',
+  'host.console.tooltip': '{name} の Cockpit インターフェイスを開く',
   'datacenters.forceRemove.action': '強制削除',
   'datacenters.forceRemove.confirm.title': 'データセンター「{name}」を強制削除しますか？',
   'datacenters.forceRemove.confirm.body':
@@ -3312,6 +3344,9 @@ export const ja: LocaleCatalog = {
   'hostForm.field.rootPassword': 'Rootパスワード',
   'hostForm.field.sshPort': 'SSHポート',
   'hostForm.field.sshUser': 'SSHユーザー',
+  'hostForm.firewall.configure': 'ホストのファイアウォールを自動的に設定',
+  'hostForm.firewall.configure.help':
+    'インストール時に、クラスターのファイアウォールタイプを使用して、oVirt に必要なポートをホストのファイアウォールで開きます。ホストのファイアウォールを自分で管理している場合にのみオフにしてください。その場合、必要なポートは手動で開く必要があります。',
   'hostForm.hostedEngine.deploy': 'Hosted engineをデプロイ',
   'hostForm.hostedEngine.deploy.help':
     'インストールでは、self-hosted engineコンポーネントもデプロイされるため、このホストは既存のhosted-engineホストと並んでエンジンVMを実行できます。通常の仮想化ホストの場合はオフのままにします。',
@@ -4858,4 +4893,70 @@ export const ja: LocaleCatalog = {
     '部分的なセットアップの取り消しが停止しました: {error}',
   'host.configureLocalStorage.outcome.rerunHint':
     '完了するには、必要に応じてホストをメンテナンスモードにし、「ローカルストレージを設定」をもう一度実行してください。空のローカルデータセンターが再利用されます。',
+  // Guide Me (data center and cluster next steps)
+  'guideMe.action': 'ガイド',
+  'guideMe.title': 'ガイド: {name}',
+  'guideMe.loading': '次の手順を読み込み中',
+  'guideMe.error.title': '次の手順を読み込めませんでした',
+  'guideMe.dataCenter.created': 'データセンターを作成しました。',
+  'guideMe.dataCenter.configured': 'データセンターは完全に設定され、使用できる状態です。',
+  'guideMe.cluster.created': 'クラスターを作成しました。',
+  'guideMe.cluster.configured': 'クラスターは完全に設定され、使用できる状態です。',
+  'guideMe.configured.title': '設定が完了しました',
+  'guideMe.unconfigured': 'まだ設定が必要なエンティティがあります。',
+  'guideMe.section.required': '必須の手順',
+  'guideMe.section.optional': '任意の手順',
+  'guideMe.configureLater': '後で設定',
+  'guideMe.step.configureCluster': 'クラスターを設定',
+  'guideMe.step.addAnotherCluster': '別のクラスターを追加',
+  'guideMe.step.configureHost': 'ホストを設定',
+  'guideMe.step.addAnotherHost': '別のホストを追加',
+  'guideMe.step.configureStorage': 'ストレージを設定',
+  'guideMe.step.addMoreStorage': 'ストレージを追加',
+  'guideMe.step.attachStorage': 'ストレージを接続',
+  'guideMe.step.attachMoreStorage': 'さらにストレージを接続',
+  'guideMe.step.configureIsoLibrary': 'ISO ライブラリーを設定',
+  'guideMe.step.attachIsoLibrary': 'ISO ライブラリーを接続',
+  'guideMe.step.addLocalStorage': 'ローカルストレージを追加',
+  'guideMe.reason.noUpHost': 'データセンターには少なくとも 1 台のアクティブなホストが必要です。',
+  'guideMe.reason.noCluster': '先にデータセンターにクラスターを追加してください。',
+  'guideMe.reason.noUnattachedData': '接続可能な未接続のデータドメインがありません。',
+  'guideMe.reason.noActiveMaster':
+    'データセンターには先にアクティブなマスターデータドメインが必要です。',
+  'guideMe.reason.noIsoDomain': '接続可能な ISO ドメインがありません。',
+  'guideMe.reason.localDcHasHost':
+    'ローカルデータセンターに置けるホストは 1 台だけで、このデータセンターにはすでにあります。',
+  'guideMe.reason.dcInitialized': 'データセンターはすでに初期化されています。',
+  'guideMe.reason.clusterLocalHasHost':
+    'このクラスターは、唯一のホストをすでに持つローカルデータセンターに属しています。',
+  'guideMe.note.localStorage':
+    'データセンターを完全に設定するには、ローカルストレージドメインを少なくとも 1 つ接続して有効化してください。',
+  'guideMe.note.clusterNoActions':
+    'このクラスターで使用できる操作はありません: どのデータセンターにも接続されていません。',
+  // Configure aggregate entry point (pages/ConfigurePage.tsx): the webadmin
+  // Administration › Configure index linking to its five surfaces.
+  'nav.configure': '構成',
+  'configure.title': '構成',
+  'configure.intro':
+    'すべてのデータセンターとクラスターで共有される、エンジン全体の定義です。それぞれ専用のページで開きます。',
+  'configure.loading': '構成領域を読み込んでいます',
+  'configure.notPermitted': 'システム構成',
+  'configure.list.ariaLabel': '構成領域',
+  'configure.card.roles': 'ロールと、各ロールがユーザーおよび管理者に付与する権限を定義します。',
+  'configure.card.systemPermissions': 'システム全体でユーザーとグループにロールを割り当てます。',
+  'configure.card.schedulingPolicies':
+    'クラスターがVMの配置に使用するフィルター、重み付け、負荷分散のルールを管理します。',
+  'configure.card.instanceTypes':
+    '新しい仮想マシン用の再利用可能なハードウェアプロファイルを定義します。',
+  'configure.card.macPools': '仮想NICに割り当てるMACアドレスの範囲を管理します。',
+  // EDIT VM: Foreman/Satellite section (provider picker)
+  'vm.edit.section.foreman': 'Foreman/Satellite',
+  'vm.edit.foreman.provider': 'プロバイダー',
+  'vm.edit.foreman.none': 'プロバイダーなし',
+  'vm.edit.foreman.unknown': '不明なプロバイダー ({id})',
+  'vm.edit.foreman.loading': 'Foreman/Satellite プロバイダーを読み込んでいます',
+  'vm.edit.foreman.empty':
+    'Foreman/Satellite プロバイダーが登録されていません。この VM をバインドするには、プロバイダーページで追加してください。',
+  'vm.edit.foreman.help':
+    'エンジンは、選択した Foreman/Satellite プロバイダーからこの VM の正誤表を取得します。',
 }

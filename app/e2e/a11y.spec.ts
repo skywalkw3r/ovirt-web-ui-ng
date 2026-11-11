@@ -67,7 +67,7 @@ test('host console button and its tooltip have no serious accessibility violatio
 }) => {
   await login(page, { path: '/hosts/host-01' })
   await page.getByRole('button', { name: 'Host console' }).focus()
-  await expect(page.getByRole('tooltip')).toContainText('in a new tab')
+  await expect(page.getByRole('tooltip')).toContainText('Cockpit interface')
 
   // scanned with the tooltip open, so the shared helper (which waits for
   // tooltips to close) does not apply
@@ -137,6 +137,21 @@ test('New affinity group dialog with members selected has no serious violations'
   const toggle = dialog.getByRole('button', { name: '2 selected — Select virtual machines' })
   await toggle.click()
   await expect(toggle).toHaveAttribute('aria-expanded', 'false')
+
+  await expectNoSeriousViolations(page)
+})
+
+test('Add permission dialog with directory picks has no serious violations', async ({ page }) => {
+  // The multi-select table, the selected-principal chips and the directory
+  // hint only render once a directory is searched and rows are picked.
+  await login(page, { path: '/vms/vm-01' })
+  await page.getByRole('tab', { name: 'Permissions' }).click()
+  await page.getByRole('button', { name: 'Add permission' }).click()
+  const dialog = page.getByRole('dialog')
+  await dialog.getByRole('combobox', { name: 'Search in' }).selectOption('ldap.corp-authz')
+  await dialog.getByRole('checkbox', { name: 'Select bnewhire@ldap.corp' }).check()
+  await dialog.getByRole('checkbox', { name: 'Select rpatel@ldap.corp' }).check()
+  await expect(dialog.getByText('2 principals selected')).toBeVisible()
 
   await expectNoSeriousViolations(page)
 })
@@ -241,6 +256,33 @@ test('User detail page has no serious accessibility violations as admin', async 
   // the header meta line and every populated tab are in the tree.
   await login(page, { path: '/users/user-04' })
   await expect(page.getByRole('heading', { name: 'Jane Doe', exact: true })).toBeVisible()
+
+  await expectNoSeriousViolations(page)
+})
+
+test('Configure page has no serious accessibility violations as admin', async ({ page }) => {
+  // The Administration › Configure index: five cards, each an h2 link plus a
+  // description, in a labelled list.
+  await login(page, { path: '/configure' })
+  await expect(page.getByRole('heading', { name: 'Configure', level: 1 })).toBeVisible()
+  await expect(
+    page.getByRole('list', { name: 'Configuration areas' }).getByRole('listitem'),
+  ).toHaveCount(5)
+
+  await expectNoSeriousViolations(page)
+})
+
+test('Edit VM Foreman/Satellite tab has no serious accessibility violations', async ({ page }) => {
+  // vm-01 is bound to the mock Foreman provider, so the picker is scanned
+  // loaded, with the bound provider selected.
+  await login(page, { path: '/vms/vm-01' })
+  await page.getByRole('button', { name: 'Edit', exact: true }).click()
+  const dialog = page.getByRole('dialog', { name: 'Edit virtual machine — web-01' })
+  await expect(dialog).toBeVisible()
+  await dialog.getByRole('tab', { name: 'Foreman/Satellite' }).click()
+  const provider = dialog.getByRole('combobox', { name: 'Provider' })
+  await expect(provider).toBeEnabled()
+  await expect(provider).toHaveValue('ehp-01')
 
   await expectNoSeriousViolations(page)
 })

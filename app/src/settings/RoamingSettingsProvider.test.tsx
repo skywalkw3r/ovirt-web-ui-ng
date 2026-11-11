@@ -2,7 +2,8 @@
 import '../test/env'
 import { fireEvent, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
-import { mockUserIdFor, mockUserOptions } from '../api/mock/routes/user-options'
+import { mockAuthenticatedUserId } from '../api/mock/handlers'
+import { mockUserOptions } from '../api/mock/routes/user-options'
 import { FIND_TIMEOUT_MS, renderWithProviders } from '../test/render'
 import { useTheme } from '../theme/context'
 import { useSettings } from './context'
@@ -38,7 +39,9 @@ function renderAs(user: string) {
 }
 
 function ownOption(username: string) {
-  return mockUserOptions(mockUserIdFor(username)).find((o) => o.name === ROAMING_OPTION_NAME)
+  return mockUserOptions(mockAuthenticatedUserId(username)).find(
+    (o) => o.name === ROAMING_OPTION_NAME,
+  )
 }
 
 describe('RoamingSettingsProvider', () => {
@@ -60,7 +63,7 @@ describe('RoamingSettingsProvider', () => {
       }),
     )
     // nothing to write back; the VM Portal's key is untouched
-    expect(mockUserOptions(mockUserIdFor('roaming@internal')).map((o) => o.id)).toEqual([
+    expect(mockUserOptions(mockAuthenticatedUserId('roaming@internal')).map((o) => o.id)).toEqual([
       'uo-roaming-01',
       'uo-roaming-02',
     ])
@@ -82,7 +85,7 @@ describe('RoamingSettingsProvider', () => {
         }),
       { timeout: FIND_TIMEOUT_MS },
     )
-    expect(mockUserOptions(mockUserIdFor('admin@internal'))).toHaveLength(1)
+    expect(mockUserOptions(mockAuthenticatedUserId('admin@internal'))).toHaveLength(1)
   })
 
   it('keeps working from localStorage when the engine answers 403', async () => {
