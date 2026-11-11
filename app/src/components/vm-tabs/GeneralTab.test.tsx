@@ -83,8 +83,15 @@ const { GeneralTab } = await import('./GeneralTab')
 // omitted (absence-beats-dash); admins always keep the row (the ⊕ lives there).
 function renderTab(vm: Vm, vmTags?: Tag[], opts: { admin?: boolean; tpm?: boolean } = {}): string {
   const queryClient = new QueryClient()
-  // the TPM row reads its own all_content query (useVmTpm)
-  if (opts.tpm !== undefined) queryClient.setQueryData(['vm', vm.id, 'tpm'], opts.tpm)
+  // the TPM row reads the all_content devices query (useVmTpm narrows it)
+  if (opts.tpm !== undefined) {
+    queryClient.setQueryData(['vm', vm.id, 'all-content'], {
+      serialConsoleEnabled: false,
+      virtioScsiEnabled: false,
+      soundcardEnabled: false,
+      tpmEnabled: opts.tpm,
+    })
+  }
   if (vmTags !== undefined) {
     queryClient.setQueryData(['vm', vm.id, 'tags'], vmTags)
     queryClient.setQueryData(['tags'], vmTags)

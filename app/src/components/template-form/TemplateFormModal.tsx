@@ -14,6 +14,7 @@ import {
   ModalBody,
   ModalFooter,
   ModalHeader,
+  Skeleton,
   Switch,
   TextInput,
 } from '@patternfly/react-core'
@@ -22,6 +23,7 @@ import type { Template } from '../../api/schemas/template'
 import { useT } from '../../i18n/useT'
 import type { MessageId } from '../../i18n/messages/en'
 import { OPTIMIZED_FOR_OPTIONS, vmNameError } from '../edit-vm/editVmDraft'
+import { useTemplateSoundcard } from '../../hooks/useAllContent'
 import { useUpdateTemplate } from '../../hooks/useTemplateMutations'
 import { operatingSystemKeys } from '../../hooks/useCatalog'
 
@@ -70,6 +72,10 @@ interface TemplateDraft {
   monitors: number
   usbEnabled: boolean
   smartcardEnabled: boolean
+  // The sound card is not on the template read the modal opens with (the
+  // engine fills soundcard_enabled on an all_content read only), so it starts
+  // "not loaded" and the modal folds getTemplateSoundcardEnabled in later.
+  soundcardLoaded: boolean
   soundcardEnabled: boolean
 }
 
@@ -92,7 +98,6 @@ function bytesToMb(bytes: number | undefined): number {
 function templateToDraft(template: Template): TemplateDraft {
   const loose = template as unknown as {
     delete_protected?: unknown
-    soundcard_enabled?: unknown
     display?: { smartcard_enabled?: unknown }
   }
   const memoryMb = bytesToMb(template.memory)
@@ -119,7 +124,8 @@ function templateToDraft(template: Template): TemplateDraft {
     monitors: template.display?.monitors ?? 1,
     usbEnabled: template.usb?.enabled ?? false,
     smartcardEnabled: coerceBool(loose.display?.smartcard_enabled),
-    soundcardEnabled: coerceBool(loose.soundcard_enabled),
+    soundcardLoaded: false,
+    soundcardEnabled: false,
   }
 }
 
@@ -143,8 +149,13 @@ function memoryError(draft: TemplateDraft): MessageId | undefined {
 // the way back. Memory fields go back to bytes; memory_policy fields are omitted
 // when 0/unset so the engine applies its own default instead of a rejected 0.
 // os is omitted while no OS type is chosen so an untouched save never rewrites
-// it.
-function draftToPayload(draft: TemplateDraft): Record<string, unknown> {
+// it. soundcard_enabled rides only when the switch moved from the loaded
+// device (soundcardBaseline): the engine adds or removes the sound device
+// whenever the key is set, so sending a placeholder would remove a real one.
+function draftToPayload(
+  draft: TemplateDraft,
+  soundcardBaseline: boolean | undefined,
+): Record<string, unknown> {
   const memoryPolicy: Record<string, unknown> = {}
   if (draft.guaranteedMemoryMb > 0) memoryPolicy.guaranteed = draft.guaranteedMemoryMb * MiB
   if (draft.maxMemoryMb > 0) memoryPolicy.max = draft.maxMemoryMb * MiB
@@ -167,7 +178,13 @@ function draftToPayload(draft: TemplateDraft): Record<string, unknown> {
     high_availability: { enabled: draft.haEnabled, priority: draft.haPriority },
     display: { monitors: draft.monitors, smartcard_enabled: draft.smartcardEnabled },
     usb: { enabled: draft.usbEnabled },
-    soundcard_enabled: draft.soundcardEnabled,
+  }
+  if (
+    draft.soundcardLoaded &&
+    soundcardBaseline !== undefined &&
+    draft.soundcardEnabled !== soundcardBaseline
+  ) {
+    payload.soundcard_enabled = draft.soundcardEnabled
   }
   if (draft.osType) payload.os = { type: draft.osType }
   if (Object.keys(memoryPolicy).length > 0) payload.memory_policy = memoryPolicy
@@ -199,6 +216,23 @@ export function TemplateFormModal({
     setDraft(templateToDraft(template))
   }
 
+  // The sound card comes from its own all_content read (see
+  // getTemplateSoundcardEnabled), folded into the draft once per template and
+  // kept as the baseline the save diffs against. The seed waits out a fetch in
+  // flight, like the Edit VM device read. A failed read leaves the switch
+  // disabled and soundcard_enabled out of the save.
+  const soundcard = useTemplateSoundcard(template.id, isOpen)
+  const [soundcardSeed, setSoundcardSeed] = useState<{ id: string; enabled: boolean } | null>(null)
+  if (soundcard.isSuccess && !soundcard.isFetching && soundcardSeed?.id !== template.id) {
+    setSoundcardSeed({ id: template.id, enabled: soundcard.data })
+    setDraft((current) => ({
+      ...current,
+      soundcardLoaded: true,
+      soundcardEnabled: soundcard.data,
+    }))
+  }
+  const soundcardBaseline = soundcardSeed?.id === template.id ? soundcardSeed.enabled : undefined
+
   const set = <K extends keyof TemplateDraft>(key: K, value: TemplateDraft[K]) => {
     setDraft((current) => ({ ...current, [key]: value }))
   }
@@ -224,7 +258,10 @@ export function TemplateFormModal({
   const pending = update.isPending
 
   const save = () => {
-    update.mutate({ id: template.id, payload: draftToPayload(draft) }, { onSuccess: onClose })
+    update.mutate(
+      { id: template.id, payload: draftToPayload(draft, soundcardBaseline) },
+      { onSuccess: onClose },
+    )
   }
 
   // Inline validation (webadmin parity) — the Save gate uses the same validators
@@ -477,13 +514,34 @@ export function TemplateFormModal({
             </FormGroup>
 
             <FormGroup fieldId="template-soundcard">
-              <Switch
-                id="template-soundcard"
-                label={t('templateForm.soundcard')}
-                aria-label={t('templateForm.soundcard')}
-                isChecked={draft.soundcardEnabled}
-                onChange={(_event, checked) => set('soundcardEnabled', checked)}
-              />
+              {!draft.soundcardLoaded && !soundcard.isError ? (
+                <Skeleton
+                  height="1.5rem"
+                  width="3rem"
+                  screenreaderText={t('templateForm.soundcard.loading')}
+                />
+              ) : (
+                <Switch
+                  id="template-soundcard"
+                  label={t('templateForm.soundcard')}
+                  aria-label={t('templateForm.soundcard')}
+                  isChecked={draft.soundcardEnabled}
+                  isDisabled={!draft.soundcardLoaded}
+                  onChange={(_event, checked) => set('soundcardEnabled', checked)}
+                />
+              )}
+              {soundcard.isError && !draft.soundcardLoaded && (
+                <FormHelperText>
+                  <HelperText>
+                    <HelperTextItem variant="error" data-testid="template-soundcard-error">
+                      {t('templateForm.soundcard.error')}{' '}
+                      <Button variant="link" isInline onClick={() => void soundcard.refetch()}>
+                        {t('common.action.retry')}
+                      </Button>
+                    </HelperTextItem>
+                  </HelperText>
+                </FormHelperText>
+              )}
             </FormGroup>
           </FormSection>
         </Form>

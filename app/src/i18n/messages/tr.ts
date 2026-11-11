@@ -4740,7 +4740,6 @@ export const tr: LocaleCatalog = {
   // VM TPM device (Edit VM Resource Allocation, New VM wizard, General tab)
   'vm.edit.resources.tpm': 'TPM Aygıtı Etkin',
   'vm.edit.resources.tpm.loading': 'TPM aygıtı yükleniyor',
-  'vm.edit.resources.tpm.error': 'TPM aygıtı yüklenemedi; değiştirilmeden bırakıldı.',
   'vm.edit.resources.tpm.reason.version': 'Küme uyumluluk sürümü 4.5 ve üzerinde kullanılabilir',
   'vm.edit.resources.tpm.reason.os': 'Konuk işletim sistemi sürümü desteklenmiyor',
   'vm.edit.resources.tpm.reason.architecture': 'Bu CPU mimarisinde desteklenmiyor',
@@ -4764,4 +4763,11 @@ export const tr: LocaleCatalog = {
   'vm.create.tpm.templateError':
     'Şablonun TPM aygıtı yüklenemedi: {message}. Ayarı burada değiştirmediğiniz sürece yeni VM şablonun TPM aygıtını olduğu gibi alır.',
   'vm.create.tpm.review.inherited': 'Şablondaki gibi',
+  // all_content device reads (Edit VM device toggles, Edit Template sound card)
+  'vm.edit.devices.loading': 'Aygıt durumu yükleniyor',
+  'vm.edit.devices.error.title': "VM'nin aygıtları okunamadı",
+  'vm.edit.devices.error.body':
+    'Seri konsol, ses kartı, VirtIO-SCSI, rastgele sayı üreteci ve TPM devre dışı kalır ve kaydetme bunları değiştirmez.',
+  'templateForm.soundcard.loading': 'Ses kartı durumu yükleniyor',
+  'templateForm.soundcard.error': 'Şablonun ses kartı okunamadı; kaydetme onu değiştirmez.',
 }

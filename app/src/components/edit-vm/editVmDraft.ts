@@ -1,4 +1,5 @@
 import { vmLargeIconId } from '../../api/resources/icons'
+import type { VmAllContentDevices } from '../../api/resources/vms'
 import { watchdogChangeFor, type WatchdogChange } from '../../api/resources/watchdogs'
 import type { Vm } from '../../api/schemas/vm'
 import type { Watchdog } from '../../api/schemas/watchdog'
@@ -120,12 +121,15 @@ export interface EditVmDraft {
   watchdogId: string
   watchdogModel: string
   watchdogAction: string
-  // Resource Allocation depth: the TPM device (tpm_enabled). The polled vm
-  // read never carries it (the engine fills it on an all_content read only),
-  // so vmToDraft seeds "not loaded" and the modal folds the dedicated read in
-  // (tpmDraftFields) into BOTH draft and baseline; tpmLoaded gates the toggle
-  // and the payload so an unread device is never written.
-  tpmLoaded: boolean
+  // The all_content device flags: serial console and sound card (Console),
+  // VirtIO-SCSI and the TPM device (Resource Allocation), and the RNG device
+  // (Random Generator). The polled vm read never carries them (the engine
+  // fills them on an all_content read only, see getVmAllContentDevices), so
+  // vmToDraft seeds "not loaded" and the modal folds the dedicated read in
+  // (allContentDraftFields) into BOTH draft and baseline. devicesLoaded keeps
+  // those controls disabled and those keys out of the payload until then, so
+  // an unread device is never written.
+  devicesLoaded: boolean
   tpmEnabled: boolean
   // Resource Allocation depth — vNIC multi-queues + VirtIO-SCSI multi-queue
   // (0 queues = auto-derive from vCPUs/disks).
@@ -292,8 +296,6 @@ export function vmToDraft(vm: Vm): EditVmDraft {
     graphicsProtocol: graphicsProtocolOf(vm),
     vncKeyboardLayout: vm.display?.keyboard_layout ?? '',
     smartcardEnabled: vm.display?.smartcard_enabled ?? false,
-    soundcardEnabled: vm.soundcard_enabled ?? false,
-    serialConsoleEnabled: vm.console?.enabled ?? false,
     firstBootDevice: devices[0] ?? '',
     secondBootDevice: devices[1] ?? '',
     bootMenuEnabled: vm.bios?.boot_menu?.enabled ?? false,
@@ -331,9 +333,10 @@ export function vmToDraft(vm: Vm): EditVmDraft {
     watchdogId: '',
     watchdogModel: '',
     watchdogAction: DEFAULT_WATCHDOG_ACTION,
-    // Seeded from the all_content read later (tpmDraftFields).
-    tpmLoaded: false,
-    tpmEnabled: false,
+    // Serial console, sound card, VirtIO-SCSI, TPM and RNG: not on this read
+    // (the engine fills them on an all_content read only), so they start as
+    // "not loaded" and the modal folds the all_content read in later.
+    ...allContentDraftFields(undefined),
     multiQueuesEnabled: vm.multi_queues_enabled ?? true,
     virtioScsiMultiQueuesEnabled: vm.virtio_scsi_multi_queues_enabled ?? false,
     virtioScsiMultiQueues: vm.virtio_scsi_multi_queues ?? 0,
@@ -365,14 +368,6 @@ export function vmToDraft(vm: Vm): EditVmDraft {
     // Ballooning defaults on (webadmin default) when the engine omits it.
     memoryBalloonEnabled: vm.memory_policy?.ballooning ?? true,
     ioThreads: vm.io?.threads ?? 0,
-    virtioScsiEnabled: vm.virtio_scsi?.enabled ?? false,
-    // Random Generator: a present rng_device means "enabled". urandom is the
-    // engine default source (RANDOM was retired in 4.1); absent rate fields
-    // collapse to 0 = unlimited.
-    rngEnabled: vm.rng_device !== undefined,
-    rngSource: vm.rng_device?.source ?? 'urandom',
-    rngBytes: vm.rng_device?.rate?.bytes ?? 0,
-    rngPeriod: vm.rng_device?.rate?.period ?? 0,
     customProperties: customPropertyRows(vm),
     // The VM's current large-icon reference (a bare { id } link on a plain
     // read). No upload staged until the user picks/uploads in the Icon section.
@@ -420,13 +415,44 @@ export function buildWatchdogChange(
   return watchdogChangeFor(current, { model: draft.watchdogModel, action: draft.watchdogAction })
 }
 
-// ── TPM device ───────────────────────────────────────────────────────────────
+// ── all_content device flags ─────────────────────────────────────────────────
 
-// The draft fields for the loaded TPM state (the all_content read's
-// tpm_enabled), folded into draft and baseline by the modal.
-export function tpmDraftFields(enabled: boolean): Pick<EditVmDraft, 'tpmLoaded' | 'tpmEnabled'> {
-  return { tpmLoaded: true, tpmEnabled: enabled }
+export type AllContentDraftFields = Pick<
+  EditVmDraft,
+  | 'devicesLoaded'
+  | 'serialConsoleEnabled'
+  | 'soundcardEnabled'
+  | 'virtioScsiEnabled'
+  | 'tpmEnabled'
+  | 'rngEnabled'
+  | 'rngSource'
+  | 'rngBytes'
+  | 'rngPeriod'
+>
+
+// The draft fields for the all_content device read, folded into draft and
+// baseline by the modal; undefined (not read yet) gives the "not loaded"
+// placeholders vmToDraft starts from. Random Generator: a present rng_device
+// means "enabled". urandom is the engine default source (RANDOM was retired in
+// 4.1); absent rate fields collapse to 0 = unlimited.
+export function allContentDraftFields(
+  devices: VmAllContentDevices | undefined,
+): AllContentDraftFields {
+  const rng = devices?.rngDevice
+  return {
+    devicesLoaded: devices !== undefined,
+    serialConsoleEnabled: devices?.serialConsoleEnabled ?? false,
+    soundcardEnabled: devices?.soundcardEnabled ?? false,
+    virtioScsiEnabled: devices?.virtioScsiEnabled ?? false,
+    tpmEnabled: devices?.tpmEnabled ?? false,
+    rngEnabled: rng !== undefined,
+    rngSource: rng?.source ?? 'urandom',
+    rngBytes: rng?.rate?.bytes ?? 0,
+    rngPeriod: rng?.rate?.period ?? 0,
+  }
 }
+
+// ── TPM device ───────────────────────────────────────────────────────────────
 
 // Whether the TPM toggle can be edited, and why not when it cannot.
 // 'unavailable' forces the device off, 'required' forces it on.
@@ -531,7 +557,7 @@ export function editTpmGate(
   if (
     draftGate.state === 'unavailable' &&
     baselineGate.state === 'unavailable' &&
-    baseline.tpmLoaded &&
+    baseline.devicesLoaded &&
     baseline.tpmEnabled
   ) {
     return { state: 'editable' }
@@ -555,7 +581,7 @@ export function effectiveTpmEnabled(enabled: boolean, availability: TpmAvailabil
 // device this way is confirmed first (tpmRemovalPending), and editTpmGate
 // keeps a gate that disagrees with the engine from forcing a removal.
 export function gatedTpmDraft(draft: EditVmDraft, availability: TpmAvailability): EditVmDraft {
-  if (!draft.tpmLoaded || availability.state === 'editable') return draft
+  if (!draft.devicesLoaded || availability.state === 'editable') return draft
   const tpmEnabled = availability.state === 'required'
   return tpmEnabled === draft.tpmEnabled ? draft : { ...draft, tpmEnabled }
 }
@@ -570,8 +596,8 @@ export function tpmRemovalPending(
   availability: TpmAvailability,
 ): boolean {
   return (
-    draft.tpmLoaded &&
-    baseline.tpmLoaded &&
+    draft.devicesLoaded &&
+    baseline.devicesLoaded &&
     baseline.tpmEnabled &&
     !effectiveTpmEnabled(draft.tpmEnabled, availability)
   )
@@ -594,9 +620,9 @@ export function tpmCreateValue(
 // Keys vmFieldsChanged ignores: the watchdog and the CD, which each ride their
 // own subcollection (the CD tray id is also seeded into the draft alone on
 // open; a real CD pick is cdTouched + attachedCdId, see buildCdromChange), and
-// the TPM "loaded" marker, which is read state and never part of the body.
+// the all_content "loaded" marker, which is read state and never part of the body.
 const NON_VM_DRAFT_KEYS: ReadonlySet<keyof EditVmDraft> = new Set([
-  'tpmLoaded',
+  'devicesLoaded',
   'watchdogLoaded',
   'watchdogId',
   'watchdogModel',
@@ -779,6 +805,11 @@ function applyChangedSections(
       : 'custom'
   }
 
+  // The all_content device flags (VirtIO-SCSI, TPM, RNG, sound card, serial
+  // console) are sent only once the all_content read seeded them into both
+  // sides: before that the draft holds placeholders, not the VM's devices.
+  const devicesRead = draft.devicesLoaded && baseline.devicesLoaded
+
   // Resource Allocation.
   if (draft.cpuProfileId && draft.cpuProfileId !== baseline.cpuProfileId) {
     payload.cpu_profile = { id: draft.cpuProfileId }
@@ -788,7 +819,7 @@ function applyChangedSections(
     ;(payload.memory_policy as Record<string, unknown>).ballooning = draft.memoryBalloonEnabled
   }
   if (draft.ioThreads !== baseline.ioThreads) payload.io = { threads: draft.ioThreads }
-  if (draft.virtioScsiEnabled !== baseline.virtioScsiEnabled) {
+  if (devicesRead && draft.virtioScsiEnabled !== baseline.virtioScsiEnabled) {
     payload.virtio_scsi = { enabled: draft.virtioScsiEnabled }
   }
 
@@ -796,7 +827,7 @@ function applyChangedSections(
   // read and the toggle moved (BackendVmResource applies tpm_enabled when set
   // and leaves the device alone when it is absent). Turning it off deletes the
   // VM's TPM data, which the modal confirms first (tpmRemovalPending).
-  if (draft.tpmLoaded && baseline.tpmLoaded && draft.tpmEnabled !== baseline.tpmEnabled) {
+  if (devicesRead && draft.tpmEnabled !== baseline.tpmEnabled) {
     payload.tpm_enabled = draft.tpmEnabled
   }
 
@@ -808,7 +839,7 @@ function applyChangedSections(
   // RngSection shows an explicit warning telling the user to verify the device
   // actually detached after saving (vm.edit.rng.removalWarning.*).
   const rng = buildRngDevice(draft)
-  if (changed(rng, buildRngDevice(baseline))) {
+  if (devicesRead && changed(rng, buildRngDevice(baseline))) {
     payload.rng_device = rng ?? {}
   }
 
@@ -840,10 +871,10 @@ function applyChangedSections(
   if (draft.spiceCopyPaste !== baseline.spiceCopyPaste) {
     display.copy_paste_enabled = draft.spiceCopyPaste
   }
-  if (draft.soundcardEnabled !== baseline.soundcardEnabled) {
+  if (devicesRead && draft.soundcardEnabled !== baseline.soundcardEnabled) {
     payload.soundcard_enabled = draft.soundcardEnabled
   }
-  if (draft.serialConsoleEnabled !== baseline.serialConsoleEnabled) {
+  if (devicesRead && draft.serialConsoleEnabled !== baseline.serialConsoleEnabled) {
     payload.console = { enabled: draft.serialConsoleEnabled }
   }
 

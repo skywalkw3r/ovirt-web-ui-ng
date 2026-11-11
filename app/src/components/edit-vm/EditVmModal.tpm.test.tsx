@@ -277,11 +277,14 @@ describe('EditVmModal TPM device', () => {
     renderWithProviders(<EditVmModal vm={vm06()} isOpen onClose={onClose} />)
     await tab(user, 'Resource Allocation')
     expect(
-      await screen.findByText(/Could not load the TPM device/, undefined, {
+      await screen.findByText(/Could not read the VM's devices/, undefined, {
         timeout: FIND_TIMEOUT_MS,
       }),
     ).toBeDefined()
     expect((await tpmSwitch()).disabled).toBe(true)
+    expect(
+      (screen.getByRole('switch', { name: 'VirtIO-SCSI Enabled' }) as HTMLInputElement).disabled,
+    ).toBe(true)
     expect(screen.getByRole('button', { name: 'Retry' })).toBeDefined()
 
     await user.click(screen.getByRole('switch', { name: 'Memory Balloon Device Enabled' }))

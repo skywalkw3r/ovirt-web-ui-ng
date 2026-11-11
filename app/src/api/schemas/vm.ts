@@ -160,16 +160,19 @@ export const VmSchema = z.looseObject({
   cpu_profile: z.looseObject({ id: z.string().optional() }).optional(),
   // IO threads count (Resource Allocation). JSON-string on the live engine.
   io: z.looseObject({ threads: z.coerce.number().optional() }).optional(),
-  // VirtIO-SCSI controller toggle (Resource Allocation).
+  // VirtIO-SCSI controller toggle (Resource Allocation). Like console,
+  // soundcard_enabled, rng_device and tpm_enabled, the engine fills it only on
+  // an all_content read (see resources/vms.ts getVmAllContentDevices).
   virtio_scsi: z
     .looseObject({ enabled: z.union([z.boolean(), z.stringbool()]).optional() })
     .optional(),
   // TPM device toggle (Resource Allocation; VmBase.tpm_enabled, api-model
   // 4.4.5+). The engine only fills it on an all_content read, so it is absent
-  // from the polled detail read (see resources/vms.ts getVmTpmEnabled).
+  // from the polled detail read (see resources/vms.ts getVmAllContentDevices).
   tpm_enabled: z.union([z.boolean(), z.stringbool()]).optional(),
   // Random Number Generator device (Random Generator section). Absent when no
-  // device is attached; rate scalars are JSON-strings on the live engine.
+  // device is attached, and on every read without all_content; rate scalars
+  // are JSON-strings on the live engine.
   rng_device: z
     .looseObject({
       source: z.string().optional(),
@@ -247,7 +250,8 @@ export const VmSchema = z.looseObject({
     .optional(),
   usb: z.looseObject({ enabled: z.union([z.boolean(), z.stringbool()]).optional() }).optional(),
   // Emulated soundcard device toggle (Console depth). A top-level VmBase field,
-  // JSON-string on the live engine like every other boolean scalar.
+  // JSON-string on the live engine like every other boolean scalar. Filled on
+  // all_content reads only, as is console below.
   soundcard_enabled: z.union([z.boolean(), z.stringbool()]).optional(),
   // VirtIO serial console device (Console depth) — `enabled` toggles it.
   console: z.looseObject({ enabled: z.union([z.boolean(), z.stringbool()]).optional() }).optional(),

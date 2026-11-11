@@ -474,6 +474,9 @@ interface MockTemplateDetail {
     copy_paste_enabled?: boolean | string
   }
   usb?: { enabled?: boolean | string }
+  // Sound card device: served on all_content reads only (see allContentView,
+  // and templateDetailView for the single-template read's inversion).
+  soundcard_enabled?: boolean | string
   delete_protected?: boolean | string
   high_availability?: { enabled?: boolean | string; priority?: number | string }
   time_zone?: { name?: string; utc_offset?: string }
@@ -3339,6 +3342,8 @@ const templateDetails: Record<string, MockTemplateDetail> = {
     cpu: { architecture: 'x86_64', topology: { sockets: '2', cores: 2, threads: '1' } },
     bios: { type: 'q35_ovmf', boot_menu: { enabled: true } },
     display: { type: 'vnc', monitors: 1, copy_paste_enabled: 'false' },
+    // string boolean exercises coercion; all_content reads only
+    soundcard_enabled: 'true',
     high_availability: { enabled: 'true', priority: 50 },
   },
   'tpl-02': {
@@ -6160,13 +6165,60 @@ const ACTIONS: Record<
 const initialTpmDevices = (): Set<string> => new Set(['vm-06', 'tpl-02'])
 let tpmDevices = initialTpmDevices()
 
-// The engine fills tpm_enabled only on an all_content read
-// (BackendVmResource.doPopulate), so the plain reads the app polls never
-// carry it.
-function withTpm<T extends { id: string }>(entity: T, query: URLSearchParams | undefined): T {
+// The engine fills console, virtio_scsi, soundcard_enabled, rng_device and
+// tpm_enabled only on an all_content read: doPopulate (BackendVmDeviceHelper
+// for a VM) sets them from the device table, and the mappers never map them
+// from the entity (ovirt-engine 4.5.6). The fixtures keep the devices on the
+// entity, so a plain read strips them: the reads the app polls never carry
+// them, which keeps a client that seeds from a plain read honest.
+const ALL_CONTENT_DEVICE_KEYS = ['console', 'virtio_scsi', 'soundcard_enabled', 'rng_device']
+
+function isAllContentRead(query: URLSearchParams | undefined): boolean {
   return query?.get('all_content') === 'true'
-    ? { ...entity, tpm_enabled: tpmDevices.has(entity.id) }
-    : entity
+}
+
+type MockDeviceCarrier = {
+  id: string
+  console?: { enabled?: boolean | string }
+  virtio_scsi?: { enabled?: boolean | string }
+  soundcard_enabled?: boolean | string
+}
+
+// The entity as a read returns it. On an all_content read doPopulate always
+// sets console, virtio_scsi and soundcard_enabled (false when there is no
+// device), rng_device only when there is one, and tpm_enabled.
+function allContentView<T extends MockDeviceCarrier>(
+  entity: T,
+  query: URLSearchParams | undefined,
+): T {
+  if (!isAllContentRead(query)) {
+    const plain: Record<string, unknown> = { ...entity }
+    for (const key of ALL_CONTENT_DEVICE_KEYS) delete plain[key]
+    return plain as T
+  }
+  return {
+    ...entity,
+    console: { ...entity.console, enabled: entity.console?.enabled ?? false },
+    virtio_scsi: { ...entity.virtio_scsi, enabled: entity.virtio_scsi?.enabled ?? false },
+    soundcard_enabled: entity.soundcard_enabled ?? false,
+    tpm_enabled: tpmDevices.has(entity.id),
+  }
+}
+
+// GET /templates/{id}?all_content=true. BackendTemplateResource.doPopulate
+// sets soundcard_enabled from getSoundDevicesForEntity(...).isEmpty() without
+// the negation the VM, instance type and template collection resources have,
+// so this one read reports the opposite of the device (4.5.6 and master
+// sources). Modeled, so a client that seeds a sound card from it is caught;
+// the collection read (GET /templates?all_content=true) is right.
+function templateDetailView(
+  detail: MockTemplateDetail,
+  query: URLSearchParams | undefined,
+): MockTemplateDetail {
+  const view = allContentView(detail, query)
+  if (!isAllContentRead(query)) return view
+  const hasSound = detail.soundcard_enabled === true || detail.soundcard_enabled === 'true'
+  return { ...view, soundcard_enabled: !hasSound }
 }
 
 // VmDeviceUtils.isTpmDeviceSupported, reduced to what the fixtures model (all
@@ -11169,6 +11221,7 @@ function searchEvents(search: string | null): MockEvent[] {
 // result (same posture as vmMatchesTerm), and sortby/page tail clauses are
 // dropped like searchEvents does.
 interface MockSearchableEntity {
+  id?: string
   name?: string
   description?: string
   status?: string
@@ -11198,6 +11251,9 @@ function entityMatchesTerm(entity: MockSearchableEntity, term: string): boolean 
     }
     case 'status':
       return (entity.status ?? '').toLowerCase() === value.toLowerCase()
+    // the engine's hidden template id field (VmTemplateConditionFieldAutoCompleter)
+    case '_vmt_id':
+      return entity.id === value
     default:
       return true
   }
@@ -11809,7 +11865,8 @@ const routes: MockRoute[] = [
     pattern: /^\/vms$/,
     handle: (_params, _body, query) => {
       const follows = (query.get('follow') ?? '').split(',')
-      let vms: MockVm[] = searchVms(query.get('search'))
+      // the device flags ride all_content reads only (allContentView)
+      let vms: MockVm[] = searchVms(query.get('search')).map((vm) => allContentView(vm, query))
       // follow=disk_attachments inlines each VM's attachment rows (bare disk
       // { id } links suffice) — listDiskVms' modeled reverse-lookup rung reads
       // this; the engine omits the key for VMs with no disks. Decorated on the
@@ -11830,7 +11887,7 @@ const routes: MockRoute[] = [
   {
     method: 'GET',
     pattern: /^\/vms\/([^/]+)$/,
-    handle: ([id], _body, query) => withTpm(requireVm(id), query),
+    handle: ([id], _body, query) => allContentView(requireVm(id), query),
   },
   {
     method: 'GET',
@@ -12405,7 +12462,19 @@ const routes: MockRoute[] = [
     method: 'GET',
     pattern: /^\/templates$/,
     handle: (_params, _body, query) => {
-      const list = templates.filter((t) => searchMatches(t, query.get('search')))
+      // An all_content list read carries each template's devices
+      // (BackendTemplatesResource.doPopulate, which reports the sound card
+      // correctly, unlike the single-template read: see templateDetailView).
+      const list = templates
+        .filter((t) => searchMatches(t, query.get('search')))
+        .map((t) =>
+          isAllContentRead(query)
+            ? allContentView(
+                { ...t, soundcard_enabled: templateDetails[t.id]?.soundcard_enabled },
+                query,
+              )
+            : t,
+        )
       const followsTags = (query.get('follow') ?? '').split(',').includes('tags')
       return {
         template: followsTags
@@ -12418,7 +12487,7 @@ const routes: MockRoute[] = [
   {
     method: 'GET',
     pattern: /^\/templates\/([^/]+)$/,
-    handle: ([id], _body, query) => withTpm(requireTemplateDetail(id), query),
+    handle: ([id], _body, query) => templateDetailView(requireTemplateDetail(id), query),
   },
   {
     method: 'PUT',

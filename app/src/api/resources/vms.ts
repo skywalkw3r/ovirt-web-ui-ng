@@ -93,15 +93,40 @@ export async function getVm(id: string): Promise<Vm> {
   throw lastError
 }
 
-// Does the VM carry a TPM device? The engine fills VmBase.tpm_enabled only when
-// the read asks for all content (BackendVmResource.doPopulate; api-model:
-// "only visible when fetching if All-Content=true"), and that read also builds
-// the VM's OVF, so it stays off the polled detail read and is fetched once
-// where it is needed (the Edit VM modal, the General tab). An engine older
-// than 4.4.5 omits the key, which reads as "no TPM".
-export async function getVmTpmEnabled(id: string): Promise<boolean> {
+// The VM's device flags that the engine fills only when the read asks for all
+// content. BackendVmResource.doPopulate (through BackendVmDeviceHelper) is the
+// one place that sets console, virtio_scsi, soundcard_enabled, rng_device and
+// tpm_enabled on a VM: VmMapper and VmBaseMapper map none of them from the
+// entity, and AbstractBackendResource.populate runs doPopulate only for an
+// all_content read (ovirt-engine 4.5.6 sources). So the polled detail read never
+// carries them, and seeding the Edit VM toggles from it would show the VM's
+// serial console, VirtIO-SCSI controller, sound card and RNG as absent. The
+// all_content read also builds the VM's OVF, so it stays off the poll and is
+// fetched once where it is needed (the Edit VM modal, the General tab).
+export interface VmAllContentDevices {
+  serialConsoleEnabled: boolean
+  virtioScsiEnabled: boolean
+  soundcardEnabled: boolean
+  // Absent = no RNG device (the engine sets the key only when there is one).
+  rngDevice?: NonNullable<Vm['rng_device']>
+  // An engine older than 4.4.5 omits tpm_enabled, which reads as "no TPM".
+  tpmEnabled: boolean
+}
+
+export async function getVmAllContentDevices(id: string): Promise<VmAllContentDevices> {
   const vm = VmSchema.parse(await request(`/vms/${encodeURIComponent(id)}?all_content=true`))
-  return vm.tpm_enabled ?? false
+  return {
+    serialConsoleEnabled: vm.console?.enabled ?? false,
+    virtioScsiEnabled: vm.virtio_scsi?.enabled ?? false,
+    soundcardEnabled: vm.soundcard_enabled ?? false,
+    rngDevice: vm.rng_device,
+    tpmEnabled: vm.tpm_enabled ?? false,
+  }
+}
+
+// Does the VM carry a TPM device? One field of the all_content read above.
+export async function getVmTpmEnabled(id: string): Promise<boolean> {
+  return (await getVmAllContentDevices(id)).tpmEnabled
 }
 
 // Installed guest packages the guest agent reports; empty (and often absent)

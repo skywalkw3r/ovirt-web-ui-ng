@@ -4977,7 +4977,6 @@ export const ru: LocaleCatalog = {
   // VM TPM device (Edit VM Resource Allocation, New VM wizard, General tab)
   'vm.edit.resources.tpm': 'Устройство TPM включено',
   'vm.edit.resources.tpm.loading': 'Загрузка устройства TPM',
-  'vm.edit.resources.tpm.error': 'Не удалось загрузить устройство TPM; оно остаётся без изменений.',
   'vm.edit.resources.tpm.reason.version': 'Доступно начиная с версии совместимости кластера 4.5',
   'vm.edit.resources.tpm.reason.os': 'Версия гостевой ОС не поддерживается',
   'vm.edit.resources.tpm.reason.architecture': 'Не поддерживается на этой архитектуре ЦП',
@@ -5001,4 +5000,12 @@ export const ru: LocaleCatalog = {
   'vm.create.tpm.templateError':
     'Не удалось загрузить устройство TPM шаблона: {message}. Если вы не измените настройку здесь, новая ВМ получит устройство TPM шаблона без изменений.',
   'vm.create.tpm.review.inherited': 'Как в шаблоне',
+  // all_content device reads (Edit VM device toggles, Edit Template sound card)
+  'vm.edit.devices.loading': 'Загрузка состояния устройств',
+  'vm.edit.devices.error.title': 'Не удалось прочитать устройства ВМ',
+  'vm.edit.devices.error.body':
+    'Последовательная консоль, звуковая карта, VirtIO-SCSI, генератор случайных чисел и TPM остаются отключёнными, и сохранение их не изменяет.',
+  'templateForm.soundcard.loading': 'Загрузка состояния звуковой карты',
+  'templateForm.soundcard.error':
+    'Не удалось прочитать звуковую карту шаблона; сохранение её не изменяет.',
 }

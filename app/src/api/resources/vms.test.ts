@@ -1,5 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { createVm, getVm, getVmTpmEnabled, listVmAffinityGroups, listVms } from './vms'
+import {
+  createVm,
+  getVm,
+  getVmAllContentDevices,
+  getVmTpmEnabled,
+  listVmAffinityGroups,
+  listVms,
+} from './vms'
 import { clearSessionToken, setSessionToken } from '../session'
 import { isFollowDenied, resetFollowDenials } from '../followDegrade'
 
@@ -148,6 +155,44 @@ describe('listVmAffinityGroups — follow=vms degrade', () => {
     ])
     const groups = await listVmAffinityGroups('cluster-01', 'vm-01')
     expect(groups.map((g) => g.id)).toEqual(['ag-1'])
+  })
+})
+
+describe('getVmAllContentDevices', () => {
+  it('reads every all_content device flag, coercing the string forms', async () => {
+    const fetchMock = mockFetchSequence([
+      {
+        status: 200,
+        payload: {
+          id: 'vm-01',
+          name: 'one',
+          console: { enabled: 'true' },
+          virtio_scsi: { enabled: 'false' },
+          soundcard_enabled: 'true',
+          rng_device: { source: 'urandom', rate: { bytes: '64', period: '2000' } },
+          tpm_enabled: 'false',
+        },
+      },
+    ])
+    await expect(getVmAllContentDevices('vm 01')).resolves.toEqual({
+      serialConsoleEnabled: true,
+      virtioScsiEnabled: false,
+      soundcardEnabled: true,
+      rngDevice: { source: 'urandom', rate: { bytes: 64, period: 2000 } },
+      tpmEnabled: false,
+    })
+    expect(urlsOf(fetchMock)[0]).toMatch(/\/vms\/vm%2001\?all_content=true$/)
+  })
+
+  it('reads absent keys as no device', async () => {
+    mockFetchSequence([{ status: 200, payload: { id: 'vm-01', name: 'one' } }])
+    await expect(getVmAllContentDevices('vm-01')).resolves.toEqual({
+      serialConsoleEnabled: false,
+      virtioScsiEnabled: false,
+      soundcardEnabled: false,
+      rngDevice: undefined,
+      tpmEnabled: false,
+    })
   })
 })
 

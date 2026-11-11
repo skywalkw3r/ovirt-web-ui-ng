@@ -10,6 +10,7 @@ import {
 } from '@patternfly/react-core'
 import { useT } from '../../i18n/useT'
 import { FieldHelp } from '../forms/FieldHelp'
+import { AllContentField } from './AllContentField'
 import {
   DISCONNECT_ACTION_OPTIONS,
   GRAPHICS_PROTOCOL_OPTIONS,
@@ -30,13 +31,17 @@ function keyboardLayoutOptions(current: string): string[] {
 
 // Presentational Console section of the Edit Virtual Machine modal: every input
 // is controlled from `draft` and writes back through `set`. No data fetching and
-// no save logic — the owning modal holds the draft state.
+// no save logic — the owning modal holds the draft state. The sound card and
+// serial console switches wait for the all_content device read
+// (draft.devicesLoaded); devicesFailed says that read failed.
 export function ConsoleSection({
   draft,
   set,
+  devicesFailed = false,
 }: {
   draft: EditVmDraft
   set: <K extends keyof EditVmDraft>(key: K, value: EditVmDraft[K]) => void
+  devicesFailed?: boolean
 }) {
   const t = useT()
   const isVnc = draft.graphicsProtocol === 'vnc'
@@ -203,13 +208,16 @@ export function ConsoleSection({
       </FormGroup>
 
       <FormGroup label={t('vm.edit.console.soundcard.field')} fieldId="edit-vm-console-soundcard">
-        <Switch
-          id="edit-vm-console-soundcard"
-          label={t('vm.edit.console.soundcard')}
-          aria-label={t('vm.edit.console.soundcard')}
-          isChecked={draft.soundcardEnabled}
-          onChange={(_event, checked) => set('soundcardEnabled', checked)}
-        />
+        <AllContentField loaded={draft.devicesLoaded} failed={devicesFailed}>
+          <Switch
+            id="edit-vm-console-soundcard"
+            label={t('vm.edit.console.soundcard')}
+            aria-label={t('vm.edit.console.soundcard')}
+            isChecked={draft.soundcardEnabled}
+            isDisabled={!draft.devicesLoaded}
+            onChange={(_event, checked) => set('soundcardEnabled', checked)}
+          />
+        </AllContentField>
       </FormGroup>
 
       <FormGroup
@@ -222,13 +230,16 @@ export function ConsoleSection({
           />
         }
       >
-        <Switch
-          id="edit-vm-console-serial"
-          label={t('vm.edit.console.serialConsole')}
-          aria-label={t('vm.edit.console.serialConsole')}
-          isChecked={draft.serialConsoleEnabled}
-          onChange={(_event, checked) => set('serialConsoleEnabled', checked)}
-        />
+        <AllContentField loaded={draft.devicesLoaded} failed={devicesFailed}>
+          <Switch
+            id="edit-vm-console-serial"
+            label={t('vm.edit.console.serialConsole')}
+            aria-label={t('vm.edit.console.serialConsole')}
+            isChecked={draft.serialConsoleEnabled}
+            isDisabled={!draft.devicesLoaded}
+            onChange={(_event, checked) => set('serialConsoleEnabled', checked)}
+          />
+        </AllContentField>
       </FormGroup>
 
       <FormGroup

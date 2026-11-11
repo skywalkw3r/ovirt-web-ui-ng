@@ -13,6 +13,7 @@ import {
 import { FormattedMessage } from 'react-intl'
 import { useT } from '../../i18n/useT'
 import { FieldHelp } from '../forms/FieldHelp'
+import { AllContentField } from './AllContentField'
 import { RNG_SOURCE_OPTIONS, type EditVmDraft } from './editVmDraft'
 
 // Random Generator section of the Edit Virtual Machine modal: enable/disable
@@ -24,14 +25,19 @@ import { RNG_SOURCE_OPTIONS, type EditVmDraft } from './editVmDraft'
 // clearing convention (documented for `initialization`, undocumented here), so
 // whenever the draft turns a previously-attached device off, a warning Alert
 // tells the user to verify the device actually detached after saving.
+//
+// The device state comes from the all_content device read: the controls wait
+// for it (draft.devicesLoaded), and devicesFailed says that read failed.
 export function RngSection({
   draft,
   set,
   baselineEnabled,
+  devicesFailed = false,
 }: {
   draft: EditVmDraft
   set: <K extends keyof EditVmDraft>(key: K, value: EditVmDraft[K]) => void
   baselineEnabled: boolean
+  devicesFailed?: boolean
 }) {
   const t = useT()
 
@@ -55,12 +61,15 @@ export function RngSection({
         </Alert>
       )}
       <FormGroup fieldId="edit-vm-rng-enabled">
-        <Checkbox
-          id="edit-vm-rng-enabled"
-          label={t('vm.edit.rng.enable')}
-          isChecked={draft.rngEnabled}
-          onChange={(_event, checked) => set('rngEnabled', checked)}
-        />
+        <AllContentField loaded={draft.devicesLoaded} failed={devicesFailed}>
+          <Checkbox
+            id="edit-vm-rng-enabled"
+            label={t('vm.edit.rng.enable')}
+            isChecked={draft.rngEnabled}
+            isDisabled={!draft.devicesLoaded}
+            onChange={(_event, checked) => set('rngEnabled', checked)}
+          />
+        </AllContentField>
         <FormHelperText>
           <HelperText>
             <HelperTextItem>

@@ -4815,8 +4815,6 @@ export const it: LocaleCatalog = {
   // VM TPM device (Edit VM Resource Allocation, New VM wizard, General tab)
   'vm.edit.resources.tpm': 'Dispositivo TPM abilitato',
   'vm.edit.resources.tpm.loading': 'Caricamento del dispositivo TPM',
-  'vm.edit.resources.tpm.error':
-    'Impossibile caricare il dispositivo TPM; viene lasciato invariato.',
   'vm.edit.resources.tpm.reason.version':
     'Disponibile dalla versione di compatibilità 4.5 del cluster',
   'vm.edit.resources.tpm.reason.os': 'La versione del sistema operativo guest non è supportata',
@@ -4841,4 +4839,12 @@ export const it: LocaleCatalog = {
   'vm.create.tpm.templateError':
     "Impossibile caricare il dispositivo TPM del modello: {message}. Se non modifichi l'impostazione qui, la nuova VM riceve il dispositivo TPM del modello così com'è.",
   'vm.create.tpm.review.inherited': 'Come nel modello',
+  // all_content device reads (Edit VM device toggles, Edit Template sound card)
+  'vm.edit.devices.loading': 'Caricamento dello stato dei dispositivi',
+  'vm.edit.devices.error.title': 'Impossibile leggere i dispositivi della VM',
+  'vm.edit.devices.error.body':
+    'Console seriale, scheda audio, VirtIO-SCSI, generatore casuale e TPM restano disabilitati e il salvataggio li lascia invariati.',
+  'templateForm.soundcard.loading': 'Caricamento dello stato della scheda audio',
+  'templateForm.soundcard.error':
+    'Impossibile leggere la scheda audio del modello; il salvataggio la lascia invariata.',
 }

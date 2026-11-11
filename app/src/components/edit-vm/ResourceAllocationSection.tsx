@@ -16,6 +16,7 @@ import type { UseQueryResult } from '@tanstack/react-query'
 import type { ClusterCpuProfile } from '../../api/resources/clusters'
 import { useT } from '../../i18n/useT'
 import { FieldHelp } from '../forms/FieldHelp'
+import { AllContentField } from './AllContentField'
 import {
   CPU_SHARES_CUSTOM,
   CPU_SHARES_PRESETS,
@@ -34,7 +35,7 @@ export function ResourceAllocationSection({
   draft,
   set,
   cpuProfiles,
-  tpm,
+  devicesFailed = false,
   tpmAvailability,
   tpmRemovalPending,
   tpmLevelWarning = false,
@@ -42,10 +43,11 @@ export function ResourceAllocationSection({
   draft: EditVmDraft
   set: <K extends keyof EditVmDraft>(key: K, value: EditVmDraft[K]) => void
   cpuProfiles: UseQueryResult<ClusterCpuProfile[]>
-  // The VM's TPM read the modal seeds the draft from, here only for the
-  // loading/error states: the toggle stays disabled until the draft holds the
-  // loaded value (draft.tpmLoaded), so a pick can never race the seed.
-  tpm: UseQueryResult<boolean>
+  // Whether the all_content device read the modal seeds the TPM and
+  // VirtIO-SCSI toggles from failed (the modal's alert offers Retry). Both
+  // stay disabled until the draft holds the loaded values
+  // (draft.devicesLoaded), so a pick can never race the seed.
+  devicesFailed?: boolean
   // Whether the firmware / guest OS / cluster allow the toggle (the modal
   // derives it from the draft), and whether this save would remove a TPM
   // device the VM has.
@@ -194,7 +196,7 @@ export function ResourceAllocationSection({
         fieldId="edit-vm-tpm"
         labelHelp={<FieldHelp field={t('vm.edit.resources.tpm')} content={t('fieldHelp.vm.tpm')} />}
       >
-        {!draft.tpmLoaded && !tpm.isError ? (
+        {!draft.devicesLoaded && !devicesFailed ? (
           <Skeleton
             height="1.5rem"
             width="3rem"
@@ -205,11 +207,11 @@ export function ResourceAllocationSection({
             id="edit-vm-tpm"
             aria-label={t('vm.edit.resources.tpm')}
             isChecked={effectiveTpmEnabled(draft.tpmEnabled, tpmAvailability)}
-            isDisabled={!draft.tpmLoaded || tpmAvailability.state !== 'editable'}
+            isDisabled={!draft.devicesLoaded || tpmAvailability.state !== 'editable'}
             onChange={(_event, checked) => set('tpmEnabled', checked)}
           />
         )}
-        {draft.tpmLoaded && tpmAvailability.state !== 'editable' && (
+        {draft.devicesLoaded && tpmAvailability.state !== 'editable' && (
           <FormHelperText>
             <HelperText>
               <HelperTextItem>{t(tpmAvailability.reasonId)}</HelperTextItem>
@@ -230,18 +232,6 @@ export function ResourceAllocationSection({
             <HelperText>
               <HelperTextItem variant="warning" data-testid="tpm-removal-warning">
                 {t('vm.edit.resources.tpm.removalWarning')}
-              </HelperTextItem>
-            </HelperText>
-          </FormHelperText>
-        )}
-        {tpm.isError && !draft.tpmLoaded && (
-          <FormHelperText>
-            <HelperText>
-              <HelperTextItem variant="error">
-                {t('vm.edit.resources.tpm.error')}{' '}
-                <Button variant="link" isInline onClick={() => void tpm.refetch()}>
-                  {t('common.action.retry')}
-                </Button>
               </HelperTextItem>
             </HelperText>
           </FormHelperText>
@@ -277,12 +267,15 @@ export function ResourceAllocationSection({
           />
         }
       >
-        <Switch
-          id="edit-vm-virtio-scsi"
-          aria-label={t('vm.edit.resources.virtioScsi')}
-          isChecked={draft.virtioScsiEnabled}
-          onChange={(_event, checked) => set('virtioScsiEnabled', checked)}
-        />
+        <AllContentField loaded={draft.devicesLoaded} failed={devicesFailed}>
+          <Switch
+            id="edit-vm-virtio-scsi"
+            aria-label={t('vm.edit.resources.virtioScsi')}
+            isChecked={draft.virtioScsiEnabled}
+            isDisabled={!draft.devicesLoaded}
+            onChange={(_event, checked) => set('virtioScsiEnabled', checked)}
+          />
+        </AllContentField>
       </FormGroup>
 
       {/* VirtIO-SCSI queue tuning only applies while the controller exists. */}

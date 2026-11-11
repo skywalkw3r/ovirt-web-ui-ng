@@ -92,6 +92,10 @@ export const TemplateSchema = z.looseObject({
   // TPM device toggle (VmBase.tpm_enabled, api-model 4.4.5+). Only filled on an
   // all_content read (see resources/templates.ts getTemplateTpmEnabled).
   tpm_enabled: BooleanishSchema.optional(),
+  // Sound card device toggle (VmBase.soundcard_enabled). Also all_content
+  // only, and see resources/templates.ts getTemplateSoundcardEnabled for why
+  // the console reads it through the collection.
+  soundcard_enabled: BooleanishSchema.optional(),
   high_availability: z
     .looseObject({
       enabled: BooleanishSchema.optional(),
