@@ -240,6 +240,16 @@ interface MockEvent {
   time?: number | string
   vm?: { id?: string; name?: string }
   host?: { id?: string; name?: string }
+  // the other entity links api-model's Event carries; the scoped Events tabs
+  // search on their names (lib/scopedEvents)
+  template?: { id?: string; name?: string }
+  cluster?: { id?: string; name?: string }
+  data_center?: { id?: string; name?: string }
+  storage_domain?: { id?: string; name?: string }
+  // Mock-only: REST's Event has no quota link (the engine joins audit_log on
+  // quota_id server-side for the quota= search), so the fixture carries the
+  // name the mock search matches against.
+  quota?: { id?: string; name?: string }
 }
 
 interface MockJob {
@@ -1667,7 +1677,7 @@ const minutesAgo = (m: number) => Date.now() - m * 60_000
 // rows past the newest-100 window that the Events page's server-side paging
 // (search `page N` windows) is exercisable in dev:mock and tests out of the
 // box — no env knob needed (contrast VITE_MOCK_SCALE, which gates the VM
-// tail). 137 + the 15 handcrafted = 152 total, so 50-row windows walk
+// tail). 137 + the 18 handcrafted = 155 total, so 50-row windows walk
 // full/full/full/short and the short last page proves the "no more pages"
 // edge. Deterministic on purpose — no Math.random — mirroring scaleVm.
 const BACKLOG_EVENT_COUNT = 137
@@ -1732,6 +1742,8 @@ const initialEvents = (): MockEvent[] => [
     severity: 'warning',
     description: 'Storage domain data has 12% free space remaining.',
     time: minutesAgo(48),
+    storage_domain: { id: 'sd-01', name: 'data' },
+    data_center: { id: 'dc-01', name: 'Default' },
   },
   {
     id: 'ev-05',
@@ -1796,6 +1808,7 @@ const initialEvents = (): MockEvent[] => [
     description: 'Available memory of host node-02 is under the defined threshold (91% used).',
     time: minutesAgo(8),
     host: { id: 'host-02', name: 'node-02' },
+    cluster: { id: 'cluster-01', name: 'Default' },
   },
   {
     id: 'ev-14',
@@ -1803,6 +1816,41 @@ const initialEvents = (): MockEvent[] => [
     severity: 'alert',
     description: 'Data center Default compatibility version upgrade check found 1 issue.',
     time: minutesAgo(5),
+    data_center: { id: 'dc-01', name: 'Default' },
+  },
+  // Template and quota stories for the scoped Events tabs (template, cluster,
+  // data center, storage domain, quota). Kept inside the curated window (newer
+  // than the 61+ minute backlog) so the tabs open on them.
+  {
+    id: 'ev-16',
+    code: 49,
+    severity: 'normal',
+    description: 'Creation of Template centos-stream-9 from VM centos9-golden has been completed.',
+    time: minutesAgo(52),
+    template: { id: 'tpl-01', name: 'centos-stream-9' },
+    cluster: { id: 'cluster-01', name: 'Default' },
+    data_center: { id: 'dc-01', name: 'Default' },
+    storage_domain: { id: 'sd-01', name: 'data' },
+  },
+  {
+    id: 'ev-17',
+    code: '2023',
+    severity: 'normal',
+    description:
+      'Disk centos9_root of template centos-stream-9 was copied to domain hosted_storage.',
+    time: `${minutesAgo(25)}`,
+    template: { id: 'tpl-01', name: 'centos-stream-9' },
+    data_center: { id: 'dc-01', name: 'Default' },
+    storage_domain: { id: 'sd-02', name: 'hosted_storage' },
+  },
+  {
+    id: 'ev-18',
+    code: 10000,
+    severity: 'warning',
+    description: 'Quota dev-quota storage limit exceeded the warning threshold (85% used).',
+    time: minutesAgo(15),
+    data_center: { id: 'dc-01', name: 'Default' },
+    quota: { id: 'quota-02', name: 'dev-quota' },
   },
   {
     id: 'ev-15',
@@ -3369,8 +3417,9 @@ const templateDetails: Record<string, MockTemplateDetail> = {
 
 // Template subcollections keyed by template id. NICs share the flat NicSchema,
 // disk attachments the DiskAttachmentSchema (both mix string/number scalars to
-// exercise coercion). Only tpl-00 carries entries; the other templates return
-// empty lists / a 404-tolerant permissions collection to exercise those states.
+// exercise coercion). Only tpl-00 carries entries (plus tpl-01's disks, for the
+// Storage tab); the other templates return empty lists / a 404-tolerant
+// permissions collection to exercise those states.
 // Template NICs (GET/POST/PUT/DELETE /templates/{id}/nics). The NICs tab authors
 // them, so a `let` binding restored by resetMockVms; new NIC ids reuse nicSeq.
 const initialTemplateNics = (): Record<string, MockNic[]> => ({
@@ -3396,6 +3445,43 @@ const templateDiskAttachments: Record<string, MockDiskAttachment[]> = {
         actual_size: 2 * GiB,
         status: 'ok',
         format: 'cow',
+        storage_domains: { storage_domain: [{ id: 'sd-01' }] },
+      },
+    },
+  ],
+  // tpl-01 feeds the template Storage tab: centos9_root is copied to two
+  // domains (it lists under both), centos9_data sits on one.
+  'tpl-01': [
+    {
+      id: 'tpl-01-da-1',
+      bootable: true,
+      interface: 'virtio_scsi',
+      active: 'true',
+      disk: {
+        id: 'tpl-01-disk-1',
+        name: 'centos9_root',
+        provisioned_size: 20 * GiB,
+        actual_size: `${3 * GiB}`,
+        status: 'ok',
+        format: 'cow',
+        storage_type: 'image',
+        storage_domains: { storage_domain: [{ id: 'sd-01' }, { id: 'sd-02' }] },
+      },
+    },
+    {
+      id: 'tpl-01-da-2',
+      bootable: 'false',
+      interface: 'virtio',
+      active: true,
+      disk: {
+        id: 'tpl-01-disk-2',
+        name: 'centos9_data',
+        provisioned_size: `${50 * GiB}`,
+        actual_size: GiB,
+        status: 'ok',
+        format: 'raw',
+        storage_type: 'image',
+        storage_domains: { storage_domain: [{ id: 'sd-01' }] },
       },
     },
   ],
@@ -11246,8 +11332,10 @@ function searchVms(search: string | null): MockVm[] {
   return vms.filter((vm) => terms.every((term) => vmMatchesTerm(vm, term)))
 }
 
-// GET /events?search=... — the host detail Events tab emits host.name=<name>;
-// the Events page toolbar emits free text and severity=<x>. Free text matches
+// GET /events?search=... — the host detail Events tab emits host.name=<name>,
+// the other scoped Events tabs event_template= / cluster= / event_datacenter=
+// / event_storage= / quota=; the Events page toolbar emits free text and
+// severity=<x>. Free text matches
 // the description (case-insensitive substring — close enough to webadmin's
 // loose matching for the mock); unknown keyed terms broaden the result (same
 // posture as vmMatchesTerm) so the global feed is the fallback.
@@ -11263,6 +11351,18 @@ function eventMatchesTerm(event: MockEvent, term: string): boolean {
   }
   if (key === 'severity') {
     return event.severity?.toLowerCase() === value.toLowerCase()
+  }
+  // the scoped Events tabs' terms (lib/scopedEvents): exact, case-insensitive
+  // name matches on the event's entity links
+  const linked: Record<string, { name?: string } | undefined> = {
+    event_template: event.template,
+    cluster: event.cluster,
+    event_datacenter: event.data_center,
+    event_storage: event.storage_domain,
+    quota: event.quota,
+  }
+  if (key in linked) {
+    return linked[key]?.name?.toLowerCase() === value.toLowerCase()
   }
   return true
 }

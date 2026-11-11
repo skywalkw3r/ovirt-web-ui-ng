@@ -35,6 +35,8 @@ import { StorageDomainRegisterTemplatesTab } from '../components/storage-domain-
 import { StorageDomainRegisterVmsTab } from '../components/storage-domain-tabs/StorageDomainRegisterVmsTab'
 import { StorageDomainTemplatesTab } from '../components/storage-domain-tabs/StorageDomainTemplatesTab'
 import { StorageDomainVmsTab } from '../components/storage-domain-tabs/StorageDomainVmsTab'
+import { ScopedEventsTab } from '../components/events/ScopedEventsTab'
+import { scopedEventsSearch } from '../lib/scopedEvents'
 import { useStorageDomain } from '../hooks/useStorageDomainDetail'
 import { useT } from '../i18n/useT'
 import { statusText } from '../lib/format'
@@ -310,6 +312,18 @@ export function StorageDomainDetailPage() {
             >
               <TabContentBody hasPadding>
                 <StorageDomainPermissionsTab storageDomainId={storageDomainId} />
+              </TabContentBody>
+            </Tab>
+            <Tab
+              eventKey="events"
+              title={<TabTitleText>{t('storageDetail.tab.events')}</TabTitleText>}
+            >
+              <TabContentBody hasPadding>
+                <ScopedEventsTab
+                  search={scopedEventsSearch.storageDomain(storageDomain.data.name)}
+                  ariaLabel={t('storageEvents.table.ariaLabel')}
+                  emptyBody={t('storageEvents.empty.body')}
+                />
               </TabContentBody>
             </Tab>
           </Tabs>

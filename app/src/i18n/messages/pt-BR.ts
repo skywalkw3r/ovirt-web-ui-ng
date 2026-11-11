@@ -5000,4 +5000,35 @@ export const ptBR: LocaleCatalog = {
     'Nenhum provedor Foreman/Satellite está registrado. Adicione um na página Fornecedores para vincular esta VM a ele.',
   'vm.edit.foreman.help':
     'O mecanismo obtém as errata desta VM do provedor Foreman/Satellite escolhido.',
+  // Template Storage tab + scoped Events tabs (issue #33) ----------------
+  'scopedEvents.loading': 'Carregando eventos',
+  'scopedEvents.error.title': 'Não foi possível carregar eventos',
+  'scopedEvents.empty.title': 'Nenhum evento',
+  'templateDetail.tab.storage': 'Armazenamento',
+  'templateDetail.tab.events': 'Eventos',
+  'templateEvents.empty.body':
+    'Os eventos do log de auditoria do engine para este modelo aparecerão aqui.',
+  'templateEvents.table.ariaLabel': 'Eventos deste modelo',
+  'templateStorage.empty.body': 'Nenhum disco deste modelo está em um domínio de armazenamento.',
+  'templateStorage.table.ariaLabel': 'Domínios de armazenamento com os discos deste modelo',
+  'templateStorage.column.used': 'Espaço usado',
+  'templateStorage.column.disks': 'Discos',
+  'templateStorage.expand.ariaLabel': 'Mostrar discos',
+  'templateStorage.disks.ariaLabel': 'Discos do modelo em {name}',
+  'clusterDetail.tab.events': 'Eventos',
+  'clusterEvents.empty.body':
+    'Os eventos do log de auditoria do engine para este cluster aparecerão aqui.',
+  'clusterEvents.table.ariaLabel': 'Eventos deste cluster',
+  'dcDetail.tab.events': 'Eventos',
+  'dcEvents.empty.body':
+    'Os eventos do log de auditoria do engine para este centro de dados aparecerão aqui.',
+  'dcEvents.table.ariaLabel': 'Eventos deste centro de dados',
+  'storageDetail.tab.events': 'Eventos',
+  'storageEvents.empty.body':
+    'Os eventos do log de auditoria do engine para este domínio de armazenamento aparecerão aqui.',
+  'storageEvents.table.ariaLabel': 'Eventos deste domínio de armazenamento',
+  'quotaDetail.tab.events': 'Eventos',
+  'quotaEvents.empty.body':
+    'Os eventos do log de auditoria do engine para esta cota aparecerão aqui.',
+  'quotaEvents.table.ariaLabel': 'Eventos desta cota',
 }

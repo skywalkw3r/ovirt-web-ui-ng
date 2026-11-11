@@ -4959,4 +4959,32 @@ export const ja: LocaleCatalog = {
     'Foreman/Satellite プロバイダーが登録されていません。この VM をバインドするには、プロバイダーページで追加してください。',
   'vm.edit.foreman.help':
     'エンジンは、選択した Foreman/Satellite プロバイダーからこの VM の正誤表を取得します。',
+  // Template Storage tab + scoped Events tabs (issue #33) ----------------
+  'scopedEvents.loading': 'イベントを読み込んでいます',
+  'scopedEvents.error.title': 'イベントを読み込めませんでした',
+  'scopedEvents.empty.title': 'イベントがありません',
+  'templateDetail.tab.storage': 'ストレージ',
+  'templateDetail.tab.events': 'イベント',
+  'templateEvents.empty.body': 'このテンプレートのエンジン監査ログイベントがここに表示されます。',
+  'templateEvents.table.ariaLabel': 'このテンプレートのイベント',
+  'templateStorage.empty.body':
+    'このテンプレートのディスクはどのストレージドメインにもありません。',
+  'templateStorage.table.ariaLabel': 'このテンプレートのディスクを保持するストレージドメイン',
+  'templateStorage.column.used': '使用領域',
+  'templateStorage.column.disks': 'ディスク',
+  'templateStorage.expand.ariaLabel': 'ディスクを表示',
+  'templateStorage.disks.ariaLabel': '{name} 上のテンプレートディスク',
+  'clusterDetail.tab.events': 'イベント',
+  'clusterEvents.empty.body': 'このクラスターのエンジン監査ログイベントがここに表示されます。',
+  'clusterEvents.table.ariaLabel': 'このクラスターのイベント',
+  'dcDetail.tab.events': 'イベント',
+  'dcEvents.empty.body': 'このデータセンターのエンジン監査ログイベントがここに表示されます。',
+  'dcEvents.table.ariaLabel': 'このデータセンターのイベント',
+  'storageDetail.tab.events': 'イベント',
+  'storageEvents.empty.body':
+    'このストレージドメインのエンジン監査ログイベントがここに表示されます。',
+  'storageEvents.table.ariaLabel': 'このストレージドメインのイベント',
+  'quotaDetail.tab.events': 'イベント',
+  'quotaEvents.empty.body': 'このクォータのエンジン監査ログイベントがここに表示されます。',
+  'quotaEvents.table.ariaLabel': 'このクォータのイベント',
 }

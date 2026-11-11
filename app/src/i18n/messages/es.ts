@@ -5030,4 +5030,36 @@ export const es: LocaleCatalog = {
     'No hay proveedores de Foreman/Satellite registrados. Agregue uno en la página Proveedores para vincularle esta VM.',
   'vm.edit.foreman.help':
     'El motor obtiene las erratas de esta VM del proveedor de Foreman/Satellite elegido.',
+  // Template Storage tab + scoped Events tabs (issue #33) ----------------
+  'scopedEvents.loading': 'Cargando eventos',
+  'scopedEvents.error.title': 'No se pudieron cargar los eventos',
+  'scopedEvents.empty.title': 'No hay eventos',
+  'templateDetail.tab.storage': 'Almacenamiento',
+  'templateDetail.tab.events': 'Eventos',
+  'templateEvents.empty.body':
+    'Los eventos del registro de auditoría del motor para esta plantilla aparecerán aquí.',
+  'templateEvents.table.ariaLabel': 'Eventos para esta plantilla',
+  'templateStorage.empty.body':
+    'Ningún disco de esta plantilla está en un dominio de almacenamiento.',
+  'templateStorage.table.ariaLabel': 'Dominios de almacenamiento con los discos de esta plantilla',
+  'templateStorage.column.used': 'Espacio usado',
+  'templateStorage.column.disks': 'Discos',
+  'templateStorage.expand.ariaLabel': 'Mostrar discos',
+  'templateStorage.disks.ariaLabel': 'Discos de la plantilla en {name}',
+  'clusterDetail.tab.events': 'Eventos',
+  'clusterEvents.empty.body':
+    'Los eventos del registro de auditoría del motor para este clúster aparecerán aquí.',
+  'clusterEvents.table.ariaLabel': 'Eventos para este clúster',
+  'dcDetail.tab.events': 'Eventos',
+  'dcEvents.empty.body':
+    'Los eventos del registro de auditoría del motor para este centro de datos aparecerán aquí.',
+  'dcEvents.table.ariaLabel': 'Eventos para este centro de datos',
+  'storageDetail.tab.events': 'Eventos',
+  'storageEvents.empty.body':
+    'Los eventos del registro de auditoría del motor para este dominio de almacenamiento aparecerán aquí.',
+  'storageEvents.table.ariaLabel': 'Eventos para este dominio de almacenamiento',
+  'quotaDetail.tab.events': 'Eventos',
+  'quotaEvents.empty.body':
+    'Los eventos del registro de auditoría del motor para esta cuota aparecerán aquí.',
+  'quotaEvents.table.ariaLabel': 'Eventos para esta cuota',
 }

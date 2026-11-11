@@ -5029,4 +5029,36 @@ export const it: LocaleCatalog = {
     'Nessun provider Foreman/Satellite registrato. Aggiungine uno nella pagina Provider per associarvi questa VM.',
   'vm.edit.foreman.help':
     'Il motore legge le errata di questa VM dal provider Foreman/Satellite scelto.',
+  // Template Storage tab + scoped Events tabs (issue #33) ----------------
+  'scopedEvents.loading': 'Caricamento degli eventi',
+  'scopedEvents.error.title': 'Impossibile caricare gli eventi',
+  'scopedEvents.empty.title': 'Nessun evento',
+  'templateDetail.tab.storage': 'Storage',
+  'templateDetail.tab.events': 'Eventi',
+  'templateEvents.empty.body':
+    'Gli eventi del registro di controllo del motore per questo modello appariranno qui.',
+  'templateEvents.table.ariaLabel': 'Eventi per questo modello',
+  'templateStorage.empty.body':
+    'Nessun disco di questo modello si trova su un dominio di archiviazione.',
+  'templateStorage.table.ariaLabel': 'Domini di archiviazione con i dischi di questo modello',
+  'templateStorage.column.used': 'Spazio utilizzato',
+  'templateStorage.column.disks': 'Dischi',
+  'templateStorage.expand.ariaLabel': 'Mostra dischi',
+  'templateStorage.disks.ariaLabel': 'Dischi del modello su {name}',
+  'clusterDetail.tab.events': 'Eventi',
+  'clusterEvents.empty.body':
+    'Gli eventi del registro di controllo del motore per questo cluster appariranno qui.',
+  'clusterEvents.table.ariaLabel': 'Eventi per questo cluster',
+  'dcDetail.tab.events': 'Eventi',
+  'dcEvents.empty.body':
+    'Gli eventi del registro di controllo del motore per questo data center appariranno qui.',
+  'dcEvents.table.ariaLabel': 'Eventi per questo data center',
+  'storageDetail.tab.events': 'Eventi',
+  'storageEvents.empty.body':
+    'Gli eventi del registro di controllo del motore per questo dominio di archiviazione appariranno qui.',
+  'storageEvents.table.ariaLabel': 'Eventi per questo dominio di archiviazione',
+  'quotaDetail.tab.events': 'Eventi',
+  'quotaEvents.empty.body':
+    'Gli eventi del registro di controllo del motore per questa quota appariranno qui.',
+  'quotaEvents.table.ariaLabel': 'Eventi per questa quota',
 }

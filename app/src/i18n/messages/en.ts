@@ -5515,6 +5515,32 @@ export const en = {
     'No Foreman/Satellite providers are registered. Add one on the Providers page to bind this VM to it.',
   'vm.edit.foreman.help':
     'The engine reads the errata for this VM from the chosen Foreman/Satellite provider.',
+  // Template Storage tab + scoped Events tabs (issue #33) ----------------
+  'scopedEvents.loading': 'Loading events',
+  'scopedEvents.error.title': 'Could not load events',
+  'scopedEvents.empty.title': 'No events',
+  'templateDetail.tab.storage': 'Storage',
+  'templateDetail.tab.events': 'Events',
+  'templateEvents.empty.body': 'Engine audit log events for this template will appear here.',
+  'templateEvents.table.ariaLabel': 'Events for this template',
+  'templateStorage.empty.body': 'None of this template’s disks is on a storage domain.',
+  'templateStorage.table.ariaLabel': 'Storage domains holding this template’s disks',
+  'templateStorage.column.used': 'Used Space',
+  'templateStorage.column.disks': 'Disks',
+  'templateStorage.expand.ariaLabel': 'Show disks',
+  'templateStorage.disks.ariaLabel': 'Template disks on {name}',
+  'clusterDetail.tab.events': 'Events',
+  'clusterEvents.empty.body': 'Engine audit log events for this cluster will appear here.',
+  'clusterEvents.table.ariaLabel': 'Events for this cluster',
+  'dcDetail.tab.events': 'Events',
+  'dcEvents.empty.body': 'Engine audit log events for this data center will appear here.',
+  'dcEvents.table.ariaLabel': 'Events for this data center',
+  'storageDetail.tab.events': 'Events',
+  'storageEvents.empty.body': 'Engine audit log events for this storage domain will appear here.',
+  'storageEvents.table.ariaLabel': 'Events for this storage domain',
+  'quotaDetail.tab.events': 'Events',
+  'quotaEvents.empty.body': 'Engine audit log events for this quota will appear here.',
+  'quotaEvents.table.ariaLabel': 'Events for this quota',
 } as const
 
 // The id union — source of truth for every typed i18n surface (useT, the

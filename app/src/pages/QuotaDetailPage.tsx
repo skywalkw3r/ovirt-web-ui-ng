@@ -26,6 +26,8 @@ import { QuotaStorageLimitsTab } from '../components/quota-tabs/QuotaStorageLimi
 import { QuotaTemplatesTab } from '../components/quota-tabs/QuotaTemplatesTab'
 import { QuotaUsersTab } from '../components/quota-tabs/QuotaUsersTab'
 import { QuotaVmsTab } from '../components/quota-tabs/QuotaVmsTab'
+import { ScopedEventsTab } from '../components/events/ScopedEventsTab'
+import { scopedEventsSearch } from '../lib/scopedEvents'
 import { QuotaFormModal } from '../components/quota-form/QuotaFormModal'
 import { useDataCenters } from '../hooks/useAdminResources'
 import { useDeleteQuota, useQuota } from '../hooks/useQuotaMutations'
@@ -211,6 +213,18 @@ export function QuotaDetailPage() {
             <Tab eventKey="users" title={<TabTitleText>{t('quotaDetail.tab.users')}</TabTitleText>}>
               <TabContentBody hasPadding>
                 <QuotaUsersTab quotaId={quotaId} dataCenterId={dataCenterId} />
+              </TabContentBody>
+            </Tab>
+            <Tab
+              eventKey="events"
+              title={<TabTitleText>{t('quotaDetail.tab.events')}</TabTitleText>}
+            >
+              <TabContentBody hasPadding>
+                <ScopedEventsTab
+                  search={scopedEventsSearch.quota(quota.data.name)}
+                  ariaLabel={t('quotaEvents.table.ariaLabel')}
+                  emptyBody={t('quotaEvents.empty.body')}
+                />
               </TabContentBody>
             </Tab>
           </Tabs>

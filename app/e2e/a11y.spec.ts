@@ -295,3 +295,36 @@ test('Settings Preferences with the roaming note has no serious violations', asy
 
   await expectNoSeriousViolations(page)
 })
+
+test('template Storage (expanded) and Events tabs have no serious violations', async ({ page }) => {
+  await login(page, { path: '/templates/tpl-01' })
+  await page.getByRole('tab', { name: 'Storage' }).click()
+  const storage = page.getByRole('grid', { name: 'Storage domains holding this template’s disks' })
+  await expect(storage.getByRole('link', { name: 'hosted_storage' })).toBeVisible()
+  // expand a domain so the nested disks table is scanned too
+  await storage.getByRole('button', { name: 'Details' }).first().click()
+  await expect(page.getByRole('grid', { name: /^Template disks on / })).toBeVisible()
+  await expectNoSeriousViolations(page)
+
+  await page.getByRole('tab', { name: 'Events' }).click()
+  await expect(page.getByRole('grid', { name: 'Events for this template' })).toBeVisible()
+  await expectNoSeriousViolations(page)
+})
+
+// Each subject has at least one linked fixture event, so the table is scanned
+// populated. One test per page: every test signs in fresh.
+const SCOPED_EVENT_TABS = [
+  { entity: 'cluster', path: '/clusters/cluster-01', grid: 'Events for this cluster' },
+  { entity: 'data center', path: '/datacenters/dc-01', grid: 'Events for this data center' },
+  { entity: 'storage domain', path: '/storage/sd-01', grid: 'Events for this storage domain' },
+  { entity: 'quota', path: '/quotas/quota-02', grid: 'Events for this quota' },
+]
+
+for (const entry of SCOPED_EVENT_TABS) {
+  test(`${entry.entity} Events tab has no serious accessibility violations`, async ({ page }) => {
+    await login(page, { path: entry.path })
+    await page.getByRole('tab', { name: 'Events' }).click()
+    await expect(page.getByRole('grid', { name: entry.grid })).toBeVisible()
+    await expectNoSeriousViolations(page)
+  })
+}
