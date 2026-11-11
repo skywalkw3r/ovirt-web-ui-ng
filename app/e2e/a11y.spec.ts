@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'
-import { login } from './helpers'
+import { login, openUserMenuItem } from './helpers'
 
 // Gate: 'critical' and 'serious' violations fail the suite; 'moderate' and
 // 'minor' still show up in axe's report locally but do not block. Each scan
@@ -241,6 +241,15 @@ test('User detail page has no serious accessibility violations as admin', async 
   // the header meta line and every populated tab are in the tree.
   await login(page, { path: '/users/user-04' })
   await expect(page.getByRole('heading', { name: 'Jane Doe', exact: true })).toBeVisible()
+
+  await expectNoSeriousViolations(page)
+})
+
+test('Settings Preferences with the roaming note has no serious violations', async ({ page }) => {
+  await login(page)
+  const dialog = await openUserMenuItem(page, 'Settings')
+  await dialog.getByRole('tab', { name: 'Preferences' }).click()
+  await expect(dialog.getByText('Saved to your oVirt user profile')).toBeVisible()
 
   await expectNoSeriousViolations(page)
 })

@@ -1723,6 +1723,11 @@ export const ko: LocaleCatalog = {
   'settings.pref.console.vncDescription': 'noVNC 및 대부분의 데스크톱 뷰어와 작동합니다.',
   'settings.pref.console.spiceDescription': 'virt-viewer를 통한 더 풍부한 원격 환경입니다.',
   'settings.pref.language': '언어',
+  // Roaming note (components/UserMenu, settings/RoamingSettingsProvider)
+  'settings.pref.roaming.synced':
+    'oVirt 사용자 프로필에 저장되므로 다른 브라우저에서도 적용됩니다.',
+  'settings.pref.roaming.local':
+    '이 브라우저에만 저장됩니다. oVirt 사용자 프로필에 저장할 수 없습니다.',
   'settings.refresh.seconds': '{count, plural, other {#초}}',
   'settings.timeout.minutes': '{count, plural, other {#분}}',
   'settings.timeout.hours': '{count, plural, other {#시간}}',

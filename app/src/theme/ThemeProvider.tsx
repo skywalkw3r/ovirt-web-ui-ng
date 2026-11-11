@@ -29,7 +29,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     setTheme((current) => (current === 'dark' ? 'light' : 'dark'))
   }, [])
 
-  const value = useMemo<ThemeContextValue>(() => ({ theme, toggle }), [theme, toggle])
+  const value = useMemo<ThemeContextValue>(() => ({ theme, toggle, setTheme }), [theme, toggle])
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
 }

@@ -1681,6 +1681,9 @@ export const zhCN: LocaleCatalog = {
   'settings.pref.console.vncDescription': '适用于 noVNC 和大多数桌面查看器。',
   'settings.pref.console.spiceDescription': '通过 virt-viewer 提供更丰富的远程体验。',
   'settings.pref.language': '语言',
+  // Roaming note (components/UserMenu, settings/RoamingSettingsProvider)
+  'settings.pref.roaming.synced': '已保存到您的 oVirt 用户配置文件，因此会在其他浏览器中同步。',
+  'settings.pref.roaming.local': '仅保存在此浏览器中；您的 oVirt 用户配置文件无法存储这些首选项。',
   'settings.refresh.seconds': '{count, plural, other {# 秒}}',
   'settings.timeout.minutes': '{count, plural, other {# 分钟}}',
   'settings.timeout.hours': '{count, plural, other {# 小时}}',

@@ -45,6 +45,16 @@ export const DEFAULT_PREFERRED_CONSOLE: PreferredConsole = 'vnc'
 export const DEFAULT_LOCALE: Locale = 'en'
 export const DEFAULT_SESSION_TIMEOUT_MINUTES: SessionTimeoutMinutes = 60
 
+// The preference set SettingsProvider persists (localStorage
+// 'console-settings') and RoamingSettingsProvider roams through the engine's
+// per-user options (settings/roaming.ts).
+export interface UserSettings {
+  refreshIntervalMs: number
+  preferredConsole: PreferredConsole
+  locale: Locale
+  sessionTimeoutMinutes: SessionTimeoutMinutes
+}
+
 export interface SettingsContextValue {
   refreshIntervalMs: number
   setRefreshIntervalMs: (n: number) => void
@@ -54,6 +64,10 @@ export interface SettingsContextValue {
   setLocale: (l: Locale) => void
   sessionTimeoutMinutes: SessionTimeoutMinutes
   setSessionTimeoutMinutes: (m: SessionTimeoutMinutes) => void
+  // Bulk replace from an untrusted source (the engine user-options blob):
+  // every field is re-validated, and an unusable or missing one keeps its
+  // current value.
+  replaceSettings: (next: Partial<Record<keyof UserSettings, unknown>>) => void
 }
 
 export const SettingsContext = createContext<SettingsContextValue | null>(null)

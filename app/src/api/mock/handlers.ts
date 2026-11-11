@@ -13,6 +13,7 @@ import {
 import type { HostAction } from '../resources/hosts'
 import type { VmAction } from '../resources/vms'
 import { extraRoutes, type MockRoute } from './routes'
+import { mockUserIdFor } from './routes/user-options'
 
 const LATENCY_MS = 300
 // Shorter than the 10s VM poll on purpose: refetches see the transitional
@@ -11829,9 +11830,11 @@ const routes: MockRoute[] = [
     pattern: /^$/,
     // authenticated_user feeds fetchCapabilityProfile's tier heuristic; the
     // live engine serializes it as a bare link, the mock inlines user_name.
+    // The id follows the username so each mock identity has its own
+    // /users/{id}/options profile (routes/user-options.ts).
     handle: () => ({
       ...API_ROOT,
-      authenticated_user: { id: 'mock-user', user_name: mockUsername },
+      authenticated_user: { id: mockUserIdFor(mockUsername), user_name: mockUsername },
     }),
   },
   {

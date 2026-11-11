@@ -2121,6 +2121,11 @@ export const en = {
   'settings.pref.console.vncDescription': 'Works with noVNC and most desktop viewers.',
   'settings.pref.console.spiceDescription': 'Richer remote experience via virt-viewer.',
   'settings.pref.language': 'Language',
+  // Roaming note (components/UserMenu, settings/RoamingSettingsProvider)
+  'settings.pref.roaming.synced':
+    'Saved to your oVirt user profile, so they follow you to other browsers.',
+  'settings.pref.roaming.local':
+    'Saved in this browser only; your oVirt user profile is not available to store them.',
   'settings.refresh.seconds': '{count, plural, one {# second} other {# seconds}}',
   'settings.timeout.minutes': '{count, plural, one {# minute} other {# minutes}}',
   'settings.timeout.hours': '{count, plural, one {# hour} other {# hours}}',

@@ -1742,6 +1742,11 @@ export const tr: LocaleCatalog = {
   'settings.pref.console.vncDescription': 'noVNC ve çoğu masaüstü görüntüleyiciyle çalışır.',
   'settings.pref.console.spiceDescription': 'virt-viewer aracılığıyla daha zengin uzak deneyim.',
   'settings.pref.language': 'Dil',
+  // Roaming note (components/UserMenu, settings/RoamingSettingsProvider)
+  'settings.pref.roaming.synced':
+    'oVirt kullanıcı profilinize kaydedilir, böylece diğer tarayıcılarda da geçerli olur.',
+  'settings.pref.roaming.local':
+    'Yalnızca bu tarayıcıda kaydedilir; oVirt kullanıcı profiliniz bunları saklamak için kullanılamıyor.',
   'settings.refresh.seconds': '{count, plural, one {# saniye} other {# saniye}}',
   'settings.timeout.minutes': '{count, plural, one {# dakika} other {# dakika}}',
   'settings.timeout.hours': '{count, plural, one {# saat} other {# saat}}',
