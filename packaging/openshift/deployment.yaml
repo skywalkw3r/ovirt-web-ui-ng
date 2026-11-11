@@ -42,6 +42,13 @@ spec:
             #   value: "https://engine2.example.com https://engine3.example.com"
             - name: CSP_CONNECT_EXTRA
               value: ""
+            # UI plugins served from ANOTHER origin only (docs/PLUGINS.md):
+            # space-separated https origins appended to the CSP script-src.
+            # Plugins served from this console's own path need nothing. A
+            # cross-origin manifest is fetched, so its origin also belongs in
+            # CSP_CONNECT_EXTRA. Ignored when you mount your own default.conf.
+            - name: CSP_SCRIPT_EXTRA
+              value: ""
           volumeMounts:
             # Deploy-time runtime config (multi-engine server list etc.) over
             # the baked copy; subPath so only this one file is replaced.
