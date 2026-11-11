@@ -17,11 +17,13 @@ import { useT } from '../../i18n/useT'
 // plain PUT — the engine hot-applies what it can and stages the rest itself.
 // A watchdog change is the exception to "Apply now": the engine only edits the
 // device table, so it lands at the next start either way, and the dialog says
-// so when the edit carries one.
+// so when the edit carries one. The TPM device is the same (UpdateVmCommand
+// edits devices on a running VM only through the next-run snapshot).
 export function NextRunDialog({
   vmName,
   isSaving,
   watchdogChanged = false,
+  tpmChanged = false,
   onApplyLater,
   onApplyNow,
   onCancel,
@@ -29,6 +31,7 @@ export function NextRunDialog({
   vmName: string
   isSaving: boolean
   watchdogChanged?: boolean
+  tpmChanged?: boolean
   onApplyLater: () => void
   onApplyNow: () => void
   onCancel: () => void
@@ -49,6 +52,13 @@ export function NextRunDialog({
           <HelperText style={{ marginBlockStart: 'var(--pf-t--global--spacer--md)' }}>
             <HelperTextItem variant="warning">
               <FormattedMessage id="vm.edit.nextRun.watchdogNote" />
+            </HelperTextItem>
+          </HelperText>
+        )}
+        {tpmChanged && (
+          <HelperText style={{ marginBlockStart: 'var(--pf-t--global--spacer--md)' }}>
+            <HelperTextItem variant="warning">
+              <FormattedMessage id="vm.edit.nextRun.tpmNote" />
             </HelperTextItem>
           </HelperText>
         )}

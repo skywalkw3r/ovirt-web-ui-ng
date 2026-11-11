@@ -4695,15 +4695,22 @@ export const ko: LocaleCatalog = {
   'vm.edit.resources.tpm.reason.architecture': '이 CPU 아키텍처에서는 지원되지 않습니다',
   'vm.edit.resources.tpm.reason.uefi': 'UEFI 펌웨어에서만 사용할 수 있습니다',
   'vm.edit.resources.tpm.reason.required': '게스트 OS에 TPM 장치가 필요합니다',
+  'vm.edit.resources.tpm.reason.requiredUefi':
+    '게스트 OS에 TPM 장치가 필요하며, TPM 장치는 UEFI 펌웨어에서만 사용할 수 있습니다',
+  'vm.edit.resources.tpm.levelWarning':
+    '클러스터 호환 버전 4.5에서는 엔진이 그렇게 구성된 경우에만 TPM 장치를 활성화합니다. 기본적으로 저장이 거부됩니다.',
+  'vm.edit.nextRun.tpmNote':
+    '지금 적용을 선택해도 TPM 변경 사항은 VM을 다음에 시작할 때 적용됩니다.',
   'vm.edit.resources.tpm.removalWarning':
     '저장하면 TPM 장치가 제거되고 해당 TPM 데이터가 복구할 수 없게 삭제됩니다.',
   'vm.edit.resources.tpm.removeConfirm.title': 'VM TPM 데이터 제거',
   'vm.edit.resources.tpm.removeConfirm.body':
-    '{name}의 TPM 장치가 제거되고 현재 TPM 데이터가 복구할 수 없게 삭제됩니다. 데이터를 유지하려면 취소한 후 저장하기 전에 TPM 장치를 다시 활성화하십시오.',
+    '{name}의 TPM 장치가 제거되고 현재 TPM 데이터가 복구할 수 없게 삭제됩니다. 데이터를 유지하려면 취소한 후 저장하기 전에 변경 사항을 되돌리십시오.',
   'vm.edit.resources.tpm.removeConfirm.confirm': 'TPM 데이터 제거',
   'fieldHelp.vm.tpm':
     '에뮬레이트된 TPM(Trusted Platform Module)을 VM에 추가합니다. 게스트는 디스크 암호화 키 봉인과 측정 부팅에 사용하며, 일부 게스트(Windows 11)에는 필수입니다. x86에서는 UEFI 펌웨어가 필요합니다. 장치를 제거하면 저장된 TPM 데이터가 삭제됩니다.',
   'vmGeneral.term.tpmEnabled': 'TPM 장치 활성화됨',
   'vm.create.tpm.templateError':
-    '템플릿의 TPM 장치를 로드할 수 없습니다: {message}. 설정을 변경하면 새 VM에는 여기에서 선택한 TPM 설정이 그대로 적용됩니다.',
+    '템플릿의 TPM 장치를 로드할 수 없습니다: {message}. 여기에서 설정을 변경하지 않으면 새 VM은 템플릿의 TPM 장치를 그대로 받습니다.',
+  'vm.create.tpm.review.inherited': '템플릿과 동일',
 }

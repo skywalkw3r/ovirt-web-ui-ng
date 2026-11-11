@@ -4824,15 +4824,22 @@ export const es: LocaleCatalog = {
   'vm.edit.resources.tpm.reason.uefi': 'Disponible solo con firmware UEFI',
   'vm.edit.resources.tpm.reason.required':
     'El sistema operativo invitado requiere un dispositivo TPM',
+  'vm.edit.resources.tpm.reason.requiredUefi':
+    'El sistema operativo invitado requiere un dispositivo TPM, que solo está disponible con firmware UEFI',
+  'vm.edit.resources.tpm.levelWarning':
+    'Con la versión de compatibilidad de clúster 4.5, el motor solo habilita dispositivos TPM si está configurado para ello; de forma predeterminada rechaza el guardado.',
+  'vm.edit.nextRun.tpmNote':
+    'El cambio de TPM se aplica en el siguiente inicio de la VM, incluso con «Aplicar ahora».',
   'vm.edit.resources.tpm.removalWarning':
     'Al guardar se elimina el dispositivo TPM y sus datos TPM se borran de forma irrecuperable.',
   'vm.edit.resources.tpm.removeConfirm.title': 'Eliminar los datos TPM de la VM',
   'vm.edit.resources.tpm.removeConfirm.body':
-    'Se eliminará el dispositivo TPM de {name} y sus datos TPM actuales se borrarán de forma irrecuperable. Para conservar los datos, cancele y vuelva a habilitar el dispositivo TPM antes de guardar.',
+    'Se eliminará el dispositivo TPM de {name} y sus datos TPM actuales se borrarán de forma irrecuperable. Para conservar los datos, cancele y deshaga el cambio antes de guardar.',
   'vm.edit.resources.tpm.removeConfirm.confirm': 'Eliminar datos TPM',
   'fieldHelp.vm.tpm':
     'Añade a la VM un módulo de plataforma segura (TPM) emulado. Los invitados lo usan para sellar claves de cifrado de disco y para el arranque medido, y algunos (Windows 11) lo exigen. En x86 necesita firmware UEFI. Al quitar el dispositivo se borran los datos TPM almacenados.',
   'vmGeneral.term.tpmEnabled': 'Dispositivo TPM habilitado',
   'vm.create.tpm.templateError':
-    'No se pudo cargar el dispositivo TPM de la plantilla: {message}. La nueva VM obtiene exactamente la configuración de TPM elegida aquí en cuanto la cambie.',
+    'No se pudo cargar el dispositivo TPM de la plantilla: {message}. Salvo que cambie la configuración aquí, la nueva VM recibe el dispositivo TPM de la plantilla tal como está.',
+  'vm.create.tpm.review.inherited': 'Como en la plantilla',
 }

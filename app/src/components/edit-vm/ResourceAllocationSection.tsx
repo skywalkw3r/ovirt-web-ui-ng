@@ -37,6 +37,7 @@ export function ResourceAllocationSection({
   tpm,
   tpmAvailability,
   tpmRemovalPending,
+  tpmLevelWarning = false,
 }: {
   draft: EditVmDraft
   set: <K extends keyof EditVmDraft>(key: K, value: EditVmDraft[K]) => void
@@ -50,6 +51,9 @@ export function ResourceAllocationSection({
   // device the VM has.
   tpmAvailability: TpmAvailability
   tpmRemovalPending: boolean
+  // The save would add a TPM at cluster level 4.5, which the engine's default
+  // config refuses (tpmLevelWarning in editVmDraft).
+  tpmLevelWarning?: boolean
 }) {
   const t = useT()
   // Once the user picks "Custom" the select stays on it even if they then type
@@ -190,7 +194,7 @@ export function ResourceAllocationSection({
         fieldId="edit-vm-tpm"
         labelHelp={<FieldHelp field={t('vm.edit.resources.tpm')} content={t('fieldHelp.vm.tpm')} />}
       >
-        {tpm.isPending && !draft.tpmLoaded ? (
+        {!draft.tpmLoaded && !tpm.isError ? (
           <Skeleton
             height="1.5rem"
             width="3rem"
@@ -209,6 +213,15 @@ export function ResourceAllocationSection({
           <FormHelperText>
             <HelperText>
               <HelperTextItem>{t(tpmAvailability.reasonId)}</HelperTextItem>
+            </HelperText>
+          </FormHelperText>
+        )}
+        {tpmLevelWarning && (
+          <FormHelperText>
+            <HelperText>
+              <HelperTextItem variant="warning">
+                {t('vm.edit.resources.tpm.levelWarning')}
+              </HelperTextItem>
             </HelperText>
           </FormHelperText>
         )}

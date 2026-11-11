@@ -458,13 +458,24 @@ const UEFI_BIOS_TYPES = ['q35_ovmf', 'q35_secure_boot']
 //  2. the guest OS does not allow a TPM: unavailable;
 //  3. s390x: unavailable (the engine's TpmDeviceSupported config is false for
 //     s390x at every level; webadmin leaves this one to the engine);
-//  4. x86 without UEFI firmware: unavailable;
+//  4. x86 without UEFI firmware: unavailable, with a reason that names the
+//     guest OS when it requires a TPM;
 //  5. the guest OS requires a TPM: forced on;
 //  6. otherwise editable.
 // An input that is not known (a catalog read still loading or failed, an
 // engine without tpm_support) never blocks: the engine validates the save.
-// Webadmin differs in one spot: for an OS that requires a TPM it also switches
-// the chipset to Q35 with UEFI itself, where this reports the firmware (4).
+// Webadmin differs in one spot: for an OS that requires a TPM it checks that
+// before the firmware and switches the chipset to Q35 with UEFI itself. This
+// console never changes another field behind the user's back, so it reports
+// the firmware instead (4) and the user picks the chipset; the engine refuses
+// a required-TPM OS without UEFI either way (TPM_DEVICE_REQUIRED_BY_OS or
+// TPM_DEVICE_REQUESTED_ON_NOT_SUPPORTED_PLATFORM).
+// Level 4.5 passes, as in webadmin, although the engine's shipped
+// TpmDeviceSupported config only turns TPM on for x86 and ppc from 4.6: an
+// admin can enable it at 4.5 with engine-config, and a disabled toggle would
+// then hide a device the engine allows. tpmLevelWarning flags that case.
+// The VM's custom compatibility version (which the engine prefers over the
+// cluster's) is not on the draft, so only the cluster level is checked.
 export function tpmAvailability(input: TpmGateInput): TpmAvailability {
   const { major, minor } = input.clusterVersion ?? {}
   if (major !== undefined && minor !== undefined && (major < 4 || (major === 4 && minor < 5))) {
@@ -485,12 +496,47 @@ export function tpmAvailability(input: TpmGateInput): TpmAvailability {
     firmware !== 'cluster_default' &&
     !UEFI_BIOS_TYPES.includes(firmware)
   ) {
-    return { state: 'unavailable', reasonId: 'vm.edit.resources.tpm.reason.uefi' }
+    return {
+      state: 'unavailable',
+      reasonId:
+        input.osTpmSupport === 'required'
+          ? 'vm.edit.resources.tpm.reason.requiredUefi'
+          : 'vm.edit.resources.tpm.reason.uefi',
+    }
   }
   if (input.osTpmSupport === 'required') {
     return { state: 'required', reasonId: 'vm.edit.resources.tpm.reason.required' }
   }
   return { state: 'editable' }
+}
+
+// Cluster level 4.5 exactly: the gate lets the toggle through (see
+// tpmAvailability), but the engine's default config refuses a TPM there, so
+// the toggle warns when it would add one.
+export function tpmLevelWarning(clusterVersion: TpmGateInput['clusterVersion']): boolean {
+  return clusterVersion?.major === 4 && clusterVersion.minor === 5
+}
+
+// The gate the Edit VM modal applies. When the gate already calls the TPM
+// unavailable for the VM as loaded although the VM has one, the gate and the
+// engine disagree (the engine refuses to add a device it does not support), so
+// the engine is trusted: the toggle stays editable and nothing removes the
+// device unless the user unticks it. A gate that only turns unavailable through
+// this edit (a switch away from UEFI, say) stands.
+export function editTpmGate(
+  draftGate: TpmAvailability,
+  baselineGate: TpmAvailability,
+  baseline: EditVmDraft,
+): TpmAvailability {
+  if (
+    draftGate.state === 'unavailable' &&
+    baselineGate.state === 'unavailable' &&
+    baseline.tpmLoaded &&
+    baseline.tpmEnabled
+  ) {
+    return { state: 'editable' }
+  }
+  return draftGate
 }
 
 // The TPM state the toggle shows and a save results in: the gate's forced
@@ -501,19 +547,16 @@ export function effectiveTpmEnabled(enabled: boolean, availability: TpmAvailabil
   return enabled
 }
 
-// The draft a save sends, with the TPM gate applied. A required TPM is sent as
-// on. An unavailable one is NOT sent as off: the draft falls back to the
-// loaded value so the body carries no tpm_enabled, and the engine drops the
-// device itself when the saved VM cannot hold one (VmDeviceUtils
-// .updateTpmDevice). Only the user's own untick ever sends tpm_enabled false,
-// so a gate this console got wrong can never delete TPM data on its own.
-export function gatedTpmDraft(
-  draft: EditVmDraft,
-  baseline: EditVmDraft,
-  availability: TpmAvailability,
-): EditVmDraft {
+// The draft a save sends, with the TPM gate applied: a required TPM is sent as
+// on and an unavailable one as off, as webadmin does. Off has to be explicit:
+// UpdateVmCommand.validate treats an absent tpm_enabled as "keep the device
+// the VM has" and refuses the whole save when the edited VM cannot hold it
+// (TPM_DEVICE_REQUESTED_ON_NOT_SUPPORTED_PLATFORM). A save that removes a
+// device this way is confirmed first (tpmRemovalPending), and editTpmGate
+// keeps a gate that disagrees with the engine from forcing a removal.
+export function gatedTpmDraft(draft: EditVmDraft, availability: TpmAvailability): EditVmDraft {
   if (!draft.tpmLoaded || availability.state === 'editable') return draft
-  const tpmEnabled = availability.state === 'required' ? true : baseline.tpmEnabled
+  const tpmEnabled = availability.state === 'required'
   return tpmEnabled === draft.tpmEnabled ? draft : { ...draft, tpmEnabled }
 }
 

@@ -4823,15 +4823,22 @@ export const it: LocaleCatalog = {
   'vm.edit.resources.tpm.reason.architecture': 'Non supportato su questa architettura CPU',
   'vm.edit.resources.tpm.reason.uefi': 'Disponibile solo con firmware UEFI',
   'vm.edit.resources.tpm.reason.required': 'Il sistema operativo guest richiede un dispositivo TPM',
+  'vm.edit.resources.tpm.reason.requiredUefi':
+    'Il sistema operativo guest richiede un dispositivo TPM, disponibile solo con firmware UEFI',
+  'vm.edit.resources.tpm.levelWarning':
+    'Con la versione di compatibilità del cluster 4.5 il motore abilita i dispositivi TPM solo se configurato per farlo; per impostazione predefinita rifiuta il salvataggio.',
+  'vm.edit.nextRun.tpmNote':
+    'La modifica del TPM ha effetto al prossimo avvio della VM, anche con “Applica ora”.',
   'vm.edit.resources.tpm.removalWarning':
     'Il salvataggio rimuove il dispositivo TPM ed elimina in modo irreversibile i suoi dati TPM.',
   'vm.edit.resources.tpm.removeConfirm.title': 'Rimuovi i dati TPM della VM',
   'vm.edit.resources.tpm.removeConfirm.body':
-    'Il dispositivo TPM di {name} verrà rimosso e i suoi dati TPM attuali saranno eliminati in modo irreversibile. Per conservare i dati, annulla e riabilita il dispositivo TPM prima di salvare.',
+    'Il dispositivo TPM di {name} verrà rimosso e i suoi dati TPM attuali saranno eliminati in modo irreversibile. Per conservare i dati, annulla e revoca la modifica prima di salvare.',
   'vm.edit.resources.tpm.removeConfirm.confirm': 'Rimuovi dati TPM',
   'fieldHelp.vm.tpm':
     "Aggiunge alla VM un Trusted Platform Module (TPM) emulato. I guest lo usano per sigillare le chiavi di cifratura dei dischi e per l'avvio misurato, e alcuni (Windows 11) lo richiedono. Su x86 serve il firmware UEFI. La rimozione del dispositivo elimina i dati TPM memorizzati.",
   'vmGeneral.term.tpmEnabled': 'Dispositivo TPM abilitato',
   'vm.create.tpm.templateError':
-    "Impossibile caricare il dispositivo TPM del modello: {message}. La nuova VM riceve esattamente l'impostazione TPM scelta qui non appena la modifichi.",
+    "Impossibile caricare il dispositivo TPM del modello: {message}. Se non modifichi l'impostazione qui, la nuova VM riceve il dispositivo TPM del modello così com'è.",
+  'vm.create.tpm.review.inherited': 'Come nel modello',
 }

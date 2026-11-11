@@ -4746,15 +4746,22 @@ export const tr: LocaleCatalog = {
   'vm.edit.resources.tpm.reason.architecture': 'Bu CPU mimarisinde desteklenmiyor',
   'vm.edit.resources.tpm.reason.uefi': 'Yalnızca UEFI üretici yazılımıyla kullanılabilir',
   'vm.edit.resources.tpm.reason.required': 'Konuk işletim sistemi bir TPM aygıtı gerektiriyor',
+  'vm.edit.resources.tpm.reason.requiredUefi':
+    'Konuk işletim sistemi, yalnızca UEFI ürün yazılımıyla kullanılabilen bir TPM aygıtı gerektiriyor',
+  'vm.edit.resources.tpm.levelWarning':
+    'Küme uyumluluk sürümü 4.5’te motor TPM aygıtlarını yalnızca bu şekilde yapılandırıldığında etkinleştirir; varsayılan olarak kaydetmeyi reddeder.',
+  'vm.edit.nextRun.tpmNote':
+    '"Şimdi uygula" seçilse bile TPM değişikliği VM’nin bir sonraki başlatılmasında etkili olur.',
   'vm.edit.resources.tpm.removalWarning':
     'Kaydetmek TPM aygıtını kaldırır ve TPM verilerini geri alınamaz biçimde siler.',
   'vm.edit.resources.tpm.removeConfirm.title': 'VM TPM verilerini kaldır',
   'vm.edit.resources.tpm.removeConfirm.body':
-    '{name} adlı VM’nin TPM aygıtı kaldırılacak ve geçerli TPM verileri geri alınamaz biçimde silinecek. Verileri korumak için iptal edin ve kaydetmeden önce TPM aygıtını yeniden etkinleştirin.',
+    '{name} adlı VM’nin TPM aygıtı kaldırılacak ve geçerli TPM verileri geri alınamaz biçimde silinecek. Verileri korumak için iptal edin ve kaydetmeden önce değişikliği geri alın.',
   'vm.edit.resources.tpm.removeConfirm.confirm': 'TPM verilerini kaldır',
   'fieldHelp.vm.tpm':
     'VM’ye öykünülmüş bir Güvenilir Platform Modülü (TPM) ekler. Konuklar bunu disk şifreleme anahtarlarını mühürlemek ve ölçülü önyükleme için kullanır; bazıları (Windows 11) bunu zorunlu tutar. x86 üzerinde UEFI üretici yazılımı gerekir. Aygıtın kaldırılması, saklanan TPM verilerini siler.',
   'vmGeneral.term.tpmEnabled': 'TPM Aygıtı Etkin',
   'vm.create.tpm.templateError':
-    'Şablonun TPM aygıtı yüklenemedi: {message}. Ayarı değiştirdiğinizde yeni VM tam olarak burada seçilen TPM ayarını alır.',
+    'Şablonun TPM aygıtı yüklenemedi: {message}. Ayarı burada değiştirmediğiniz sürece yeni VM şablonun TPM aygıtını olduğu gibi alır.',
+  'vm.create.tpm.review.inherited': 'Şablondaki gibi',
 }

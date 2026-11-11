@@ -28,9 +28,12 @@ import {
   buildWatchdogChange,
   draftToPayload,
   editRequiresRestart,
+  editTpmGate,
+  effectiveTpmEnabled,
   gatedTpmDraft,
   tpmAvailability,
   tpmDraftFields,
+  tpmLevelWarning,
   tpmRemovalPending,
   vmIsRunning,
   vmMemoryError,
@@ -103,10 +106,12 @@ export function EditVmModal({
   // tpm_enabled on an all_content read only): fold the dedicated read into
   // BOTH baseline and draft once it lands, the watchdog idiom above. A failed
   // read leaves tpmLoaded false, which keeps the toggle disabled and
-  // tpm_enabled out of the save.
+  // tpm_enabled out of the save. The seed waits out a fetch in flight: after
+  // a save the cached value is invalidated (it nests under the vm detail key)
+  // but still isSuccess, and seeding from it would show the old device.
   const tpm = useVmTpm(vm.id)
   const [tpmSeededId, setTpmSeededId] = useState<string | null>(null)
-  if (tpm.isSuccess && tpmSeededId !== vm.id) {
+  if (tpm.isSuccess && !tpm.isFetching && tpmSeededId !== vm.id) {
     setTpmSeededId(vm.id)
     const fields = tpmDraftFields(tpm.data)
     setBaseline((current) => ({ ...current, ...fields }))
@@ -156,20 +161,35 @@ export function EditVmModal({
 
   // The TPM gate for the draft as it stands: the picked cluster's level,
   // default firmware and architecture, the picked chipset and the picked guest
-  // OS. The draft a save sends is the gated one (a required TPM rides as on; an
-  // unavailable one is left to the engine), and a save that would remove a TPM
-  // the VM has is confirmed first.
+  // OS. The draft a save sends is the gated one (a required TPM rides as on, an
+  // unavailable one as off), and a save that would remove a TPM the VM has is
+  // confirmed first. The gate for the VM as loaded (baseline) lets editTpmGate
+  // spot a gate that disagrees with the engine.
   const draftCluster = clusters.data?.find((cluster) => cluster.id === draft.clusterId)
-  const tpmGate = tpmAvailability({
-    clusterVersion: draftCluster?.version,
-    architecture: vm.cpu?.architecture ?? draftCluster?.cpu?.architecture,
-    biosType: draft.biosType,
-    clusterBiosType:
-      draftCluster?.bios_type ??
-      (draft.clusterId === vm.cluster?.id ? vm.cluster?.bios_type : undefined),
-    osTpmSupport: operatingSystems.data?.find((os) => os.name === draft.osType)?.tpm_support,
-  })
-  const saveDraft = gatedTpmDraft(draft, baseline, tpmGate)
+  const tpmGateFor = (d: EditVmDraft) => {
+    const cluster = clusters.data?.find((c) => c.id === d.clusterId)
+    return tpmAvailability({
+      clusterVersion: cluster?.version,
+      // the engine checks the cluster's architecture (the VM runs on it)
+      architecture: cluster?.cpu?.architecture ?? vm.cpu?.architecture,
+      // a PUT with cluster_default keeps the VM's current firmware
+      // (UpdateVmCommand: an unset bios type stays as it is)
+      biosType:
+        d.biosType === 'cluster_default' && baseline.biosType !== 'cluster_default'
+          ? baseline.biosType
+          : d.biosType,
+      clusterBiosType:
+        cluster?.bios_type ?? (d.clusterId === vm.cluster?.id ? vm.cluster?.bios_type : undefined),
+      osTpmSupport: operatingSystems.data?.find((os) => os.name === d.osType)?.tpm_support,
+    })
+  }
+  const tpmGate = editTpmGate(tpmGateFor(draft), tpmGateFor(baseline), baseline)
+  const tpmLevelNotice =
+    tpmLevelWarning(draftCluster?.version) &&
+    tpmGate.state !== 'unavailable' &&
+    effectiveTpmEnabled(draft.tpmEnabled, tpmGate) &&
+    !(baseline.tpmLoaded && baseline.tpmEnabled)
+  const saveDraft = gatedTpmDraft(draft, tpmGate)
   const tpmRemoval = tpmRemovalPending(draft, baseline, tpmGate)
   const [confirmingTpmRemoval, setConfirmingTpmRemoval] = useState(false)
 
@@ -443,6 +463,7 @@ export function EditVmModal({
                   tpm={tpm}
                   tpmAvailability={tpmGate}
                   tpmRemovalPending={tpmRemoval}
+                  tpmLevelWarning={tpmLevelNotice}
                 />
               ),
             },
@@ -497,6 +518,7 @@ export function EditVmModal({
           vmName={vm.name}
           isSaving={saving}
           watchdogChanged={buildWatchdogChange(draft, baseline) !== undefined}
+          tpmChanged={saveDraft.tpmLoaded && saveDraft.tpmEnabled !== baseline.tpmEnabled}
           onApplyLater={() => void mutate(true)}
           onApplyNow={() => void mutate(false)}
           onCancel={() => setConfirmingNextRun(false)}

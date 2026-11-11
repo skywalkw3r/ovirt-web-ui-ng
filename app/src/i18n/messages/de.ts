@@ -4852,15 +4852,22 @@ export const de: LocaleCatalog = {
   'vm.edit.resources.tpm.reason.architecture': 'Auf dieser CPU-Architektur nicht unterstützt',
   'vm.edit.resources.tpm.reason.uefi': 'Nur mit UEFI-Firmware verfügbar',
   'vm.edit.resources.tpm.reason.required': 'Das Gast-Betriebssystem erfordert ein TPM-Gerät',
+  'vm.edit.resources.tpm.reason.requiredUefi':
+    'Das Gast-Betriebssystem erfordert ein TPM-Gerät, das nur mit UEFI-Firmware verfügbar ist',
+  'vm.edit.resources.tpm.levelWarning':
+    'Bei Cluster-Kompatibilitätsversion 4.5 aktiviert die Engine TPM-Geräte nur, wenn sie dafür konfiguriert ist; standardmäßig lehnt sie das Speichern ab.',
+  'vm.edit.nextRun.tpmNote':
+    'Die TPM-Änderung wird beim nächsten Start der VM wirksam, auch mit „Jetzt anwenden“.',
   'vm.edit.resources.tpm.removalWarning':
     'Beim Speichern wird das TPM-Gerät entfernt und seine TPM-Daten werden unwiederbringlich gelöscht.',
   'vm.edit.resources.tpm.removeConfirm.title': 'TPM-Daten der VM entfernen',
   'vm.edit.resources.tpm.removeConfirm.body':
-    'Das TPM-Gerät von {name} wird entfernt und die aktuellen TPM-Daten werden unwiederbringlich gelöscht. Um die Daten zu behalten, brechen Sie ab und aktivieren Sie das TPM-Gerät vor dem Speichern wieder.',
+    'Das TPM-Gerät von {name} wird entfernt und die aktuellen TPM-Daten werden unwiederbringlich gelöscht. Um die Daten zu behalten, brechen Sie ab und machen Sie die Änderung vor dem Speichern rückgängig.',
   'vm.edit.resources.tpm.removeConfirm.confirm': 'TPM-Daten entfernen',
   'fieldHelp.vm.tpm':
     'Fügt der VM ein emuliertes Trusted Platform Module (TPM) hinzu. Gäste nutzen es, um Schlüssel der Datenträgerverschlüsselung zu versiegeln und für Measured Boot, und manche (Windows 11) setzen es voraus. Auf x86 ist UEFI-Firmware erforderlich. Beim Entfernen des Geräts werden die gespeicherten TPM-Daten gelöscht.',
   'vmGeneral.term.tpmEnabled': 'TPM-Gerät aktiviert',
   'vm.create.tpm.templateError':
-    'Das TPM-Gerät der Vorlage konnte nicht geladen werden: {message}. Die neue VM erhält genau die hier gewählte TPM-Einstellung, sobald Sie sie ändern.',
+    'Das TPM-Gerät der Vorlage konnte nicht geladen werden: {message}. Solange Sie die Einstellung hier nicht ändern, erhält die neue VM das TPM-Gerät der Vorlage unverändert.',
+  'vm.create.tpm.review.inherited': 'Wie in der Vorlage',
 }

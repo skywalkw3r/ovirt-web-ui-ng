@@ -4758,15 +4758,22 @@ export const ja: LocaleCatalog = {
   'vm.edit.resources.tpm.reason.architecture': 'このCPUアーキテクチャーではサポートされていません',
   'vm.edit.resources.tpm.reason.uefi': 'UEFIファームウェアでのみ利用できます',
   'vm.edit.resources.tpm.reason.required': 'ゲストOSにTPMデバイスが必要です',
+  'vm.edit.resources.tpm.reason.requiredUefi':
+    'ゲストOSにTPMデバイスが必要ですが、TPMデバイスはUEFIファームウェアでのみ使用できます',
+  'vm.edit.resources.tpm.levelWarning':
+    'クラスター互換バージョン4.5では、エンジンは設定されている場合にのみTPMデバイスを有効にします。デフォルトでは保存が拒否されます。',
+  'vm.edit.nextRun.tpmNote':
+    '「今すぐ適用」を選択しても、TPMの変更はVMの次回起動時に有効になります。',
   'vm.edit.resources.tpm.removalWarning':
     '保存するとTPMデバイスが削除され、そのTPMデータは復元できない形で削除されます。',
   'vm.edit.resources.tpm.removeConfirm.title': 'VMのTPMデータを削除',
   'vm.edit.resources.tpm.removeConfirm.body':
-    '{name} のTPMデバイスが削除され、現在のTPMデータは復元できない形で削除されます。データを保持するには、キャンセルして、保存する前にTPMデバイスをもう一度有効にしてください。',
+    '{name} のTPMデバイスが削除され、現在のTPMデータは復元できない形で削除されます。データを保持するには、キャンセルして、保存する前に変更を元に戻してください。',
   'vm.edit.resources.tpm.removeConfirm.confirm': 'TPMデータを削除',
   'fieldHelp.vm.tpm':
     'エミュレートされたTrusted Platform Module（TPM）をVMに追加します。ゲストはディスク暗号化キーの封印やメジャードブートに使用し、一部のゲスト（Windows 11）では必須です。x86ではUEFIファームウェアが必要です。デバイスを削除すると、保存されているTPMデータも削除されます。',
   'vmGeneral.term.tpmEnabled': 'TPMデバイス有効',
   'vm.create.tpm.templateError':
-    'テンプレートのTPMデバイスを読み込めませんでした: {message}。設定を変更すると、新しいVMにはここで選択したTPM設定がそのまま適用されます。',
+    'テンプレートのTPMデバイスを読み込めませんでした: {message}。ここで設定を変更しない限り、新しいVMにはテンプレートのTPMデバイスがそのまま引き継がれます。',
+  'vm.create.tpm.review.inherited': 'テンプレートと同じ',
 }

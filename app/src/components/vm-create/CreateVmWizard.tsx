@@ -48,6 +48,7 @@ import {
   isWindowsOsType,
   tpmAvailability,
   tpmCreateValue,
+  tpmLevelWarning,
   watchdogModelOptions,
 } from '../edit-vm/editVmDraft'
 import { FieldHelp } from '../forms/FieldHelp'
@@ -243,6 +244,12 @@ export function CreateVmWizardModal({
       ?.tpm_support,
   })
   const tpmEffective = effectiveTpmEnabled(tpmEnabled, tpmGate)
+  const tpmLevelNotice = tpmEffective && tpmLevelWarning(chosenCluster?.version)
+  const tpmSpecValue = tpmCreateValue(
+    tpmEffective,
+    templateTpm.isSuccess ? templateTpm.data : undefined,
+    tpmTouched || tpmGate.state !== 'editable',
+  )
 
   const updateNic = (index: number, patch: Partial<CloudInitNicSpec>) => {
     setNics((rows) => rows.map((nic, i) => (i === index ? { ...nic, ...patch } : nic)))
@@ -346,11 +353,7 @@ export function CreateVmWizardModal({
             }
           : undefined,
       // only a pick that differs from the template's device rides the POST
-      tpmEnabled: tpmCreateValue(
-        tpmEffective,
-        templateTpm.isSuccess ? templateTpm.data : undefined,
-        tpmTouched || tpmGate.state !== 'editable',
-      ),
+      tpmEnabled: tpmSpecValue,
     }
     // The watchdog is a subcollection device, set once the VM exists. Skipped
     // only when the template is KNOWN to carry none and nothing was picked.
@@ -719,6 +722,15 @@ export function CreateVmWizardModal({
                     </HelperText>
                   </FormHelperText>
                 )}
+                {tpmLevelNotice && (
+                  <FormHelperText>
+                    <HelperText>
+                      <HelperTextItem variant="warning">
+                        {t('vm.edit.resources.tpm.levelWarning')}
+                      </HelperTextItem>
+                    </HelperText>
+                  </FormHelperText>
+                )}
                 {templateTpm.isError && (
                   <FormHelperText>
                     <HelperText>
@@ -1053,7 +1065,13 @@ export function CreateVmWizardModal({
               <DescriptionListGroup>
                 <DescriptionListTerm>{t('vm.edit.resources.tpm')}</DescriptionListTerm>
                 <DescriptionListDescription>
-                  {tpmEffective ? t('common.yes') : t('common.no')}
+                  {/* the template's device is unknown and nothing here decided
+                      one: the POST omits tpm_enabled and the engine copies it */}
+                  {tpmSpecValue === undefined && !templateTpm.isSuccess
+                    ? t('vm.create.tpm.review.inherited')
+                    : tpmEffective
+                      ? t('common.yes')
+                      : t('common.no')}
                 </DescriptionListDescription>
               </DescriptionListGroup>
               <DescriptionListGroup>

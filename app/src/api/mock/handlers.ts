@@ -434,6 +434,9 @@ interface MockTemplate {
   name: string
   description?: string
   os?: { type?: string }
+  // chipset/firmware: a VM created from the template takes it (the New VM
+  // wizard's TPM gate reads it off the list)
+  bios?: { type?: string }
 }
 
 // The enriched body GET /templates/{id} returns — scalars mix string/number
@@ -3274,6 +3277,8 @@ const templates: MockTemplate[] = [
     name: 'win2022-base',
     description: 'Windows Server 2022 sysprepped base',
     os: { type: 'windows_2022' },
+    // UEFI with secure boot: it carries a TPM device (initialTpmDevices)
+    bios: { type: 'q35_secure_boot' },
   },
 ]
 
@@ -3350,6 +3355,7 @@ const templateDetails: Record<string, MockTemplateDetail> = {
     stateless: 'false',
     type: 'desktop',
     cpu: { architecture: 'x86_64', topology: { sockets: 1, cores: '4', threads: 1 } },
+    bios: { type: 'q35_secure_boot', boot_menu: { enabled: 'false' } },
   },
 }
 
@@ -6175,6 +6181,19 @@ function vmSupportsTpm(vm: MockVm): boolean {
   return firmware === 'q35_ovmf' || firmware === 'q35_secure_boot'
 }
 
+function osRequiresTpm(vm: MockVm): boolean {
+  return operatingSystems.find((entry) => entry.name === vm.os?.type)?.tpm_support === 'required'
+}
+
+function tpmRequired(action: string): ApiError {
+  // AppErrors TPM_DEVICE_REQUIRED_BY_OS
+  return new ApiError(
+    409,
+    'Operation Failed',
+    `Cannot ${action} VM. TPM device is required by the guest OS.`,
+  )
+}
+
 function tpmNotSupported(action: string): ApiError {
   // AppErrors TPM_DEVICE_REQUESTED_ON_NOT_SUPPORTED_PLATFORM
   return new ApiError(
@@ -6252,15 +6271,19 @@ function addVm(body: unknown): unknown {
     memory: spec.memory,
     os: template?.os,
     cluster: spec.cluster,
+    // the new VM takes the template's chipset/firmware
+    bios: template?.bios,
   }
   // TPM: an explicit tpm_enabled wins, else the new VM inherits the
   // template's device (BackendVmsResource.add). Either way the engine refuses
-  // a TPM the VM cannot hold (AddVmCommand validation).
+  // a TPM the VM cannot hold, and no TPM for a guest OS that requires one
+  // (AddVmCommand validation).
   const wantsTpm =
     spec.tpm_enabled !== undefined
       ? spec.tpm_enabled === true || spec.tpm_enabled === 'true'
       : template !== undefined && tpmDevices.has(template.id)
   if (wantsTpm && !vmSupportsTpm(vm)) throw tpmNotSupported('add')
+  if (!wantsTpm && osRequiresTpm(vm)) throw tpmRequired('add')
   if (wantsTpm) tpmDevices.add(vm.id)
   vms.push(vm)
   // Seed the per-VM collections so the detail routes work for new VMs too.
@@ -6315,19 +6338,32 @@ function updateVm(id: string, body: unknown, query?: URLSearchParams): unknown {
     delete patch.rng_device
   }
   // tpm_enabled is not stored on the entity: it adds or removes the TPM device
-  // (and with it the VM's TPM data). The engine refuses a TPM the edited VM
-  // cannot hold, and drops an existing one when an edit (say a switch away
-  // from UEFI) leaves it unsupported (VmDeviceUtils.updateTpmDevice).
+  // (and with it the VM's TPM data). UpdateVmCommand.validate reads an absent
+  // tpm_enabled as "the device the VM has", so it refuses a TPM the edited VM
+  // cannot hold even when the body never mentions one (an edit that switches
+  // a TPM VM away from UEFI must send tpm_enabled false), and refuses no TPM
+  // for a guest OS that requires one. A set value then adds or removes the
+  // device (VmDeviceUtils.updateTpmDevice).
   const tpmEnabled = (patch as { tpm_enabled?: boolean | string }).tpm_enabled
   delete (patch as { tpm_enabled?: unknown }).tpm_enabled
   const wantsTpm =
     tpmEnabled !== undefined ? tpmEnabled === true || tpmEnabled === 'true' : tpmDevices.has(id)
-  const edited = { ...vm, ...patch }
-  if (tpmEnabled !== undefined && wantsTpm && !vmSupportsTpm(edited)) {
-    throw tpmNotSupported('edit')
+  // The edit body's bios block merges into the VM's (the Edit VM payload
+  // sends boot_menu alone when the chipset is unchanged), and a bios type of
+  // cluster_default leaves the firmware as it is (the api maps it to an unset
+  // bios type, which UpdateVmCommand keeps).
+  if (patch.bios !== undefined) {
+    const type = patch.bios.type === 'cluster_default' ? vm.bios?.type : patch.bios.type
+    patch.bios = { ...vm.bios, ...patch.bios, type: type ?? vm.bios?.type }
+    if (patch.bios.type === undefined) delete patch.bios.type
   }
-  if (wantsTpm && vmSupportsTpm(edited)) tpmDevices.add(id)
-  else tpmDevices.delete(id)
+  const edited = { ...vm, ...patch }
+  if (wantsTpm && !vmSupportsTpm(edited)) throw tpmNotSupported('edit')
+  if (!wantsTpm && osRequiresTpm(edited)) throw tpmRequired('edit')
+  if (tpmEnabled !== undefined) {
+    if (wantsTpm) tpmDevices.add(id)
+    else tpmDevices.delete(id)
+  }
   Object.assign(vm, patch)
   if (query?.get('next_run') === 'true') {
     vm.next_run_configuration_exists = true
@@ -7649,10 +7685,25 @@ function addTemplate(body: unknown): unknown {
     os: sourceVm?.os,
     cluster: sourceVm?.cluster,
     memory: sourceVm?.memory,
+    bios: sourceVm?.bios,
     origin: 'ovirt',
   }
-  templates.push({ id, name: detail.name, description: detail.description, os: detail.os })
+  templates.push({
+    id,
+    name: detail.name,
+    description: detail.description,
+    os: detail.os,
+    bios: sourceVm?.bios,
+  })
   templateDetails[id] = detail
+  // AddVmTemplateCommand copies the source VM's devices; an unset
+  // tpm_enabled keeps its TPM device (and the TPM data with it)
+  const tpmSpec = (body as { tpm_enabled?: boolean | string } | undefined)?.tpm_enabled
+  const copyTpm =
+    tpmSpec !== undefined
+      ? tpmSpec === true || tpmSpec === 'true'
+      : sourceVm !== undefined && tpmDevices.has(sourceVm.id)
+  if (copyTpm) tpmDevices.add(id)
   setTimeout(() => {
     detail.status = 'ok'
   }, TRANSITION_MS)
