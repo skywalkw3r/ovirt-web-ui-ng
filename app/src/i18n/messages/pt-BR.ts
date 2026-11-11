@@ -4894,4 +4894,43 @@ export const ptBR: LocaleCatalog = {
     'A reversão da configuração parcial foi interrompida: {error}',
   'host.configureLocalStorage.outcome.rerunHint':
     'Para concluir, coloque o host em manutenção, se necessário, e execute “Configurar armazenamento local” novamente; o data center local vazio será reutilizado.',
+  // Guide Me (data center and cluster next steps)
+  'guideMe.action': 'Guie-me',
+  'guideMe.title': 'Guie-me: {name}',
+  'guideMe.loading': 'Carregando as próximas etapas',
+  'guideMe.error.title': 'Não foi possível carregar as próximas etapas',
+  'guideMe.dataCenter.created': 'Data center criado.',
+  'guideMe.dataCenter.configured': 'O data center está totalmente configurado e pronto para uso.',
+  'guideMe.cluster.created': 'Cluster criado.',
+  'guideMe.cluster.configured': 'O cluster está totalmente configurado e pronto para uso.',
+  'guideMe.configured.title': 'Configuração concluída',
+  'guideMe.unconfigured': 'Ainda há entidades a configurar.',
+  'guideMe.section.required': 'Etapas obrigatórias',
+  'guideMe.section.optional': 'Etapas opcionais',
+  'guideMe.configureLater': 'Configurar depois',
+  'guideMe.step.configureCluster': 'Configurar cluster',
+  'guideMe.step.addAnotherCluster': 'Adicionar outro cluster',
+  'guideMe.step.configureHost': 'Configurar host',
+  'guideMe.step.addAnotherHost': 'Adicionar outro host',
+  'guideMe.step.configureStorage': 'Configurar armazenamento',
+  'guideMe.step.addMoreStorage': 'Adicionar mais armazenamento',
+  'guideMe.step.attachStorage': 'Anexar armazenamento',
+  'guideMe.step.attachMoreStorage': 'Anexar mais armazenamento',
+  'guideMe.step.configureIsoLibrary': 'Configurar biblioteca ISO',
+  'guideMe.step.attachIsoLibrary': 'Anexar biblioteca ISO',
+  'guideMe.step.addLocalStorage': 'Adicionar armazenamento local',
+  'guideMe.reason.noUpHost': 'O data center precisa de pelo menos um host ativo.',
+  'guideMe.reason.noCluster': 'Primeiro adicione um cluster ao data center.',
+  'guideMe.reason.noUnattachedData': 'Nenhum domínio de dados não anexado está disponível.',
+  'guideMe.reason.noActiveMaster':
+    'O data center precisa primeiro de um domínio de dados mestre ativo.',
+  'guideMe.reason.noIsoDomain': 'Nenhum domínio ISO está disponível para anexar.',
+  'guideMe.reason.localDcHasHost': 'Um data center local comporta apenas um host, e este já o tem.',
+  'guideMe.reason.dcInitialized': 'O data center já está inicializado.',
+  'guideMe.reason.clusterLocalHasHost':
+    'Este cluster pertence a um data center local que já tem seu único host.',
+  'guideMe.note.localStorage':
+    'Para configurar totalmente o data center, anexe e ative pelo menos um domínio de armazenamento local.',
+  'guideMe.note.clusterNoActions':
+    'Nenhuma ação está disponível para este cluster: ele não está anexado a um data center.',
 }

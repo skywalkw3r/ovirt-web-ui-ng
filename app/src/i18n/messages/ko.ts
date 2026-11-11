@@ -4790,4 +4790,43 @@ export const ko: LocaleCatalog = {
   'host.configureLocalStorage.outcome.undoStopped': '부분 설정 취소가 중단되었습니다: {error}',
   'host.configureLocalStorage.outcome.rerunHint':
     '완료하려면 필요한 경우 호스트를 유지 관리 모드로 전환한 후 "로컬 스토리지 구성"을 다시 실행하십시오. 빈 로컬 데이터 센터가 다시 사용됩니다.',
+  // Guide Me (data center and cluster next steps)
+  'guideMe.action': '가이드',
+  'guideMe.title': '가이드: {name}',
+  'guideMe.loading': '다음 단계를 불러오는 중',
+  'guideMe.error.title': '다음 단계를 불러올 수 없습니다',
+  'guideMe.dataCenter.created': '데이터 센터가 생성되었습니다.',
+  'guideMe.dataCenter.configured': '데이터 센터가 완전히 구성되어 사용할 준비가 되었습니다.',
+  'guideMe.cluster.created': '클러스터가 생성되었습니다.',
+  'guideMe.cluster.configured': '클러스터가 완전히 구성되어 사용할 준비가 되었습니다.',
+  'guideMe.configured.title': '구성 완료',
+  'guideMe.unconfigured': '아직 구성해야 할 엔터티가 있습니다.',
+  'guideMe.section.required': '필수 단계',
+  'guideMe.section.optional': '선택 단계',
+  'guideMe.configureLater': '나중에 구성',
+  'guideMe.step.configureCluster': '클러스터 구성',
+  'guideMe.step.addAnotherCluster': '다른 클러스터 추가',
+  'guideMe.step.configureHost': '호스트 구성',
+  'guideMe.step.addAnotherHost': '다른 호스트 추가',
+  'guideMe.step.configureStorage': '스토리지 구성',
+  'guideMe.step.addMoreStorage': '스토리지 추가',
+  'guideMe.step.attachStorage': '스토리지 연결',
+  'guideMe.step.attachMoreStorage': '스토리지 더 연결',
+  'guideMe.step.configureIsoLibrary': 'ISO 라이브러리 구성',
+  'guideMe.step.attachIsoLibrary': 'ISO 라이브러리 연결',
+  'guideMe.step.addLocalStorage': '로컬 스토리지 추가',
+  'guideMe.reason.noUpHost': '데이터 센터에 활성 호스트가 하나 이상 있어야 합니다.',
+  'guideMe.reason.noCluster': '먼저 데이터 센터에 클러스터를 추가하세요.',
+  'guideMe.reason.noUnattachedData': '연결할 수 있는 미연결 데이터 도메인이 없습니다.',
+  'guideMe.reason.noActiveMaster': '데이터 센터에 먼저 활성 마스터 데이터 도메인이 있어야 합니다.',
+  'guideMe.reason.noIsoDomain': '연결할 수 있는 ISO 도메인이 없습니다.',
+  'guideMe.reason.localDcHasHost':
+    '로컬 데이터 센터에는 호스트를 하나만 둘 수 있으며 이 데이터 센터에는 이미 있습니다.',
+  'guideMe.reason.dcInitialized': '데이터 센터가 이미 초기화되었습니다.',
+  'guideMe.reason.clusterLocalHasHost':
+    '이 클러스터는 이미 유일한 호스트가 있는 로컬 데이터 센터에 속합니다.',
+  'guideMe.note.localStorage':
+    '데이터 센터를 완전히 구성하려면 로컬 스토리지 도메인을 하나 이상 연결하고 활성화하세요.',
+  'guideMe.note.clusterNoActions':
+    '이 클러스터에 사용할 수 있는 작업이 없습니다: 데이터 센터에 연결되어 있지 않습니다.',
 }

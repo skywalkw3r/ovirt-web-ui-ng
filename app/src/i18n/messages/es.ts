@@ -4922,4 +4922,45 @@ export const es: LocaleCatalog = {
     'Se detuvo la reversión de la configuración parcial: {error}',
   'host.configureLocalStorage.outcome.rerunHint':
     'Para terminar, ponga el host en mantenimiento si es necesario y vuelva a ejecutar «Configurar almacenamiento local»; reutiliza el centro de datos local vacío.',
+  // Guide Me (data center and cluster next steps)
+  'guideMe.action': 'Guíame',
+  'guideMe.title': 'Guíame: {name}',
+  'guideMe.loading': 'Cargando los siguientes pasos',
+  'guideMe.error.title': 'No se pudieron cargar los siguientes pasos',
+  'guideMe.dataCenter.created': 'Centro de datos creado.',
+  'guideMe.dataCenter.configured':
+    'El centro de datos está totalmente configurado y listo para usarse.',
+  'guideMe.cluster.created': 'Clúster creado.',
+  'guideMe.cluster.configured': 'El clúster está totalmente configurado y listo para usarse.',
+  'guideMe.configured.title': 'Configuración completada',
+  'guideMe.unconfigured': 'Aún quedan entidades por configurar.',
+  'guideMe.section.required': 'Pasos obligatorios',
+  'guideMe.section.optional': 'Pasos opcionales',
+  'guideMe.configureLater': 'Configurar más tarde',
+  'guideMe.step.configureCluster': 'Configurar clúster',
+  'guideMe.step.addAnotherCluster': 'Añadir otro clúster',
+  'guideMe.step.configureHost': 'Configurar host',
+  'guideMe.step.addAnotherHost': 'Añadir otro host',
+  'guideMe.step.configureStorage': 'Configurar almacenamiento',
+  'guideMe.step.addMoreStorage': 'Añadir más almacenamiento',
+  'guideMe.step.attachStorage': 'Adjuntar almacenamiento',
+  'guideMe.step.attachMoreStorage': 'Adjuntar más almacenamiento',
+  'guideMe.step.configureIsoLibrary': 'Configurar biblioteca ISO',
+  'guideMe.step.attachIsoLibrary': 'Adjuntar biblioteca ISO',
+  'guideMe.step.addLocalStorage': 'Añadir almacenamiento local',
+  'guideMe.reason.noUpHost': 'El centro de datos necesita al menos un host activo.',
+  'guideMe.reason.noCluster': 'Primero añada un clúster al centro de datos.',
+  'guideMe.reason.noUnattachedData': 'No hay ningún dominio de datos sin adjuntar disponible.',
+  'guideMe.reason.noActiveMaster':
+    'El centro de datos necesita primero un dominio de datos maestro activo.',
+  'guideMe.reason.noIsoDomain': 'No hay ningún dominio ISO disponible para adjuntar.',
+  'guideMe.reason.localDcHasHost':
+    'Un centro de datos local admite un solo host y este ya lo tiene.',
+  'guideMe.reason.dcInitialized': 'El centro de datos ya está inicializado.',
+  'guideMe.reason.clusterLocalHasHost':
+    'Este clúster pertenece a un centro de datos local que ya tiene su único host.',
+  'guideMe.note.localStorage':
+    'Para configurar totalmente el centro de datos, adjunte y active al menos un dominio de almacenamiento local.',
+  'guideMe.note.clusterNoActions':
+    'No hay acciones disponibles para este clúster: no está adjunto a ningún centro de datos.',
 }

@@ -496,7 +496,7 @@ export const de: LocaleCatalog = {
   'datacenters.search.hint': 'name=Default — oder Klartext',
   'datacenters.search.ariaLabel': 'Rechenzentren durchsuchen',
   'datacenters.pagination.ariaLabel': 'Seitennummerierung von Rechenzentren',
-  'datacenters.new': 'Rechenzentrum',
+  'datacenters.new': 'Neues Rechenzentrum',
   'datacenters.loading': 'Rechenzentren werden geladen',
   'datacenters.error.title': 'Rechenzentren konnten nicht geladen werden',
   'datacenters.empty.title': 'Keine Rechenzentren',
@@ -4954,4 +4954,45 @@ export const de: LocaleCatalog = {
     'Das Rückgängigmachen der teilweisen Einrichtung wurde abgebrochen: {error}',
   'host.configureLocalStorage.outcome.rerunHint':
     'Versetzen Sie zum Abschließen den Host bei Bedarf in die Wartung und führen Sie „Lokalen Speicher konfigurieren“ erneut aus; dabei wird das leere lokale Rechenzentrum wiederverwendet.',
+  // Guide Me (data center and cluster next steps)
+  'guideMe.action': 'Anleitung',
+  'guideMe.title': 'Anleitung: {name}',
+  'guideMe.loading': 'Nächste Schritte werden geladen',
+  'guideMe.error.title': 'Die nächsten Schritte konnten nicht geladen werden',
+  'guideMe.dataCenter.created': 'Rechenzentrum erstellt.',
+  'guideMe.dataCenter.configured':
+    'Das Rechenzentrum ist vollständig konfiguriert und einsatzbereit.',
+  'guideMe.cluster.created': 'Cluster erstellt.',
+  'guideMe.cluster.configured': 'Der Cluster ist vollständig konfiguriert und einsatzbereit.',
+  'guideMe.configured.title': 'Konfiguration abgeschlossen',
+  'guideMe.unconfigured': 'Einige Entitäten müssen noch konfiguriert werden.',
+  'guideMe.section.required': 'Erforderliche Schritte',
+  'guideMe.section.optional': 'Optionale Schritte',
+  'guideMe.configureLater': 'Später konfigurieren',
+  'guideMe.step.configureCluster': 'Cluster konfigurieren',
+  'guideMe.step.addAnotherCluster': 'Weiteren Cluster hinzufügen',
+  'guideMe.step.configureHost': 'Host konfigurieren',
+  'guideMe.step.addAnotherHost': 'Weiteren Host hinzufügen',
+  'guideMe.step.configureStorage': 'Speicher konfigurieren',
+  'guideMe.step.addMoreStorage': 'Weiteren Speicher hinzufügen',
+  'guideMe.step.attachStorage': 'Speicher anhängen',
+  'guideMe.step.attachMoreStorage': 'Weiteren Speicher anhängen',
+  'guideMe.step.configureIsoLibrary': 'ISO-Bibliothek konfigurieren',
+  'guideMe.step.attachIsoLibrary': 'ISO-Bibliothek anhängen',
+  'guideMe.step.addLocalStorage': 'Lokalen Speicher hinzufügen',
+  'guideMe.reason.noUpHost': 'Das Rechenzentrum benötigt mindestens einen aktiven Host.',
+  'guideMe.reason.noCluster': 'Fügen Sie dem Rechenzentrum zuerst einen Cluster hinzu.',
+  'guideMe.reason.noUnattachedData': 'Es ist keine nicht angehängte Datendomäne verfügbar.',
+  'guideMe.reason.noActiveMaster':
+    'Das Rechenzentrum benötigt zuerst eine aktive Master-Datendomäne.',
+  'guideMe.reason.noIsoDomain': 'Es ist keine ISO-Domäne zum Anhängen verfügbar.',
+  'guideMe.reason.localDcHasHost':
+    'Ein lokales Rechenzentrum enthält nur einen Host, und dieses hat ihn bereits.',
+  'guideMe.reason.dcInitialized': 'Das Rechenzentrum ist bereits initialisiert.',
+  'guideMe.reason.clusterLocalHasHost':
+    'Dieser Cluster gehört zu einem lokalen Rechenzentrum, das seinen einzigen Host bereits hat.',
+  'guideMe.note.localStorage':
+    'Um das Rechenzentrum vollständig zu konfigurieren, hängen Sie mindestens eine lokale Speicherdomäne an und aktivieren Sie sie.',
+  'guideMe.note.clusterNoActions':
+    'Für diesen Cluster sind keine Aktionen verfügbar: Er ist keinem Rechenzentrum zugeordnet.',
 }

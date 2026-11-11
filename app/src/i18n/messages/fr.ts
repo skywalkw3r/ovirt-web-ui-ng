@@ -4929,4 +4929,45 @@ export const fr: LocaleCatalog = {
     "L'annulation de la configuration partielle s'est arrêtée : {error}",
   'host.configureLocalStorage.outcome.rerunHint':
     "Pour terminer, mettez l'hôte en maintenance si nécessaire et relancez « Configurer le stockage local » ; le centre de données local vide sera réutilisé.",
+  // Guide Me (data center and cluster next steps)
+  'guideMe.action': 'Guidez-moi',
+  'guideMe.title': 'Guidez-moi : {name}',
+  'guideMe.loading': 'Chargement des étapes suivantes',
+  'guideMe.error.title': 'Impossible de charger les étapes suivantes',
+  'guideMe.dataCenter.created': 'Centre de données créé.',
+  'guideMe.dataCenter.configured':
+    'Le centre de données est entièrement configuré et prêt à être utilisé.',
+  'guideMe.cluster.created': 'Cluster créé.',
+  'guideMe.cluster.configured': 'Le cluster est entièrement configuré et prêt à être utilisé.',
+  'guideMe.configured.title': 'Configuration terminée',
+  'guideMe.unconfigured': 'Certaines entités restent à configurer.',
+  'guideMe.section.required': 'Étapes obligatoires',
+  'guideMe.section.optional': 'Étapes facultatives',
+  'guideMe.configureLater': 'Configurer plus tard',
+  'guideMe.step.configureCluster': 'Configurer le cluster',
+  'guideMe.step.addAnotherCluster': 'Ajouter un autre cluster',
+  'guideMe.step.configureHost': "Configurer l'hôte",
+  'guideMe.step.addAnotherHost': 'Ajouter un autre hôte',
+  'guideMe.step.configureStorage': 'Configurer le stockage',
+  'guideMe.step.addMoreStorage': 'Ajouter du stockage',
+  'guideMe.step.attachStorage': 'Attacher le stockage',
+  'guideMe.step.attachMoreStorage': 'Attacher plus de stockage',
+  'guideMe.step.configureIsoLibrary': 'Configurer la bibliothèque ISO',
+  'guideMe.step.attachIsoLibrary': 'Attacher la bibliothèque ISO',
+  'guideMe.step.addLocalStorage': 'Ajouter un stockage local',
+  'guideMe.reason.noUpHost': 'Le centre de données doit avoir au moins un hôte actif.',
+  'guideMe.reason.noCluster': "Ajoutez d'abord un cluster au centre de données.",
+  'guideMe.reason.noUnattachedData': "Aucun domaine de données non attaché n'est disponible.",
+  'guideMe.reason.noActiveMaster':
+    "Le centre de données doit d'abord avoir un domaine de données maître actif.",
+  'guideMe.reason.noIsoDomain': "Aucun domaine ISO n'est disponible pour l'attachement.",
+  'guideMe.reason.localDcHasHost':
+    "Un centre de données local ne contient qu'un seul hôte, et celui-ci en a déjà un.",
+  'guideMe.reason.dcInitialized': 'Le centre de données est déjà initialisé.',
+  'guideMe.reason.clusterLocalHasHost':
+    'Ce cluster appartient à un centre de données local qui a déjà son unique hôte.',
+  'guideMe.note.localStorage':
+    'Pour configurer entièrement le centre de données, attachez et activez au moins un domaine de stockage local.',
+  'guideMe.note.clusterNoActions':
+    "Aucune action n'est disponible pour ce cluster : il n'est attaché à aucun centre de données.",
 }

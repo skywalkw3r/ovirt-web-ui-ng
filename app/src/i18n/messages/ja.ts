@@ -4853,4 +4853,44 @@ export const ja: LocaleCatalog = {
     '部分的なセットアップの取り消しが停止しました: {error}',
   'host.configureLocalStorage.outcome.rerunHint':
     '完了するには、必要に応じてホストをメンテナンスモードにし、「ローカルストレージを設定」をもう一度実行してください。空のローカルデータセンターが再利用されます。',
+  // Guide Me (data center and cluster next steps)
+  'guideMe.action': 'ガイド',
+  'guideMe.title': 'ガイド: {name}',
+  'guideMe.loading': '次の手順を読み込み中',
+  'guideMe.error.title': '次の手順を読み込めませんでした',
+  'guideMe.dataCenter.created': 'データセンターを作成しました。',
+  'guideMe.dataCenter.configured': 'データセンターは完全に設定され、使用できる状態です。',
+  'guideMe.cluster.created': 'クラスターを作成しました。',
+  'guideMe.cluster.configured': 'クラスターは完全に設定され、使用できる状態です。',
+  'guideMe.configured.title': '設定が完了しました',
+  'guideMe.unconfigured': 'まだ設定が必要なエンティティがあります。',
+  'guideMe.section.required': '必須の手順',
+  'guideMe.section.optional': '任意の手順',
+  'guideMe.configureLater': '後で設定',
+  'guideMe.step.configureCluster': 'クラスターを設定',
+  'guideMe.step.addAnotherCluster': '別のクラスターを追加',
+  'guideMe.step.configureHost': 'ホストを設定',
+  'guideMe.step.addAnotherHost': '別のホストを追加',
+  'guideMe.step.configureStorage': 'ストレージを設定',
+  'guideMe.step.addMoreStorage': 'ストレージを追加',
+  'guideMe.step.attachStorage': 'ストレージを接続',
+  'guideMe.step.attachMoreStorage': 'さらにストレージを接続',
+  'guideMe.step.configureIsoLibrary': 'ISO ライブラリーを設定',
+  'guideMe.step.attachIsoLibrary': 'ISO ライブラリーを接続',
+  'guideMe.step.addLocalStorage': 'ローカルストレージを追加',
+  'guideMe.reason.noUpHost': 'データセンターには少なくとも 1 台のアクティブなホストが必要です。',
+  'guideMe.reason.noCluster': '先にデータセンターにクラスターを追加してください。',
+  'guideMe.reason.noUnattachedData': '接続可能な未接続のデータドメインがありません。',
+  'guideMe.reason.noActiveMaster':
+    'データセンターには先にアクティブなマスターデータドメインが必要です。',
+  'guideMe.reason.noIsoDomain': '接続可能な ISO ドメインがありません。',
+  'guideMe.reason.localDcHasHost':
+    'ローカルデータセンターに置けるホストは 1 台だけで、このデータセンターにはすでにあります。',
+  'guideMe.reason.dcInitialized': 'データセンターはすでに初期化されています。',
+  'guideMe.reason.clusterLocalHasHost':
+    'このクラスターは、唯一のホストをすでに持つローカルデータセンターに属しています。',
+  'guideMe.note.localStorage':
+    'データセンターを完全に設定するには、ローカルストレージドメインを少なくとも 1 つ接続して有効化してください。',
+  'guideMe.note.clusterNoActions':
+    'このクラスターで使用できる操作はありません: どのデータセンターにも接続されていません。',
 }
