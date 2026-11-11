@@ -5309,6 +5309,27 @@ export const en = {
   'host.configureLocalStorage.outcome.undoStopped': 'Undoing the partial setup stopped: {error}',
   'host.configureLocalStorage.outcome.rerunHint':
     'To finish, put the host into maintenance if needed and run Configure local storage again; it reuses the empty local data center.',
+  // VM TPM device (Edit VM Resource Allocation, New VM wizard, General tab)
+  'vm.edit.resources.tpm': 'TPM Device Enabled',
+  'vm.edit.resources.tpm.loading': 'Loading TPM device',
+  'vm.edit.resources.tpm.error': 'Could not load the TPM device; it is left unchanged.',
+  'vm.edit.resources.tpm.reason.version':
+    'Available in cluster compatibility version 4.5 or higher',
+  'vm.edit.resources.tpm.reason.os': 'Guest OS version is not supported',
+  'vm.edit.resources.tpm.reason.architecture': 'Not supported on this CPU architecture',
+  'vm.edit.resources.tpm.reason.uefi': 'Available only with UEFI firmware',
+  'vm.edit.resources.tpm.reason.required': 'TPM device is required by the guest OS',
+  'vm.edit.resources.tpm.removalWarning':
+    'Saving removes the TPM device and irrecoverably deletes its TPM data.',
+  'vm.edit.resources.tpm.removeConfirm.title': 'Remove VM TPM data',
+  'vm.edit.resources.tpm.removeConfirm.body':
+    'The TPM device of {name} will be removed and its current TPM data irrecoverably deleted. To keep the data, cancel and enable the TPM device again before saving.',
+  'vm.edit.resources.tpm.removeConfirm.confirm': 'Remove TPM data',
+  'fieldHelp.vm.tpm':
+    'Adds an emulated Trusted Platform Module (TPM) to the VM. Guests use it to seal disk-encryption keys and for measured boot, and some (Windows 11) require one. On x86 it needs UEFI firmware. Removing the device deletes its stored TPM data.',
+  'vmGeneral.term.tpmEnabled': 'TPM Device Enabled',
+  'vm.create.tpm.templateError':
+    "Could not load the template's TPM device: {message}. The new VM gets exactly the TPM setting chosen here once you change it.",
 } as const
 
 // The id union — source of truth for every typed i18n surface (useT, the

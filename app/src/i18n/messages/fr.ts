@@ -4819,4 +4819,27 @@ export const fr: LocaleCatalog = {
     "L'annulation de la configuration partielle s'est arrêtée : {error}",
   'host.configureLocalStorage.outcome.rerunHint':
     "Pour terminer, mettez l'hôte en maintenance si nécessaire et relancez « Configurer le stockage local » ; le centre de données local vide sera réutilisé.",
+  // VM TPM device (Edit VM Resource Allocation, New VM wizard, General tab)
+  'vm.edit.resources.tpm': 'Périphérique TPM activé',
+  'vm.edit.resources.tpm.loading': 'Chargement du périphérique TPM',
+  'vm.edit.resources.tpm.error': 'Impossible de charger le périphérique TPM ; il reste inchangé.',
+  'vm.edit.resources.tpm.reason.version':
+    'Disponible à partir de la version de compatibilité 4.5 du cluster',
+  'vm.edit.resources.tpm.reason.os':
+    "La version du système d'exploitation invité n'est pas prise en charge",
+  'vm.edit.resources.tpm.reason.architecture': 'Non pris en charge sur cette architecture CPU',
+  'vm.edit.resources.tpm.reason.uefi': 'Disponible uniquement avec un firmware UEFI',
+  'vm.edit.resources.tpm.reason.required':
+    "Le système d'exploitation invité exige un périphérique TPM",
+  'vm.edit.resources.tpm.removalWarning':
+    "L'enregistrement supprime le périphérique TPM et efface définitivement ses données TPM.",
+  'vm.edit.resources.tpm.removeConfirm.title': 'Supprimer les données TPM de la VM',
+  'vm.edit.resources.tpm.removeConfirm.body':
+    "Le périphérique TPM de {name} sera supprimé et ses données TPM actuelles seront définitivement effacées. Pour conserver les données, annulez et réactivez le périphérique TPM avant d'enregistrer.",
+  'vm.edit.resources.tpm.removeConfirm.confirm': 'Supprimer les données TPM',
+  'fieldHelp.vm.tpm':
+    "Ajoute à la VM un module de plateforme sécurisée (TPM) émulé. Les invités l'utilisent pour sceller les clés de chiffrement de disque et pour le démarrage mesuré, et certains (Windows 11) l'exigent. Sur x86, un firmware UEFI est nécessaire. Retirer le périphérique efface les données TPM stockées.",
+  'vmGeneral.term.tpmEnabled': 'Périphérique TPM activé',
+  'vm.create.tpm.templateError':
+    'Impossible de charger le périphérique TPM du modèle : {message}. La nouvelle VM reçoit exactement le réglage TPM choisi ici dès que vous le modifiez.',
 }

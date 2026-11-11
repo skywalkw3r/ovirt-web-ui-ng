@@ -39,6 +39,9 @@ export const InstanceTypeSchema = z.looseObject({
       priority: z.coerce.number().optional(),
     })
     .optional(),
+  // TPM device toggle (VmBase.tpm_enabled, api-model 4.4.5+). Only filled on an
+  // all_content read; declared for the shared VmBase shape, no form edits it.
+  tpm_enabled: z.union([z.boolean(), z.stringbool()]).optional(),
 })
 
 // JSON quirk: GET /instancetypes returns { instance_type: [...] } and omits the

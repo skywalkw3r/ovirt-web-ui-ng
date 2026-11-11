@@ -4686,4 +4686,24 @@ export const ko: LocaleCatalog = {
   'host.configureLocalStorage.outcome.undoStopped': '부분 설정 취소가 중단되었습니다: {error}',
   'host.configureLocalStorage.outcome.rerunHint':
     '완료하려면 필요한 경우 호스트를 유지 관리 모드로 전환한 후 "로컬 스토리지 구성"을 다시 실행하십시오. 빈 로컬 데이터 센터가 다시 사용됩니다.',
+  // VM TPM device (Edit VM Resource Allocation, New VM wizard, General tab)
+  'vm.edit.resources.tpm': 'TPM 장치 활성화됨',
+  'vm.edit.resources.tpm.loading': 'TPM 장치 로드 중',
+  'vm.edit.resources.tpm.error': 'TPM 장치를 로드할 수 없습니다. 변경되지 않은 상태로 유지됩니다.',
+  'vm.edit.resources.tpm.reason.version': '클러스터 호환성 버전 4.5 이상에서 사용할 수 있습니다',
+  'vm.edit.resources.tpm.reason.os': '게스트 OS 버전이 지원되지 않습니다',
+  'vm.edit.resources.tpm.reason.architecture': '이 CPU 아키텍처에서는 지원되지 않습니다',
+  'vm.edit.resources.tpm.reason.uefi': 'UEFI 펌웨어에서만 사용할 수 있습니다',
+  'vm.edit.resources.tpm.reason.required': '게스트 OS에 TPM 장치가 필요합니다',
+  'vm.edit.resources.tpm.removalWarning':
+    '저장하면 TPM 장치가 제거되고 해당 TPM 데이터가 복구할 수 없게 삭제됩니다.',
+  'vm.edit.resources.tpm.removeConfirm.title': 'VM TPM 데이터 제거',
+  'vm.edit.resources.tpm.removeConfirm.body':
+    '{name}의 TPM 장치가 제거되고 현재 TPM 데이터가 복구할 수 없게 삭제됩니다. 데이터를 유지하려면 취소한 후 저장하기 전에 TPM 장치를 다시 활성화하십시오.',
+  'vm.edit.resources.tpm.removeConfirm.confirm': 'TPM 데이터 제거',
+  'fieldHelp.vm.tpm':
+    '에뮬레이트된 TPM(Trusted Platform Module)을 VM에 추가합니다. 게스트는 디스크 암호화 키 봉인과 측정 부팅에 사용하며, 일부 게스트(Windows 11)에는 필수입니다. x86에서는 UEFI 펌웨어가 필요합니다. 장치를 제거하면 저장된 TPM 데이터가 삭제됩니다.',
+  'vmGeneral.term.tpmEnabled': 'TPM 장치 활성화됨',
+  'vm.create.tpm.templateError':
+    '템플릿의 TPM 장치를 로드할 수 없습니다: {message}. 설정을 변경하면 새 VM에는 여기에서 선택한 TPM 설정이 그대로 적용됩니다.',
 }

@@ -9,11 +9,13 @@ import { clusterKeys } from '../../hooks/useAdminResources'
 import { useClusters, useOperatingSystems } from '../../hooks/useCatalog'
 import { useHosts } from '../../hooks/useHosts'
 import { useUpdateVm } from '../../hooks/useUpdateVm'
+import { useVmTpm } from '../../hooks/useVmTpm'
 import { useApplyVmWatchdog, useVmWatchdogs } from '../../hooks/useVmWatchdogs'
 import { vmKeys } from '../../hooks/useVms'
 import type { MessageId } from '../../i18n/messages/en'
 import { useT } from '../../i18n/useT'
 import { useNotify } from '../../notifications/context'
+import { ConfirmModal } from '../ConfirmModal'
 import { ModalVerticalTabs } from '../forms/ModalVerticalTabs'
 import { OptionsHelper } from '../forms/OptionsSelect'
 import { BootOptionsSection } from './BootOptionsSection'
@@ -26,6 +28,10 @@ import {
   buildWatchdogChange,
   draftToPayload,
   editRequiresRestart,
+  gatedTpmDraft,
+  tpmAvailability,
+  tpmDraftFields,
+  tpmRemovalPending,
   vmIsRunning,
   vmMemoryError,
   vmNameError,
@@ -93,6 +99,20 @@ export function EditVmModal({
     setDraft((current) => ({ ...current, ...fields }))
   }
 
+  // The TPM device is not on the polled vm read either (the engine fills
+  // tpm_enabled on an all_content read only): fold the dedicated read into
+  // BOTH baseline and draft once it lands, the watchdog idiom above. A failed
+  // read leaves tpmLoaded false, which keeps the toggle disabled and
+  // tpm_enabled out of the save.
+  const tpm = useVmTpm(vm.id)
+  const [tpmSeededId, setTpmSeededId] = useState<string | null>(null)
+  if (tpm.isSuccess && tpmSeededId !== vm.id) {
+    setTpmSeededId(vm.id)
+    const fields = tpmDraftFields(tpm.data)
+    setBaseline((current) => ({ ...current, ...fields }))
+    setDraft((current) => ({ ...current, ...fields }))
+  }
+
   // Stable updater so sections don't re-render on every keystroke elsewhere.
   const set = useCallback(<K extends keyof EditVmDraft>(key: K, value: EditVmDraft[K]) => {
     setDraft((current) => ({ ...current, [key]: value }))
@@ -134,6 +154,25 @@ export function EditVmModal({
     enabled: draft.clusterId !== '',
   })
 
+  // The TPM gate for the draft as it stands: the picked cluster's level,
+  // default firmware and architecture, the picked chipset and the picked guest
+  // OS. The draft a save sends is the gated one (a required TPM rides as on; an
+  // unavailable one is left to the engine), and a save that would remove a TPM
+  // the VM has is confirmed first.
+  const draftCluster = clusters.data?.find((cluster) => cluster.id === draft.clusterId)
+  const tpmGate = tpmAvailability({
+    clusterVersion: draftCluster?.version,
+    architecture: vm.cpu?.architecture ?? draftCluster?.cpu?.architecture,
+    biosType: draft.biosType,
+    clusterBiosType:
+      draftCluster?.bios_type ??
+      (draft.clusterId === vm.cluster?.id ? vm.cluster?.bios_type : undefined),
+    osTpmSupport: operatingSystems.data?.find((os) => os.name === draft.osType)?.tpm_support,
+  })
+  const saveDraft = gatedTpmDraft(draft, baseline, tpmGate)
+  const tpmRemoval = tpmRemovalPending(draft, baseline, tpmGate)
+  const [confirmingTpmRemoval, setConfirmingTpmRemoval] = useState(false)
+
   const update = useUpdateVm()
   const applyWatchdog = useApplyVmWatchdog()
   const queryClient = useQueryClient()
@@ -158,7 +197,7 @@ export function EditVmModal({
     // either way). buildCdromChange is undefined on an untouched picker, so
     // ordinary saves never eject; '' is an explicit eject.
     const cdFileId = buildCdromChange(draft)
-    const vmChanged = vmFieldsChanged(draft, baseline)
+    const vmChanged = vmFieldsChanged(saveDraft, baseline)
     // A save with nothing pending at all still PUTs, as it always has.
     const putVm =
       vmChanged || (watchdogChange === undefined && cdFileId === undefined && !nextRunRefreshOwed)
@@ -197,7 +236,7 @@ export function EditVmModal({
     // 2. The vm PUT (or the minimal next-run refresh).
     if (putVm) {
       try {
-        await update.mutateAsync({ vm, payload: draftToPayload(draft, baseline), nextRun })
+        await update.mutateAsync({ vm, payload: draftToPayload(saveDraft, baseline), nextRun })
       } catch {
         // useUpdateVm toasts the fault; the modal (and an open Next-Run
         // dialog) stays up on the draft, as before. A watchdog that already
@@ -205,7 +244,7 @@ export function EditVmModal({
         setBaseline(saved)
         return
       }
-      saved = baselineAfterVmSave(draft, saved)
+      saved = baselineAfterVmSave(saveDraft, saved)
       anythingSaved = true
       setDraft((current) => ({ ...current, iconUploadData: '', iconUploadMediaType: '' }))
     } else if (refreshNextRun) {
@@ -254,16 +293,27 @@ export function EditVmModal({
     }
   }
 
-  const save = () => {
-    // A running VM with reboot-only changes detours through the Next-Run
-    // dialog; a down VM (or a hot-applicable edit) saves straight through —
-    // the simple path is unchanged. A retry after a partial failure compares
-    // against the re-baselined draft, so steps that landed do not ask again.
-    if (vmIsRunning(vm.status) && editRequiresRestart(draft, baseline)) {
+  // A running VM with reboot-only changes detours through the Next-Run
+  // dialog; a down VM (or a hot-applicable edit) saves straight through —
+  // the simple path is unchanged. A retry after a partial failure compares
+  // against the re-baselined draft, so steps that landed do not ask again.
+  const saveOrAskNextRun = () => {
+    if (vmIsRunning(vm.status) && editRequiresRestart(saveDraft, baseline)) {
       setConfirmingNextRun(true)
       return
     }
     void mutate(false)
+  }
+
+  const save = () => {
+    // Removing the TPM device deletes the VM's TPM data for good, so that
+    // save is confirmed first (webadmin's "Remove VM TPM data" dialog), ahead
+    // of the Next-Run question.
+    if (tpmRemoval) {
+      setConfirmingTpmRemoval(true)
+      return
+    }
+    saveOrAskNextRun()
   }
 
   // GeneralSection renders the matching inline error for the same validator.
@@ -273,12 +323,9 @@ export function EditVmModal({
   const memoryInvalid = vmMemoryError(draft) !== undefined
   // The cluster's CPU architecture backs the watchdog model list when the vm
   // read does not carry its own cpu.architecture.
-  const currentClusterArchitecture = clusters.data?.find(
-    (cluster) => cluster.id === draft.clusterId,
-  )?.cpu?.architecture
+  const currentClusterArchitecture = draftCluster?.cpu?.architecture
   // The VM's cluster over-commit % drives the guaranteed derivation in System.
-  const overcommitPercent = clusters.data?.find((cluster) => cluster.id === draft.clusterId)
-    ?.memory_policy?.over_commit?.percent
+  const overcommitPercent = draftCluster?.memory_policy?.over_commit?.percent
 
   return (
     <Modal
@@ -389,7 +436,14 @@ export function EditVmModal({
               key: 'resource-allocation',
               title: t('vm.edit.section.resourceAllocation'),
               content: (
-                <ResourceAllocationSection draft={draft} set={set} cpuProfiles={cpuProfiles} />
+                <ResourceAllocationSection
+                  draft={draft}
+                  set={set}
+                  cpuProfiles={cpuProfiles}
+                  tpm={tpm}
+                  tpmAvailability={tpmGate}
+                  tpmRemovalPending={tpmRemoval}
+                />
               ),
             },
             {
@@ -423,6 +477,20 @@ export function EditVmModal({
           {t('common.action.cancel')}
         </Button>
       </ModalFooter>
+
+      {/* Stacked on the edit modal like the Next-Run dialog below; confirming
+          falls through to the Next-Run question for a running VM. */}
+      <ConfirmModal
+        title={t('vm.edit.resources.tpm.removeConfirm.title')}
+        body={t('vm.edit.resources.tpm.removeConfirm.body', { name: vm.name })}
+        confirmLabel={t('vm.edit.resources.tpm.removeConfirm.confirm')}
+        isOpen={confirmingTpmRemoval}
+        onConfirm={() => {
+          setConfirmingTpmRemoval(false)
+          saveOrAskNextRun()
+        }}
+        onCancel={() => setConfirmingTpmRemoval(false)}
+      />
 
       {confirmingNextRun && (
         <NextRunDialog

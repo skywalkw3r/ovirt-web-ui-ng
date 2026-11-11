@@ -34,8 +34,9 @@ import { MinusCircleIcon, PlusCircleIcon } from '@patternfly/react-icons'
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table'
 import { useNavigate } from '@tanstack/react-router'
 import type { CloudInitNicSpec, NewVmSpec } from '../../api/resources/vms'
-import { useClusters, useTemplates } from '../../hooks/useCatalog'
+import { useClusters, useOperatingSystems, useTemplates } from '../../hooks/useCatalog'
 import { useCreateVm } from '../../hooks/useCreateVm'
+import { useTemplateTpm } from '../../hooks/useVmTpm'
 import { useReconcileVmWatchdog, useTemplateWatchdogs } from '../../hooks/useVmWatchdogs'
 import { useT } from '../../i18n/useT'
 import { formatBytes } from '../../lib/format'
@@ -43,7 +44,10 @@ import { ConfirmModal } from '../ConfirmModal'
 import {
   DEFAULT_WATCHDOG_ACTION,
   WATCHDOG_ACTION_OPTIONS,
+  effectiveTpmEnabled,
   isWindowsOsType,
+  tpmAvailability,
+  tpmCreateValue,
   watchdogModelOptions,
 } from '../edit-vm/editVmDraft'
 import { FieldHelp } from '../forms/FieldHelp'
@@ -208,6 +212,38 @@ export function CreateVmWizardModal({
   const watchdogActionLabel =
     watchdogActionLabelId !== undefined ? t(watchdogActionLabelId) : watchdogAction
 
+  // TPM device (webadmin's Resource Allocation "TPM Device Enabled"; it sits
+  // on Resources with the watchdog). A VM inherits its template's device, so
+  // the toggle is seeded from the template's (the watchdog idiom above) until
+  // the user picks, and gated the way the Edit VM modal gates it: the new VM
+  // takes the template's chipset and guest OS and the chosen cluster's level,
+  // default firmware and architecture.
+  const [tpmEnabled, setTpmEnabled] = useState(false)
+  const [tpmTouched, setTpmTouched] = useState(false)
+  const templateTpm = useTemplateTpm(selectedTemplate?.id)
+  const [tpmSeededFor, setTpmSeededFor] = useState<string | null>(null)
+  if (
+    !tpmTouched &&
+    templateTpm.isSuccess &&
+    selectedTemplate !== undefined &&
+    tpmSeededFor !== selectedTemplate.id
+  ) {
+    setTpmSeededFor(selectedTemplate.id)
+    setTpmEnabled(templateTpm.data)
+  }
+  const tpmSeedPending = templateTpm.isPending && selectedTemplate !== undefined && !tpmTouched
+  const operatingSystems = useOperatingSystems()
+  const chosenCluster = clusters.data?.find((cluster) => cluster.name === clusterName)
+  const tpmGate = tpmAvailability({
+    clusterVersion: chosenCluster?.version,
+    architecture,
+    biosType: selectedTemplate?.bios?.type ?? '',
+    clusterBiosType: chosenCluster?.bios_type,
+    osTpmSupport: operatingSystems.data?.find((os) => os.name === selectedTemplate?.os?.type)
+      ?.tpm_support,
+  })
+  const tpmEffective = effectiveTpmEnabled(tpmEnabled, tpmGate)
+
   const updateNic = (index: number, patch: Partial<CloudInitNicSpec>) => {
     setNics((rows) => rows.map((nic, i) => (i === index ? { ...nic, ...patch } : nic)))
   }
@@ -309,6 +345,12 @@ export function CreateVmWizardModal({
               customScript: sysprepCustomScript.trim() || undefined,
             }
           : undefined,
+      // only a pick that differs from the template's device rides the POST
+      tpmEnabled: tpmCreateValue(
+        tpmEffective,
+        templateTpm.isSuccess ? templateTpm.data : undefined,
+        tpmTouched || tpmGate.state !== 'editable',
+      ),
     }
     // The watchdog is a subcollection device, set once the VM exists. Skipped
     // only when the template is KNOWN to carry none and nothing was picked.
@@ -644,6 +686,57 @@ export function CreateVmWizardModal({
                   ))}
                 </FormSelect>
               </FormGroup>
+              <FormGroup
+                label={t('vm.edit.resources.tpm')}
+                fieldId="new-vm-tpm"
+                labelHelp={
+                  <FieldHelp field={t('vm.edit.resources.tpm')} content={t('fieldHelp.vm.tpm')} />
+                }
+              >
+                {/* the template's device seeds the toggle: hold it (disabled,
+                    so it keeps its place) until that has loaded */}
+                <Switch
+                  id="new-vm-tpm"
+                  aria-label={t('vm.edit.resources.tpm')}
+                  isChecked={tpmEffective}
+                  isDisabled={tpmSeedPending || tpmGate.state !== 'editable'}
+                  onChange={(_event, checked) => {
+                    setTpmEnabled(checked)
+                    setTpmTouched(true)
+                  }}
+                />
+                {tpmSeedPending && (
+                  <FormHelperText>
+                    <HelperText>
+                      <HelperTextItem>{t('vm.edit.resources.tpm.loading')}</HelperTextItem>
+                    </HelperText>
+                  </FormHelperText>
+                )}
+                {tpmGate.state !== 'editable' && (
+                  <FormHelperText>
+                    <HelperText>
+                      <HelperTextItem>{t(tpmGate.reasonId)}</HelperTextItem>
+                    </HelperText>
+                  </FormHelperText>
+                )}
+                {templateTpm.isError && (
+                  <FormHelperText>
+                    <HelperText>
+                      <HelperTextItem variant="error">
+                        {t('vm.create.tpm.templateError', {
+                          message:
+                            templateTpm.error instanceof Error
+                              ? templateTpm.error.message
+                              : t('common.error.unknown'),
+                        })}{' '}
+                        <Button variant="link" isInline onClick={() => void templateTpm.refetch()}>
+                          {t('common.action.retry')}
+                        </Button>
+                      </HelperTextItem>
+                    </HelperText>
+                  </FormHelperText>
+                )}
+              </FormGroup>
             </Form>
           </WizardStep>
 
@@ -957,6 +1050,12 @@ export function CreateVmWizardModal({
                   <DescriptionListDescription>{watchdogActionLabel}</DescriptionListDescription>
                 </DescriptionListGroup>
               )}
+              <DescriptionListGroup>
+                <DescriptionListTerm>{t('vm.edit.resources.tpm')}</DescriptionListTerm>
+                <DescriptionListDescription>
+                  {tpmEffective ? t('common.yes') : t('common.no')}
+                </DescriptionListDescription>
+              </DescriptionListGroup>
               <DescriptionListGroup>
                 <DescriptionListTerm>
                   {windows

@@ -4526,4 +4526,23 @@ export const zhCN: LocaleCatalog = {
   'host.configureLocalStorage.outcome.undoStopped': '撤消部分设置时停止：{error}',
   'host.configureLocalStorage.outcome.rerunHint':
     '要完成配置，请在需要时将主机置于维护模式，然后再次运行“配置本地存储”；它会重新使用空的本地数据中心。',
+  // VM TPM device (Edit VM Resource Allocation, New VM wizard, General tab)
+  'vm.edit.resources.tpm': '启用 TPM 设备',
+  'vm.edit.resources.tpm.loading': '正在加载 TPM 设备',
+  'vm.edit.resources.tpm.error': '无法加载 TPM 设备；该设备保持不变。',
+  'vm.edit.resources.tpm.reason.version': '需要集群兼容版本 4.5 或更高',
+  'vm.edit.resources.tpm.reason.os': '不支持此客户机操作系统版本',
+  'vm.edit.resources.tpm.reason.architecture': '此 CPU 架构不支持',
+  'vm.edit.resources.tpm.reason.uefi': '仅适用于 UEFI 固件',
+  'vm.edit.resources.tpm.reason.required': '客户机操作系统要求使用 TPM 设备',
+  'vm.edit.resources.tpm.removalWarning': '保存后将移除 TPM 设备，其 TPM 数据将被删除且无法恢复。',
+  'vm.edit.resources.tpm.removeConfirm.title': '移除虚拟机 TPM 数据',
+  'vm.edit.resources.tpm.removeConfirm.body':
+    '将移除 {name} 的 TPM 设备，其当前 TPM 数据将被删除且无法恢复。要保留数据，请取消，并在保存前重新启用 TPM 设备。',
+  'vm.edit.resources.tpm.removeConfirm.confirm': '移除 TPM 数据',
+  'fieldHelp.vm.tpm':
+    '为虚拟机添加模拟的可信平台模块（TPM）。客户机用它来封存磁盘加密密钥并进行度量启动，部分客户机（Windows 11）必须使用它。在 x86 上需要 UEFI 固件。移除该设备会删除已存储的 TPM 数据。',
+  'vmGeneral.term.tpmEnabled': '已启用 TPM 设备',
+  'vm.create.tpm.templateError':
+    '无法加载模板的 TPM 设备：{message}。更改设置后，新虚拟机将完全使用此处选择的 TPM 设置。',
 }

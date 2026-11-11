@@ -120,6 +120,13 @@ export interface EditVmDraft {
   watchdogId: string
   watchdogModel: string
   watchdogAction: string
+  // Resource Allocation depth: the TPM device (tpm_enabled). The polled vm
+  // read never carries it (the engine fills it on an all_content read only),
+  // so vmToDraft seeds "not loaded" and the modal folds the dedicated read in
+  // (tpmDraftFields) into BOTH draft and baseline; tpmLoaded gates the toggle
+  // and the payload so an unread device is never written.
+  tpmLoaded: boolean
+  tpmEnabled: boolean
   // Resource Allocation depth — vNIC multi-queues + VirtIO-SCSI multi-queue
   // (0 queues = auto-derive from vCPUs/disks).
   multiQueuesEnabled: boolean
@@ -324,6 +331,9 @@ export function vmToDraft(vm: Vm): EditVmDraft {
     watchdogId: '',
     watchdogModel: '',
     watchdogAction: DEFAULT_WATCHDOG_ACTION,
+    // Seeded from the all_content read later (tpmDraftFields).
+    tpmLoaded: false,
+    tpmEnabled: false,
     multiQueuesEnabled: vm.multi_queues_enabled ?? true,
     virtioScsiMultiQueuesEnabled: vm.virtio_scsi_multi_queues_enabled ?? false,
     virtioScsiMultiQueues: vm.virtio_scsi_multi_queues ?? 0,
@@ -410,10 +420,140 @@ export function buildWatchdogChange(
   return watchdogChangeFor(current, { model: draft.watchdogModel, action: draft.watchdogAction })
 }
 
+// ── TPM device ───────────────────────────────────────────────────────────────
+
+// The draft fields for the loaded TPM state (the all_content read's
+// tpm_enabled), folded into draft and baseline by the modal.
+export function tpmDraftFields(enabled: boolean): Pick<EditVmDraft, 'tpmLoaded' | 'tpmEnabled'> {
+  return { tpmLoaded: true, tpmEnabled: enabled }
+}
+
+// Whether the TPM toggle can be edited, and why not when it cannot.
+// 'unavailable' forces the device off, 'required' forces it on.
+export type TpmAvailability =
+  | { state: 'editable' }
+  | { state: 'unavailable'; reasonId: MessageId }
+  | { state: 'required'; reasonId: MessageId }
+
+export interface TpmGateInput {
+  // The cluster's compatibility version.
+  clusterVersion?: { major?: number; minor?: number }
+  // The VM's CPU architecture (else its cluster's).
+  architecture?: string
+  // The VM's own bios.type; 'cluster_default' / '' follow clusterBiosType.
+  biosType: string
+  clusterBiosType?: string
+  // The guest OS's api-model TpmSupport ('supported' | 'unsupported' |
+  // 'required'), from /operatingsystems (4.5.2+).
+  osTpmSupport?: string
+}
+
+// UEFI firmware (engine BiosType.isOvmf): Q35 with UEFI, with or without
+// secure boot.
+const UEFI_BIOS_TYPES = ['q35_ovmf', 'q35_secure_boot']
+
+// The gate webadmin puts on "TPM Device Enabled" (UnitVmModel.updateTpmEnabled)
+// backed by the engine's own check (VmDeviceUtils.isTpmDeviceSupported):
+//  1. cluster level below 4.5: unavailable;
+//  2. the guest OS does not allow a TPM: unavailable;
+//  3. s390x: unavailable (the engine's TpmDeviceSupported config is false for
+//     s390x at every level; webadmin leaves this one to the engine);
+//  4. x86 without UEFI firmware: unavailable;
+//  5. the guest OS requires a TPM: forced on;
+//  6. otherwise editable.
+// An input that is not known (a catalog read still loading or failed, an
+// engine without tpm_support) never blocks: the engine validates the save.
+// Webadmin differs in one spot: for an OS that requires a TPM it also switches
+// the chipset to Q35 with UEFI itself, where this reports the firmware (4).
+export function tpmAvailability(input: TpmGateInput): TpmAvailability {
+  const { major, minor } = input.clusterVersion ?? {}
+  if (major !== undefined && minor !== undefined && (major < 4 || (major === 4 && minor < 5))) {
+    return { state: 'unavailable', reasonId: 'vm.edit.resources.tpm.reason.version' }
+  }
+  if (input.osTpmSupport === 'unsupported') {
+    return { state: 'unavailable', reasonId: 'vm.edit.resources.tpm.reason.os' }
+  }
+  if (input.architecture === 's390x') {
+    return { state: 'unavailable', reasonId: 'vm.edit.resources.tpm.reason.architecture' }
+  }
+  const followsCluster = input.biosType === '' || input.biosType === 'cluster_default'
+  const firmware = followsCluster ? input.clusterBiosType : input.biosType
+  if (
+    input.architecture === 'x86_64' &&
+    firmware !== undefined &&
+    firmware !== '' &&
+    firmware !== 'cluster_default' &&
+    !UEFI_BIOS_TYPES.includes(firmware)
+  ) {
+    return { state: 'unavailable', reasonId: 'vm.edit.resources.tpm.reason.uefi' }
+  }
+  if (input.osTpmSupport === 'required') {
+    return { state: 'required', reasonId: 'vm.edit.resources.tpm.reason.required' }
+  }
+  return { state: 'editable' }
+}
+
+// The TPM state the toggle shows and a save results in: the gate's forced
+// value, else the user's pick.
+export function effectiveTpmEnabled(enabled: boolean, availability: TpmAvailability): boolean {
+  if (availability.state === 'unavailable') return false
+  if (availability.state === 'required') return true
+  return enabled
+}
+
+// The draft a save sends, with the TPM gate applied. A required TPM is sent as
+// on. An unavailable one is NOT sent as off: the draft falls back to the
+// loaded value so the body carries no tpm_enabled, and the engine drops the
+// device itself when the saved VM cannot hold one (VmDeviceUtils
+// .updateTpmDevice). Only the user's own untick ever sends tpm_enabled false,
+// so a gate this console got wrong can never delete TPM data on its own.
+export function gatedTpmDraft(
+  draft: EditVmDraft,
+  baseline: EditVmDraft,
+  availability: TpmAvailability,
+): EditVmDraft {
+  if (!draft.tpmLoaded || availability.state === 'editable') return draft
+  const tpmEnabled = availability.state === 'required' ? true : baseline.tpmEnabled
+  return tpmEnabled === draft.tpmEnabled ? draft : { ...draft, tpmEnabled }
+}
+
+// Will this save remove a TPM device the VM has? Either the user unticked it
+// or the edit made it unavailable (for example a switch away from UEFI). The
+// engine deletes the VM's TPM data with the device, so the modal warns inline
+// and confirms before saving (webadmin's "Remove VM TPM data" confirmation).
+export function tpmRemovalPending(
+  draft: EditVmDraft,
+  baseline: EditVmDraft,
+  availability: TpmAvailability,
+): boolean {
+  return (
+    draft.tpmLoaded &&
+    baseline.tpmLoaded &&
+    baseline.tpmEnabled &&
+    !effectiveTpmEnabled(draft.tpmEnabled, availability)
+  )
+}
+
+// The tpm_enabled a New VM create sends, or undefined to let the engine copy
+// the template's device (BackendVmsResource: an unset tpm_enabled inherits the
+// template's). With the template's device known, only a difference is sent.
+// With it unknown (its read still loading or failed) the value is sent only
+// when it was decided here: the user touched the toggle or the gate forced it.
+export function tpmCreateValue(
+  effective: boolean,
+  inherited: boolean | undefined,
+  decided: boolean,
+): boolean | undefined {
+  if (inherited !== undefined) return effective !== inherited ? effective : undefined
+  return decided ? effective : undefined
+}
+
 // Keys vmFieldsChanged ignores: the watchdog and the CD, which each ride their
 // own subcollection (the CD tray id is also seeded into the draft alone on
-// open; a real CD pick is cdTouched + attachedCdId, see buildCdromChange).
+// open; a real CD pick is cdTouched + attachedCdId, see buildCdromChange), and
+// the TPM "loaded" marker, which is read state and never part of the body.
 const NON_VM_DRAFT_KEYS: ReadonlySet<keyof EditVmDraft> = new Set([
+  'tpmLoaded',
   'watchdogLoaded',
   'watchdogId',
   'watchdogModel',
@@ -607,6 +747,14 @@ function applyChangedSections(
   if (draft.ioThreads !== baseline.ioThreads) payload.io = { threads: draft.ioThreads }
   if (draft.virtioScsiEnabled !== baseline.virtioScsiEnabled) {
     payload.virtio_scsi = { enabled: draft.virtioScsiEnabled }
+  }
+
+  // Resource Allocation depth: the TPM device. Sent only when the device was
+  // read and the toggle moved (BackendVmResource applies tpm_enabled when set
+  // and leaves the device alone when it is absent). Turning it off deletes the
+  // VM's TPM data, which the modal confirms first (tpmRemovalPending).
+  if (draft.tpmLoaded && baseline.tpmLoaded && draft.tpmEnabled !== baseline.tpmEnabled) {
+    payload.tpm_enabled = draft.tpmEnabled
   }
 
   // Random Generator — enabling or re-tuning sends the device object; DISABLING
@@ -933,6 +1081,11 @@ const NEXT_RUN_KEYS: (keyof EditVmDraft)[] = [
   // so a running VM picks the change up on its next start.
   'watchdogModel',
   'watchdogAction',
+  // Resource Allocation depth: the TPM is a device the engine marks editable
+  // on status Down only (VmManagementParametersBase.tpmEnabled carries
+  // @EditableDeviceOnVmStatusField with the default statuses), so on a running
+  // VM the change is staged for the next start.
+  'tpmEnabled',
   // Resource Allocation depth — queue counts bind to devices at boot.
   'multiQueuesEnabled',
   'virtioScsiMultiQueuesEnabled',

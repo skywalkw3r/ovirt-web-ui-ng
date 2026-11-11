@@ -4974,4 +4974,24 @@ export const ru: LocaleCatalog = {
   'host.configureLocalStorage.outcome.undoStopped': 'Отмена частичной настройки прервана: {error}',
   'host.configureLocalStorage.outcome.rerunHint':
     'Чтобы завершить, при необходимости переведите хост в режим обслуживания и снова запустите «Настроить локальное хранилище»; будет повторно использован пустой локальный дата-центр.',
+  // VM TPM device (Edit VM Resource Allocation, New VM wizard, General tab)
+  'vm.edit.resources.tpm': 'Устройство TPM включено',
+  'vm.edit.resources.tpm.loading': 'Загрузка устройства TPM',
+  'vm.edit.resources.tpm.error': 'Не удалось загрузить устройство TPM; оно остаётся без изменений.',
+  'vm.edit.resources.tpm.reason.version': 'Доступно начиная с версии совместимости кластера 4.5',
+  'vm.edit.resources.tpm.reason.os': 'Версия гостевой ОС не поддерживается',
+  'vm.edit.resources.tpm.reason.architecture': 'Не поддерживается на этой архитектуре ЦП',
+  'vm.edit.resources.tpm.reason.uefi': 'Доступно только с прошивкой UEFI',
+  'vm.edit.resources.tpm.reason.required': 'Гостевой ОС требуется устройство TPM',
+  'vm.edit.resources.tpm.removalWarning':
+    'При сохранении устройство TPM будет удалено, а его данные TPM безвозвратно стёрты.',
+  'vm.edit.resources.tpm.removeConfirm.title': 'Удаление данных TPM ВМ',
+  'vm.edit.resources.tpm.removeConfirm.body':
+    'Устройство TPM ВМ {name} будет удалено, а его текущие данные TPM безвозвратно стёрты. Чтобы сохранить данные, отмените действие и снова включите устройство TPM перед сохранением.',
+  'vm.edit.resources.tpm.removeConfirm.confirm': 'Удалить данные TPM',
+  'fieldHelp.vm.tpm':
+    'Добавляет в ВМ эмулируемый доверенный платформенный модуль (TPM). Гостевые системы используют его для защиты ключей шифрования дисков и измеряемой загрузки, а некоторым (Windows 11) он обязателен. На x86 требуется прошивка UEFI. При удалении устройства сохранённые данные TPM стираются.',
+  'vmGeneral.term.tpmEnabled': 'Устройство TPM включено',
+  'vm.create.tpm.templateError':
+    'Не удалось загрузить устройство TPM шаблона: {message}. Новая ВМ получит именно ту настройку TPM, которая выбрана здесь, как только вы её измените.',
 }

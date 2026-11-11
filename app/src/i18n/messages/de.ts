@@ -4842,4 +4842,25 @@ export const de: LocaleCatalog = {
     'Das Rückgängigmachen der teilweisen Einrichtung wurde abgebrochen: {error}',
   'host.configureLocalStorage.outcome.rerunHint':
     'Versetzen Sie zum Abschließen den Host bei Bedarf in die Wartung und führen Sie „Lokalen Speicher konfigurieren“ erneut aus; dabei wird das leere lokale Rechenzentrum wiederverwendet.',
+  // VM TPM device (Edit VM Resource Allocation, New VM wizard, General tab)
+  'vm.edit.resources.tpm': 'TPM-Gerät aktiviert',
+  'vm.edit.resources.tpm.loading': 'TPM-Gerät wird geladen',
+  'vm.edit.resources.tpm.error':
+    'Das TPM-Gerät konnte nicht geladen werden; es bleibt unverändert.',
+  'vm.edit.resources.tpm.reason.version': 'Verfügbar ab Cluster-Kompatibilitätsversion 4.5',
+  'vm.edit.resources.tpm.reason.os': 'Die Version des Gast-Betriebssystems wird nicht unterstützt',
+  'vm.edit.resources.tpm.reason.architecture': 'Auf dieser CPU-Architektur nicht unterstützt',
+  'vm.edit.resources.tpm.reason.uefi': 'Nur mit UEFI-Firmware verfügbar',
+  'vm.edit.resources.tpm.reason.required': 'Das Gast-Betriebssystem erfordert ein TPM-Gerät',
+  'vm.edit.resources.tpm.removalWarning':
+    'Beim Speichern wird das TPM-Gerät entfernt und seine TPM-Daten werden unwiederbringlich gelöscht.',
+  'vm.edit.resources.tpm.removeConfirm.title': 'TPM-Daten der VM entfernen',
+  'vm.edit.resources.tpm.removeConfirm.body':
+    'Das TPM-Gerät von {name} wird entfernt und die aktuellen TPM-Daten werden unwiederbringlich gelöscht. Um die Daten zu behalten, brechen Sie ab und aktivieren Sie das TPM-Gerät vor dem Speichern wieder.',
+  'vm.edit.resources.tpm.removeConfirm.confirm': 'TPM-Daten entfernen',
+  'fieldHelp.vm.tpm':
+    'Fügt der VM ein emuliertes Trusted Platform Module (TPM) hinzu. Gäste nutzen es, um Schlüssel der Datenträgerverschlüsselung zu versiegeln und für Measured Boot, und manche (Windows 11) setzen es voraus. Auf x86 ist UEFI-Firmware erforderlich. Beim Entfernen des Geräts werden die gespeicherten TPM-Daten gelöscht.',
+  'vmGeneral.term.tpmEnabled': 'TPM-Gerät aktiviert',
+  'vm.create.tpm.templateError':
+    'Das TPM-Gerät der Vorlage konnte nicht geladen werden: {message}. Die neue VM erhält genau die hier gewählte TPM-Einstellung, sobald Sie sie ändern.',
 }

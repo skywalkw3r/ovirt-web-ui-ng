@@ -4737,4 +4737,24 @@ export const tr: LocaleCatalog = {
   'host.configureLocalStorage.outcome.undoStopped': 'Kısmi kurulumun geri alınması durdu: {error}',
   'host.configureLocalStorage.outcome.rerunHint':
     'Tamamlamak için gerekirse ana makineyi bakıma alın ve "Yerel depolamayı yapılandır" işlemini yeniden çalıştırın; boş yerel veri merkezi yeniden kullanılır.',
+  // VM TPM device (Edit VM Resource Allocation, New VM wizard, General tab)
+  'vm.edit.resources.tpm': 'TPM Aygıtı Etkin',
+  'vm.edit.resources.tpm.loading': 'TPM aygıtı yükleniyor',
+  'vm.edit.resources.tpm.error': 'TPM aygıtı yüklenemedi; değiştirilmeden bırakıldı.',
+  'vm.edit.resources.tpm.reason.version': 'Küme uyumluluk sürümü 4.5 ve üzerinde kullanılabilir',
+  'vm.edit.resources.tpm.reason.os': 'Konuk işletim sistemi sürümü desteklenmiyor',
+  'vm.edit.resources.tpm.reason.architecture': 'Bu CPU mimarisinde desteklenmiyor',
+  'vm.edit.resources.tpm.reason.uefi': 'Yalnızca UEFI üretici yazılımıyla kullanılabilir',
+  'vm.edit.resources.tpm.reason.required': 'Konuk işletim sistemi bir TPM aygıtı gerektiriyor',
+  'vm.edit.resources.tpm.removalWarning':
+    'Kaydetmek TPM aygıtını kaldırır ve TPM verilerini geri alınamaz biçimde siler.',
+  'vm.edit.resources.tpm.removeConfirm.title': 'VM TPM verilerini kaldır',
+  'vm.edit.resources.tpm.removeConfirm.body':
+    '{name} adlı VM’nin TPM aygıtı kaldırılacak ve geçerli TPM verileri geri alınamaz biçimde silinecek. Verileri korumak için iptal edin ve kaydetmeden önce TPM aygıtını yeniden etkinleştirin.',
+  'vm.edit.resources.tpm.removeConfirm.confirm': 'TPM verilerini kaldır',
+  'fieldHelp.vm.tpm':
+    'VM’ye öykünülmüş bir Güvenilir Platform Modülü (TPM) ekler. Konuklar bunu disk şifreleme anahtarlarını mühürlemek ve ölçülü önyükleme için kullanır; bazıları (Windows 11) bunu zorunlu tutar. x86 üzerinde UEFI üretici yazılımı gerekir. Aygıtın kaldırılması, saklanan TPM verilerini siler.',
+  'vmGeneral.term.tpmEnabled': 'TPM Aygıtı Etkin',
+  'vm.create.tpm.templateError':
+    'Şablonun TPM aygıtı yüklenemedi: {message}. Ayarı değiştirdiğinizde yeni VM tam olarak burada seçilen TPM ayarını alır.',
 }

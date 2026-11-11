@@ -3,6 +3,7 @@ import {
   Button,
   Form,
   FormGroup,
+  FormHelperText,
   FormSelect,
   FormSelectOption,
   HelperText,
@@ -19,21 +20,36 @@ import {
   CPU_SHARES_CUSTOM,
   CPU_SHARES_PRESETS,
   type EditVmDraft,
+  effectiveTpmEnabled,
   isCpuSharesPreset,
+  type TpmAvailability,
 } from './editVmDraft'
 
 // Resource Allocation section of the Edit Virtual Machine modal: CPU profile
 // (fed by the cluster's cpuprofiles query, all four states designed), CPU
-// shares (preset buckets + custom integer), memory balloon, IO threads and
-// VirtIO-SCSI. Presentational — the modal owns the draft and the query.
+// shares (preset buckets + custom integer), memory balloon, the TPM device, IO
+// threads and VirtIO-SCSI. Presentational — the modal owns the draft and the
+// queries.
 export function ResourceAllocationSection({
   draft,
   set,
   cpuProfiles,
+  tpm,
+  tpmAvailability,
+  tpmRemovalPending,
 }: {
   draft: EditVmDraft
   set: <K extends keyof EditVmDraft>(key: K, value: EditVmDraft[K]) => void
   cpuProfiles: UseQueryResult<ClusterCpuProfile[]>
+  // The VM's TPM read the modal seeds the draft from, here only for the
+  // loading/error states: the toggle stays disabled until the draft holds the
+  // loaded value (draft.tpmLoaded), so a pick can never race the seed.
+  tpm: UseQueryResult<boolean>
+  // Whether the firmware / guest OS / cluster allow the toggle (the modal
+  // derives it from the draft), and whether this save would remove a TPM
+  // device the VM has.
+  tpmAvailability: TpmAvailability
+  tpmRemovalPending: boolean
 }) {
   const t = useT()
   // Once the user picks "Custom" the select stays on it even if they then type
@@ -164,6 +180,59 @@ export function ResourceAllocationSection({
           isChecked={draft.memoryBalloonEnabled}
           onChange={(_event, checked) => set('memoryBalloonEnabled', checked)}
         />
+      </FormGroup>
+
+      {/* TPM device (webadmin's Resource Allocation "TPM Device Enabled").
+          Rides the vm PUT as tpm_enabled; disabled with the reason when the
+          firmware, guest OS or cluster level cannot hold one. */}
+      <FormGroup
+        label={t('vm.edit.resources.tpm')}
+        fieldId="edit-vm-tpm"
+        labelHelp={<FieldHelp field={t('vm.edit.resources.tpm')} content={t('fieldHelp.vm.tpm')} />}
+      >
+        {tpm.isPending && !draft.tpmLoaded ? (
+          <Skeleton
+            height="1.5rem"
+            width="3rem"
+            screenreaderText={t('vm.edit.resources.tpm.loading')}
+          />
+        ) : (
+          <Switch
+            id="edit-vm-tpm"
+            aria-label={t('vm.edit.resources.tpm')}
+            isChecked={effectiveTpmEnabled(draft.tpmEnabled, tpmAvailability)}
+            isDisabled={!draft.tpmLoaded || tpmAvailability.state !== 'editable'}
+            onChange={(_event, checked) => set('tpmEnabled', checked)}
+          />
+        )}
+        {draft.tpmLoaded && tpmAvailability.state !== 'editable' && (
+          <FormHelperText>
+            <HelperText>
+              <HelperTextItem>{t(tpmAvailability.reasonId)}</HelperTextItem>
+            </HelperText>
+          </FormHelperText>
+        )}
+        {tpmRemovalPending && (
+          <FormHelperText>
+            <HelperText>
+              <HelperTextItem variant="warning" data-testid="tpm-removal-warning">
+                {t('vm.edit.resources.tpm.removalWarning')}
+              </HelperTextItem>
+            </HelperText>
+          </FormHelperText>
+        )}
+        {tpm.isError && !draft.tpmLoaded && (
+          <FormHelperText>
+            <HelperText>
+              <HelperTextItem variant="error">
+                {t('vm.edit.resources.tpm.error')}{' '}
+                <Button variant="link" isInline onClick={() => void tpm.refetch()}>
+                  {t('common.action.retry')}
+                </Button>
+              </HelperTextItem>
+            </HelperText>
+          </FormHelperText>
+        )}
       </FormGroup>
 
       <FormGroup

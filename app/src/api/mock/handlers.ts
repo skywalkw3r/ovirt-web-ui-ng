@@ -750,8 +750,10 @@ interface MockCluster {
   id: string
   name: string
   description?: string
-  cpu?: { type?: string }
+  cpu?: { type?: string; architecture?: string }
   version?: { major?: number | string; minor?: number | string }
+  // default chipset/firmware (the TPM gate resolves cluster_default with it)
+  bios_type?: string
   // virt-only clusters answer 404 for the glustervolumes subcollection
   gluster_service?: boolean
   // bare { id } link on flat list reads, like the live engine (the Hosts &
@@ -1318,6 +1320,9 @@ const initialVms = (): MockVm[] => [
     memory: 8 * GiB,
     os: { type: 'windows_2022' },
     cluster: { id: 'cluster-01' },
+    // UEFI with secure boot (the cluster default is SeaBIOS): the one fixture
+    // that carries a TPM device (initialTpmDevices), which needs UEFI on x86
+    bios: { type: 'q35_secure_boot' },
   },
   {
     id: 'vm-07',
@@ -3236,18 +3241,24 @@ const diskPermissions: Record<string, MockHostPermission[]> = {
 interface MockOperatingSystem {
   name: string
   description?: string
+  // api-model TpmSupport (4.5.2+), from the engine's osinfo devices.tpm value
+  tpm_support?: string
 }
 
+// tpm_support mirrors osinfo-defaults.properties: `other` (and other_linux,
+// which derives from it) is unsupported, RHEL 7+ and Windows 8+ are supported,
+// Windows 11 requires a TPM.
 const operatingSystems: MockOperatingSystem[] = [
-  { name: 'rhel_8x64', description: 'Red Hat Enterprise Linux 8.x x64' },
-  { name: 'rhel_9x64', description: 'Red Hat Enterprise Linux 9.x x64' },
-  { name: 'other_linux', description: 'Other Linux' },
-  { name: 'windows_2022', description: 'Windows Server 2022' },
-  { name: 'other', description: 'Other OS' },
+  { name: 'rhel_8x64', description: 'Red Hat Enterprise Linux 8.x x64', tpm_support: 'supported' },
+  { name: 'rhel_9x64', description: 'Red Hat Enterprise Linux 9.x x64', tpm_support: 'supported' },
+  { name: 'other_linux', description: 'Other Linux', tpm_support: 'unsupported' },
+  { name: 'windows_2022', description: 'Windows Server 2022', tpm_support: 'supported' },
+  { name: 'windows_11', description: 'Windows 11', tpm_support: 'required' },
+  { name: 'other', description: 'Other OS', tpm_support: 'unsupported' },
   // Live engines list the generic entries once PER ARCHITECTURE with the same
   // name — these repeats exercise listOperatingSystems' dedupe-by-name.
-  { name: 'other', description: 'Other OS' },
-  { name: 'other_linux', description: 'Other Linux' },
+  { name: 'other', description: 'Other OS', tpm_support: 'unsupported' },
+  { name: 'other_linux', description: 'Other Linux', tpm_support: 'unsupported' },
 ]
 
 const templates: MockTemplate[] = [
@@ -3395,8 +3406,10 @@ export const clusters: MockCluster[] = [
     id: 'cluster-01',
     name: 'Default',
     description: 'The default server cluster',
-    cpu: { type: 'Secure Intel Cascadelake Server Family' },
+    cpu: { type: 'Secure Intel Cascadelake Server Family', architecture: 'x86_64' },
     version: { major: 4, minor: 7 },
+    // the default chipset/firmware rides the list too (the TPM gate reads it)
+    bios_type: 'q35_sea_bios',
     gluster_service: false,
     data_center: { id: 'dc-01' },
   },
@@ -3404,9 +3417,10 @@ export const clusters: MockCluster[] = [
     id: 'cluster-02',
     name: 'lab-nested',
     description: 'Nested-virtualization lab cluster',
-    cpu: { type: 'Secure Intel Cascadelake Server Family' },
+    cpu: { type: 'Secure Intel Cascadelake Server Family', architecture: 'x86_64' },
     // string version parts exercise z.coerce.number()
     version: { major: '4', minor: '7' },
+    bios_type: 'q35_ovmf',
     gluster_service: true,
     data_center: { id: 'dc-01' },
   },
@@ -6014,6 +6028,7 @@ export function resetMockVms(): void {
   restoreInPlace(clusters, pristineClusters)
   restoreRecordInPlace(clusterDetails, pristineClusterDetails)
   vms = allInitialVms()
+  tpmDevices = initialTpmDevices()
   snapshots = initialSnapshots()
   disks = initialDisks()
   nics = initialNics()
@@ -6133,6 +6148,42 @@ const ACTIONS: Record<
   cancelmigration: { allowed: canCancelMigration, final: 'up' },
 }
 
+// The VMs and templates that carry a TPM device (the engine keeps it in the
+// device table, not on the entity). vm-06 is Windows on UEFI with secure boot;
+// tpl-02 is the Windows template the New VM wizard seeds its toggle from.
+const initialTpmDevices = (): Set<string> => new Set(['vm-06', 'tpl-02'])
+let tpmDevices = initialTpmDevices()
+
+// The engine fills tpm_enabled only on an all_content read
+// (BackendVmResource.doPopulate), so the plain reads the app polls never
+// carry it.
+function withTpm<T extends { id: string }>(entity: T, query: URLSearchParams | undefined): T {
+  return query?.get('all_content') === 'true'
+    ? { ...entity, tpm_enabled: tpmDevices.has(entity.id) }
+    : entity
+}
+
+// VmDeviceUtils.isTpmDeviceSupported, reduced to what the fixtures model (all
+// x86_64, level 4.7): the guest OS must allow a TPM and the firmware, the
+// VM's own or its cluster's default, must be UEFI.
+function vmSupportsTpm(vm: MockVm): boolean {
+  const os = operatingSystems.find((entry) => entry.name === vm.os?.type)
+  if (os?.tpm_support === 'unsupported') return false
+  const cluster = clusters.find((c) => c.id === vm.cluster?.id || c.name === vm.cluster?.name)
+  const own = vm.bios?.type
+  const firmware = own !== undefined && own !== 'cluster_default' ? own : cluster?.bios_type
+  return firmware === 'q35_ovmf' || firmware === 'q35_secure_boot'
+}
+
+function tpmNotSupported(action: string): ApiError {
+  // AppErrors TPM_DEVICE_REQUESTED_ON_NOT_SUPPORTED_PLATFORM
+  return new ApiError(
+    409,
+    'Operation Failed',
+    `Cannot ${action} VM. TPM device is not supported on 'x86_64' architecture, or for the guest OS, or UEFI firmware is not enabled, or insufficient compatibility level (4.6 required by default).`,
+  )
+}
+
 function requireVm(id: string): MockVm {
   const vm = vms.find((v) => v.id === id)
   if (!vm) throw new ApiError(404, 'Not Found', `no VM with id ${id}`)
@@ -6182,6 +6233,7 @@ function addVm(body: unknown): unknown {
     cluster?: { id?: string; name?: string }
     memory?: number
     snapshots?: { snapshot?: { id?: string }[] }
+    tpm_enabled?: boolean | string
   }
   if (!spec.name) {
     throw new ApiError(400, 'Incomplete parameters', 'Vm [name] required for add')
@@ -6201,6 +6253,15 @@ function addVm(body: unknown): unknown {
     os: template?.os,
     cluster: spec.cluster,
   }
+  // TPM: an explicit tpm_enabled wins, else the new VM inherits the
+  // template's device (BackendVmsResource.add). Either way the engine refuses
+  // a TPM the VM cannot hold (AddVmCommand validation).
+  const wantsTpm =
+    spec.tpm_enabled !== undefined
+      ? spec.tpm_enabled === true || spec.tpm_enabled === 'true'
+      : template !== undefined && tpmDevices.has(template.id)
+  if (wantsTpm && !vmSupportsTpm(vm)) throw tpmNotSupported('add')
+  if (wantsTpm) tpmDevices.add(vm.id)
   vms.push(vm)
   // Seed the per-VM collections so the detail routes work for new VMs too.
   snapshots.set(vm.id, [activeSnapshot(vm.id)])
@@ -6226,6 +6287,7 @@ function removeVm(id: string): unknown {
     )
   }
   vms = vms.filter((v) => v.id !== id)
+  tpmDevices.delete(id)
   snapshots.delete(id)
   disks.delete(id)
   nics.delete(id)
@@ -6252,6 +6314,20 @@ function updateVm(id: string, body: unknown, query?: URLSearchParams): unknown {
     delete vm.rng_device
     delete patch.rng_device
   }
+  // tpm_enabled is not stored on the entity: it adds or removes the TPM device
+  // (and with it the VM's TPM data). The engine refuses a TPM the edited VM
+  // cannot hold, and drops an existing one when an edit (say a switch away
+  // from UEFI) leaves it unsupported (VmDeviceUtils.updateTpmDevice).
+  const tpmEnabled = (patch as { tpm_enabled?: boolean | string }).tpm_enabled
+  delete (patch as { tpm_enabled?: unknown }).tpm_enabled
+  const wantsTpm =
+    tpmEnabled !== undefined ? tpmEnabled === true || tpmEnabled === 'true' : tpmDevices.has(id)
+  const edited = { ...vm, ...patch }
+  if (tpmEnabled !== undefined && wantsTpm && !vmSupportsTpm(edited)) {
+    throw tpmNotSupported('edit')
+  }
+  if (wantsTpm && vmSupportsTpm(edited)) tpmDevices.add(id)
+  else tpmDevices.delete(id)
   Object.assign(vm, patch)
   if (query?.get('next_run') === 'true') {
     vm.next_run_configuration_exists = true
@@ -11700,7 +11776,11 @@ const routes: MockRoute[] = [
       }
     },
   },
-  { method: 'GET', pattern: /^\/vms\/([^/]+)$/, handle: ([id]) => requireVm(id) },
+  {
+    method: 'GET',
+    pattern: /^\/vms\/([^/]+)$/,
+    handle: ([id], _body, query) => withTpm(requireVm(id), query),
+  },
   {
     method: 'GET',
     pattern: /^\/vms\/([^/]+)\/snapshots$/,
@@ -12287,7 +12367,7 @@ const routes: MockRoute[] = [
   {
     method: 'GET',
     pattern: /^\/templates\/([^/]+)$/,
-    handle: ([id]) => requireTemplateDetail(id),
+    handle: ([id], _body, query) => withTpm(requireTemplateDetail(id), query),
   },
   {
     method: 'PUT',

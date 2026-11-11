@@ -4812,4 +4812,26 @@ export const it: LocaleCatalog = {
     "L'annullamento della configurazione parziale si è interrotto: {error}",
   'host.configureLocalStorage.outcome.rerunHint':
     "Per completare, metti l'host in manutenzione se necessario ed esegui di nuovo “Configura storage locale”; il data center locale vuoto verrà riutilizzato.",
+  // VM TPM device (Edit VM Resource Allocation, New VM wizard, General tab)
+  'vm.edit.resources.tpm': 'Dispositivo TPM abilitato',
+  'vm.edit.resources.tpm.loading': 'Caricamento del dispositivo TPM',
+  'vm.edit.resources.tpm.error':
+    'Impossibile caricare il dispositivo TPM; viene lasciato invariato.',
+  'vm.edit.resources.tpm.reason.version':
+    'Disponibile dalla versione di compatibilità 4.5 del cluster',
+  'vm.edit.resources.tpm.reason.os': 'La versione del sistema operativo guest non è supportata',
+  'vm.edit.resources.tpm.reason.architecture': 'Non supportato su questa architettura CPU',
+  'vm.edit.resources.tpm.reason.uefi': 'Disponibile solo con firmware UEFI',
+  'vm.edit.resources.tpm.reason.required': 'Il sistema operativo guest richiede un dispositivo TPM',
+  'vm.edit.resources.tpm.removalWarning':
+    'Il salvataggio rimuove il dispositivo TPM ed elimina in modo irreversibile i suoi dati TPM.',
+  'vm.edit.resources.tpm.removeConfirm.title': 'Rimuovi i dati TPM della VM',
+  'vm.edit.resources.tpm.removeConfirm.body':
+    'Il dispositivo TPM di {name} verrà rimosso e i suoi dati TPM attuali saranno eliminati in modo irreversibile. Per conservare i dati, annulla e riabilita il dispositivo TPM prima di salvare.',
+  'vm.edit.resources.tpm.removeConfirm.confirm': 'Rimuovi dati TPM',
+  'fieldHelp.vm.tpm':
+    "Aggiunge alla VM un Trusted Platform Module (TPM) emulato. I guest lo usano per sigillare le chiavi di cifratura dei dischi e per l'avvio misurato, e alcuni (Windows 11) lo richiedono. Su x86 serve il firmware UEFI. La rimozione del dispositivo elimina i dati TPM memorizzati.",
+  'vmGeneral.term.tpmEnabled': 'Dispositivo TPM abilitato',
+  'vm.create.tpm.templateError':
+    "Impossibile caricare il dispositivo TPM del modello: {message}. La nuova VM riceve esattamente l'impostazione TPM scelta qui non appena la modifichi.",
 }
