@@ -4950,4 +4950,22 @@ export const de: LocaleCatalog = {
     'Das Rückgängigmachen der teilweisen Einrichtung wurde abgebrochen: {error}',
   'host.configureLocalStorage.outcome.rerunHint':
     'Versetzen Sie zum Abschließen den Host bei Bedarf in die Wartung und führen Sie „Lokalen Speicher konfigurieren“ erneut aus; dabei wird das leere lokale Rechenzentrum wiederverwendet.',
+  // Configure aggregate entry point (pages/ConfigurePage.tsx): the webadmin
+  // Administration › Configure index linking to its five surfaces.
+  'nav.configure': 'Konfigurieren',
+  'configure.title': 'Konfigurieren',
+  'configure.intro':
+    'Engine-weite Definitionen, die alle Rechenzentren und Cluster gemeinsam nutzen. Jede öffnet sich auf einer eigenen Seite.',
+  'configure.loading': 'Konfigurationsbereiche werden geladen',
+  'configure.notPermitted': 'die Systemkonfiguration',
+  'configure.list.ariaLabel': 'Konfigurationsbereiche',
+  'configure.card.roles':
+    'Rollen und die Berechtigungen festlegen, die sie Benutzern und Administratoren gewähren.',
+  'configure.card.systemPermissions': 'Benutzern und Gruppen systemweit Rollen zuweisen.',
+  'configure.card.schedulingPolicies':
+    'Die Filter-, Gewichtungs- und Lastausgleichsregeln verwalten, mit denen Cluster VMs platzieren.',
+  'configure.card.instanceTypes':
+    'Wiederverwendbare Hardwareprofile für neue virtuelle Maschinen festlegen.',
+  'configure.card.macPools':
+    'Die MAC-Adressbereiche verwalten, die virtuellen NICs zugewiesen werden.',
 }

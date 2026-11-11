@@ -4787,4 +4787,19 @@ export const ko: LocaleCatalog = {
   'host.configureLocalStorage.outcome.undoStopped': '부분 설정 취소가 중단되었습니다: {error}',
   'host.configureLocalStorage.outcome.rerunHint':
     '완료하려면 필요한 경우 호스트를 유지 관리 모드로 전환한 후 "로컬 스토리지 구성"을 다시 실행하십시오. 빈 로컬 데이터 센터가 다시 사용됩니다.',
+  // Configure aggregate entry point (pages/ConfigurePage.tsx): the webadmin
+  // Administration › Configure index linking to its five surfaces.
+  'nav.configure': '구성',
+  'configure.title': '구성',
+  'configure.intro':
+    '모든 데이터 센터와 클러스터가 공유하는 엔진 전체 정의입니다. 각 항목은 자체 페이지에서 열립니다.',
+  'configure.loading': '구성 영역 로드 중',
+  'configure.notPermitted': '시스템 구성',
+  'configure.list.ariaLabel': '구성 영역',
+  'configure.card.roles': '역할과 각 역할이 사용자 및 관리자에게 부여하는 권한을 정의합니다.',
+  'configure.card.systemPermissions': '시스템 전체에서 사용자와 그룹에 역할을 할당합니다.',
+  'configure.card.schedulingPolicies':
+    '클러스터가 VM을 배치할 때 사용하는 필터, 가중치, 밸런싱 규칙을 관리합니다.',
+  'configure.card.instanceTypes': '새 가상 머신에 재사용할 하드웨어 프로필을 정의합니다.',
+  'configure.card.macPools': '가상 NIC에 할당되는 MAC 주소 범위를 관리합니다.',
 }

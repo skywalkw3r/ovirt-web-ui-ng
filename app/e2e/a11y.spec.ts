@@ -244,3 +244,15 @@ test('User detail page has no serious accessibility violations as admin', async 
 
   await expectNoSeriousViolations(page)
 })
+
+test('Configure page has no serious accessibility violations as admin', async ({ page }) => {
+  // The Administration › Configure index: five cards, each an h2 link plus a
+  // description, in a labelled list.
+  await login(page, { path: '/configure' })
+  await expect(page.getByRole('heading', { name: 'Configure', level: 1 })).toBeVisible()
+  await expect(
+    page.getByRole('list', { name: 'Configuration areas' }).getByRole('listitem'),
+  ).toHaveCount(5)
+
+  await expectNoSeriousViolations(page)
+})

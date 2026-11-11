@@ -5079,4 +5079,22 @@ export const ru: LocaleCatalog = {
   'host.configureLocalStorage.outcome.undoStopped': 'Отмена частичной настройки прервана: {error}',
   'host.configureLocalStorage.outcome.rerunHint':
     'Чтобы завершить, при необходимости переведите хост в режим обслуживания и снова запустите «Настроить локальное хранилище»; будет повторно использован пустой локальный дата-центр.',
+  // Configure aggregate entry point (pages/ConfigurePage.tsx): the webadmin
+  // Administration › Configure index linking to its five surfaces.
+  'nav.configure': 'Конфигурация',
+  'configure.title': 'Конфигурация',
+  'configure.intro':
+    'Общие для всего движка определения, используемые всеми центрами данных и кластерами. Каждое открывается на отдельной странице.',
+  'configure.loading': 'Загрузка разделов конфигурации',
+  'configure.notPermitted': 'системной конфигурации',
+  'configure.list.ariaLabel': 'Разделы конфигурации',
+  'configure.card.roles':
+    'Определение ролей и разрешений, которые каждая из них предоставляет пользователям и администраторам.',
+  'configure.card.systemPermissions':
+    'Назначение ролей пользователям и группам на уровне всей системы.',
+  'configure.card.schedulingPolicies':
+    'Управление правилами фильтрации, весов и балансировки, по которым кластеры размещают ВМ.',
+  'configure.card.instanceTypes':
+    'Определение многократно используемых профилей оборудования для новых виртуальных машин.',
+  'configure.card.macPools': 'Управление диапазонами MAC-адресов, назначаемых виртуальным NIC.',
 }

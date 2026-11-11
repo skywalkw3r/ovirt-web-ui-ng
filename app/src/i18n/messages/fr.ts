@@ -4925,4 +4925,22 @@ export const fr: LocaleCatalog = {
     "L'annulation de la configuration partielle s'est arrêtée : {error}",
   'host.configureLocalStorage.outcome.rerunHint':
     "Pour terminer, mettez l'hôte en maintenance si nécessaire et relancez « Configurer le stockage local » ; le centre de données local vide sera réutilisé.",
+  // Configure aggregate entry point (pages/ConfigurePage.tsx): the webadmin
+  // Administration › Configure index linking to its five surfaces.
+  'nav.configure': 'Configurer',
+  'configure.title': 'Configurer',
+  'configure.intro':
+    "Définitions à l'échelle du moteur, partagées par tous les centres de données et clusters. Chacune s'ouvre sur sa propre page.",
+  'configure.loading': 'Chargement des zones de configuration',
+  'configure.notPermitted': 'la configuration du système',
+  'configure.list.ariaLabel': 'Zones de configuration',
+  'configure.card.roles':
+    'Définir les rôles et les permissions que chacun accorde aux utilisateurs et aux administrateurs.',
+  'configure.card.systemPermissions':
+    "Attribuer des rôles aux utilisateurs et aux groupes à l'échelle du système.",
+  'configure.card.schedulingPolicies':
+    "Gérer les règles de filtre, de pondération et d'équilibrage utilisées par les clusters pour placer les VM.",
+  'configure.card.instanceTypes':
+    'Définir des profils matériels réutilisables pour les nouvelles machines virtuelles.',
+  'configure.card.macPools': "Gérer les plages d'adresses MAC attribuées aux NIC virtuelles.",
 }

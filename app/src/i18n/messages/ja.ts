@@ -4850,4 +4850,20 @@ export const ja: LocaleCatalog = {
     '部分的なセットアップの取り消しが停止しました: {error}',
   'host.configureLocalStorage.outcome.rerunHint':
     '完了するには、必要に応じてホストをメンテナンスモードにし、「ローカルストレージを設定」をもう一度実行してください。空のローカルデータセンターが再利用されます。',
+  // Configure aggregate entry point (pages/ConfigurePage.tsx): the webadmin
+  // Administration › Configure index linking to its five surfaces.
+  'nav.configure': '構成',
+  'configure.title': '構成',
+  'configure.intro':
+    'すべてのデータセンターとクラスターで共有される、エンジン全体の定義です。それぞれ専用のページで開きます。',
+  'configure.loading': '構成領域を読み込んでいます',
+  'configure.notPermitted': 'システム構成',
+  'configure.list.ariaLabel': '構成領域',
+  'configure.card.roles': 'ロールと、各ロールがユーザーおよび管理者に付与する権限を定義します。',
+  'configure.card.systemPermissions': 'システム全体でユーザーとグループにロールを割り当てます。',
+  'configure.card.schedulingPolicies':
+    'クラスターがVMの配置に使用するフィルター、重み付け、負荷分散のルールを管理します。',
+  'configure.card.instanceTypes':
+    '新しい仮想マシン用の再利用可能なハードウェアプロファイルを定義します。',
+  'configure.card.macPools': '仮想NICに割り当てるMACアドレスの範囲を管理します。',
 }
