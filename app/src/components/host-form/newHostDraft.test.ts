@@ -181,4 +181,12 @@ describe('draftToAddSpec', () => {
     expect(touched.kernelCmdline).toBe('intel_iommu=on')
     expect(touched.deployHostedEngine).toBe(true)
   })
+
+  it('defaults to configuring the host firewall and sends the flag only when turned off', () => {
+    // webadmin checks the box once a cluster is picked; the engine default is
+    // true too, so the untouched draft leaves the key out entirely
+    expect(blankNewHostDraft().overrideFirewall).toBe(true)
+    expect(draftToAddSpec(filledDraft())).not.toHaveProperty('overrideFirewall')
+    expect(draftToAddSpec(filledDraft({ overrideFirewall: false })).overrideFirewall).toBe(false)
+  })
 })

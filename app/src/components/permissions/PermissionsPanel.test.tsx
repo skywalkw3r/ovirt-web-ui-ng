@@ -89,7 +89,6 @@ vi.mock('../../auth/capabilities', () => ({
 }))
 
 vi.mock('../../hooks/usePermissionMutations', () => ({
-  useAddPermission: () => ({ isPending: false, mutate: () => {} }),
   useRemovePermission: () => ({ isPending: false, mutate: () => {} }),
   // assignee-name join sources (live engines serialize nameless principals)
   usePermissionUsers: () => ({ data: [{ id: 'user-01', user_name: 'admin@internal' }] }),

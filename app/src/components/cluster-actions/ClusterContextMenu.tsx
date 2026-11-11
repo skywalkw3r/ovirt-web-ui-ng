@@ -7,6 +7,7 @@ import { useT } from '../../i18n/useT'
 import { ClusterFormModal } from '../cluster-form/ClusterFormModal'
 import { ClusterUpgradeModal } from '../cluster-upgrade/ClusterUpgradeModal'
 import { ContextMenu, type ContextMenuPosition } from '../context-menu/ContextMenu'
+import { useGuideMeLauncher } from '../guide-me/guideMeContext'
 import { NewHostModal } from '../host-form/NewHostModal'
 import { RemoveClusterConfirm } from './RemoveClusterConfirm'
 
@@ -43,6 +44,8 @@ export function ClusterContextMenu({
   // create-under-this-cluster modal, scoped to it
   const [addingHost, setAddingHost] = useState(false)
   const deleteMutation = useDeleteCluster()
+  // Guide Me lives in the app-level provider, so it outlives this menu
+  const guideMe = useGuideMeLauncher()
 
   const modalActive = editing || upgrading || removing || addingHost
   useEffect(() => {
@@ -80,6 +83,16 @@ export function ClusterContextMenu({
           >
             {t('hosts.new')}
           </DropdownItem>
+          {guideMe && (
+            <DropdownItem
+              onClick={() => {
+                setIsOpen(false)
+                guideMe.open({ kind: 'cluster', id: cluster.id })
+              }}
+            >
+              {t('guideMe.action')}
+            </DropdownItem>
+          )}
           <Divider component="li" />
           <DropdownItem
             onClick={() => {

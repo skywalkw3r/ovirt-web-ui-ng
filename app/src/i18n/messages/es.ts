@@ -1070,6 +1070,41 @@ export const es: LocaleCatalog = {
   'permissions.add.role.none': 'No hay roles asignables disponibles en este motor.',
   'permissions.add.role.userGroup': 'Roles de usuario',
   'permissions.add.role.adminGroup': 'Roles administrativos',
+  // Add Permission picker depth (issue #31): multi-select, My groups,
+  // Everyone, and directory search.
+  'permissions.add.kind.myGroups': 'Mis grupos',
+  'permissions.add.kind.everyone': 'Todos',
+  'permissions.add.source.label': 'Buscar en',
+  'permissions.add.source.engine': 'Base de datos del motor',
+  'permissions.add.source.directory': 'Directorio: {domain}',
+  'permissions.add.source.domainsLoading': 'Cargando directorios',
+  'permissions.add.source.domainsError': 'No se pudieron cargar los directorios: {message}',
+  'permissions.add.source.directoryHint':
+    'Los principales encontrados en un directorio que aún no están en el motor se añaden a él al conceder el rol.',
+  'permissions.add.empty.directory.users': 'Este directorio no devolvió ningún usuario.',
+  'permissions.add.empty.directory.groups': 'Este directorio no devolvió ningún grupo.',
+  'permissions.add.myGroups.loading': 'Cargando sus grupos',
+  'permissions.add.myGroups.error': 'No se pudieron cargar sus grupos: {message}',
+  'permissions.add.myGroups.empty.title': 'No hay grupos',
+  'permissions.add.myGroups.empty.body': 'Su cuenta no es miembro de ningún grupo del directorio.',
+  'permissions.add.myGroups.table.ariaLabel': 'Mis grupos',
+  'permissions.add.everyone.body':
+    'El rol se concede al grupo integrado Everyone, por lo que todos los usuarios lo obtienen en este {noun}.',
+  'permissions.add.selectMany.user': 'Seleccione uno o más usuarios a los que conceder el rol.',
+  'permissions.add.selectMany.group': 'Seleccione uno o más grupos a los que conceder el rol.',
+  'permissions.add.selected.count':
+    '{count, plural, one {# principal seleccionado} other {# principales seleccionados}}',
+  'permissions.add.selected.ariaLabel': 'Principales seleccionados',
+  'permissions.add.selected.remove': 'Quitar {name} de la selección',
+  'permissions.add.result.failed.title':
+    '{count, plural, one {No se pudo conceder el rol a # principal} other {No se pudo conceder el rol a # principales}}',
+  'permissions.add.result.failed.body':
+    'Los principales con error siguen seleccionados. Corrija la causa y vuelva a intentarlo, o quítelos de la selección.',
+  'permissions.add.result.failed.item': '{name}: {message}',
+  'permissions.add.submit.retry': 'Reintentar los fallidos',
+  'permissions.add.toast.granted': '{role} concedido a {name}',
+  'permissions.add.toast.grantedMany':
+    '{role} concedido a {count, plural, one {# principal} other {# principales}}',
   'users.notPermitted': 'Usuarios',
   'users.title': 'Usuarios',
   'users.search.hint': 'usrname=jdoe* — o texto sin formato',
@@ -1949,11 +1984,7 @@ export const es: LocaleCatalog = {
   'hostNuma.loading': 'Cargando topología NUMA',
   'host.console.open': 'Consola del host',
   'host.console.newTab': 'Abre Cockpit en una pestaña nueva',
-  'host.console.sso.note':
-    'La consola se abre en una pestaña nueva e inicia sesión con su sesión actual.',
-  'host.console.direct.title': 'La consola abre {url} en una pestaña nueva',
-  'host.console.direct.body':
-    'Inicie sesión con una cuenta del host. Cockpit usa el certificado del host, por lo que el navegador puede mostrar una advertencia hasta que se confíe en ese certificado.',
+  'host.console.tooltip': 'Abrir la interfaz de Cockpit de {name}',
   'datacenters.forceRemove.action': 'Forzar eliminación',
   'datacenters.forceRemove.confirm.title': "¿Forzar la eliminación del centro de datos ''{name}''?",
   'datacenters.forceRemove.confirm.body':
@@ -3353,6 +3384,9 @@ export const es: LocaleCatalog = {
   'hostForm.field.rootPassword': 'Contraseña de root',
   'hostForm.field.sshPort': 'Puerto SSH',
   'hostForm.field.sshUser': 'Usuario SSH',
+  'hostForm.firewall.configure': 'Configurar automáticamente el firewall del host',
+  'hostForm.firewall.configure.help':
+    'Permite que la instalación abra en el firewall del host los puertos que oVirt necesita, usando el tipo de firewall del clúster. Desactívelo solo si gestiona usted mismo el firewall del host; en ese caso deberá abrir a mano los puertos necesarios.',
   'hostForm.hostedEngine.deploy': 'Implementar hosted engine',
   'hostForm.hostedEngine.deploy.help':
     'La instalación también implementa los componentes del motor autoalojado, de modo que este host puede ejecutar la VM del motor junto a los hosts de hosted-engine existentes. Déjelo desactivado para un host de virtualización normal.',
@@ -4922,6 +4956,65 @@ export const es: LocaleCatalog = {
     'Se detuvo la reversión de la configuración parcial: {error}',
   'host.configureLocalStorage.outcome.rerunHint':
     'Para terminar, ponga el host en mantenimiento si es necesario y vuelva a ejecutar «Configurar almacenamiento local»; reutiliza el centro de datos local vacío.',
+  // Guide Me (data center and cluster next steps)
+  'guideMe.action': 'Guíame',
+  'guideMe.title': 'Guíame: {name}',
+  'guideMe.loading': 'Cargando los siguientes pasos',
+  'guideMe.error.title': 'No se pudieron cargar los siguientes pasos',
+  'guideMe.dataCenter.created': 'Centro de datos creado.',
+  'guideMe.dataCenter.configured':
+    'El centro de datos está totalmente configurado y listo para usarse.',
+  'guideMe.cluster.created': 'Clúster creado.',
+  'guideMe.cluster.configured': 'El clúster está totalmente configurado y listo para usarse.',
+  'guideMe.configured.title': 'Configuración completada',
+  'guideMe.unconfigured': 'Aún quedan entidades por configurar.',
+  'guideMe.section.required': 'Pasos obligatorios',
+  'guideMe.section.optional': 'Pasos opcionales',
+  'guideMe.configureLater': 'Configurar más tarde',
+  'guideMe.step.configureCluster': 'Configurar clúster',
+  'guideMe.step.addAnotherCluster': 'Añadir otro clúster',
+  'guideMe.step.configureHost': 'Configurar host',
+  'guideMe.step.addAnotherHost': 'Añadir otro host',
+  'guideMe.step.configureStorage': 'Configurar almacenamiento',
+  'guideMe.step.addMoreStorage': 'Añadir más almacenamiento',
+  'guideMe.step.attachStorage': 'Adjuntar almacenamiento',
+  'guideMe.step.attachMoreStorage': 'Adjuntar más almacenamiento',
+  'guideMe.step.configureIsoLibrary': 'Configurar biblioteca ISO',
+  'guideMe.step.attachIsoLibrary': 'Adjuntar biblioteca ISO',
+  'guideMe.step.addLocalStorage': 'Añadir almacenamiento local',
+  'guideMe.reason.noUpHost': 'El centro de datos necesita al menos un host activo.',
+  'guideMe.reason.noCluster': 'Primero añada un clúster al centro de datos.',
+  'guideMe.reason.noUnattachedData': 'No hay ningún dominio de datos sin adjuntar disponible.',
+  'guideMe.reason.noActiveMaster':
+    'El centro de datos necesita primero un dominio de datos maestro activo.',
+  'guideMe.reason.noIsoDomain': 'No hay ningún dominio ISO disponible para adjuntar.',
+  'guideMe.reason.localDcHasHost':
+    'Un centro de datos local admite un solo host y este ya lo tiene.',
+  'guideMe.reason.dcInitialized': 'El centro de datos ya está inicializado.',
+  'guideMe.reason.clusterLocalHasHost':
+    'Este clúster pertenece a un centro de datos local que ya tiene su único host.',
+  'guideMe.note.localStorage':
+    'Para configurar totalmente el centro de datos, adjunte y active al menos un dominio de almacenamiento local.',
+  'guideMe.note.clusterNoActions':
+    'No hay acciones disponibles para este clúster: no está adjunto a ningún centro de datos.',
+  // Configure aggregate entry point (pages/ConfigurePage.tsx): the webadmin
+  // Administration › Configure index linking to its five surfaces.
+  'nav.configure': 'Configurar',
+  'configure.title': 'Configurar',
+  'configure.intro':
+    'Definiciones de todo el motor compartidas por todos los centros de datos y clústeres. Cada una se abre en su propia página.',
+  'configure.loading': 'Cargando áreas de configuración',
+  'configure.notPermitted': 'la configuración del sistema',
+  'configure.list.ariaLabel': 'Áreas de configuración',
+  'configure.card.roles':
+    'Defina roles y los permisos que cada uno concede a usuarios y administradores.',
+  'configure.card.systemPermissions': 'Asigne roles a usuarios y grupos en todo el sistema.',
+  'configure.card.schedulingPolicies':
+    'Gestione las reglas de filtro, peso y equilibrio que usan los clústeres para ubicar las VM.',
+  'configure.card.instanceTypes':
+    'Defina perfiles de hardware reutilizables para nuevas máquinas virtuales.',
+  'configure.card.macPools':
+    'Gestione los rangos de direcciones MAC asignados a las NIC virtuales.',
   // EDIT VM: Foreman/Satellite section (provider picker)
   'vm.edit.section.foreman': 'Foreman/Satellite',
   'vm.edit.foreman.provider': 'Proveedor',

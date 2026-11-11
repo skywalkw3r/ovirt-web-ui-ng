@@ -1040,6 +1040,39 @@ export const ko: LocaleCatalog = {
   'permissions.add.role.none': '이 엔진에서 할당할 수 있는 역할이 없습니다.',
   'permissions.add.role.userGroup': '사용자 권한',
   'permissions.add.role.adminGroup': '관리 역할',
+  // Add Permission picker depth (issue #31): multi-select, My groups,
+  // Everyone, and directory search.
+  'permissions.add.kind.myGroups': '내 그룹',
+  'permissions.add.kind.everyone': '모든 사용자',
+  'permissions.add.source.label': '검색 대상',
+  'permissions.add.source.engine': '엔진 데이터베이스',
+  'permissions.add.source.directory': '디렉터리: {domain}',
+  'permissions.add.source.domainsLoading': '디렉터리 로드 중',
+  'permissions.add.source.domainsError': '디렉터리를 로드할 수 없음: {message}',
+  'permissions.add.source.directoryHint':
+    '디렉터리에서 찾은 주체 중 아직 엔진에 없는 주체는 역할을 부여할 때 엔진에 추가됩니다.',
+  'permissions.add.empty.directory.users': '이 디렉터리에서 반환된 사용자가 없습니다.',
+  'permissions.add.empty.directory.groups': '이 디렉터리에서 반환된 그룹이 없습니다.',
+  'permissions.add.myGroups.loading': '내 그룹 로드 중',
+  'permissions.add.myGroups.error': '내 그룹을 로드할 수 없음: {message}',
+  'permissions.add.myGroups.empty.title': '그룹 없음',
+  'permissions.add.myGroups.empty.body': '이 계정은 어떤 디렉터리 그룹의 구성원도 아닙니다.',
+  'permissions.add.myGroups.table.ariaLabel': '내 그룹',
+  'permissions.add.everyone.body':
+    '역할이 기본 제공 Everyone 그룹에 부여되므로 모든 사용자가 이 {noun}에서 해당 역할을 갖습니다.',
+  'permissions.add.selectMany.user': '역할을 부여할 사용자를 하나 이상 선택합니다.',
+  'permissions.add.selectMany.group': '역할을 부여할 그룹을 하나 이상 선택합니다.',
+  'permissions.add.selected.count': '{count, plural, other {주체 #개 선택됨}}',
+  'permissions.add.selected.ariaLabel': '선택한 주체',
+  'permissions.add.selected.remove': '선택에서 {name} 제거',
+  'permissions.add.result.failed.title':
+    '{count, plural, other {주체 #개에 역할을 부여할 수 없음}}',
+  'permissions.add.result.failed.body':
+    '실패한 주체는 선택된 상태로 유지됩니다. 원인을 해결한 후 다시 시도하거나 선택에서 제거하십시오.',
+  'permissions.add.result.failed.item': '{name}: {message}',
+  'permissions.add.submit.retry': '실패 항목 재시도',
+  'permissions.add.toast.granted': '{name}에게 {role} 부여됨',
+  'permissions.add.toast.grantedMany': '주체 {count, plural, other {#개}}에게 {role} 부여됨',
   'users.notPermitted': '사용자',
   'users.title': '사용자',
   'users.search.hint': 'usrname = jdoe * — 또는 일반 텍스트',
@@ -1901,10 +1934,7 @@ export const ko: LocaleCatalog = {
   'hostNuma.loading': 'NUMA 토폴로지 로드 중',
   'host.console.open': '호스트 콘솔',
   'host.console.newTab': '새 탭에서 Cockpit을 엽니다',
-  'host.console.sso.note': '콘솔이 새 탭에서 열리고 현재 세션으로 로그인됩니다.',
-  'host.console.direct.title': '콘솔이 새 탭에서 {url}을(를) 엽니다',
-  'host.console.direct.body':
-    '호스트의 계정으로 로그인하세요. Cockpit은 호스트 인증서를 사용하므로 해당 인증서를 신뢰할 때까지 브라우저에 경고가 표시될 수 있습니다.',
+  'host.console.tooltip': '{name}의 Cockpit 인터페이스 열기',
   'datacenters.forceRemove.action': '강제 제거',
   'datacenters.forceRemove.confirm.title': "''{name}'' 데이터 센터를 강제로 제거하시겠습니까?",
   'datacenters.forceRemove.confirm.body':
@@ -3262,6 +3292,9 @@ export const ko: LocaleCatalog = {
   'hostForm.field.rootPassword': 'root 비밀번호',
   'hostForm.field.sshPort': 'SSH 포트',
   'hostForm.field.sshUser': 'SSH 사용자',
+  'hostForm.firewall.configure': '호스트 방화벽 자동 구성',
+  'hostForm.firewall.configure.help':
+    '설치 과정에서 클러스터의 방화벽 유형을 사용해 oVirt에 필요한 포트를 호스트 방화벽에서 엽니다. 호스트 방화벽을 직접 관리하는 경우에만 끄십시오. 이 경우 필요한 포트를 수동으로 열어야 합니다.',
   'hostForm.hostedEngine.deploy': 'Hosted engine 배포',
   'hostForm.hostedEngine.deploy.help':
     '설치 시 자체 호스팅 엔진 구성 요소도 배포되므로, 이 호스트는 기존 hosted-engine 호스트와 함께 엔진 VM을 실행할 수 있습니다. 일반 가상화 호스트의 경우 끄십시오.',
@@ -4790,6 +4823,60 @@ export const ko: LocaleCatalog = {
   'host.configureLocalStorage.outcome.undoStopped': '부분 설정 취소가 중단되었습니다: {error}',
   'host.configureLocalStorage.outcome.rerunHint':
     '완료하려면 필요한 경우 호스트를 유지 관리 모드로 전환한 후 "로컬 스토리지 구성"을 다시 실행하십시오. 빈 로컬 데이터 센터가 다시 사용됩니다.',
+  // Guide Me (data center and cluster next steps)
+  'guideMe.action': '가이드',
+  'guideMe.title': '가이드: {name}',
+  'guideMe.loading': '다음 단계를 불러오는 중',
+  'guideMe.error.title': '다음 단계를 불러올 수 없습니다',
+  'guideMe.dataCenter.created': '데이터 센터가 생성되었습니다.',
+  'guideMe.dataCenter.configured': '데이터 센터가 완전히 구성되어 사용할 준비가 되었습니다.',
+  'guideMe.cluster.created': '클러스터가 생성되었습니다.',
+  'guideMe.cluster.configured': '클러스터가 완전히 구성되어 사용할 준비가 되었습니다.',
+  'guideMe.configured.title': '구성 완료',
+  'guideMe.unconfigured': '아직 구성해야 할 엔터티가 있습니다.',
+  'guideMe.section.required': '필수 단계',
+  'guideMe.section.optional': '선택 단계',
+  'guideMe.configureLater': '나중에 구성',
+  'guideMe.step.configureCluster': '클러스터 구성',
+  'guideMe.step.addAnotherCluster': '다른 클러스터 추가',
+  'guideMe.step.configureHost': '호스트 구성',
+  'guideMe.step.addAnotherHost': '다른 호스트 추가',
+  'guideMe.step.configureStorage': '스토리지 구성',
+  'guideMe.step.addMoreStorage': '스토리지 추가',
+  'guideMe.step.attachStorage': '스토리지 연결',
+  'guideMe.step.attachMoreStorage': '스토리지 더 연결',
+  'guideMe.step.configureIsoLibrary': 'ISO 라이브러리 구성',
+  'guideMe.step.attachIsoLibrary': 'ISO 라이브러리 연결',
+  'guideMe.step.addLocalStorage': '로컬 스토리지 추가',
+  'guideMe.reason.noUpHost': '데이터 센터에 활성 호스트가 하나 이상 있어야 합니다.',
+  'guideMe.reason.noCluster': '먼저 데이터 센터에 클러스터를 추가하세요.',
+  'guideMe.reason.noUnattachedData': '연결할 수 있는 미연결 데이터 도메인이 없습니다.',
+  'guideMe.reason.noActiveMaster': '데이터 센터에 먼저 활성 마스터 데이터 도메인이 있어야 합니다.',
+  'guideMe.reason.noIsoDomain': '연결할 수 있는 ISO 도메인이 없습니다.',
+  'guideMe.reason.localDcHasHost':
+    '로컬 데이터 센터에는 호스트를 하나만 둘 수 있으며 이 데이터 센터에는 이미 있습니다.',
+  'guideMe.reason.dcInitialized': '데이터 센터가 이미 초기화되었습니다.',
+  'guideMe.reason.clusterLocalHasHost':
+    '이 클러스터는 이미 유일한 호스트가 있는 로컬 데이터 센터에 속합니다.',
+  'guideMe.note.localStorage':
+    '데이터 센터를 완전히 구성하려면 로컬 스토리지 도메인을 하나 이상 연결하고 활성화하세요.',
+  'guideMe.note.clusterNoActions':
+    '이 클러스터에 사용할 수 있는 작업이 없습니다: 데이터 센터에 연결되어 있지 않습니다.',
+  // Configure aggregate entry point (pages/ConfigurePage.tsx): the webadmin
+  // Administration › Configure index linking to its five surfaces.
+  'nav.configure': '구성',
+  'configure.title': '구성',
+  'configure.intro':
+    '모든 데이터 센터와 클러스터가 공유하는 엔진 전체 정의입니다. 각 항목은 자체 페이지에서 열립니다.',
+  'configure.loading': '구성 영역 로드 중',
+  'configure.notPermitted': '시스템 구성',
+  'configure.list.ariaLabel': '구성 영역',
+  'configure.card.roles': '역할과 각 역할이 사용자 및 관리자에게 부여하는 권한을 정의합니다.',
+  'configure.card.systemPermissions': '시스템 전체에서 사용자와 그룹에 역할을 할당합니다.',
+  'configure.card.schedulingPolicies':
+    '클러스터가 VM을 배치할 때 사용하는 필터, 가중치, 밸런싱 규칙을 관리합니다.',
+  'configure.card.instanceTypes': '새 가상 머신에 재사용할 하드웨어 프로필을 정의합니다.',
+  'configure.card.macPools': '가상 NIC에 할당되는 MAC 주소 범위를 관리합니다.',
   // EDIT VM: Foreman/Satellite section (provider picker)
   'vm.edit.section.foreman': 'Foreman/Satellite',
   'vm.edit.foreman.provider': '공급자',

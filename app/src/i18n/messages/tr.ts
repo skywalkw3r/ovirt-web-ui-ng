@@ -1051,6 +1051,41 @@ export const tr: LocaleCatalog = {
   'permissions.add.role.none': 'Bu motorda atanabilir rol yok.',
   'permissions.add.role.userGroup': 'Kullanıcı Rolleri',
   'permissions.add.role.adminGroup': 'İdari roller',
+  // Add Permission picker depth (issue #31): multi-select, My groups,
+  // Everyone, and directory search.
+  'permissions.add.kind.myGroups': 'Gruplarım',
+  'permissions.add.kind.everyone': 'Herkes',
+  'permissions.add.source.label': 'Arama yeri',
+  'permissions.add.source.engine': 'Motor veritabanı',
+  'permissions.add.source.directory': 'Dizin: {domain}',
+  'permissions.add.source.domainsLoading': 'Dizinler yükleniyor',
+  'permissions.add.source.domainsError': 'Dizinler yüklenemedi: {message}',
+  'permissions.add.source.directoryHint':
+    'Bir dizinde bulunan ve henüz motorda olmayan kullanıcı ve gruplar, rol verildiğinde motora eklenir.',
+  'permissions.add.empty.directory.users': 'Bu dizin hiç kullanıcı döndürmedi.',
+  'permissions.add.empty.directory.groups': 'Bu dizin hiç grup döndürmedi.',
+  'permissions.add.myGroups.loading': 'Gruplarınız yükleniyor',
+  'permissions.add.myGroups.error': 'Gruplarınız yüklenemedi: {message}',
+  'permissions.add.myGroups.empty.title': 'Grup yok',
+  'permissions.add.myGroups.empty.body': 'Hesabınız hiçbir dizin grubunun üyesi değil.',
+  'permissions.add.myGroups.table.ariaLabel': 'Gruplarım',
+  'permissions.add.everyone.body':
+    'Rol yerleşik Everyone grubuna verilir; böylece her kullanıcı bu {noun} üzerinde bu role sahip olur.',
+  'permissions.add.selectMany.user': 'Rolün verileceği bir veya daha fazla kullanıcı seçin.',
+  'permissions.add.selectMany.group': 'Rolün verileceği bir veya daha fazla grup seçin.',
+  'permissions.add.selected.count':
+    '{count, plural, one {# kullanıcı/grup seçildi} other {# kullanıcı/grup seçildi}}',
+  'permissions.add.selected.ariaLabel': 'Seçilen kullanıcı ve gruplar',
+  'permissions.add.selected.remove': '{name} öğesini seçimden kaldır',
+  'permissions.add.result.failed.title':
+    '{count, plural, one {Rol # kullanıcıya/gruba verilemedi} other {Rol # kullanıcıya/gruba verilemedi}}',
+  'permissions.add.result.failed.body':
+    'Başarısız olanlar seçili kalır. Nedeni giderip yeniden deneyin veya bunları seçimden kaldırın.',
+  'permissions.add.result.failed.item': '{name}: {message}',
+  'permissions.add.submit.retry': 'Başarısız olanları yeniden dene',
+  'permissions.add.toast.granted': '{role}, {name} için verildi',
+  'permissions.add.toast.grantedMany':
+    '{role}, {count, plural, one {# kullanıcı/grup} other {# kullanıcı/grup}} için verildi',
   'users.notPermitted': 'Kullanıcılar',
   'users.title': 'Kullanıcılar',
   'users.search.hint': 'usrname=jdoe* — veya düz metin',
@@ -1923,10 +1958,7 @@ export const tr: LocaleCatalog = {
   'hostNuma.loading': 'NUMA topolojisi yükleniyor',
   'host.console.open': 'Ana makine konsolu',
   'host.console.newTab': 'Cockpit’i yeni sekmede açar',
-  'host.console.sso.note': 'Konsol yeni sekmede açılır ve geçerli oturumunuzla oturum açar.',
-  'host.console.direct.title': 'Konsol {url} adresini yeni sekmede açar',
-  'host.console.direct.body':
-    'Ana makinedeki bir hesapla oturum açın. Cockpit ana makinenin sertifikasını kullanır; bu sertifikaya güvenilene kadar tarayıcınız bir uyarı gösterebilir.',
+  'host.console.tooltip': '{name} için Cockpit arayüzünü aç',
   'datacenters.forceRemove.action': 'Zorla kaldır',
   'datacenters.forceRemove.confirm.title': "''{name}'' veri merkezi zorla kaldırılsın mı?",
   'datacenters.forceRemove.confirm.body':
@@ -3301,6 +3333,9 @@ export const tr: LocaleCatalog = {
   'hostForm.field.rootPassword': 'Root parolası',
   'hostForm.field.sshPort': 'SSH bağlantı noktası',
   'hostForm.field.sshUser': 'SSH kullanıcısı',
+  'hostForm.firewall.configure': 'Ana makine güvenlik duvarını otomatik yapılandır',
+  'hostForm.firewall.configure.help':
+    "Kurulumun, kümenin güvenlik duvarı türünü kullanarak oVirt'in ihtiyaç duyduğu bağlantı noktalarını ana makinenin güvenlik duvarında açmasını sağlar. Yalnızca ana makine güvenlik duvarını kendiniz yönetiyorsanız kapatın; bu durumda gerekli bağlantı noktalarını elle açmanız gerekir.",
   'hostForm.hostedEngine.deploy': 'Hosted engine dağıt',
   'hostForm.hostedEngine.deploy.help':
     'Kurulum ayrıca kendi kendine barındırılan motor bileşenlerini de dağıtır, böylece bu ana makine motor VM’sini mevcut hosted-engine ana makineleriyle birlikte çalıştırabilir. Normal bir sanallaştırma ana makinesi için kapalı bırakın.',
@@ -4843,6 +4878,62 @@ export const tr: LocaleCatalog = {
   'host.configureLocalStorage.outcome.undoStopped': 'Kısmi kurulumun geri alınması durdu: {error}',
   'host.configureLocalStorage.outcome.rerunHint':
     'Tamamlamak için gerekirse ana makineyi bakıma alın ve "Yerel depolamayı yapılandır" işlemini yeniden çalıştırın; boş yerel veri merkezi yeniden kullanılır.',
+  // Guide Me (data center and cluster next steps)
+  'guideMe.action': 'Rehber',
+  'guideMe.title': 'Rehber: {name}',
+  'guideMe.loading': 'Sonraki adımlar yükleniyor',
+  'guideMe.error.title': 'Sonraki adımlar yüklenemedi',
+  'guideMe.dataCenter.created': 'Veri merkezi oluşturuldu.',
+  'guideMe.dataCenter.configured': 'Veri merkezi tamamen yapılandırıldı ve kullanıma hazır.',
+  'guideMe.cluster.created': 'Küme oluşturuldu.',
+  'guideMe.cluster.configured': 'Küme tamamen yapılandırıldı ve kullanıma hazır.',
+  'guideMe.configured.title': 'Yapılandırma tamamlandı',
+  'guideMe.unconfigured': 'Hâlâ yapılandırılması gereken varlıklar var.',
+  'guideMe.section.required': 'Gerekli adımlar',
+  'guideMe.section.optional': 'İsteğe bağlı adımlar',
+  'guideMe.configureLater': 'Daha sonra yapılandır',
+  'guideMe.step.configureCluster': 'Kümeyi yapılandır',
+  'guideMe.step.addAnotherCluster': 'Başka bir küme ekle',
+  'guideMe.step.configureHost': 'Ana makineyi yapılandır',
+  'guideMe.step.addAnotherHost': 'Başka bir ana makine ekle',
+  'guideMe.step.configureStorage': 'Depolamayı yapılandır',
+  'guideMe.step.addMoreStorage': 'Daha fazla depolama ekle',
+  'guideMe.step.attachStorage': 'Depolama bağla',
+  'guideMe.step.attachMoreStorage': 'Daha fazla depolama bağla',
+  'guideMe.step.configureIsoLibrary': 'ISO kitaplığını yapılandır',
+  'guideMe.step.attachIsoLibrary': 'ISO kitaplığı bağla',
+  'guideMe.step.addLocalStorage': 'Yerel depolama ekle',
+  'guideMe.reason.noUpHost': 'Veri merkezinde en az bir etkin ana makine olmalıdır.',
+  'guideMe.reason.noCluster': 'Önce veri merkezine bir küme ekleyin.',
+  'guideMe.reason.noUnattachedData': 'Bağlanabilecek bağlı olmayan bir veri alanı yok.',
+  'guideMe.reason.noActiveMaster': 'Veri merkezinin önce etkin bir ana veri alanı olmalıdır.',
+  'guideMe.reason.noIsoDomain': 'Bağlanabilecek bir ISO alanı yok.',
+  'guideMe.reason.localDcHasHost':
+    'Yerel bir veri merkezi yalnızca bir ana makine barındırır ve bu veri merkezinde zaten var.',
+  'guideMe.reason.dcInitialized': 'Veri merkezi zaten başlatıldı.',
+  'guideMe.reason.clusterLocalHasHost':
+    'Bu küme, tek ana makinesi zaten olan yerel bir veri merkezine aittir.',
+  'guideMe.note.localStorage':
+    'Veri merkezini tamamen yapılandırmak için en az bir yerel depolama alanı bağlayıp etkinleştirin.',
+  'guideMe.note.clusterNoActions':
+    'Bu küme için kullanılabilir eylem yok: herhangi bir veri merkezine bağlı değil.',
+  // Configure aggregate entry point (pages/ConfigurePage.tsx): the webadmin
+  // Administration › Configure index linking to its five surfaces.
+  'nav.configure': 'Yapılandırma',
+  'configure.title': 'Yapılandırma',
+  'configure.intro':
+    'Tüm veri merkezleri ve kümeler tarafından paylaşılan, motor genelindeki tanımlar. Her biri kendi sayfasında açılır.',
+  'configure.loading': 'Yapılandırma alanları yükleniyor',
+  'configure.notPermitted': 'sistem yapılandırmasını',
+  'configure.list.ariaLabel': 'Yapılandırma alanları',
+  'configure.card.roles':
+    'Rolleri ve her rolün kullanıcılara ve yöneticilere verdiği izinleri tanımlayın.',
+  'configure.card.systemPermissions': 'Tüm sistem genelinde kullanıcılara ve gruplara rol atayın.',
+  'configure.card.schedulingPolicies':
+    'Kümelerin VM yerleştirmek için kullandığı filtre, ağırlık ve dengeleme kurallarını yönetin.',
+  'configure.card.instanceTypes':
+    'Yeni sanal makineler için yeniden kullanılabilir donanım profilleri tanımlayın.',
+  'configure.card.macPools': 'Sanal NIC’lere atanan MAC adres aralıklarını yönetin.',
   // EDIT VM: Foreman/Satellite section (provider picker)
   'vm.edit.section.foreman': 'Foreman/Satellite',
   'vm.edit.foreman.provider': 'Sağlayıcı',

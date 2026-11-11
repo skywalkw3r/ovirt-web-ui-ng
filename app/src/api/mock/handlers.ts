@@ -3862,6 +3862,25 @@ const initialGroups = (): MockGroup[] => [
 // multi-row read. The internal built-ins have no memberships, so their ids are
 // absent and the read serves the engine's omitted-key empty-list quirk.
 const userGroupMemberships: Record<string, MockGroup[]> = {
+  // The built-in admin (the default mock session) gets two memberships so the
+  // Add Permission dialog's "My groups" has rows. These are DIRECTORY-shaped
+  // (encoded directory ids, like the live GetAuthzGroupsByUserId read):
+  // dev-team is already in the engine DB (group-01, matched by name + domain),
+  // platform-team is not, so granting to it materializes it via POST /groups.
+  'user-01': [
+    {
+      id: 'dir-group-dev',
+      name: 'dev-team',
+      namespace: 'dc=ldap,dc=corp',
+      domain: { id: 'ldap.corp-authz', name: 'ldap.corp' },
+    },
+    {
+      id: 'dir-group-platform',
+      name: 'platform-team',
+      namespace: 'dc=ldap,dc=corp',
+      domain: { id: 'ldap.corp-authz', name: 'ldap.corp' },
+    },
+  ],
   'user-04': [
     {
       id: 'group-01',
@@ -7539,6 +7558,9 @@ function addHost(body: unknown, query: URLSearchParams): unknown {
     cluster?: { id?: string; name?: string }
     ssh?: { port?: number | string; authentication_method?: string }
     root_password?: string
+    // Install-time knob: accepted and not stored, as on the live engine, whose
+    // HostMapper never maps it back onto the read model
+    override_iptables?: boolean | string
     power_management?: {
       enabled?: boolean | string
       kdump_detection?: boolean | string
@@ -8342,15 +8364,32 @@ function attachDataCenterStorageDomain(dcId: string, body: unknown): unknown {
   if (spec.id === undefined || !summary) {
     throw new ApiError(404, 'Not Found', `no storage domain with id ${spec.id}`)
   }
+  // The first data domain attached to a pool becomes its master, and the pool
+  // leaves Uninitialized for Up (AttachStorageDomainToPool on an empty pool).
+  const firstData =
+    summary.type === 'data' &&
+    !storageDomains.some(
+      (sd) =>
+        sd.type === 'data' &&
+        String(sd.master) === 'true' &&
+        (sd.data_centers?.data_center ?? []).some((dc) => dc.id === dcId),
+    )
   summary.status = 'active'
   delete summary.external_status
   // mirror the inlined DC onto the flat row too (the list now follows it)
   summary.data_centers = { data_center: [{ id: dataCenter.id, name: dataCenter.name }] }
+  if (firstData) summary.master = true
   const detail = storageDomainDetails[spec.id]
   if (detail) {
     detail.status = 'active'
     delete detail.external_status
     detail.data_centers = { data_center: [{ id: dataCenter.id, name: dataCenter.name }] }
+    if (firstData) detail.master = true
+  }
+  if (firstData && dataCenter.status === 'uninitialized') {
+    dataCenter.status = 'up'
+    const dcDetail = dataCenterDetails[dcId]
+    if (dcDetail) dcDetail.status = 'up'
   }
   return { id: spec.id }
 }
@@ -10299,8 +10338,16 @@ function dataCenterStorageDomains(dcId: string): unknown {
     throw new ApiError(404, 'Not Found', `no data center with id ${dcId}`)
   }
   // Only attached domains (those reporting "status", not the unattached iso
-  // domain that reports only external_status) belong to a data center.
-  return { storage_domain: storageDomains.filter((sd) => sd.status !== undefined) }
+  // domain that reports only external_status) belong to a data center — and
+  // only to the one their data_centers link names, so a freshly created data
+  // center starts with no storage (the Guide Me steps key off this).
+  return {
+    storage_domain: storageDomains.filter(
+      (sd) =>
+        sd.status !== undefined &&
+        (sd.data_centers?.data_center ?? []).some((dc) => dc.id === dcId),
+    ),
+  }
 }
 
 // GET /datacenters/{id}/networks — the networks defined in a data center;
@@ -10312,13 +10359,13 @@ function dataCenterNetworks(dcId: string): unknown {
   return { network: networks.filter((net) => net.data_center?.id === dcId) }
 }
 
-// GET /datacenters/{id}/clusters — the clusters that belong to a data center.
-// The mock lab's clusters all live under dc-01, so both are returned there.
+// GET /datacenters/{id}/clusters — the clusters that belong to a data center,
+// by their data_center back-link (the seeded clusters all live under dc-01).
 function dataCenterClusters(dcId: string): unknown {
   if (!dataCenters.some((dc) => dc.id === dcId)) {
     throw new ApiError(404, 'Not Found', `no data center with id ${dcId}`)
   }
-  return { cluster: clusters }
+  return { cluster: clusters.filter((cluster) => cluster.data_center?.id === dcId) }
 }
 
 // GET /datacenters/{id}/qoss — an optional subcollection: a data center without
@@ -11377,6 +11424,18 @@ function addEntityPermission(collection: string, id: string, rawBody: unknown): 
     // exactly one of user.id / group.id
     throw new ApiError(400, 'Bad Request', 'Permission entity requires user.id or group.id.')
   }
+  // PERMISSION_ADD_FAILED_PERMISSION_ALREADY_EXISTS — the same role granted
+  // to the same principal on the same object is refused, which also gives the
+  // Add Permission dialog's partial-failure path something to hit.
+  const principalId = hasUser ? body.user?.id : body.group?.id
+  const existing = effectivePermissions(collection, id) ?? []
+  if (
+    existing.some(
+      (p) => p.role?.id === role.id && (hasUser ? p.user?.id : p.group?.id) === principalId,
+    )
+  ) {
+    throw new ApiError(409, 'Operation Failed', 'Cannot add Permission. Permission already exists.')
+  }
   const created: MockHostPermission = {
     id: `perm-new-${++permissionSeq}`,
     role: { id: role.id, name: role.name, administrative: role.administrative },
@@ -11848,9 +11907,15 @@ const routes: MockRoute[] = [
     pattern: /^$/,
     // authenticated_user feeds fetchCapabilityProfile's tier heuristic; the
     // live engine serializes it as a bare link, the mock inlines user_name.
+    // The id is the signed-in principal's DB row when there is one (the live
+    // engine links the session's DbUser), so per-user reads such as the Add
+    // Permission dialog's My groups (GET /users/{id}/groups) resolve.
     handle: () => ({
       ...API_ROOT,
-      authenticated_user: { id: 'mock-user', user_name: mockUsername },
+      authenticated_user: {
+        id: users.find((u) => u.user_name === mockUsername)?.id ?? 'mock-user',
+        user_name: mockUsername,
+      },
     }),
   },
   {
