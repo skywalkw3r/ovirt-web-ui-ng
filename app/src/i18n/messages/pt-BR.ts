@@ -2355,6 +2355,22 @@ export const ptBR: LocaleCatalog = {
   'templateForm.memory.error.guaranteed':
     'A memória física garantida não pode exceder o tamanho da memória',
   'templateForm.memory.error.max': 'A memória máxima não pode ser menor que o tamanho da memória',
+  // New template (standalone) and the sectioned template dialog (#28)
+  'templateForm.title.new': 'Novo modelo',
+  'templateForm.newAction': 'Novo modelo',
+  'templateForm.sections.ariaLabel': 'Seções do modelo',
+  'templateForm.sourceVm': 'VM de origem',
+  'templateForm.sourceVm.placeholder': 'Selecione uma VM desligada',
+  'templateForm.sourceVm.help':
+    'O novo modelo copia os discos e a configuração desta VM. Somente uma VM desligada pode ser usada. O que você alterar nesta caixa de diálogo substitui as configurações da VM.',
+  'templateForm.sourceVm.empty':
+    'Nenhuma VM está desligada. Desligue uma VM para criar um modelo a partir dela.',
+  'templateForm.sourceVm.disksNote':
+    'Os discos são copiados para os domínios de armazenamento atuais. Para alocação de disco, subversões ou selagem, use Criar modelo na VM.',
+  'templateForm.sourceVm.loading': 'Carregando a configuração da VM',
+  'templateForm.sourceVm.error': 'Não foi possível carregar a configuração da VM.',
+  'templateForm.sourceVm.hint':
+    'Selecione uma VM de origem para definir o sistema, o console e outras configurações do modelo.',
   'templateExport.title': 'Exportar {name} como OVA',
   'templateExport.host': 'Host',
   'templateExport.host.placeholder': 'Selecione um host',

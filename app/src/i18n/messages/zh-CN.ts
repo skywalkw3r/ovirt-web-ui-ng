@@ -2243,6 +2243,20 @@ export const zhCN: LocaleCatalog = {
   'templateForm.memory.error.positive': '内存大小必须大于 0',
   'templateForm.memory.error.guaranteed': '保证物理内存不能超过内存大小',
   'templateForm.memory.error.max': '最大内存不能小于内存大小',
+  // New template (standalone) and the sectioned template dialog (#28)
+  'templateForm.title.new': '新建模板',
+  'templateForm.newAction': '新建模板',
+  'templateForm.sections.ariaLabel': '模板分区',
+  'templateForm.sourceVm': '源虚拟机',
+  'templateForm.sourceVm.placeholder': '选择已关闭的虚拟机',
+  'templateForm.sourceVm.help':
+    '新模板会复制此虚拟机的磁盘和配置。只能使用已关闭的虚拟机。您在此对话框中所做的更改将覆盖虚拟机的设置。',
+  'templateForm.sourceVm.empty': '没有已关闭的虚拟机。请关闭一台虚拟机以从中创建模板。',
+  'templateForm.sourceVm.disksNote':
+    '磁盘将复制到其当前的存储域。如需磁盘分配、子版本或封装，请在虚拟机上使用“创建模板”。',
+  'templateForm.sourceVm.loading': '正在加载虚拟机配置',
+  'templateForm.sourceVm.error': '无法加载虚拟机配置。',
+  'templateForm.sourceVm.hint': '选择源虚拟机以设置模板的系统、控制台和其他设置。',
   'templateExport.title': '将 {name} 导出为 OVA',
   'templateExport.host': '主机',
   'templateExport.host.placeholder': '选择一个主机',

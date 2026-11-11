@@ -294,3 +294,25 @@ test('kebab Add tag opens a modal that survives interaction', async ({ page }) =
   await save.click()
   await expect(page.getByText('Tags updated for db-01')).toBeVisible()
 })
+
+// Standalone New template (#28): the template dialog in create mode, built
+// from a powered-off source VM picked inside it. The new row joins the
+// inventory once POST /templates lands.
+test('creates a template from a powered-off VM with New template', async ({ page }) => {
+  await login(page, { path: '/vms-templates' })
+  const rows = page.locator('table[aria-label="VMs and templates"] tbody tr')
+  await expect(rows.filter({ hasText: 'centos-stream-9' })).toHaveCount(1)
+
+  await page.getByRole('button', { name: 'New template' }).click()
+  const dialog = page.getByRole('dialog', { name: 'New template' })
+  await dialog.getByRole('combobox', { name: 'Source VM' }).selectOption({ label: 'legacy-erp' })
+  await expect(dialog.getByRole('textbox', { name: 'Template name' })).toHaveValue(
+    'legacy-erp-template',
+  )
+  await dialog.getByRole('tab', { name: 'Resource Allocation' }).click()
+  await dialog.getByRole('combobox', { name: 'CPU Shares' }).selectOption({ label: 'High' })
+  await dialog.getByRole('button', { name: 'Create' }).click()
+
+  await expect(dialog).toBeHidden()
+  await expect(rows.filter({ hasText: 'legacy-erp-template' })).toHaveCount(1)
+})

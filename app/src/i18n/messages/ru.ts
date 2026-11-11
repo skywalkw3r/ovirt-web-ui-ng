@@ -2360,6 +2360,21 @@ export const ru: LocaleCatalog = {
   'templateForm.memory.error.guaranteed':
     'Гарантированная физическая память не может превышать объём памяти',
   'templateForm.memory.error.max': 'Максимальный объём памяти не может быть меньше объёма памяти',
+  // New template (standalone) and the sectioned template dialog (#28)
+  'templateForm.title.new': 'Новый шаблон',
+  'templateForm.newAction': 'Новый шаблон',
+  'templateForm.sections.ariaLabel': 'Разделы шаблона',
+  'templateForm.sourceVm': 'Исходная ВМ',
+  'templateForm.sourceVm.placeholder': 'Выберите выключенную ВМ',
+  'templateForm.sourceVm.help':
+    'Новый шаблон копирует диски и конфигурацию этой ВМ. Можно использовать только выключенную ВМ. Изменения в этом диалоговом окне заменяют настройки ВМ.',
+  'templateForm.sourceVm.empty': 'Нет выключенных ВМ. Выключите ВМ, чтобы создать из неё шаблон.',
+  'templateForm.sourceVm.disksNote':
+    'Диски копируются в их текущие домены хранилища. Для выделения дисков, подверсий или запечатывания используйте «Создать шаблон» на ВМ.',
+  'templateForm.sourceVm.loading': 'Загрузка конфигурации ВМ',
+  'templateForm.sourceVm.error': 'Не удалось загрузить конфигурацию ВМ.',
+  'templateForm.sourceVm.hint':
+    'Выберите исходную ВМ, чтобы задать систему, консоль и другие параметры шаблона.',
   'templateExport.title': 'Экспортировать {name} как OVA',
   'templateExport.host': 'Хост',
   'templateExport.host.placeholder': 'Выберите хост',

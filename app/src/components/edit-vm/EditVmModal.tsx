@@ -1,7 +1,6 @@
 import { useCallback, useState } from 'react'
 import { Alert, Button, Modal, ModalBody, ModalFooter, ModalHeader } from '@patternfly/react-core'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { listClusterCpuProfiles } from '../../api/resources/clusters'
+import { useQueryClient } from '@tanstack/react-query'
 import {
   applyVmNumaSteps,
   listVmNumaNodes,
@@ -11,7 +10,6 @@ import {
 import { changeVmCd, updateVm } from '../../api/resources/vms'
 import type { Vm } from '../../api/schemas/vm'
 import { useCapabilities } from '../../auth/capabilities'
-import { clusterKeys } from '../../hooks/useAdminResources'
 import { useClusters, useOperatingSystems } from '../../hooks/useCatalog'
 import { useHosts } from '../../hooks/useHosts'
 import { useUpdateVm } from '../../hooks/useUpdateVm'
@@ -53,6 +51,7 @@ import { baselineWithNuma, buildNumaPlan, numaDraftFields, numaError } from './n
 import { ResourceAllocationSection } from './ResourceAllocationSection'
 import { RngSection } from './RngSection'
 import { SystemSection } from './SystemSection'
+import { useCpuProfileOptions } from './vmBaseQueries'
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error)
@@ -155,9 +154,14 @@ export function EditVmModal({
     setDraft((current) => ({ ...current, ...fields }))
   }
 
-  // Stable updater so sections don't re-render on every keystroke elsewhere.
+  // Stable updaters so sections don't re-render on every keystroke elsewhere:
+  // `set` for the VM-only sections, `patch` for the shared VmBase sections
+  // (their onChange, see vmBaseDraft.ts).
   const set = useCallback(<K extends keyof EditVmDraft>(key: K, value: EditVmDraft[K]) => {
     setDraft((current) => ({ ...current, [key]: value }))
+  }, [])
+  const patch = useCallback((changes: Partial<EditVmDraft>) => {
+    setDraft((current) => ({ ...current, ...changes }))
   }, [])
 
   // Option sources for the General section. useClusters is the shared catalog
@@ -216,14 +220,8 @@ export function EditVmModal({
   )
   const numaDraftError = numaEditable ? numaError(draft, baseline, pinnedHostsNuma) : undefined
 
-  // The Resource Allocation CPU-profile select — keyed like useClusterCpuProfiles
-  // (clusterKeys.cpuProfiles) so the cluster detail page and this modal share
-  // the cache; no poll and gated on a chosen cluster, unlike the detail hook.
-  const cpuProfiles = useQuery({
-    queryKey: clusterKeys.cpuProfiles(draft.clusterId),
-    queryFn: () => listClusterCpuProfiles(draft.clusterId),
-    enabled: draft.clusterId !== '',
-  })
+  // The Resource Allocation CPU-profile select, for the VM's chosen cluster.
+  const cpuProfiles = useCpuProfileOptions(draft.clusterId)
 
   const update = useUpdateVm()
   const applyWatchdog = useApplyVmWatchdog()
@@ -494,7 +492,12 @@ export function EditVmModal({
               key: 'system',
               title: t('vm.edit.section.system'),
               content: (
-                <SystemSection draft={draft} set={set} overcommitPercent={overcommitPercent} />
+                <SystemSection
+                  draft={draft}
+                  onChange={patch}
+                  overcommitPercent={overcommitPercent}
+                  topologyLocked={draft.cpuPinningPolicy === 'resize_and_pin_numa'}
+                />
               ),
             },
             {
@@ -505,7 +508,7 @@ export function EditVmModal({
             {
               key: 'icon',
               title: t('vm.edit.section.icon'),
-              content: <IconSection draft={draft} set={set} />,
+              content: <IconSection draft={draft} onChange={patch} />,
             },
             // Foreman/Satellite: the external host provider the VM's errata
             // come from. Provider reads are admin-only, so the tab is too
@@ -522,7 +525,7 @@ export function EditVmModal({
             {
               key: 'console',
               title: t('vm.edit.section.console'),
-              content: <ConsoleSection draft={draft} set={set} />,
+              content: <ConsoleSection draft={draft} onChange={patch} />,
             },
             // Host placement is engine-admin-only (GET /hosts requires an
             // admin session), mirroring webadmin where the Host tab is an
@@ -555,8 +558,13 @@ export function EditVmModal({
               content: (
                 <HighAvailabilitySection
                   draft={draft}
-                  set={set}
-                  architecture={vm.cpu?.architecture ?? currentClusterArchitecture}
+                  onChange={patch}
+                  watchdog={{
+                    vmId: vm.id,
+                    draft,
+                    onChange: patch,
+                    architecture: vm.cpu?.architecture ?? currentClusterArchitecture,
+                  }}
                 />
               ),
             },
@@ -564,7 +572,11 @@ export function EditVmModal({
               key: 'resource-allocation',
               title: t('vm.edit.section.resourceAllocation'),
               content: (
-                <ResourceAllocationSection draft={draft} set={set} cpuProfiles={cpuProfiles} />
+                <ResourceAllocationSection
+                  draft={draft}
+                  onChange={patch}
+                  cpuProfiles={cpuProfiles}
+                />
               ),
             },
             {
@@ -580,7 +592,7 @@ export function EditVmModal({
             {
               key: 'custom-properties',
               title: t('vm.edit.section.customProperties'),
-              content: <CustomPropertiesSection draft={draft} set={set} />,
+              content: <CustomPropertiesSection draft={draft} onChange={patch} />,
             },
           ]}
         />

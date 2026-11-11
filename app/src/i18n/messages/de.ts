@@ -2381,6 +2381,22 @@ export const de: LocaleCatalog = {
     'Der garantierte physische Speicher darf die Speichergröße nicht überschreiten',
   'templateForm.memory.error.max':
     'Der maximale Speicher darf nicht kleiner als die Speichergröße sein',
+  // New template (standalone) and the sectioned template dialog (#28)
+  'templateForm.title.new': 'Neue Vorlage',
+  'templateForm.newAction': 'Neue Vorlage',
+  'templateForm.sections.ariaLabel': 'Abschnitte der Vorlage',
+  'templateForm.sourceVm': 'Quell-VM',
+  'templateForm.sourceVm.placeholder': 'Ausgeschaltete VM auswählen',
+  'templateForm.sourceVm.help':
+    'Die neue Vorlage kopiert die Datenträger und die Konfiguration dieser VM. Nur eine ausgeschaltete VM kann verwendet werden. Was Sie in diesem Dialog ändern, ersetzt die Einstellungen der VM.',
+  'templateForm.sourceVm.empty':
+    'Keine VM ist ausgeschaltet. Fahren Sie eine VM herunter, um daraus eine Vorlage zu erstellen.',
+  'templateForm.sourceVm.disksNote':
+    'Die Datenträger werden in ihre aktuellen Speicherdomänen kopiert. Für Datenträgerzuweisung, Unterversionen oder Versiegelung verwenden Sie Vorlage erstellen an der VM.',
+  'templateForm.sourceVm.loading': 'VM-Konfiguration wird geladen',
+  'templateForm.sourceVm.error': 'Die VM-Konfiguration konnte nicht geladen werden.',
+  'templateForm.sourceVm.hint':
+    'Wählen Sie eine Quell-VM, um System, Konsole und weitere Einstellungen der Vorlage festzulegen.',
   'templateExport.title': '{name} als OVA exportieren',
   'templateExport.host': 'Host',
   'templateExport.host.placeholder': 'Host auswählen',

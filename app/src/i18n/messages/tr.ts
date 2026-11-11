@@ -2332,6 +2332,21 @@ export const tr: LocaleCatalog = {
   'templateForm.memory.error.positive': 'Bellek Boyutu 0’dan büyük olmalıdır',
   'templateForm.memory.error.guaranteed': 'Garanti Edilen Fiziksel Bellek, Bellek Boyutunu aşamaz',
   'templateForm.memory.error.max': 'Maksimum bellek, Bellek Boyutundan küçük olamaz',
+  // New template (standalone) and the sectioned template dialog (#28)
+  'templateForm.title.new': 'Yeni şablon',
+  'templateForm.newAction': 'Yeni şablon',
+  'templateForm.sections.ariaLabel': 'Şablon bölümleri',
+  'templateForm.sourceVm': 'Kaynak VM',
+  'templateForm.sourceVm.placeholder': 'Kapalı bir VM seçin',
+  'templateForm.sourceVm.help':
+    "Yeni şablon bu VM'nin disklerini ve yapılandırmasını kopyalar. Yalnızca kapalı bir VM kullanılabilir. Bu iletişim kutusunda yaptığınız değişiklikler VM'nin ayarlarının yerine geçer.",
+  'templateForm.sourceVm.empty': 'Kapalı VM yok. Şablon yapmak için bir VM kapatın.',
+  'templateForm.sourceVm.disksNote':
+    "Diskler mevcut depolama alanlarına kopyalanır. Disk tahsisi, alt sürümler veya mühürleme için VM üzerinde Şablon Yap'ı kullanın.",
+  'templateForm.sourceVm.loading': 'VM yapılandırması yükleniyor',
+  'templateForm.sourceVm.error': 'VM yapılandırması yüklenemedi.',
+  'templateForm.sourceVm.hint':
+    'Şablonun sistem, konsol ve diğer ayarlarını belirlemek için bir kaynak VM seçin.',
   'templateExport.title': '{name} OVA olarak dışa aktar',
   'templateExport.host': 'Ana makine',
   'templateExport.host.placeholder': 'Bir ana makine seçin',

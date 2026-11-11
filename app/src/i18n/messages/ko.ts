@@ -2301,6 +2301,21 @@ export const ko: LocaleCatalog = {
   'templateForm.memory.error.positive': '메모리 크기는 0보다 커야 합니다',
   'templateForm.memory.error.guaranteed': '보장된 물리 메모리는 메모리 크기를 초과할 수 없습니다',
   'templateForm.memory.error.max': '최대 메모리는 메모리 크기보다 작을 수 없습니다',
+  // New template (standalone) and the sectioned template dialog (#28)
+  'templateForm.title.new': '새 템플릿',
+  'templateForm.newAction': '새 템플릿',
+  'templateForm.sections.ariaLabel': '템플릿 섹션',
+  'templateForm.sourceVm': '소스 VM',
+  'templateForm.sourceVm.placeholder': '전원이 꺼진 VM 선택',
+  'templateForm.sourceVm.help':
+    '새 템플릿은 이 VM의 디스크와 구성을 복사합니다. 전원이 꺼진 VM만 사용할 수 있습니다. 이 대화 상자에서 변경한 내용이 VM의 설정을 대체합니다.',
+  'templateForm.sourceVm.empty': '전원이 꺼진 VM이 없습니다. VM을 종료한 후 템플릿을 만드십시오.',
+  'templateForm.sourceVm.disksNote':
+    '디스크는 현재 스토리지 도메인에 복사됩니다. 디스크 할당, 하위 버전 또는 봉인이 필요하면 VM에서 템플릿 만들기를 사용하십시오.',
+  'templateForm.sourceVm.loading': 'VM 구성 로드 중',
+  'templateForm.sourceVm.error': 'VM 구성을 로드할 수 없습니다.',
+  'templateForm.sourceVm.hint':
+    '소스 VM을 선택하면 템플릿의 시스템, 콘솔 및 기타 설정을 지정할 수 있습니다.',
   'templateExport.title': '{name}을(를) OVA로 내보내기',
   'templateExport.host': '호스트',
   'templateExport.host.placeholder': '호스트 선택',

@@ -475,7 +475,11 @@ interface MockTemplateDetail {
   origin?: string
   stateless?: boolean | string
   type?: string
-  memory_policy?: { guaranteed?: number | string; max?: number | string }
+  memory_policy?: {
+    guaranteed?: number | string
+    max?: number | string
+    ballooning?: boolean | string
+  }
   cpu?: {
     architecture?: string
     topology?: { sockets?: number | string; cores?: number | string; threads?: number | string }
@@ -484,6 +488,9 @@ interface MockTemplateDetail {
   display?: {
     type?: string
     monitors?: number | string
+    disconnect_action?: string
+    keyboard_layout?: string
+    smartcard_enabled?: boolean | string
     single_qxl_pci?: boolean | string
     file_transfer_enabled?: boolean | string
     copy_paste_enabled?: boolean | string
@@ -493,6 +500,24 @@ interface MockTemplateDetail {
   high_availability?: { enabled?: boolean | string; priority?: number | string }
   time_zone?: { name?: string; utc_offset?: string }
   custom_properties?: { custom_property?: { name?: string; value?: string }[] }
+  // VmBase depth the template dialog edits through the shared Edit VM sections
+  // (Resource Allocation, Console, High Availability, System, Icon).
+  cpu_profile?: { id?: string }
+  cpu_shares?: number | string
+  io?: { threads?: number | string }
+  virtio_scsi?: { enabled?: boolean | string }
+  multi_queues_enabled?: boolean | string
+  virtio_scsi_multi_queues_enabled?: boolean | string
+  virtio_scsi_multi_queues?: number | string
+  soundcard_enabled?: boolean | string
+  console?: { enabled?: boolean | string }
+  sso?: { methods?: { method?: { id?: string }[] } }
+  lease?: { storage_domain?: { id?: string } }
+  storage_error_resume_behaviour?: string
+  serial_number?: { policy?: string; value?: string }
+  custom_emulated_machine?: string
+  custom_cpu_model?: string
+  large_icon?: { id?: string; media_type?: string; data?: string }
 }
 
 interface MockVnicProfile {
@@ -3431,6 +3456,21 @@ const templateDetails: Record<string, MockTemplateDetail> = {
     stateless: 'false',
     type: 'desktop',
     cpu: { architecture: 'x86_64', topology: { sockets: 1, cores: '4', threads: 1 } },
+    // VmBase depth for the template dialog's shared sections (Resource
+    // Allocation, Console, High Availability, Custom Properties, Icon); string
+    // and number forms mixed so the schema coercion runs.
+    memory_policy: { guaranteed: `${8 * GiB}`, max: 16 * GiB, ballooning: 'false' },
+    display: { type: 'spice', monitors: '2', smartcard_enabled: 'false' },
+    cpu_profile: { id: 'cpuprofile-01' },
+    cpu_shares: '1024',
+    io: { threads: 1 },
+    virtio_scsi: { enabled: 'true' },
+    multi_queues_enabled: 'true',
+    soundcard_enabled: 'true',
+    console: { enabled: 'false' },
+    storage_error_resume_behaviour: 'leave_paused',
+    custom_properties: { custom_property: [{ name: 'viodiskcache', value: 'writeback' }] },
+    large_icon: { id: 'icon-windows' },
   },
 }
 
@@ -6245,6 +6285,9 @@ const pristineDataCenters = structuredClone(dataCenters)
 const pristineDataCenterDetails = structuredClone(dataCenterDetails)
 const pristineClusters = structuredClone(clusters)
 const pristineClusterDetails = structuredClone(clusterDetails)
+const pristineTemplates = structuredClone(templates)
+const pristineTemplateDetails = structuredClone(templateDetails)
+const pristineIconCatalog = structuredClone(iconCatalog)
 
 function restoreInPlace<T>(target: T[], pristine: T[]): void {
   target.splice(0, target.length, ...structuredClone(pristine))
@@ -6260,6 +6303,10 @@ export function resetMockVms(): void {
   restoreRecordInPlace(dataCenterDetails, pristineDataCenterDetails)
   restoreInPlace(clusters, pristineClusters)
   restoreRecordInPlace(clusterDetails, pristineClusterDetails)
+  restoreInPlace(templates, pristineTemplates)
+  restoreRecordInPlace(templateDetails, pristineTemplateDetails)
+  restoreInPlace(iconCatalog, pristineIconCatalog)
+  uploadedIconSeq = 0
   vms = allInitialVms()
   snapshots = initialSnapshots()
   disks = initialDisks()
@@ -7748,15 +7795,69 @@ function requireTemplateDetail(id: string): MockTemplateDetail {
   return detail
 }
 
-// PUT /templates/{id} — webadmin-style edit. Shallow-merges the request body
-// onto the matching detail fixture (and mirrors name/description onto the flat
-// list entry so GET /templates reflects the edit) and returns the merged
-// template; an unknown id 404s via requireTemplateDetail. Mirrors
-// updateCluster.
+// Merge a request body into a stored entity the way the engine applies a
+// partial update: nested objects merge key by key (VmBaseMapper's isSet
+// guards), arrays and scalars replace. Returns the target.
+function mergeEntity(target: Record<string, unknown>, patch: Record<string, unknown>) {
+  for (const [key, value] of Object.entries(patch)) {
+    const current = target[key]
+    if (
+      value !== null &&
+      typeof value === 'object' &&
+      !Array.isArray(value) &&
+      current !== null &&
+      typeof current === 'object' &&
+      !Array.isArray(current)
+    ) {
+      mergeEntity(current as Record<string, unknown>, value as Record<string, unknown>)
+    } else {
+      target[key] = value
+    }
+  }
+  return target
+}
+
+// Custom icons uploaded through a template body (large_icon { media_type,
+// data }) join the /icons catalog, as the engine stores them there and binds
+// the new id. A deterministic seq, restored by resetMockVms.
+let uploadedIconSeq = 0
+
+// VmBase body extras the mock applies the engine's way before merging: an
+// empty lease object clears the lease, and an inline icon upload becomes a new
+// catalog icon bound by id.
+function applyVmBaseBody(entity: Record<string, unknown>, body: Record<string, unknown>) {
+  const patch = { ...body }
+  if (patch.lease !== undefined && Object.keys(patch.lease as object).length === 0) {
+    delete entity.lease
+    delete patch.lease
+  }
+  const icon = patch.large_icon as { id?: string; media_type?: string; data?: string } | undefined
+  if (icon?.data !== undefined) {
+    uploadedIconSeq += 1
+    const id = `icon-upload-${uploadedIconSeq}`
+    iconCatalog.push({
+      id,
+      name: `Custom icon ${uploadedIconSeq}`,
+      media_type: icon.media_type ?? 'image/png',
+      data: icon.data,
+    })
+    patch.large_icon = { id }
+  }
+  return mergeEntity(entity, patch)
+}
+
+// PUT /templates/{id} — webadmin-style edit. Merges the request body onto the
+// matching detail fixture the engine's way (mergeEntity: nested blocks key by
+// key, so a body carrying only display.smartcard_enabled keeps the monitors),
+// mirrors name/description onto the flat list entry so GET /templates reflects
+// the edit, and returns the merged template; an unknown id 404s via
+// requireTemplateDetail.
 function updateTemplate(id: string, body: unknown): unknown {
   const detail = requireTemplateDetail(id)
-  const patch = (body ?? {}) as Partial<MockTemplateDetail>
-  Object.assign(detail, patch)
+  applyVmBaseBody(
+    detail as unknown as Record<string, unknown>,
+    (body ?? {}) as Record<string, unknown>,
+  )
   const summary = templates.find((t) => t.id === id)
   if (summary) {
     summary.name = detail.name
@@ -7764,6 +7865,47 @@ function updateTemplate(id: string, body: unknown): unknown {
   }
   return detail
 }
+
+// The VmBase keys a new template inherits from its source VM: the engine
+// builds the template from the VM's static data (BackendTemplatesResource
+// .addFromVm maps the request over it), so a body naming only the VM still
+// yields a fully configured template.
+const TEMPLATE_INHERITED_VM_KEYS = [
+  'os',
+  'cluster',
+  'memory',
+  'memory_policy',
+  'cpu',
+  'type',
+  'stateless',
+  'delete_protected',
+  'bios',
+  'display',
+  'usb',
+  'high_availability',
+  'lease',
+  'storage_error_resume_behaviour',
+  'time_zone',
+  'serial_number',
+  'custom_emulated_machine',
+  'custom_cpu_model',
+  'sso',
+  'soundcard_enabled',
+  'console',
+  'cpu_profile',
+  'cpu_shares',
+  'io',
+  'virtio_scsi',
+  'multi_queues_enabled',
+  'virtio_scsi_multi_queues_enabled',
+  'virtio_scsi_multi_queues',
+  'custom_properties',
+  'large_icon',
+] as const
+
+// Keys of a POST /templates body that are request parameters, not template
+// fields the mock should store.
+const TEMPLATE_CREATE_PARAMETER_KEYS = ['vm', 'version', 'name', 'description', 'comment']
 
 // DELETE /templates/{id} — webadmin-style remove. The Blank system template
 // (id 00000000-0000-0000-0000-000000000000 on a live engine, tpl-00 in these
@@ -7817,6 +7959,11 @@ function addTemplate(body: unknown): unknown {
   if (!spec.name) {
     throw new ApiError(400, 'Incomplete parameters', 'Template [name] required for add')
   }
+  // addFromVm needs the source VM (api-model TemplatesService.addFromVm:
+  // mandatory vm id or name); there is no VM-less create.
+  if (!spec.vm?.id) {
+    throw new ApiError(400, 'Incomplete parameters', 'Template [vm.id|name] required for add')
+  }
   const baseTemplateId = spec.version?.base_template?.id
   if (spec.version && !baseTemplateId) {
     throw new ApiError(400, 'Incomplete parameters', 'Template [version.baseTemplate] required')
@@ -7842,11 +7989,26 @@ function addTemplate(body: unknown): unknown {
           base_template: { id: baseTemplateId },
         }
       : { version_name: 'base version', version_number: 1 },
-    os: sourceVm?.os,
-    cluster: sourceVm?.cluster,
-    memory: sourceVm?.memory,
     origin: 'ovirt',
   }
+  // The VmBase configuration comes from the source VM, then the body's
+  // overrides apply on top.
+  if (sourceVm) {
+    const inherited = structuredClone(
+      Object.fromEntries(
+        TEMPLATE_INHERITED_VM_KEYS.flatMap((key) =>
+          sourceVm[key as keyof MockVm] !== undefined ? [[key, sourceVm[key as keyof MockVm]]] : [],
+        ),
+      ),
+    )
+    Object.assign(detail, inherited)
+  }
+  const overrides = Object.fromEntries(
+    Object.entries(body as Record<string, unknown>).filter(
+      ([key]) => !TEMPLATE_CREATE_PARAMETER_KEYS.includes(key),
+    ),
+  )
+  applyVmBaseBody(detail as unknown as Record<string, unknown>, overrides)
   templates.push({ id, name: detail.name, description: detail.description, os: detail.os })
   templateDetails[id] = detail
   setTimeout(() => {

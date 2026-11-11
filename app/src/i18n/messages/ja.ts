@@ -2338,6 +2338,22 @@ export const ja: LocaleCatalog = {
   'templateForm.memory.error.positive': 'メモリサイズは0より大きくする必要があります',
   'templateForm.memory.error.guaranteed': '物理メモリ保証はメモリサイズを超えることはできません',
   'templateForm.memory.error.max': '最大メモリはメモリサイズより小さくすることはできません',
+  // New template (standalone) and the sectioned template dialog (#28)
+  'templateForm.title.new': '新規テンプレート',
+  'templateForm.newAction': '新規テンプレート',
+  'templateForm.sections.ariaLabel': 'テンプレートのセクション',
+  'templateForm.sourceVm': 'ソースVM',
+  'templateForm.sourceVm.placeholder': '電源オフのVMを選択',
+  'templateForm.sourceVm.help':
+    '新しいテンプレートは、このVMのディスクと設定をコピーします。使用できるのは電源オフのVMのみです。このダイアログで変更した内容は、VMの設定より優先されます。',
+  'templateForm.sourceVm.empty':
+    '電源オフのVMがありません。VMをシャットダウンしてから、テンプレートを作成してください。',
+  'templateForm.sourceVm.disksNote':
+    'ディスクは現在のストレージドメインにコピーされます。ディスク割り当て、サブバージョン、シールが必要な場合は、VMの「テンプレートを作成」を使用してください。',
+  'templateForm.sourceVm.loading': 'VMの設定を読み込んでいます',
+  'templateForm.sourceVm.error': 'VMの設定を読み込めませんでした。',
+  'templateForm.sourceVm.hint':
+    'ソースVMを選択すると、テンプレートのシステム、コンソールなどを設定できます。',
   'templateExport.title': '{name}をOVAとしてエクスポート',
   'templateExport.host': 'ホスト',
   'templateExport.host.placeholder': 'ホストを選択',

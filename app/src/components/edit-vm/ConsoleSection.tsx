@@ -14,8 +14,8 @@ import {
   DISCONNECT_ACTION_OPTIONS,
   GRAPHICS_PROTOCOL_OPTIONS,
   VNC_KEYBOARD_LAYOUTS,
-  type EditVmDraft,
 } from './editVmDraft'
+import { fieldSetter, type ConsoleFields, type SectionChange } from './vmBaseDraft'
 
 // Monitor-count choices the console offers — SPICE supports 1/2/4 heads.
 const MONITOR_OPTIONS = [1, 2, 4]
@@ -28,17 +28,27 @@ function keyboardLayoutOptions(current: string): string[] {
     : [current, ...VNC_KEYBOARD_LAYOUTS]
 }
 
-// Presentational Console section of the Edit Virtual Machine modal: every input
-// is controlled from `draft` and writes back through `set`. No data fetching and
-// no save logic — the owning modal holds the draft state.
+// Console section, one of the shared VmBase sections (contract in
+// vmBaseDraft.ts): every input is controlled from `draft` and writes back
+// through `onChange`. No data fetching and no save logic — the owning form
+// holds the draft state.
 export function ConsoleSection({
   draft,
-  set,
+  onChange,
+  allowHeadless = true,
+  idPrefix = 'edit-vm',
 }: {
-  draft: EditVmDraft
-  set: <K extends keyof EditVmDraft>(key: K, value: EditVmDraft[K]) => void
+  draft: ConsoleFields
+  onChange: SectionChange<ConsoleFields>
+  // Headless means removing the graphics device, a graphics_consoles DELETE
+  // the form must perform itself (Edit VM does). A form that does not offers
+  // headless only while the entity already is headless, so the select still
+  // shows the loaded value.
+  allowHeadless?: boolean
+  idPrefix?: string
 }) {
   const t = useT()
+  const set = fieldSetter(onChange)
   const isVnc = draft.graphicsProtocol === 'vnc'
   const isSpice = draft.graphicsProtocol === 'spice'
   const isHeadless = draft.graphicsProtocol === 'headless'
@@ -47,7 +57,7 @@ export function ConsoleSection({
     <Form onSubmit={(event) => event.preventDefault()}>
       <FormGroup
         label={t('vm.edit.console.graphicsProtocol')}
-        fieldId="edit-vm-console-protocol"
+        fieldId={`${idPrefix}-console-protocol`}
         labelHelp={
           <FieldHelp
             field={t('vm.edit.console.graphicsProtocol')}
@@ -56,12 +66,14 @@ export function ConsoleSection({
         }
       >
         <FormSelect
-          id="edit-vm-console-protocol"
+          id={`${idPrefix}-console-protocol`}
           aria-label={t('vm.edit.console.graphicsProtocol')}
           value={draft.graphicsProtocol}
           onChange={(_event, value) => set('graphicsProtocol', value)}
         >
-          {GRAPHICS_PROTOCOL_OPTIONS.map((option) => (
+          {GRAPHICS_PROTOCOL_OPTIONS.filter(
+            (option) => allowHeadless || option.value !== 'headless',
+          ).map((option) => (
             <FormSelectOption
               key={option.value}
               value={option.value}
@@ -80,9 +92,9 @@ export function ConsoleSection({
         )}
       </FormGroup>
 
-      <FormGroup label={t('vm.edit.console.vncKeyboard')} fieldId="edit-vm-console-keyboard">
+      <FormGroup label={t('vm.edit.console.vncKeyboard')} fieldId={`${idPrefix}-console-keyboard`}>
         <FormSelect
-          id="edit-vm-console-keyboard"
+          id={`${idPrefix}-console-keyboard`}
           aria-label={t('vm.edit.console.vncKeyboard')}
           value={draft.vncKeyboardLayout}
           isDisabled={!isVnc}
@@ -97,13 +109,13 @@ export function ConsoleSection({
 
       <FormGroup
         label={t('vm.edit.console.monitors')}
-        fieldId="edit-vm-console-monitors"
+        fieldId={`${idPrefix}-console-monitors`}
         labelHelp={
           <FieldHelp field={t('vm.edit.console.monitors')} content={t('fieldHelp.vm.monitors')} />
         }
       >
         <FormSelect
-          id="edit-vm-console-monitors"
+          id={`${idPrefix}-console-monitors`}
           aria-label={t('vm.edit.console.monitors')}
           value={draft.monitors}
           onChange={(_event, value) => set('monitors', Number(value))}
@@ -114,9 +126,9 @@ export function ConsoleSection({
         </FormSelect>
       </FormGroup>
 
-      <FormGroup label={t('vm.edit.console.usbSupport')} fieldId="edit-vm-console-usb">
+      <FormGroup label={t('vm.edit.console.usbSupport')} fieldId={`${idPrefix}-console-usb`}>
         <Switch
-          id="edit-vm-console-usb"
+          id={`${idPrefix}-console-usb`}
           label={t('vm.edit.console.usb')}
           aria-label={t('vm.edit.console.usb')}
           isChecked={draft.usbEnabled}
@@ -126,7 +138,7 @@ export function ConsoleSection({
 
       <FormGroup
         label={t('vm.edit.console.smartcard.field')}
-        fieldId="edit-vm-console-smartcard"
+        fieldId={`${idPrefix}-console-smartcard`}
         labelHelp={
           <FieldHelp
             field={t('vm.edit.console.smartcard.field')}
@@ -135,7 +147,7 @@ export function ConsoleSection({
         }
       >
         <Switch
-          id="edit-vm-console-smartcard"
+          id={`${idPrefix}-console-smartcard`}
           label={t('vm.edit.console.smartcard')}
           aria-label={t('vm.edit.console.smartcard')}
           isChecked={draft.smartcardEnabled}
@@ -146,13 +158,13 @@ export function ConsoleSection({
 
       <FormGroup
         label={t('vm.edit.console.sso.field')}
-        fieldId="edit-vm-console-sso"
+        fieldId={`${idPrefix}-console-sso`}
         labelHelp={
           <FieldHelp field={t('vm.edit.console.sso.field')} content={t('fieldHelp.vm.sso')} />
         }
       >
         <Switch
-          id="edit-vm-console-sso"
+          id={`${idPrefix}-console-sso`}
           label={t('vm.edit.console.sso')}
           aria-label={t('vm.edit.console.sso')}
           isChecked={draft.ssoEnabled}
@@ -164,7 +176,7 @@ export function ConsoleSection({
           smartcard toggle below. */}
       <FormGroup
         label={t('vm.edit.console.fileTransfer.field')}
-        fieldId="edit-vm-console-file-transfer"
+        fieldId={`${idPrefix}-console-file-transfer`}
         labelHelp={
           <FieldHelp
             field={t('vm.edit.console.fileTransfer.field')}
@@ -173,7 +185,7 @@ export function ConsoleSection({
         }
       >
         <Switch
-          id="edit-vm-console-file-transfer"
+          id={`${idPrefix}-console-file-transfer`}
           label={t('vm.edit.console.fileTransfer')}
           aria-label={t('vm.edit.console.fileTransfer')}
           isChecked={draft.spiceFileTransfer}
@@ -184,7 +196,7 @@ export function ConsoleSection({
 
       <FormGroup
         label={t('vm.edit.console.copyPaste.field')}
-        fieldId="edit-vm-console-copy-paste"
+        fieldId={`${idPrefix}-console-copy-paste`}
         labelHelp={
           <FieldHelp
             field={t('vm.edit.console.copyPaste.field')}
@@ -193,7 +205,7 @@ export function ConsoleSection({
         }
       >
         <Switch
-          id="edit-vm-console-copy-paste"
+          id={`${idPrefix}-console-copy-paste`}
           label={t('vm.edit.console.copyPaste')}
           aria-label={t('vm.edit.console.copyPaste')}
           isChecked={draft.spiceCopyPaste}
@@ -202,9 +214,12 @@ export function ConsoleSection({
         />
       </FormGroup>
 
-      <FormGroup label={t('vm.edit.console.soundcard.field')} fieldId="edit-vm-console-soundcard">
+      <FormGroup
+        label={t('vm.edit.console.soundcard.field')}
+        fieldId={`${idPrefix}-console-soundcard`}
+      >
         <Switch
-          id="edit-vm-console-soundcard"
+          id={`${idPrefix}-console-soundcard`}
           label={t('vm.edit.console.soundcard')}
           aria-label={t('vm.edit.console.soundcard')}
           isChecked={draft.soundcardEnabled}
@@ -214,7 +229,7 @@ export function ConsoleSection({
 
       <FormGroup
         label={t('vm.edit.console.serial.field')}
-        fieldId="edit-vm-console-serial"
+        fieldId={`${idPrefix}-console-serial`}
         labelHelp={
           <FieldHelp
             field={t('vm.edit.console.serial.field')}
@@ -223,7 +238,7 @@ export function ConsoleSection({
         }
       >
         <Switch
-          id="edit-vm-console-serial"
+          id={`${idPrefix}-console-serial`}
           label={t('vm.edit.console.serialConsole')}
           aria-label={t('vm.edit.console.serialConsole')}
           isChecked={draft.serialConsoleEnabled}
@@ -233,7 +248,7 @@ export function ConsoleSection({
 
       <FormGroup
         label={t('vm.edit.console.disconnectAction')}
-        fieldId="edit-vm-console-disconnect-action"
+        fieldId={`${idPrefix}-console-disconnect-action`}
         labelHelp={
           <FieldHelp
             field={t('vm.edit.console.disconnectAction')}
@@ -242,7 +257,7 @@ export function ConsoleSection({
         }
       >
         <FormSelect
-          id="edit-vm-console-disconnect-action"
+          id={`${idPrefix}-console-disconnect-action`}
           aria-label={t('vm.edit.console.disconnectAction')}
           value={draft.disconnectAction}
           onChange={(_event, value) => set('disconnectAction', value)}

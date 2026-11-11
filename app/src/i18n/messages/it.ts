@@ -2371,6 +2371,22 @@ export const it: LocaleCatalog = {
     'La memoria fisica garantita non può superare la dimensione della memoria',
   'templateForm.memory.error.max':
     'La memoria massima non può essere inferiore alla dimensione della memoria',
+  // New template (standalone) and the sectioned template dialog (#28)
+  'templateForm.title.new': 'Nuovo template',
+  'templateForm.newAction': 'Nuovo template',
+  'templateForm.sections.ariaLabel': 'Sezioni del template',
+  'templateForm.sourceVm': 'VM di origine',
+  'templateForm.sourceVm.placeholder': 'Seleziona una VM spenta',
+  'templateForm.sourceVm.help':
+    'Il nuovo template copia i dischi e la configurazione di questa VM. È possibile usare solo una VM spenta. Le modifiche apportate in questa finestra di dialogo sostituiscono le impostazioni della VM.',
+  'templateForm.sourceVm.empty':
+    'Nessuna VM è spenta. Arresta una VM per creare un template da essa.',
+  'templateForm.sourceVm.disksNote':
+    "I dischi vengono copiati nei loro domini di archiviazione attuali. Per l'allocazione dei dischi, le sottoversioni o la sigillatura, usa Crea template sulla VM.",
+  'templateForm.sourceVm.loading': 'Caricamento della configurazione della VM',
+  'templateForm.sourceVm.error': 'Impossibile caricare la configurazione della VM.',
+  'templateForm.sourceVm.hint':
+    'Seleziona una VM di origine per impostare il sistema, la console e le altre impostazioni del template.',
   'templateExport.title': 'Esporta {name} come OVA',
   'templateExport.host': 'Host',
   'templateExport.host.placeholder': 'Seleziona un host',
