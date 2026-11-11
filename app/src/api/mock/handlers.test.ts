@@ -477,7 +477,7 @@ describe('VM pool CRUD (mock)', () => {
       createPool({
         name: 'qa-pool',
         cluster: { id: 'cluster-01' },
-        template: { id: 'template-01' },
+        template: { id: 'tpl-01' },
         // string scalars exercise the schema's z.coerce.number()
         size: '4',
         prestarted_vms: '1',
@@ -490,9 +490,10 @@ describe('VM pool CRUD (mock)', () => {
     expect(created.prestarted_vms).toBe(1)
     expect(created.max_user_vms).toBe(2)
     expect(created.type).toBe('automatic')
-    // template is consumed by the engine to build the base VM and never stored
-    // on the pool entity, so it is not echoed back
+    // the engine builds the member VMs from the template and links one as the
+    // pool's vm
     expect(created.cluster?.id).toBe('cluster-01')
+    expect(created.vm?.id).toBeDefined()
     const after = await settle(listPools())
     expect(after.map((p) => p.name)).toContain('qa-pool')
     // clean up so ids stay deterministic for later cases
@@ -504,7 +505,7 @@ describe('VM pool CRUD (mock)', () => {
       createPool({
         name: 'edit-pool',
         cluster: { id: 'cluster-01' },
-        template: { id: 'template-01' },
+        template: { id: 'tpl-01' },
         size: 2,
         type: 'automatic',
       }),
@@ -545,7 +546,7 @@ describe('VM pool CRUD (mock)', () => {
       createPool({
         name: 'temp-pool',
         cluster: { id: 'cluster-01' },
-        template: { id: 'template-01' },
+        template: { id: 'tpl-01' },
         size: 1,
       }),
     )
@@ -556,13 +557,13 @@ describe('VM pool CRUD (mock)', () => {
 
   it('rejects a create missing the required name (400)', async () => {
     await settleRejection(
-      createPool({ cluster: { id: 'cluster-01' }, template: { id: 'template-01' } }),
+      createPool({ cluster: { id: 'cluster-01' }, template: { id: 'tpl-01' } }),
       { status: 400, message: expect.stringContaining('name') },
     )
   })
 
   it('rejects a create missing the required cluster (400)', async () => {
-    await settleRejection(createPool({ name: 'no-cluster', template: { id: 'template-01' } }), {
+    await settleRejection(createPool({ name: 'no-cluster', template: { id: 'tpl-01' } }), {
       status: 400,
       message: expect.stringContaining('cluster'),
     })
@@ -580,7 +581,7 @@ describe('VM pool CRUD (mock)', () => {
       createPool({
         name: 'dev-pool',
         cluster: { id: 'cluster-01' },
-        template: { id: 'template-01' },
+        template: { id: 'tpl-01' },
       }),
       { status: 409, message: expect.stringContaining('already in use') },
     )
@@ -591,6 +592,70 @@ describe('VM pool CRUD (mock)', () => {
     await settleRejection(updatePool('pool-01', { size: 3 }), {
       status: 409,
       message: expect.stringContaining('decrease'),
+    })
+  })
+
+  it('404s a create naming an unknown template', async () => {
+    await settleRejection(
+      createPool({ name: 'ghost', cluster: { id: 'cluster-01' }, template: { id: 'tpl-99' } }),
+      { status: 404 },
+    )
+  })
+
+  it('builds the member VMs from the template with the vm overrides on top', async () => {
+    const created = await settle(
+      createPool({
+        name: 'depth-pool',
+        cluster: { id: 'cluster-01' },
+        template: { id: 'tpl-02' },
+        size: 2,
+        soundcard_enabled: false,
+        // usb / virtio_scsi are not read from vm by the pool add
+        vm: {
+          memory: 4 * 1024 ** 3,
+          display: { monitors: 1 },
+          usb: { enabled: true },
+          virtio_scsi: { enabled: false },
+        },
+      }),
+    )
+    const members = (await settle(listVms())).filter((vm) => vm.name.startsWith('depth-pool-'))
+    expect(members.map((vm) => vm.name)).toEqual(['depth-pool-1', 'depth-pool-2'])
+    const member = await settle(getVm(created.vm!.id!))
+    expect(member).toMatchObject({
+      memory: 4 * 1024 ** 3,
+      // the template's display type and cpu shares stay; monitors are overridden
+      display: { type: 'spice', monitors: 1 },
+      cpu_shares: 1024,
+      virtio_scsi: { enabled: true },
+      soundcard_enabled: false,
+    })
+    expect(member.usb?.enabled).not.toBe(true)
+  })
+
+  it('ignores vm on update and grows the pool with copies of its members', async () => {
+    const created = await settle(
+      createPool({
+        name: 'grow-pool',
+        cluster: { id: 'cluster-01' },
+        template: { id: 'tpl-02' },
+        size: 1,
+        vm: { cpu_shares: 2048 },
+      }),
+    )
+    await settle(updatePool(created.id, { size: 2, vm: { cpu_shares: 512 } }))
+    const members = (await settle(listVms())).filter((vm) => vm.name.startsWith('grow-pool-'))
+    expect(members).toHaveLength(2)
+    for (const member of members) {
+      expect((await settle(getVm(member.id))).cpu_shares).toBe(2048)
+    }
+  })
+
+  it('rejects a stateful change on update (VM_POOL_CANNOT_CHANGE_POOL_STATEFUL_OPTION)', async () => {
+    // pool-01 is stateful in the fixtures
+    await settleRejection(updatePool('pool-01', { stateful: false }), {
+      status: 409,
+      message: expect.stringContaining('stateful'),
     })
   })
 
