@@ -1793,6 +1793,11 @@ export const ptBR: LocaleCatalog = {
     'Funciona com noVNC e a maioria dos visualizadores de desktop.',
   'settings.pref.console.spiceDescription': 'Experiência remota mais rica via virt-viewer.',
   'settings.pref.language': 'Idioma',
+  // Roaming note (components/UserMenu, settings/RoamingSettingsProvider)
+  'settings.pref.roaming.synced':
+    'Salvas no seu perfil de usuário do oVirt, por isso acompanham você em outros navegadores.',
+  'settings.pref.roaming.local':
+    'Salvas somente neste navegador; seu perfil de usuário do oVirt não está disponível para armazená-las.',
   'settings.refresh.seconds': '{count, plural, one {# segundo} other {# segundos}}',
   'settings.timeout.minutes': '{count, plural, one {# minuto} other {# minutos}}',
   'settings.timeout.hours': '{count, plural, one {# hora} other {# horas}}',
@@ -2350,6 +2355,22 @@ export const ptBR: LocaleCatalog = {
   'templateForm.memory.error.guaranteed':
     'A memória física garantida não pode exceder o tamanho da memória',
   'templateForm.memory.error.max': 'A memória máxima não pode ser menor que o tamanho da memória',
+  // New template (standalone) and the sectioned template dialog (#28)
+  'templateForm.title.new': 'Novo modelo',
+  'templateForm.newAction': 'Novo modelo',
+  'templateForm.sections.ariaLabel': 'Seções do modelo',
+  'templateForm.sourceVm': 'VM de origem',
+  'templateForm.sourceVm.placeholder': 'Selecione uma VM desligada',
+  'templateForm.sourceVm.help':
+    'O novo modelo copia os discos e a configuração desta VM. Somente uma VM desligada pode ser usada. O que você alterar nesta caixa de diálogo substitui as configurações da VM.',
+  'templateForm.sourceVm.empty':
+    'Nenhuma VM está desligada. Desligue uma VM para criar um modelo a partir dela.',
+  'templateForm.sourceVm.disksNote':
+    'Os discos são copiados para os domínios de armazenamento atuais. Para alocação de disco, subversões ou selagem, use Criar modelo na VM.',
+  'templateForm.sourceVm.loading': 'Carregando a configuração da VM',
+  'templateForm.sourceVm.error': 'Não foi possível carregar a configuração da VM.',
+  'templateForm.sourceVm.hint':
+    'Selecione uma VM de origem para definir o sistema, o console e outras configurações do modelo.',
   'templateExport.title': 'Exportar {name} como OVA',
   'templateExport.host': 'Host',
   'templateExport.host.placeholder': 'Selecione um host',
@@ -4968,6 +4989,75 @@ export const ptBR: LocaleCatalog = {
     'Para configurar totalmente o data center, anexe e ative pelo menos um domínio de armazenamento local.',
   'guideMe.note.clusterNoActions':
     'Nenhuma ação está disponível para este cluster: ele não está anexado a um data center.',
+  // Configure aggregate entry point (pages/ConfigurePage.tsx): the webadmin
+  // Administration › Configure index linking to its five surfaces.
+  'nav.configure': 'Configurar',
+  'configure.title': 'Configurar',
+  'configure.intro':
+    'Definições de todo o motor compartilhadas por todos os data centers e clusters. Cada uma abre em sua própria página.',
+  'configure.loading': 'Carregando áreas de configuração',
+  'configure.notPermitted': 'a configuração do sistema',
+  'configure.list.ariaLabel': 'Áreas de configuração',
+  'configure.card.roles':
+    'Defina funções e as permissões que cada uma concede a usuários e administradores.',
+  'configure.card.systemPermissions': 'Atribua funções a usuários e grupos em todo o sistema.',
+  'configure.card.schedulingPolicies':
+    'Gerencie as regras de filtro, peso e balanceamento que os clusters usam para posicionar VMs.',
+  'configure.card.instanceTypes':
+    'Defina perfis de hardware reutilizáveis para novas máquinas virtuais.',
+  'configure.card.macPools': 'Gerencie os intervalos de endereços MAC atribuídos às NICs virtuais.',
+  // EDIT VM: Foreman/Satellite section (provider picker)
+  'vm.edit.section.foreman': 'Foreman/Satellite',
+  'vm.edit.foreman.provider': 'Provedor',
+  'vm.edit.foreman.none': 'Nenhum provedor',
+  'vm.edit.foreman.unknown': 'Provedor desconhecido ({id})',
+  'vm.edit.foreman.loading': 'Carregando provedores Foreman/Satellite',
+  'vm.edit.foreman.empty':
+    'Nenhum provedor Foreman/Satellite está registrado. Adicione um na página Fornecedores para vincular esta VM a ele.',
+  'vm.edit.foreman.help':
+    'O mecanismo obtém as errata desta VM do provedor Foreman/Satellite escolhido.',
+  // Template Storage tab + scoped Events tabs (issue #33) ----------------
+  'scopedEvents.loading': 'Carregando eventos',
+  'scopedEvents.error.title': 'Não foi possível carregar eventos',
+  'scopedEvents.empty.title': 'Nenhum evento',
+  'templateDetail.tab.storage': 'Armazenamento',
+  'templateDetail.tab.events': 'Eventos',
+  'templateEvents.empty.body':
+    'Os eventos do log de auditoria do engine para este modelo aparecerão aqui.',
+  'templateEvents.table.ariaLabel': 'Eventos deste modelo',
+  'templateStorage.empty.body': 'Nenhum disco deste modelo está em um domínio de armazenamento.',
+  'templateStorage.table.ariaLabel': 'Domínios de armazenamento com os discos deste modelo',
+  'templateStorage.column.used': 'Espaço usado',
+  'templateStorage.column.disks': 'Discos',
+  'templateStorage.expand.ariaLabel': 'Mostrar discos',
+  'templateStorage.disks.ariaLabel': 'Discos do modelo em {name}',
+  'clusterDetail.tab.events': 'Eventos',
+  'clusterEvents.empty.body':
+    'Os eventos do log de auditoria do engine para este cluster aparecerão aqui.',
+  'clusterEvents.table.ariaLabel': 'Eventos deste cluster',
+  'dcDetail.tab.events': 'Eventos',
+  'dcEvents.empty.body':
+    'Os eventos do log de auditoria do engine para este centro de dados aparecerão aqui.',
+  'dcEvents.table.ariaLabel': 'Eventos deste centro de dados',
+  'storageDetail.tab.events': 'Eventos',
+  'storageEvents.empty.body':
+    'Os eventos do log de auditoria do engine para este domínio de armazenamento aparecerão aqui.',
+  'storageEvents.table.ariaLabel': 'Eventos deste domínio de armazenamento',
+  'quotaDetail.tab.events': 'Eventos',
+  'quotaEvents.empty.body':
+    'Os eventos do log de auditoria do engine para esta cota aparecerão aqui.',
+  'quotaEvents.table.ariaLabel': 'Eventos desta cota',
+  // List-grid columns filled by a follow= or one shared read (issue #34)
+  'vms.column.cpu': 'CPU',
+  'vms.column.network': 'Rede',
+  'vms.column.ips': 'Endereços IP',
+  'disks.column.attachedTo': 'Anexado a',
+  'disks.column.quota': 'Cota',
+  'networks.column.qos': 'Nome da QoS',
+  'vnicProfiles.column.qos': 'Nome da QoS',
+  'vnicProfiles.column.networkFilter': 'Filtro de rede',
+  'pools.column.running': 'VMs em execução',
+  'volumes.column.spaceUsed': 'Espaço usado',
   // UI extensions (docs/PLUGINS.md): sidebar group, plugin error state,
   // plugin page states, About dialog plugin list ------------------------
   'nav.group.extensions': 'Extensões',

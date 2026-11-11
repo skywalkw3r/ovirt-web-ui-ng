@@ -46,7 +46,8 @@ import { UploadImageModal } from '../components/disk-form/UploadImageModal'
 import { ColumnPicker } from '../components/list-toolbar/ColumnPicker'
 import { ResizableTh, resizableTableProps } from '../components/list-toolbar/ResizableTh'
 import { SearchInput } from '../components/list-toolbar/SearchInput'
-import { useAllDisks } from '../hooks/useCatalogPages'
+import { useAllDisks, useDiskOwnerNames } from '../hooks/useCatalogPages'
+import { useQuotas } from '../hooks/useParityResources'
 import { useColumnPrefs } from '../hooks/useColumnPrefs'
 import { sortRows, useColumnSort } from '../hooks/useColumnSort'
 import {
@@ -77,6 +78,11 @@ import {
 // id-only links; a list-wide ?follow= is avoided per the live-engine quirk).
 interface DiskColumnCtx {
   storageDomainName: (id: string | undefined) => string | undefined
+  // VM/template names holding the disk (useDiskOwnerNames); undefined while
+  // that map is not loaded
+  ownerNames: (diskId: string) => string[] | undefined
+  // quota id → name via the cached flat quota list (useQuotas)
+  quotaName: (id: string | undefined) => string | undefined
   t: ReturnType<typeof useT>
 }
 
@@ -132,6 +138,20 @@ const COLUMNS: DiskColumn[] = [
         : disk.shareable
           ? ctx.t('common.yes')
           : ctx.t('common.no'),
+  },
+  {
+    // webadmin's Attached To. Nothing about attachments rides the flat /disks
+    // list, so the names come from one /vms + one /templates read with
+    // follow=disk_attachments (useDiskOwnerNames), issued only while this
+    // column is visible.
+    key: 'attachedTo',
+    labelId: 'disks.column.attachedTo',
+    sortValue: (disk, ctx) => ctx.ownerNames(disk.id)?.join(', '),
+    defaultHidden: true,
+    cell: (disk, ctx) => {
+      const names = ctx.ownerNames(disk.id)
+      return names !== undefined && names.length > 0 ? names.join(', ') : '—'
+    },
   },
   {
     key: 'storageDomains',
@@ -217,6 +237,16 @@ const COLUMNS: DiskColumn[] = [
     cell: (disk) => disk.description || '—',
   },
   {
+    // the flat list carries quota as a bare { id } link; the name joins
+    // against the flat quota list (one /datacenters/{id}/quotas read per data
+    // center, shared with the Quotas page), read only while this column shows
+    key: 'quota',
+    labelId: 'disks.column.quota',
+    sortValue: (disk, ctx) => disk.quota?.name ?? ctx.quotaName(disk.quota?.id),
+    defaultHidden: true,
+    cell: (disk, ctx) => disk.quota?.name ?? ctx.quotaName(disk.quota?.id) ?? '—',
+  },
+  {
     key: 'format',
     labelId: 'disks.column.format',
     sortValue: (disk) => disk.format,
@@ -225,12 +255,10 @@ const COLUMNS: DiskColumn[] = [
     cell: (disk) => diskFormatText(disk.format),
   },
 ]
-// Deferred vs webadmin's grid: Attached To (nothing about attachments rides
-// the flat /disks list — needs per-disk /disks/{id}/vms, an N+1),
-// Creation Date / Last Modified (DiskImage GWT-RPC fields the REST Disk
-// entity does not expose), Quota (bare id link on the flat list, no cached
-// quota inventory to join), LUN ID/Serial/Vendor/Product (webadmin shows
-// them only in its LUN-only radio view).
+// Deferred vs webadmin's grid: Creation Date / Last Modified (DiskImage
+// GWT-RPC fields the REST Disk entity does not expose), LUN
+// ID/Serial/Vendor/Product (webadmin shows them only in its LUN-only radio
+// view).
 
 // --- Action gating (webadmin DiskOperationsHelper / VmDiskListModel rules) ----
 // The pure rules live in lib/diskActionGuards (shared with the VM Disks tab so
@@ -270,12 +298,17 @@ function DisksTable() {
   // id → name join for Storage Domain(s) (already cached app-wide; the flat
   // /disks list carries storage_domains as id-only links)
   const storageDomains = useStorageDomains()
-  const columnCtx: DiskColumnCtx = {
-    storageDomainName: (id) => storageDomains.data?.find((sd) => sd.id === id)?.name,
-    t,
-  }
   const columns = useMemo(() => COLUMNS.map((c) => ({ ...c, label: t(c.labelId) })), [t])
   const prefs = useColumnPrefs('disks', columns)
+  const owners = useDiskOwnerNames(prefs.isVisible('attachedTo'))
+  const quotas = useQuotas({ enabled: prefs.isVisible('quota') })
+  const columnCtx: DiskColumnCtx = {
+    storageDomainName: (id) => storageDomains.data?.find((sd) => sd.id === id)?.name,
+    // a loaded map without the disk means "attached to nothing"
+    ownerNames: (diskId) => (owners.data === undefined ? undefined : (owners.data[diskId] ?? [])),
+    quotaName: (id) => quotas.data?.find((quota) => quota.id === id)?.name,
+    t,
+  }
   // client-side header sort; no default — the engine list order stands
   // until a header is clicked (see hooks/useColumnSort)
   const { sort, thSort } = useColumnSort()

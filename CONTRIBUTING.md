@@ -66,9 +66,11 @@ isAdmin, loaded }`. Admin-only nav entries and pages are hidden per tier;
 - **Providers** (nested in `main.tsx`) — `theme/ThemeProvider.tsx` owns the
   `pf-v6-theme-dark` class on `<html>` (dark default, localStorage
   `console-theme`); `settings/SettingsProvider.tsx` owns refresh interval and
-  preferred console (localStorage `console-settings`; engine user-options
-  roaming is the Phase-later path, patterned on the original ovirt-web-ui's
-  `optionsManager` — see upstream).
+  preferred console (localStorage `console-settings`, the first paint and the
+  fallback); `settings/RoamingSettingsProvider.tsx` (inside `AuthProvider`)
+  roams those preferences and the theme through the engine's
+  `/users/{id}/options` as one `webUiNg.settings` JSON option — protocol and
+  merge rule in `settings/roaming.ts`.
 - Toasts and the notification drawer live in `notifications/`.
 - `extensions/` — UI plugins (docs/PLUGINS.md): `api.ts` is the public,
   versioned contract; `loader.ts` loads allow-listed plugins after sign-in;

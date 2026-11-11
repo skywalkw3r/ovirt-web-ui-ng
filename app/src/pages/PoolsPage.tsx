@@ -24,6 +24,7 @@ import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table'
 import { EllipsisVIcon } from '@patternfly/react-icons'
 import { Link } from '@tanstack/react-router'
 import type { VmPool } from '../api/schemas/pool'
+import { useCapabilities } from '../auth/capabilities'
 import { useT } from '../i18n/useT'
 import type { MessageId } from '../i18n/messages/en'
 import { ConfirmModal } from '../components/ConfirmModal'
@@ -37,7 +38,15 @@ import { useColumnPrefs } from '../hooks/useColumnPrefs'
 import { sortRows, useColumnSort } from '../hooks/useColumnSort'
 import { useDeletePool } from '../hooks/usePoolMutations'
 import { usePools } from '../hooks/useAdminResources'
+import { useVms } from '../hooks/useVms'
 import { statusText } from '../lib/format'
+import { runningVmCounts } from '../lib/poolRunningVms'
+
+// Running-VM counts come from a client-side join against the shared /vms list
+// (see the running column); undefined while that list is not loaded.
+interface PoolColumnCtx {
+  runningVms: (poolId: string) => number | undefined
+}
 
 interface PoolColumn {
   key: string
@@ -45,8 +54,8 @@ interface PoolColumn {
   always?: boolean
   defaultHidden?: boolean
   // opt-in header sort (see hooks/useColumnSort)
-  sortValue?: (pool: VmPool) => string | number | undefined
-  cell: (pool: VmPool) => ReactNode
+  sortValue?: (pool: VmPool, ctx: PoolColumnCtx) => string | number | undefined
+  cell: (pool: VmPool, ctx: PoolColumnCtx) => ReactNode
 }
 
 // Headers and cells both map over the same isVisible-filtered array so they
@@ -79,6 +88,18 @@ const COLUMNS: PoolColumn[] = [
     sortValue: (pool) => pool.size,
     cell: (pool) => pool.size ?? '—',
   },
+  // webadmin's Running VMs (RunningVmsCount). VmPoolMapper never maps it onto
+  // the REST VmPool, so it is counted from the /vms list (each Vm carries its
+  // vm_pool link) — the same shared list entry the VMs page polls, read only
+  // while this column is visible, and only for admins: a user-tier /vms read
+  // is filtered to the user's own VMs, so its counts would be wrong.
+  {
+    key: 'running',
+    labelId: 'pools.column.running',
+    sortValue: (pool, ctx) => ctx.runningVms(pool.id),
+    defaultHidden: true,
+    cell: (pool, ctx) => ctx.runningVms(pool.id) ?? '—',
+  },
   {
     key: 'type',
     labelId: 'common.field.type',
@@ -92,10 +113,6 @@ const COLUMNS: PoolColumn[] = [
     cell: (pool) => pool.description || '—',
   },
 ]
-
-// Deferred vs webadmin's grid: Running VMs — the backend's RunningVmsCount is
-// never mapped onto the REST VmPool type, so counting would need each pool's
-// vms subcollection (N+1 per row).
 
 // Per-row kebab: Edit opens the form modal in edit mode; Remove opens the
 // typed-name danger confirm. Remove is the destructive path — the engine
@@ -192,6 +209,17 @@ export function PoolsPage() {
     [t],
   )
   const prefs = useColumnPrefs('pools', columns)
+  const { isAdmin } = useCapabilities()
+  const vms = useVms('', { enabled: isAdmin && prefs.isVisible('running') })
+  const runningCounts = useMemo(
+    () => (vms.data === undefined ? undefined : runningVmCounts(vms.data)),
+    [vms.data],
+  )
+  const columnCtx: PoolColumnCtx = {
+    // a pool with no running member is absent from the map: 0, not unknown
+    runningVms: (poolId) =>
+      runningCounts === undefined ? undefined : (runningCounts.get(poolId) ?? 0),
+  }
   // client-side header sort; no default — the engine list order stands
   // until a header is clicked (see hooks/useColumnSort)
   const { sort, thSort } = useColumnSort()
@@ -208,7 +236,7 @@ export function PoolsPage() {
       (pool.type ?? '').toLowerCase().includes(needle),
   )
   const rows = sortRows(filtered, sort, (row, key) =>
-    columns.find((column) => column.key === key)?.sortValue?.(row),
+    columns.find((column) => column.key === key)?.sortValue?.(row, columnCtx),
   )
   // undefined = closed; { pool } = edit; { pool: undefined } = create.
   const [editing, setEditing] = useState<{ pool?: VmPool } | null>(null)
@@ -340,7 +368,7 @@ export function PoolsPage() {
                 <Tr key={pool.id}>
                   {visibleColumns.map((column) => (
                     <Td key={column.key} dataLabel={column.label}>
-                      {column.cell(pool)}
+                      {column.cell(pool, columnCtx)}
                     </Td>
                   ))}
                   <Td dataLabel={t('common.field.actions')} isActionCell>

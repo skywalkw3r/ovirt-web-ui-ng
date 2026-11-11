@@ -95,6 +95,21 @@ export async function listProviders(): Promise<Provider[]> {
   })
 }
 
+// The Foreman/Satellite providers alone, for Edit VM's provider picker.
+// /externalhostproviders is already that set: the engine lists it through
+// GetAllProviders(ProviderType.FOREMAN) (BackendExternalHostProvidersResource),
+// the same query webadmin's UnitVmModel.initForemanProviders runs. Unlike
+// listProviders a failure propagates, so the picker shows an error and Retry
+// instead of passing a dead read off as "no providers".
+export async function listExternalHostProviders(): Promise<Provider[]> {
+  const collection = PROVIDER_COLLECTIONS.host
+  const parsed = ExternalHostProviderListSchema.parse(await request(collection.path))
+  return (parsed.external_host_provider ?? []).map((provider) => ({
+    ...provider,
+    providerType: 'host' as const,
+  }))
+}
+
 // Webadmin-style create: POST the new provider's fields to its typed
 // collection. The engine requires a name+url and answers with the full created
 // provider (never a password), parsed through ExternalProviderSchema so callers

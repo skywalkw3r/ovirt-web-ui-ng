@@ -31,6 +31,8 @@ import { ClusterNetworksTab } from '../components/cluster-tabs/ClusterNetworksTa
 import { ClusterPermissionsTab } from '../components/cluster-tabs/ClusterPermissionsTab'
 import { ClusterVmsTab } from '../components/cluster-tabs/ClusterVmsTab'
 import { ClusterMonitoringTab } from '../components/cluster-tabs/ClusterMonitoringTab'
+import { ScopedEventsTab } from '../components/events/ScopedEventsTab'
+import { scopedEventsSearch } from '../lib/scopedEvents'
 import { useCluster } from '../hooks/useClusterDetail'
 import { clusterDetailRoute } from '../routes/router'
 import { useExtensionTabs } from '../extensions/useExtensionTabs'
@@ -215,6 +217,18 @@ export function ClusterDetailPage() {
             >
               <TabContentBody hasPadding>
                 <ClusterPermissionsTab clusterId={clusterId} />
+              </TabContentBody>
+            </Tab>
+            <Tab
+              eventKey="events"
+              title={<TabTitleText>{t('clusterDetail.tab.events')}</TabTitleText>}
+            >
+              <TabContentBody hasPadding>
+                <ScopedEventsTab
+                  search={scopedEventsSearch.cluster(cluster.data.name)}
+                  ariaLabel={t('clusterEvents.table.ariaLabel')}
+                  emptyBody={t('clusterEvents.empty.body')}
+                />
               </TabContentBody>
             </Tab>
             {extensionTabs}

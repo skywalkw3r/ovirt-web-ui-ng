@@ -1780,6 +1780,11 @@ export const ja: LocaleCatalog = {
     'noVNCおよびほとんどのデスクトップビューアーで動作します。',
   'settings.pref.console.spiceDescription': 'virt-viewerを介したよりリッチなリモート体験。',
   'settings.pref.language': '言語',
+  // Roaming note (components/UserMenu, settings/RoamingSettingsProvider)
+  'settings.pref.roaming.synced':
+    'oVirt ユーザープロファイルに保存されるため、他のブラウザーでも同じ設定が使われます。',
+  'settings.pref.roaming.local':
+    'このブラウザーにのみ保存されます。oVirt ユーザープロファイルには保存できません。',
   'settings.refresh.seconds': '{count, plural, other {# 秒}}',
   'settings.timeout.minutes': '{count, plural, other {# 分}}',
   'settings.timeout.hours': '{count, plural, other {# 時間}}',
@@ -2333,6 +2338,22 @@ export const ja: LocaleCatalog = {
   'templateForm.memory.error.positive': 'メモリサイズは0より大きくする必要があります',
   'templateForm.memory.error.guaranteed': '物理メモリ保証はメモリサイズを超えることはできません',
   'templateForm.memory.error.max': '最大メモリはメモリサイズより小さくすることはできません',
+  // New template (standalone) and the sectioned template dialog (#28)
+  'templateForm.title.new': '新規テンプレート',
+  'templateForm.newAction': '新規テンプレート',
+  'templateForm.sections.ariaLabel': 'テンプレートのセクション',
+  'templateForm.sourceVm': 'ソースVM',
+  'templateForm.sourceVm.placeholder': '電源オフのVMを選択',
+  'templateForm.sourceVm.help':
+    '新しいテンプレートは、このVMのディスクと設定をコピーします。使用できるのは電源オフのVMのみです。このダイアログで変更した内容は、VMの設定より優先されます。',
+  'templateForm.sourceVm.empty':
+    '電源オフのVMがありません。VMをシャットダウンしてから、テンプレートを作成してください。',
+  'templateForm.sourceVm.disksNote':
+    'ディスクは現在のストレージドメインにコピーされます。ディスク割り当て、サブバージョン、シールが必要な場合は、VMの「テンプレートを作成」を使用してください。',
+  'templateForm.sourceVm.loading': 'VMの設定を読み込んでいます',
+  'templateForm.sourceVm.error': 'VMの設定を読み込めませんでした。',
+  'templateForm.sourceVm.hint':
+    'ソースVMを選択すると、テンプレートのシステム、コンソールなどを設定できます。',
   'templateExport.title': '{name}をOVAとしてエクスポート',
   'templateExport.host': 'ホスト',
   'templateExport.host.placeholder': 'ホストを選択',
@@ -4928,6 +4949,71 @@ export const ja: LocaleCatalog = {
     'データセンターを完全に設定するには、ローカルストレージドメインを少なくとも 1 つ接続して有効化してください。',
   'guideMe.note.clusterNoActions':
     'このクラスターで使用できる操作はありません: どのデータセンターにも接続されていません。',
+  // Configure aggregate entry point (pages/ConfigurePage.tsx): the webadmin
+  // Administration › Configure index linking to its five surfaces.
+  'nav.configure': '構成',
+  'configure.title': '構成',
+  'configure.intro':
+    'すべてのデータセンターとクラスターで共有される、エンジン全体の定義です。それぞれ専用のページで開きます。',
+  'configure.loading': '構成領域を読み込んでいます',
+  'configure.notPermitted': 'システム構成',
+  'configure.list.ariaLabel': '構成領域',
+  'configure.card.roles': 'ロールと、各ロールがユーザーおよび管理者に付与する権限を定義します。',
+  'configure.card.systemPermissions': 'システム全体でユーザーとグループにロールを割り当てます。',
+  'configure.card.schedulingPolicies':
+    'クラスターがVMの配置に使用するフィルター、重み付け、負荷分散のルールを管理します。',
+  'configure.card.instanceTypes':
+    '新しい仮想マシン用の再利用可能なハードウェアプロファイルを定義します。',
+  'configure.card.macPools': '仮想NICに割り当てるMACアドレスの範囲を管理します。',
+  // EDIT VM: Foreman/Satellite section (provider picker)
+  'vm.edit.section.foreman': 'Foreman/Satellite',
+  'vm.edit.foreman.provider': 'プロバイダー',
+  'vm.edit.foreman.none': 'プロバイダーなし',
+  'vm.edit.foreman.unknown': '不明なプロバイダー ({id})',
+  'vm.edit.foreman.loading': 'Foreman/Satellite プロバイダーを読み込んでいます',
+  'vm.edit.foreman.empty':
+    'Foreman/Satellite プロバイダーが登録されていません。この VM をバインドするには、プロバイダーページで追加してください。',
+  'vm.edit.foreman.help':
+    'エンジンは、選択した Foreman/Satellite プロバイダーからこの VM の正誤表を取得します。',
+  // Template Storage tab + scoped Events tabs (issue #33) ----------------
+  'scopedEvents.loading': 'イベントを読み込んでいます',
+  'scopedEvents.error.title': 'イベントを読み込めませんでした',
+  'scopedEvents.empty.title': 'イベントがありません',
+  'templateDetail.tab.storage': 'ストレージ',
+  'templateDetail.tab.events': 'イベント',
+  'templateEvents.empty.body': 'このテンプレートのエンジン監査ログイベントがここに表示されます。',
+  'templateEvents.table.ariaLabel': 'このテンプレートのイベント',
+  'templateStorage.empty.body':
+    'このテンプレートのディスクはどのストレージドメインにもありません。',
+  'templateStorage.table.ariaLabel': 'このテンプレートのディスクを保持するストレージドメイン',
+  'templateStorage.column.used': '使用領域',
+  'templateStorage.column.disks': 'ディスク',
+  'templateStorage.expand.ariaLabel': 'ディスクを表示',
+  'templateStorage.disks.ariaLabel': '{name} 上のテンプレートディスク',
+  'clusterDetail.tab.events': 'イベント',
+  'clusterEvents.empty.body': 'このクラスターのエンジン監査ログイベントがここに表示されます。',
+  'clusterEvents.table.ariaLabel': 'このクラスターのイベント',
+  'dcDetail.tab.events': 'イベント',
+  'dcEvents.empty.body': 'このデータセンターのエンジン監査ログイベントがここに表示されます。',
+  'dcEvents.table.ariaLabel': 'このデータセンターのイベント',
+  'storageDetail.tab.events': 'イベント',
+  'storageEvents.empty.body':
+    'このストレージドメインのエンジン監査ログイベントがここに表示されます。',
+  'storageEvents.table.ariaLabel': 'このストレージドメインのイベント',
+  'quotaDetail.tab.events': 'イベント',
+  'quotaEvents.empty.body': 'このクォータのエンジン監査ログイベントがここに表示されます。',
+  'quotaEvents.table.ariaLabel': 'このクォータのイベント',
+  // List-grid columns filled by a follow= or one shared read (issue #34)
+  'vms.column.cpu': 'CPU',
+  'vms.column.network': 'ネットワーク',
+  'vms.column.ips': 'IPアドレス',
+  'disks.column.attachedTo': 'アタッチ先',
+  'disks.column.quota': 'クォータ',
+  'networks.column.qos': 'QoS名',
+  'vnicProfiles.column.qos': 'QoS名',
+  'vnicProfiles.column.networkFilter': 'ネットワークフィルター',
+  'pools.column.running': '実行中のVM',
+  'volumes.column.spaceUsed': '使用容量',
   // UI extensions (docs/PLUGINS.md): sidebar group, plugin error state,
   // plugin page states, About dialog plugin list ------------------------
   'nav.group.extensions': '拡張機能',

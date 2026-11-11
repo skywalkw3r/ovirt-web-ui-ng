@@ -13,7 +13,7 @@ import {
   ToolbarItem,
 } from '@patternfly/react-core'
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table'
-import type { GlusterVolume } from '../api/schemas/gluster-volume'
+import { glusterVolumeCapacity, type GlusterVolume } from '../api/schemas/gluster-volume'
 import { useT } from '../i18n/useT'
 import type { MessageId } from '../i18n/messages/en'
 import { useCapabilities } from '../auth/capabilities'
@@ -30,7 +30,7 @@ import { useClustersInventory } from '../hooks/useAdminResources'
 import { useColumnPrefs } from '../hooks/useColumnPrefs'
 import { sortRows, useColumnSort } from '../hooks/useColumnSort'
 import { useGlusterVolumes } from '../hooks/useParityResources'
-import { statusText } from '../lib/format'
+import { formatBytes, statusText } from '../lib/format'
 
 // 'up' | 'down' | ... — open string; only the two states an admin acts on
 // routinely get a signal, same coloring policy as HostsPage.
@@ -133,6 +133,24 @@ const COLUMNS: VolumeColumn[] = [
     cell: (volume) => countCell(volume.redundancy_count),
   },
   {
+    // capacity gauges ride the list read itself (follow=statistics in
+    // listGlusterVolumes) — no extra request, so it is shown by default
+    key: 'spaceUsed',
+    labelId: 'volumes.column.spaceUsed',
+    sortValue: (volume) => {
+      const capacity = glusterVolumeCapacity(volume)
+      return capacity === undefined ? undefined : capacity.used / capacity.total
+    },
+    cell: (volume) => {
+      const capacity = glusterVolumeCapacity(volume)
+      return capacity === undefined
+        ? '—'
+        : `${formatBytes(capacity.used)} / ${formatBytes(capacity.total)} (${Math.round(
+            (capacity.used / capacity.total) * 100,
+          )}%)`
+    },
+  },
+  {
     key: 'description',
     labelId: 'common.field.description',
     sortValue: (volume) => volume.description || undefined,
@@ -141,8 +159,9 @@ const COLUMNS: VolumeColumn[] = [
   },
 ]
 // Deferred vs webadmin's grid: Bricks (up/total counts need the per-volume
-// bricks subcollection — GlusterVolumeMapper never inlines bricks on the flat
-// list, only a link), Space Used (per-volume statistics subcollection only),
+// glusterbricks subcollection — GlusterVolumeMapper never inlines bricks, and
+// the follow= that would inline them fails on the engine's link/attribute
+// name mismatch (see listGlusterVolumes), so it would be one read per volume),
 // Activities (rebalance/remove-brick task state is GWT-internal, not on the
 // REST type), No of Snapshots (GlusterVolumeEntity.getSnapshotsCount is not
 // mapped to REST).

@@ -1777,6 +1777,11 @@ export const tr: LocaleCatalog = {
   'settings.pref.console.vncDescription': 'noVNC ve çoğu masaüstü görüntüleyiciyle çalışır.',
   'settings.pref.console.spiceDescription': 'virt-viewer aracılığıyla daha zengin uzak deneyim.',
   'settings.pref.language': 'Dil',
+  // Roaming note (components/UserMenu, settings/RoamingSettingsProvider)
+  'settings.pref.roaming.synced':
+    'oVirt kullanıcı profilinize kaydedilir, böylece diğer tarayıcılarda da geçerli olur.',
+  'settings.pref.roaming.local':
+    'Yalnızca bu tarayıcıda kaydedilir; oVirt kullanıcı profiliniz bunları saklamak için kullanılamıyor.',
   'settings.refresh.seconds': '{count, plural, one {# saniye} other {# saniye}}',
   'settings.timeout.minutes': '{count, plural, one {# dakika} other {# dakika}}',
   'settings.timeout.hours': '{count, plural, one {# saat} other {# saat}}',
@@ -2327,6 +2332,21 @@ export const tr: LocaleCatalog = {
   'templateForm.memory.error.positive': 'Bellek Boyutu 0’dan büyük olmalıdır',
   'templateForm.memory.error.guaranteed': 'Garanti Edilen Fiziksel Bellek, Bellek Boyutunu aşamaz',
   'templateForm.memory.error.max': 'Maksimum bellek, Bellek Boyutundan küçük olamaz',
+  // New template (standalone) and the sectioned template dialog (#28)
+  'templateForm.title.new': 'Yeni şablon',
+  'templateForm.newAction': 'Yeni şablon',
+  'templateForm.sections.ariaLabel': 'Şablon bölümleri',
+  'templateForm.sourceVm': 'Kaynak VM',
+  'templateForm.sourceVm.placeholder': 'Kapalı bir VM seçin',
+  'templateForm.sourceVm.help':
+    "Yeni şablon bu VM'nin disklerini ve yapılandırmasını kopyalar. Yalnızca kapalı bir VM kullanılabilir. Bu iletişim kutusunda yaptığınız değişiklikler VM'nin ayarlarının yerine geçer.",
+  'templateForm.sourceVm.empty': 'Kapalı VM yok. Şablon yapmak için bir VM kapatın.',
+  'templateForm.sourceVm.disksNote':
+    "Diskler mevcut depolama alanlarına kopyalanır. Disk tahsisi, alt sürümler veya mühürleme için VM üzerinde Şablon Yap'ı kullanın.",
+  'templateForm.sourceVm.loading': 'VM yapılandırması yükleniyor',
+  'templateForm.sourceVm.error': 'VM yapılandırması yüklenemedi.',
+  'templateForm.sourceVm.hint':
+    'Şablonun sistem, konsol ve diğer ayarlarını belirlemek için bir kaynak VM seçin.',
   'templateExport.title': '{name} OVA olarak dışa aktar',
   'templateExport.host': 'Ana makine',
   'templateExport.host.placeholder': 'Bir ana makine seçin',
@@ -4917,6 +4937,71 @@ export const tr: LocaleCatalog = {
     'Veri merkezini tamamen yapılandırmak için en az bir yerel depolama alanı bağlayıp etkinleştirin.',
   'guideMe.note.clusterNoActions':
     'Bu küme için kullanılabilir eylem yok: herhangi bir veri merkezine bağlı değil.',
+  // Configure aggregate entry point (pages/ConfigurePage.tsx): the webadmin
+  // Administration › Configure index linking to its five surfaces.
+  'nav.configure': 'Yapılandırma',
+  'configure.title': 'Yapılandırma',
+  'configure.intro':
+    'Tüm veri merkezleri ve kümeler tarafından paylaşılan, motor genelindeki tanımlar. Her biri kendi sayfasında açılır.',
+  'configure.loading': 'Yapılandırma alanları yükleniyor',
+  'configure.notPermitted': 'sistem yapılandırmasını',
+  'configure.list.ariaLabel': 'Yapılandırma alanları',
+  'configure.card.roles':
+    'Rolleri ve her rolün kullanıcılara ve yöneticilere verdiği izinleri tanımlayın.',
+  'configure.card.systemPermissions': 'Tüm sistem genelinde kullanıcılara ve gruplara rol atayın.',
+  'configure.card.schedulingPolicies':
+    'Kümelerin VM yerleştirmek için kullandığı filtre, ağırlık ve dengeleme kurallarını yönetin.',
+  'configure.card.instanceTypes':
+    'Yeni sanal makineler için yeniden kullanılabilir donanım profilleri tanımlayın.',
+  'configure.card.macPools': 'Sanal NIC’lere atanan MAC adres aralıklarını yönetin.',
+  // EDIT VM: Foreman/Satellite section (provider picker)
+  'vm.edit.section.foreman': 'Foreman/Satellite',
+  'vm.edit.foreman.provider': 'Sağlayıcı',
+  'vm.edit.foreman.none': 'Sağlayıcı yok',
+  'vm.edit.foreman.unknown': 'Bilinmeyen sağlayıcı ({id})',
+  'vm.edit.foreman.loading': 'Foreman/Satellite sağlayıcıları yükleniyor',
+  'vm.edit.foreman.empty':
+    'Kayıtlı Foreman/Satellite sağlayıcısı yok. Bu VM’yi bağlamak için Sağlayıcılar sayfasından bir sağlayıcı ekleyin.',
+  'vm.edit.foreman.help':
+    'Motor, bu VM’nin errata bilgilerini seçilen Foreman/Satellite sağlayıcısından okur.',
+  // Template Storage tab + scoped Events tabs (issue #33) ----------------
+  'scopedEvents.loading': 'Olaylar yükleniyor',
+  'scopedEvents.error.title': 'Olaylar yüklenemedi',
+  'scopedEvents.empty.title': 'Olay yok',
+  'templateDetail.tab.storage': 'Depolama',
+  'templateDetail.tab.events': 'Olaylar',
+  'templateEvents.empty.body': 'Bu şablon için motor denetim günlüğü olayları burada görünecektir.',
+  'templateEvents.table.ariaLabel': 'Bu şablon için olaylar',
+  'templateStorage.empty.body': 'Bu şablonun hiçbir diski bir depolama alanında değil.',
+  'templateStorage.table.ariaLabel': 'Bu şablonun disklerini barındıran depolama alanları',
+  'templateStorage.column.used': 'Kullanılan Alan',
+  'templateStorage.column.disks': 'Diskler',
+  'templateStorage.expand.ariaLabel': 'Diskleri göster',
+  'templateStorage.disks.ariaLabel': '{name} üzerindeki şablon diskleri',
+  'clusterDetail.tab.events': 'Olaylar',
+  'clusterEvents.empty.body': 'Bu küme için motor denetim günlüğü olayları burada görünecektir.',
+  'clusterEvents.table.ariaLabel': 'Bu küme için olaylar',
+  'dcDetail.tab.events': 'Olaylar',
+  'dcEvents.empty.body': 'Bu veri merkezi için motor denetim günlüğü olayları burada görünecektir.',
+  'dcEvents.table.ariaLabel': 'Bu veri merkezi için olaylar',
+  'storageDetail.tab.events': 'Olaylar',
+  'storageEvents.empty.body':
+    'Bu depolama alanı için motor denetim günlüğü olayları burada görünecektir.',
+  'storageEvents.table.ariaLabel': 'Bu depolama alanı için olaylar',
+  'quotaDetail.tab.events': 'Olaylar',
+  'quotaEvents.empty.body': 'Bu kontenjan için motor denetim günlüğü olayları burada görünecektir.',
+  'quotaEvents.table.ariaLabel': 'Bu kontenjan için olaylar',
+  // List-grid columns filled by a follow= or one shared read (issue #34)
+  'vms.column.cpu': 'CPU',
+  'vms.column.network': 'Ağ',
+  'vms.column.ips': 'IP Adresleri',
+  'disks.column.attachedTo': 'Bağlı Olduğu',
+  'disks.column.quota': 'Kota',
+  'networks.column.qos': 'QoS Adı',
+  'vnicProfiles.column.qos': 'QoS Adı',
+  'vnicProfiles.column.networkFilter': 'Ağ filtresi',
+  'pools.column.running': 'Çalışan VM’ler',
+  'volumes.column.spaceUsed': 'Kullanılan Alan',
   // UI extensions (docs/PLUGINS.md): sidebar group, plugin error state,
   // plugin page states, About dialog plugin list ------------------------
   'nav.group.extensions': 'Uzantılar',

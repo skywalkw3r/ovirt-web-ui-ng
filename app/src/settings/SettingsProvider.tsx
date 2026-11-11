@@ -1,17 +1,14 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import {
-  DEFAULT_LOCALE,
-  DEFAULT_PREFERRED_CONSOLE,
   DEFAULT_REFRESH_INTERVAL_MS,
-  DEFAULT_SESSION_TIMEOUT_MINUTES,
-  isLocale,
-  isSessionTimeout,
   SettingsContext,
   type Locale,
   type PreferredConsole,
   type SessionTimeoutMinutes,
   type SettingsContextValue,
+  type UserSettings,
 } from './context'
+import { clampRefreshInterval, DEFAULT_SETTINGS, sameSettings, sanitizeSettings } from './sanitize'
 
 // Contract surface: SettingsProvider + useSettings both resolve from this
 // module (the hook itself lives in context.ts, mirroring theme/ and auth/).
@@ -23,72 +20,33 @@ export {
   type PreferredConsole,
   type SessionTimeoutMinutes,
   type SettingsContextValue,
+  type UserSettings,
 } from './context'
 /* oxlint-enable react/only-export-components */
 
-// Settings persist in localStorage for now, mirroring legacy
-// optionsManager.js (legacy/src/optionsManager.js). A later phase roams them
-// through the engine's per-user options API instead — legacy
-// sagas/options.js persistUserOption stores the same kind of preference as a
-// JSON blob under /users/{id}/options so it follows the user across
-// browsers — with localStorage kept as the mock-mode fallback.
+// Settings persist in localStorage (mirroring legacy optionsManager.js), which
+// is also the fast first paint. RoamingSettingsProvider (settings/roaming.ts)
+// then roams them through the engine's per-user options API
+// (/users/{id}/options) once a session exists, applying the engine's copy
+// through replaceSettings; localStorage stays the fallback when the engine
+// refuses.
 
 const STORAGE_KEY = 'console-settings'
 
-// The smallest cadence the UI itself offers (UserMenu REFRESH_INTERVAL_OPTIONS_MS
-// = [5s, 10s, 30s, 60s]). A corrupted or hand-edited localStorage value below
-// this (e.g. 100) would otherwise drive every raw-cadence poll hook at 100ms —
-// a single-browser engine DoS. Clamping up to 5s never contradicts a legitimate
-// user choice, so we enforce it on read AND on set.
-const MIN_REFRESH_INTERVAL_MS = 5_000
-
-// A non-finite/non-positive cadence is meaningless (not merely too small), so it
-// resets to the default; a valid-but-too-small one clamps up to the floor.
-function clampRefreshInterval(value: unknown, fallback: number): number {
-  if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) return fallback
-  return Math.max(value, MIN_REFRESH_INTERVAL_MS)
-}
-
-interface StoredSettings {
-  refreshIntervalMs: number
-  preferredConsole: PreferredConsole
-  locale: Locale
-  sessionTimeoutMinutes: SessionTimeoutMinutes
-}
-
-// Defensive parse, same spirit as legacy optionsManager.js loadConsoleOptions:
-// malformed JSON or unrecognized values fall back field-by-field to defaults.
-function initialSettings(): StoredSettings {
-  const defaults: StoredSettings = {
-    refreshIntervalMs: DEFAULT_REFRESH_INTERVAL_MS,
-    preferredConsole: DEFAULT_PREFERRED_CONSOLE,
-    locale: DEFAULT_LOCALE,
-    sessionTimeoutMinutes: DEFAULT_SESSION_TIMEOUT_MINUTES,
-  }
+// Defensive parse: malformed JSON or unrecognized values fall back
+// field-by-field to defaults (sanitizeSettings).
+function initialSettings(): UserSettings {
   const raw = localStorage.getItem(STORAGE_KEY)
-  if (raw === null) return defaults
+  if (raw === null) return DEFAULT_SETTINGS
   try {
-    const parsed: unknown = JSON.parse(raw)
-    if (typeof parsed !== 'object' || parsed === null) return defaults
-    const stored = parsed as Partial<Record<keyof StoredSettings, unknown>>
-    return {
-      refreshIntervalMs: clampRefreshInterval(stored.refreshIntervalMs, defaults.refreshIntervalMs),
-      preferredConsole:
-        stored.preferredConsole === 'vnc' || stored.preferredConsole === 'spice'
-          ? stored.preferredConsole
-          : defaults.preferredConsole,
-      locale: isLocale(stored.locale) ? stored.locale : defaults.locale,
-      sessionTimeoutMinutes: isSessionTimeout(stored.sessionTimeoutMinutes)
-        ? stored.sessionTimeoutMinutes
-        : defaults.sessionTimeoutMinutes,
-    }
+    return sanitizeSettings(JSON.parse(raw), DEFAULT_SETTINGS)
   } catch {
-    return defaults
+    return DEFAULT_SETTINGS
   }
 }
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
-  const [settings, setSettings] = useState<StoredSettings>(initialSettings)
+  const [settings, setSettings] = useState<UserSettings>(initialSettings)
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(settings))
@@ -113,6 +71,14 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     setSettings((current) => ({ ...current, sessionTimeoutMinutes }))
   }, [])
 
+  // Keeps the current object (no re-render, no write-back) when nothing changed.
+  const replaceSettings = useCallback((next: Partial<Record<keyof UserSettings, unknown>>) => {
+    setSettings((current) => {
+      const merged = sanitizeSettings(next, current)
+      return sameSettings(merged, current) ? current : merged
+    })
+  }, [])
+
   const value = useMemo<SettingsContextValue>(
     () => ({
       refreshIntervalMs: settings.refreshIntervalMs,
@@ -123,8 +89,16 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       setLocale,
       sessionTimeoutMinutes: settings.sessionTimeoutMinutes,
       setSessionTimeoutMinutes,
+      replaceSettings,
     }),
-    [settings, setRefreshIntervalMs, setPreferredConsole, setLocale, setSessionTimeoutMinutes],
+    [
+      settings,
+      setRefreshIntervalMs,
+      setPreferredConsole,
+      setLocale,
+      setSessionTimeoutMinutes,
+      replaceSettings,
+    ],
   )
 
   return <SettingsContext.Provider value={value}>{children}</SettingsContext.Provider>

@@ -1756,6 +1756,11 @@ export const ko: LocaleCatalog = {
   'settings.pref.console.vncDescription': 'noVNC 및 대부분의 데스크톱 뷰어와 작동합니다.',
   'settings.pref.console.spiceDescription': 'virt-viewer를 통한 더 풍부한 원격 환경입니다.',
   'settings.pref.language': '언어',
+  // Roaming note (components/UserMenu, settings/RoamingSettingsProvider)
+  'settings.pref.roaming.synced':
+    'oVirt 사용자 프로필에 저장되므로 다른 브라우저에서도 적용됩니다.',
+  'settings.pref.roaming.local':
+    '이 브라우저에만 저장됩니다. oVirt 사용자 프로필에 저장할 수 없습니다.',
   'settings.refresh.seconds': '{count, plural, other {#초}}',
   'settings.timeout.minutes': '{count, plural, other {#분}}',
   'settings.timeout.hours': '{count, plural, other {#시간}}',
@@ -2296,6 +2301,21 @@ export const ko: LocaleCatalog = {
   'templateForm.memory.error.positive': '메모리 크기는 0보다 커야 합니다',
   'templateForm.memory.error.guaranteed': '보장된 물리 메모리는 메모리 크기를 초과할 수 없습니다',
   'templateForm.memory.error.max': '최대 메모리는 메모리 크기보다 작을 수 없습니다',
+  // New template (standalone) and the sectioned template dialog (#28)
+  'templateForm.title.new': '새 템플릿',
+  'templateForm.newAction': '새 템플릿',
+  'templateForm.sections.ariaLabel': '템플릿 섹션',
+  'templateForm.sourceVm': '소스 VM',
+  'templateForm.sourceVm.placeholder': '전원이 꺼진 VM 선택',
+  'templateForm.sourceVm.help':
+    '새 템플릿은 이 VM의 디스크와 구성을 복사합니다. 전원이 꺼진 VM만 사용할 수 있습니다. 이 대화 상자에서 변경한 내용이 VM의 설정을 대체합니다.',
+  'templateForm.sourceVm.empty': '전원이 꺼진 VM이 없습니다. VM을 종료한 후 템플릿을 만드십시오.',
+  'templateForm.sourceVm.disksNote':
+    '디스크는 현재 스토리지 도메인에 복사됩니다. 디스크 할당, 하위 버전 또는 봉인이 필요하면 VM에서 템플릿 만들기를 사용하십시오.',
+  'templateForm.sourceVm.loading': 'VM 구성 로드 중',
+  'templateForm.sourceVm.error': 'VM 구성을 로드할 수 없습니다.',
+  'templateForm.sourceVm.hint':
+    '소스 VM을 선택하면 템플릿의 시스템, 콘솔 및 기타 설정을 지정할 수 있습니다.',
   'templateExport.title': '{name}을(를) OVA로 내보내기',
   'templateExport.host': '호스트',
   'templateExport.host.placeholder': '호스트 선택',
@@ -4862,6 +4882,67 @@ export const ko: LocaleCatalog = {
     '데이터 센터를 완전히 구성하려면 로컬 스토리지 도메인을 하나 이상 연결하고 활성화하세요.',
   'guideMe.note.clusterNoActions':
     '이 클러스터에 사용할 수 있는 작업이 없습니다: 데이터 센터에 연결되어 있지 않습니다.',
+  // Configure aggregate entry point (pages/ConfigurePage.tsx): the webadmin
+  // Administration › Configure index linking to its five surfaces.
+  'nav.configure': '구성',
+  'configure.title': '구성',
+  'configure.intro':
+    '모든 데이터 센터와 클러스터가 공유하는 엔진 전체 정의입니다. 각 항목은 자체 페이지에서 열립니다.',
+  'configure.loading': '구성 영역 로드 중',
+  'configure.notPermitted': '시스템 구성',
+  'configure.list.ariaLabel': '구성 영역',
+  'configure.card.roles': '역할과 각 역할이 사용자 및 관리자에게 부여하는 권한을 정의합니다.',
+  'configure.card.systemPermissions': '시스템 전체에서 사용자와 그룹에 역할을 할당합니다.',
+  'configure.card.schedulingPolicies':
+    '클러스터가 VM을 배치할 때 사용하는 필터, 가중치, 밸런싱 규칙을 관리합니다.',
+  'configure.card.instanceTypes': '새 가상 머신에 재사용할 하드웨어 프로필을 정의합니다.',
+  'configure.card.macPools': '가상 NIC에 할당되는 MAC 주소 범위를 관리합니다.',
+  // EDIT VM: Foreman/Satellite section (provider picker)
+  'vm.edit.section.foreman': 'Foreman/Satellite',
+  'vm.edit.foreman.provider': '공급자',
+  'vm.edit.foreman.none': '공급자 없음',
+  'vm.edit.foreman.unknown': '알 수 없는 공급자 ({id})',
+  'vm.edit.foreman.loading': 'Foreman/Satellite 공급자 로드 중',
+  'vm.edit.foreman.empty':
+    '등록된 Foreman/Satellite 공급자가 없습니다. 이 VM을 바인딩하려면 공급자 페이지에서 공급자를 추가하십시오.',
+  'vm.edit.foreman.help': '엔진은 선택한 Foreman/Satellite 공급자에서 이 VM의 정오표를 가져옵니다.',
+  // Template Storage tab + scoped Events tabs (issue #33) ----------------
+  'scopedEvents.loading': '이벤트 로드 중',
+  'scopedEvents.error.title': '이벤트를 로드할 수 없습니다',
+  'scopedEvents.empty.title': '이벤트 없음',
+  'templateDetail.tab.storage': '스토리지',
+  'templateDetail.tab.events': '이벤트',
+  'templateEvents.empty.body': '이 템플릿의 엔진 감사 로그 이벤트가 여기에 표시됩니다.',
+  'templateEvents.table.ariaLabel': '이 템플릿의 이벤트',
+  'templateStorage.empty.body': '이 템플릿의 디스크가 스토리지 도메인에 없습니다.',
+  'templateStorage.table.ariaLabel': '이 템플릿의 디스크를 보유한 스토리지 도메인',
+  'templateStorage.column.used': '사용 공간',
+  'templateStorage.column.disks': '디스크',
+  'templateStorage.expand.ariaLabel': '디스크 표시',
+  'templateStorage.disks.ariaLabel': '{name}의 템플릿 디스크',
+  'clusterDetail.tab.events': '이벤트',
+  'clusterEvents.empty.body': '이 클러스터의 엔진 감사 로그 이벤트가 여기에 표시됩니다.',
+  'clusterEvents.table.ariaLabel': '이 클러스터의 이벤트',
+  'dcDetail.tab.events': '이벤트',
+  'dcEvents.empty.body': '이 데이터 센터의 엔진 감사 로그 이벤트가 여기에 표시됩니다.',
+  'dcEvents.table.ariaLabel': '이 데이터 센터의 이벤트',
+  'storageDetail.tab.events': '이벤트',
+  'storageEvents.empty.body': '이 스토리지 도메인의 엔진 감사 로그 이벤트가 여기에 표시됩니다.',
+  'storageEvents.table.ariaLabel': '이 스토리지 도메인의 이벤트',
+  'quotaDetail.tab.events': '이벤트',
+  'quotaEvents.empty.body': '이 할당량의 엔진 감사 로그 이벤트가 여기에 표시됩니다.',
+  'quotaEvents.table.ariaLabel': '이 할당량의 이벤트',
+  // List-grid columns filled by a follow= or one shared read (issue #34)
+  'vms.column.cpu': 'CPU',
+  'vms.column.network': '네트워크',
+  'vms.column.ips': 'IP 주소',
+  'disks.column.attachedTo': '연결 대상',
+  'disks.column.quota': '할당량',
+  'networks.column.qos': 'QoS 이름',
+  'vnicProfiles.column.qos': 'QoS 이름',
+  'vnicProfiles.column.networkFilter': '네트워크 필터',
+  'pools.column.running': '실행 중인 VM',
+  'volumes.column.spaceUsed': '사용된 공간',
   // UI extensions (docs/PLUGINS.md): sidebar group, plugin error state,
   // plugin page states, About dialog plugin list ------------------------
   'nav.group.extensions': '확장',

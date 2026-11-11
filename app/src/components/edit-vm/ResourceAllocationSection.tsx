@@ -15,27 +15,31 @@ import type { UseQueryResult } from '@tanstack/react-query'
 import type { ClusterCpuProfile } from '../../api/resources/clusters'
 import { useT } from '../../i18n/useT'
 import { FieldHelp } from '../forms/FieldHelp'
-import {
-  CPU_SHARES_CUSTOM,
-  CPU_SHARES_PRESETS,
-  type EditVmDraft,
-  isCpuSharesPreset,
-} from './editVmDraft'
+import { CPU_SHARES_CUSTOM, CPU_SHARES_PRESETS, isCpuSharesPreset } from './editVmDraft'
+import { fieldSetter, type ResourceAllocationFields, type SectionChange } from './vmBaseDraft'
 
-// Resource Allocation section of the Edit Virtual Machine modal: CPU profile
-// (fed by the cluster's cpuprofiles query, all four states designed), CPU
-// shares (preset buckets + custom integer), memory balloon, IO threads and
-// VirtIO-SCSI. Presentational — the modal owns the draft and the query.
+// Resource Allocation section, one of the shared VmBase sections (contract in
+// vmBaseDraft.ts): CPU profile (fed by the cluster's cpuprofiles query, all
+// four states designed), CPU shares (preset buckets + custom integer), memory
+// balloon, IO threads and VirtIO-SCSI. Presentational — the form owns the
+// draft and the query (useCpuProfileOptions).
 export function ResourceAllocationSection({
   draft,
-  set,
+  onChange,
   cpuProfiles,
+  idPrefix = 'edit-vm',
 }: {
-  draft: EditVmDraft
-  set: <K extends keyof EditVmDraft>(key: K, value: EditVmDraft[K]) => void
+  draft: ResourceAllocationFields
+  onChange: SectionChange<ResourceAllocationFields>
   cpuProfiles: UseQueryResult<ClusterCpuProfile[]>
+  idPrefix?: string
 }) {
   const t = useT()
+  const set = fieldSetter(onChange)
+  // A disabled query (no cluster to read profiles from, e.g. the Blank
+  // template) stays pending forever: show "no profiles" instead of an endless
+  // skeleton.
+  const profilesIdle = cpuProfiles.isPending && cpuProfiles.fetchStatus === 'idle'
   // Once the user picks "Custom" the select stays on it even if they then type
   // a preset-valued integer — matching webadmin, where Custom is sticky until
   // another bucket is picked.
@@ -55,7 +59,7 @@ export function ResourceAllocationSection({
     <Form onSubmit={(event) => event.preventDefault()}>
       <FormGroup
         label={t('vm.edit.resources.cpuProfile')}
-        fieldId="edit-vm-cpu-profile"
+        fieldId={`${idPrefix}-cpu-profile`}
         labelHelp={
           <FieldHelp
             field={t('vm.edit.resources.cpuProfile')}
@@ -63,7 +67,7 @@ export function ResourceAllocationSection({
           />
         }
       >
-        {cpuProfiles.isPending && (
+        {cpuProfiles.isPending && !profilesIdle && (
           <Skeleton height="2.25rem" screenreaderText={t('vm.edit.resources.cpuProfile.loading')} />
         )}
         {cpuProfiles.isError && (
@@ -79,14 +83,14 @@ export function ResourceAllocationSection({
             </Button>
           </>
         )}
-        {cpuProfiles.isSuccess && cpuProfiles.data.length === 0 && (
+        {(profilesIdle || (cpuProfiles.isSuccess && cpuProfiles.data.length === 0)) && (
           <HelperText>
             <HelperTextItem>{t('vm.edit.resources.cpuProfile.empty')}</HelperTextItem>
           </HelperText>
         )}
         {cpuProfiles.isSuccess && cpuProfiles.data.length > 0 && (
           <FormSelect
-            id="edit-vm-cpu-profile"
+            id={`${idPrefix}-cpu-profile`}
             aria-label={t('vm.edit.resources.cpuProfile')}
             value={draft.cpuProfileId}
             onChange={(_event, value) => set('cpuProfileId', value)}
@@ -109,7 +113,7 @@ export function ResourceAllocationSection({
 
       <FormGroup
         label={t('vm.edit.resources.cpuShares')}
-        fieldId="edit-vm-cpu-shares"
+        fieldId={`${idPrefix}-cpu-shares`}
         labelHelp={
           <FieldHelp
             field={t('vm.edit.resources.cpuShares')}
@@ -118,7 +122,7 @@ export function ResourceAllocationSection({
         }
       >
         <FormSelect
-          id="edit-vm-cpu-shares"
+          id={`${idPrefix}-cpu-shares`}
           aria-label={t('vm.edit.resources.cpuShares')}
           value={customShares ? CPU_SHARES_CUSTOM : draft.cpuShares}
           onChange={(_event, value) => onSharesSelect(value)}
@@ -136,10 +140,10 @@ export function ResourceAllocationSection({
       {customShares && (
         <FormGroup
           label={t('vm.edit.resources.cpuShares.customValue')}
-          fieldId="edit-vm-cpu-shares-custom"
+          fieldId={`${idPrefix}-cpu-shares-custom`}
         >
           <TextInput
-            id="edit-vm-cpu-shares-custom"
+            id={`${idPrefix}-cpu-shares-custom`}
             type="number"
             aria-label={t('vm.edit.resources.cpuShares.customValue')}
             value={draft.cpuShares}
@@ -150,7 +154,7 @@ export function ResourceAllocationSection({
 
       <FormGroup
         label={t('vm.edit.resources.ballooning')}
-        fieldId="edit-vm-ballooning"
+        fieldId={`${idPrefix}-ballooning`}
         labelHelp={
           <FieldHelp
             field={t('vm.edit.resources.ballooning')}
@@ -159,7 +163,7 @@ export function ResourceAllocationSection({
         }
       >
         <Switch
-          id="edit-vm-ballooning"
+          id={`${idPrefix}-ballooning`}
           aria-label={t('vm.edit.resources.ballooning')}
           isChecked={draft.memoryBalloonEnabled}
           onChange={(_event, checked) => set('memoryBalloonEnabled', checked)}
@@ -168,7 +172,7 @@ export function ResourceAllocationSection({
 
       <FormGroup
         label={t('vm.edit.resources.ioThreads')}
-        fieldId="edit-vm-io-threads"
+        fieldId={`${idPrefix}-io-threads`}
         labelHelp={
           <FieldHelp
             field={t('vm.edit.resources.ioThreads')}
@@ -177,7 +181,7 @@ export function ResourceAllocationSection({
         }
       >
         <TextInput
-          id="edit-vm-io-threads"
+          id={`${idPrefix}-io-threads`}
           type="number"
           aria-label={t('vm.edit.resources.ioThreads')}
           value={draft.ioThreads}
@@ -187,7 +191,7 @@ export function ResourceAllocationSection({
 
       <FormGroup
         label={t('vm.edit.resources.virtioScsi')}
-        fieldId="edit-vm-virtio-scsi"
+        fieldId={`${idPrefix}-virtio-scsi`}
         labelHelp={
           <FieldHelp
             field={t('vm.edit.resources.virtioScsi')}
@@ -196,7 +200,7 @@ export function ResourceAllocationSection({
         }
       >
         <Switch
-          id="edit-vm-virtio-scsi"
+          id={`${idPrefix}-virtio-scsi`}
           aria-label={t('vm.edit.resources.virtioScsi')}
           isChecked={draft.virtioScsiEnabled}
           onChange={(_event, checked) => set('virtioScsiEnabled', checked)}
@@ -208,7 +212,7 @@ export function ResourceAllocationSection({
         <>
           <FormGroup
             label={t('vm.edit.resources.virtioScsiMq')}
-            fieldId="edit-vm-virtio-scsi-mq"
+            fieldId={`${idPrefix}-virtio-scsi-mq`}
             labelHelp={
               <FieldHelp
                 field={t('vm.edit.resources.virtioScsiMq')}
@@ -217,7 +221,7 @@ export function ResourceAllocationSection({
             }
           >
             <Switch
-              id="edit-vm-virtio-scsi-mq"
+              id={`${idPrefix}-virtio-scsi-mq`}
               aria-label={t('vm.edit.resources.virtioScsiMq')}
               isChecked={draft.virtioScsiMultiQueuesEnabled}
               onChange={(_event, checked) => set('virtioScsiMultiQueuesEnabled', checked)}
@@ -227,7 +231,7 @@ export function ResourceAllocationSection({
           {draft.virtioScsiMultiQueuesEnabled && (
             <FormGroup
               label={t('vm.edit.resources.virtioScsiMq.count')}
-              fieldId="edit-vm-virtio-scsi-mq-count"
+              fieldId={`${idPrefix}-virtio-scsi-mq-count`}
               labelHelp={
                 <FieldHelp
                   field={t('vm.edit.resources.virtioScsiMq.count')}
@@ -236,7 +240,7 @@ export function ResourceAllocationSection({
               }
             >
               <TextInput
-                id="edit-vm-virtio-scsi-mq-count"
+                id={`${idPrefix}-virtio-scsi-mq-count`}
                 type="number"
                 min={0}
                 aria-label={t('vm.edit.resources.virtioScsiMq.count')}
@@ -253,7 +257,7 @@ export function ResourceAllocationSection({
 
       <FormGroup
         label={t('vm.edit.resources.multiQueues')}
-        fieldId="edit-vm-multi-queues"
+        fieldId={`${idPrefix}-multi-queues`}
         labelHelp={
           <FieldHelp
             field={t('vm.edit.resources.multiQueues')}
@@ -262,7 +266,7 @@ export function ResourceAllocationSection({
         }
       >
         <Switch
-          id="edit-vm-multi-queues"
+          id={`${idPrefix}-multi-queues`}
           aria-label={t('vm.edit.resources.multiQueues')}
           isChecked={draft.multiQueuesEnabled}
           onChange={(_event, checked) => set('multiQueuesEnabled', checked)}

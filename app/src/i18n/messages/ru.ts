@@ -1796,6 +1796,11 @@ export const ru: LocaleCatalog = {
   'settings.pref.console.vncDescription': 'Работает с noVNC и большинством настольных клиентов.',
   'settings.pref.console.spiceDescription': 'Более богатый удалённый доступ через virt-viewer.',
   'settings.pref.language': 'Язык',
+  // Roaming note (components/UserMenu, settings/RoamingSettingsProvider)
+  'settings.pref.roaming.synced':
+    'Сохраняются в вашем профиле пользователя oVirt и доступны в других браузерах.',
+  'settings.pref.roaming.local':
+    'Сохраняются только в этом браузере: профиль пользователя oVirt недоступен для их хранения.',
   'settings.refresh.seconds':
     '{count, plural, one {# секунда} few {# секунды} many {# секунд} other {# секунды}}',
   'settings.timeout.minutes':
@@ -2355,6 +2360,21 @@ export const ru: LocaleCatalog = {
   'templateForm.memory.error.guaranteed':
     'Гарантированная физическая память не может превышать объём памяти',
   'templateForm.memory.error.max': 'Максимальный объём памяти не может быть меньше объёма памяти',
+  // New template (standalone) and the sectioned template dialog (#28)
+  'templateForm.title.new': 'Новый шаблон',
+  'templateForm.newAction': 'Новый шаблон',
+  'templateForm.sections.ariaLabel': 'Разделы шаблона',
+  'templateForm.sourceVm': 'Исходная ВМ',
+  'templateForm.sourceVm.placeholder': 'Выберите выключенную ВМ',
+  'templateForm.sourceVm.help':
+    'Новый шаблон копирует диски и конфигурацию этой ВМ. Можно использовать только выключенную ВМ. Изменения в этом диалоговом окне заменяют настройки ВМ.',
+  'templateForm.sourceVm.empty': 'Нет выключенных ВМ. Выключите ВМ, чтобы создать из неё шаблон.',
+  'templateForm.sourceVm.disksNote':
+    'Диски копируются в их текущие домены хранилища. Для выделения дисков, подверсий или запечатывания используйте «Создать шаблон» на ВМ.',
+  'templateForm.sourceVm.loading': 'Загрузка конфигурации ВМ',
+  'templateForm.sourceVm.error': 'Не удалось загрузить конфигурацию ВМ.',
+  'templateForm.sourceVm.hint':
+    'Выберите исходную ВМ, чтобы задать систему, консоль и другие параметры шаблона.',
   'templateExport.title': 'Экспортировать {name} как OVA',
   'templateExport.host': 'Хост',
   'templateExport.host.placeholder': 'Выберите хост',
@@ -5158,6 +5178,72 @@ export const ru: LocaleCatalog = {
     'Чтобы полностью настроить дата-центр, прикрепите и активируйте хотя бы один локальный домен хранения.',
   'guideMe.note.clusterNoActions':
     'Для этого кластера нет доступных действий: он не прикреплён к дата-центру.',
+  // Configure aggregate entry point (pages/ConfigurePage.tsx): the webadmin
+  // Administration › Configure index linking to its five surfaces.
+  'nav.configure': 'Конфигурация',
+  'configure.title': 'Конфигурация',
+  'configure.intro':
+    'Общие для всего движка определения, используемые всеми центрами данных и кластерами. Каждое открывается на отдельной странице.',
+  'configure.loading': 'Загрузка разделов конфигурации',
+  'configure.notPermitted': 'системной конфигурации',
+  'configure.list.ariaLabel': 'Разделы конфигурации',
+  'configure.card.roles':
+    'Определение ролей и разрешений, которые каждая из них предоставляет пользователям и администраторам.',
+  'configure.card.systemPermissions':
+    'Назначение ролей пользователям и группам на уровне всей системы.',
+  'configure.card.schedulingPolicies':
+    'Управление правилами фильтрации, весов и балансировки, по которым кластеры размещают ВМ.',
+  'configure.card.instanceTypes':
+    'Определение многократно используемых профилей оборудования для новых виртуальных машин.',
+  'configure.card.macPools': 'Управление диапазонами MAC-адресов, назначаемых виртуальным NIC.',
+  // EDIT VM: Foreman/Satellite section (provider picker)
+  'vm.edit.section.foreman': 'Foreman/Satellite',
+  'vm.edit.foreman.provider': 'Провайдер',
+  'vm.edit.foreman.none': 'Без провайдера',
+  'vm.edit.foreman.unknown': 'Неизвестный провайдер ({id})',
+  'vm.edit.foreman.loading': 'Загрузка провайдеров Foreman/Satellite',
+  'vm.edit.foreman.empty':
+    'Провайдеры Foreman/Satellite не зарегистрированы. Добавьте провайдера на странице «Провайдеры», чтобы привязать к нему эту ВМ.',
+  'vm.edit.foreman.help':
+    'Движок получает errata для этой ВМ от выбранного провайдера Foreman/Satellite.',
+  // Template Storage tab + scoped Events tabs (issue #33) ----------------
+  'scopedEvents.loading': 'Загрузка событий',
+  'scopedEvents.error.title': 'Не удалось загрузить события',
+  'scopedEvents.empty.title': 'Нет событий',
+  'templateDetail.tab.storage': 'Хранилище',
+  'templateDetail.tab.events': 'События',
+  'templateEvents.empty.body': 'Здесь появятся события журнала аудита движка для этого шаблона.',
+  'templateEvents.table.ariaLabel': 'События этого шаблона',
+  'templateStorage.empty.body': 'Ни один диск этого шаблона не находится в домене хранилища.',
+  'templateStorage.table.ariaLabel': 'Домены хранилища с дисками этого шаблона',
+  'templateStorage.column.used': 'Использованное пространство',
+  'templateStorage.column.disks': 'Диски',
+  'templateStorage.expand.ariaLabel': 'Показать диски',
+  'templateStorage.disks.ariaLabel': 'Диски шаблона в {name}',
+  'clusterDetail.tab.events': 'События',
+  'clusterEvents.empty.body': 'Здесь появятся события журнала аудита движка для этого кластера.',
+  'clusterEvents.table.ariaLabel': 'События этого кластера',
+  'dcDetail.tab.events': 'События',
+  'dcEvents.empty.body': 'Здесь появятся события журнала аудита движка для этого дата-центра.',
+  'dcEvents.table.ariaLabel': 'События этого дата-центра',
+  'storageDetail.tab.events': 'События',
+  'storageEvents.empty.body':
+    'Здесь появятся события журнала аудита движка для этого домена хранилища.',
+  'storageEvents.table.ariaLabel': 'События этого домена хранилища',
+  'quotaDetail.tab.events': 'События',
+  'quotaEvents.empty.body': 'Здесь появятся события журнала аудита движка для этой квоты.',
+  'quotaEvents.table.ariaLabel': 'События этой квоты',
+  // List-grid columns filled by a follow= or one shared read (issue #34)
+  'vms.column.cpu': 'ЦП',
+  'vms.column.network': 'Сеть',
+  'vms.column.ips': 'IP-адреса',
+  'disks.column.attachedTo': 'Подключён к',
+  'disks.column.quota': 'Квота',
+  'networks.column.qos': 'Имя QoS',
+  'vnicProfiles.column.qos': 'Имя QoS',
+  'vnicProfiles.column.networkFilter': 'Сетевой фильтр',
+  'pools.column.running': 'Запущенные ВМ',
+  'volumes.column.spaceUsed': 'Использовано места',
   // UI extensions (docs/PLUGINS.md): sidebar group, plugin error state,
   // plugin page states, About dialog plugin list ------------------------
   'nav.group.extensions': 'Расширения',

@@ -2156,6 +2156,11 @@ export const en = {
   'settings.pref.console.vncDescription': 'Works with noVNC and most desktop viewers.',
   'settings.pref.console.spiceDescription': 'Richer remote experience via virt-viewer.',
   'settings.pref.language': 'Language',
+  // Roaming note (components/UserMenu, settings/RoamingSettingsProvider)
+  'settings.pref.roaming.synced':
+    'Saved to your oVirt user profile, so they follow you to other browsers.',
+  'settings.pref.roaming.local':
+    'Saved in this browser only; your oVirt user profile is not available to store them.',
   'settings.refresh.seconds': '{count, plural, one {# second} other {# seconds}}',
   'settings.timeout.minutes': '{count, plural, one {# minute} other {# minutes}}',
   'settings.timeout.hours': '{count, plural, one {# hour} other {# hours}}',
@@ -2775,6 +2780,21 @@ export const en = {
   'templateForm.memory.error.guaranteed':
     'Physical Memory Guaranteed cannot exceed the Memory Size',
   'templateForm.memory.error.max': 'Maximum memory cannot be smaller than the Memory Size',
+  // New template (standalone) and the sectioned template dialog (#28)
+  'templateForm.title.new': 'New template',
+  'templateForm.newAction': 'New template',
+  'templateForm.sections.ariaLabel': 'Template sections',
+  'templateForm.sourceVm': 'Source VM',
+  'templateForm.sourceVm.placeholder': 'Select a powered-off VM',
+  'templateForm.sourceVm.help':
+    "The new template copies this VM's disks and configuration. Only a powered-off VM can be used. What you change in this dialog overrides the VM's settings.",
+  'templateForm.sourceVm.empty': 'No VM is powered off. Shut down a VM to make a template from it.',
+  'templateForm.sourceVm.disksNote':
+    'The disks are copied to their current storage domains. For disk allocation, sub-versions or sealing, use Make Template on the VM.',
+  'templateForm.sourceVm.loading': 'Loading the VM configuration',
+  'templateForm.sourceVm.error': 'The VM configuration could not be loaded.',
+  'templateForm.sourceVm.hint':
+    "Select a source VM to set the template's system, console and other settings.",
 
   // Export template as OVA modal (components/template-form/TemplateExportModal)
   'templateExport.title': 'Export {name} as OVA',
@@ -5484,6 +5504,69 @@ export const en = {
     'To fully configure the data center, attach and activate at least one local storage domain.',
   'guideMe.note.clusterNoActions':
     'No actions are available for this cluster: it is not attached to a data center.',
+  // Configure aggregate entry point (pages/ConfigurePage.tsx): the webadmin
+  // Administration › Configure index linking to its five surfaces.
+  'nav.configure': 'Configure',
+  'configure.title': 'Configure',
+  'configure.intro':
+    'Engine-wide definitions shared by every data center and cluster. Each one opens on its own page.',
+  'configure.loading': 'Loading configuration areas',
+  'configure.notPermitted': 'system configuration',
+  'configure.list.ariaLabel': 'Configuration areas',
+  'configure.card.roles':
+    'Define roles and the permissions each one grants to users and administrators.',
+  'configure.card.systemPermissions': 'Grant roles to users and groups across the whole system.',
+  'configure.card.schedulingPolicies':
+    'Manage the filter, weight and balancing rules clusters use to place VMs.',
+  'configure.card.instanceTypes': 'Define reusable hardware profiles for new virtual machines.',
+  'configure.card.macPools': 'Manage the MAC address ranges assigned to virtual NICs.',
+  // EDIT VM: Foreman/Satellite section (provider picker)
+  'vm.edit.section.foreman': 'Foreman/Satellite',
+  'vm.edit.foreman.provider': 'Provider',
+  'vm.edit.foreman.none': 'No provider',
+  'vm.edit.foreman.unknown': 'Unknown provider ({id})',
+  'vm.edit.foreman.loading': 'Loading Foreman/Satellite providers',
+  'vm.edit.foreman.empty':
+    'No Foreman/Satellite providers are registered. Add one on the Providers page to bind this VM to it.',
+  'vm.edit.foreman.help':
+    'The engine reads the errata for this VM from the chosen Foreman/Satellite provider.',
+  // Template Storage tab + scoped Events tabs (issue #33) ----------------
+  'scopedEvents.loading': 'Loading events',
+  'scopedEvents.error.title': 'Could not load events',
+  'scopedEvents.empty.title': 'No events',
+  'templateDetail.tab.storage': 'Storage',
+  'templateDetail.tab.events': 'Events',
+  'templateEvents.empty.body': 'Engine audit log events for this template will appear here.',
+  'templateEvents.table.ariaLabel': 'Events for this template',
+  'templateStorage.empty.body': 'None of this template’s disks is on a storage domain.',
+  'templateStorage.table.ariaLabel': 'Storage domains holding this template’s disks',
+  'templateStorage.column.used': 'Used Space',
+  'templateStorage.column.disks': 'Disks',
+  'templateStorage.expand.ariaLabel': 'Show disks',
+  'templateStorage.disks.ariaLabel': 'Template disks on {name}',
+  'clusterDetail.tab.events': 'Events',
+  'clusterEvents.empty.body': 'Engine audit log events for this cluster will appear here.',
+  'clusterEvents.table.ariaLabel': 'Events for this cluster',
+  'dcDetail.tab.events': 'Events',
+  'dcEvents.empty.body': 'Engine audit log events for this data center will appear here.',
+  'dcEvents.table.ariaLabel': 'Events for this data center',
+  'storageDetail.tab.events': 'Events',
+  'storageEvents.empty.body': 'Engine audit log events for this storage domain will appear here.',
+  'storageEvents.table.ariaLabel': 'Events for this storage domain',
+  'quotaDetail.tab.events': 'Events',
+  'quotaEvents.empty.body': 'Engine audit log events for this quota will appear here.',
+  'quotaEvents.table.ariaLabel': 'Events for this quota',
+  // List-grid columns filled by a follow= or one shared read (issue #34)
+  'vms.column.cpu': 'CPU',
+  'vms.column.network': 'Network',
+  'vms.column.ips': 'IP Addresses',
+  'disks.column.attachedTo': 'Attached To',
+  'disks.column.quota': 'Quota',
+  'networks.column.qos': 'QoS Name',
+  'vnicProfiles.column.qos': 'QoS Name',
+  'vnicProfiles.column.networkFilter': 'Network Filter',
+  'pools.column.running': 'Running VMs',
+  'volumes.column.spaceUsed': 'Space Used',
   // UI extensions (docs/PLUGINS.md): sidebar group, plugin error state,
   // plugin page states, About dialog plugin list ------------------------
   'nav.group.extensions': 'Extensions',

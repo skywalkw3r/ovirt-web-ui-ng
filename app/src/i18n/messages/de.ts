@@ -1814,6 +1814,11 @@ export const de: LocaleCatalog = {
   'settings.pref.console.vncDescription': 'Funktioniert mit noVNC und den meisten Desktop-Viewern.',
   'settings.pref.console.spiceDescription': 'Reichhaltigeres Remote-Erlebnis über virt-viewer.',
   'settings.pref.language': 'Sprache',
+  // Roaming note (components/UserMenu, settings/RoamingSettingsProvider)
+  'settings.pref.roaming.synced':
+    'In Ihrem oVirt-Benutzerprofil gespeichert, sodass sie Ihnen in andere Browser folgen.',
+  'settings.pref.roaming.local':
+    'Nur in diesem Browser gespeichert; Ihr oVirt-Benutzerprofil steht zum Speichern nicht zur Verfügung.',
   'settings.refresh.seconds': '{count, plural, one {# Sekunde} other {# Sekunden}}',
   'settings.timeout.minutes': '{count, plural, one {# Minute} other {# Minuten}}',
   'settings.timeout.hours': '{count, plural, one {# Stunde} other {# Stunden}}',
@@ -2376,6 +2381,22 @@ export const de: LocaleCatalog = {
     'Der garantierte physische Speicher darf die Speichergröße nicht überschreiten',
   'templateForm.memory.error.max':
     'Der maximale Speicher darf nicht kleiner als die Speichergröße sein',
+  // New template (standalone) and the sectioned template dialog (#28)
+  'templateForm.title.new': 'Neue Vorlage',
+  'templateForm.newAction': 'Neue Vorlage',
+  'templateForm.sections.ariaLabel': 'Abschnitte der Vorlage',
+  'templateForm.sourceVm': 'Quell-VM',
+  'templateForm.sourceVm.placeholder': 'Ausgeschaltete VM auswählen',
+  'templateForm.sourceVm.help':
+    'Die neue Vorlage kopiert die Datenträger und die Konfiguration dieser VM. Nur eine ausgeschaltete VM kann verwendet werden. Was Sie in diesem Dialog ändern, ersetzt die Einstellungen der VM.',
+  'templateForm.sourceVm.empty':
+    'Keine VM ist ausgeschaltet. Fahren Sie eine VM herunter, um daraus eine Vorlage zu erstellen.',
+  'templateForm.sourceVm.disksNote':
+    'Die Datenträger werden in ihre aktuellen Speicherdomänen kopiert. Für Datenträgerzuweisung, Unterversionen oder Versiegelung verwenden Sie Vorlage erstellen an der VM.',
+  'templateForm.sourceVm.loading': 'VM-Konfiguration wird geladen',
+  'templateForm.sourceVm.error': 'Die VM-Konfiguration konnte nicht geladen werden.',
+  'templateForm.sourceVm.hint':
+    'Wählen Sie eine Quell-VM, um System, Konsole und weitere Einstellungen der Vorlage festzulegen.',
   'templateExport.title': '{name} als OVA exportieren',
   'templateExport.host': 'Host',
   'templateExport.host.placeholder': 'Host auswählen',
@@ -5031,6 +5052,77 @@ export const de: LocaleCatalog = {
     'Um das Rechenzentrum vollständig zu konfigurieren, hängen Sie mindestens eine lokale Speicherdomäne an und aktivieren Sie sie.',
   'guideMe.note.clusterNoActions':
     'Für diesen Cluster sind keine Aktionen verfügbar: Er ist keinem Rechenzentrum zugeordnet.',
+  // Configure aggregate entry point (pages/ConfigurePage.tsx): the webadmin
+  // Administration › Configure index linking to its five surfaces.
+  'nav.configure': 'Konfigurieren',
+  'configure.title': 'Konfigurieren',
+  'configure.intro':
+    'Engine-weite Definitionen, die alle Rechenzentren und Cluster gemeinsam nutzen. Jede öffnet sich auf einer eigenen Seite.',
+  'configure.loading': 'Konfigurationsbereiche werden geladen',
+  'configure.notPermitted': 'die Systemkonfiguration',
+  'configure.list.ariaLabel': 'Konfigurationsbereiche',
+  'configure.card.roles':
+    'Rollen und die Berechtigungen festlegen, die sie Benutzern und Administratoren gewähren.',
+  'configure.card.systemPermissions': 'Benutzern und Gruppen systemweit Rollen zuweisen.',
+  'configure.card.schedulingPolicies':
+    'Die Filter-, Gewichtungs- und Lastausgleichsregeln verwalten, mit denen Cluster VMs platzieren.',
+  'configure.card.instanceTypes':
+    'Wiederverwendbare Hardwareprofile für neue virtuelle Maschinen festlegen.',
+  'configure.card.macPools':
+    'Die MAC-Adressbereiche verwalten, die virtuellen NICs zugewiesen werden.',
+  // EDIT VM: Foreman/Satellite section (provider picker)
+  'vm.edit.section.foreman': 'Foreman/Satellite',
+  'vm.edit.foreman.provider': 'Anbieter',
+  'vm.edit.foreman.none': 'Kein Anbieter',
+  'vm.edit.foreman.unknown': 'Unbekannter Anbieter ({id})',
+  'vm.edit.foreman.loading': 'Foreman/Satellite-Anbieter werden geladen',
+  'vm.edit.foreman.empty':
+    'Es sind keine Foreman/Satellite-Anbieter registriert. Fügen Sie auf der Seite „Anbieter“ einen hinzu, um diese VM daran zu binden.',
+  'vm.edit.foreman.help':
+    'Die Engine bezieht die Errata dieser VM vom ausgewählten Foreman/Satellite-Anbieter.',
+  // Template Storage tab + scoped Events tabs (issue #33) ----------------
+  'scopedEvents.loading': 'Ereignisse werden geladen',
+  'scopedEvents.error.title': 'Ereignisse konnten nicht geladen werden',
+  'scopedEvents.empty.title': 'Keine Ereignisse',
+  'templateDetail.tab.storage': 'Speicher',
+  'templateDetail.tab.events': 'Ereignisse',
+  'templateEvents.empty.body':
+    'Engine-Audit-Log-Ereignisse für diese Vorlage werden hier angezeigt.',
+  'templateEvents.table.ariaLabel': 'Ereignisse für diese Vorlage',
+  'templateStorage.empty.body':
+    'Keiner der Datenträger dieser Vorlage liegt auf einer Speicherdomäne.',
+  'templateStorage.table.ariaLabel': 'Speicherdomänen mit den Datenträgern dieser Vorlage',
+  'templateStorage.column.used': 'Belegter Platz',
+  'templateStorage.column.disks': 'Datenträger',
+  'templateStorage.expand.ariaLabel': 'Datenträger anzeigen',
+  'templateStorage.disks.ariaLabel': 'Vorlagen-Datenträger auf {name}',
+  'clusterDetail.tab.events': 'Ereignisse',
+  'clusterEvents.empty.body':
+    'Engine-Audit-Log-Ereignisse für diesen Cluster werden hier angezeigt.',
+  'clusterEvents.table.ariaLabel': 'Ereignisse für diesen Cluster',
+  'dcDetail.tab.events': 'Ereignisse',
+  'dcEvents.empty.body':
+    'Engine-Audit-Log-Ereignisse für dieses Rechenzentrum werden hier angezeigt.',
+  'dcEvents.table.ariaLabel': 'Ereignisse für dieses Rechenzentrum',
+  'storageDetail.tab.events': 'Ereignisse',
+  'storageEvents.empty.body':
+    'Engine-Audit-Log-Ereignisse für diese Speicherdomäne werden hier angezeigt.',
+  'storageEvents.table.ariaLabel': 'Ereignisse für diese Speicherdomäne',
+  'quotaDetail.tab.events': 'Ereignisse',
+  'quotaEvents.empty.body':
+    'Engine-Audit-Log-Ereignisse für diese Kontingentregelung werden hier angezeigt.',
+  'quotaEvents.table.ariaLabel': 'Ereignisse für diese Kontingentregelung',
+  // List-grid columns filled by a follow= or one shared read (issue #34)
+  'vms.column.cpu': 'CPU',
+  'vms.column.network': 'Netzwerk',
+  'vms.column.ips': 'IP-Adressen',
+  'disks.column.attachedTo': 'Angehängt an',
+  'disks.column.quota': 'Kontingent',
+  'networks.column.qos': 'QoS-Name',
+  'vnicProfiles.column.qos': 'QoS-Name',
+  'vnicProfiles.column.networkFilter': 'Netzwerkfilter',
+  'pools.column.running': 'Laufende VMs',
+  'volumes.column.spaceUsed': 'Belegter Speicher',
   // UI extensions (docs/PLUGINS.md): sidebar group, plugin error state,
   // plugin page states, About dialog plugin list ------------------------
   'nav.group.extensions': 'Erweiterungen',

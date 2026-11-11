@@ -48,6 +48,8 @@ import { DataCenterQuotasTab } from '../components/datacenter-tabs/DataCenterQuo
 import { DataCenterStorageActionsTab } from '../components/datacenter-form/DataCenterStorageActionsTab'
 import { ReinitializeDataCenterModal } from '../components/datacenter-form/ReinitializeDataCenterModal'
 import { IscsiMultipathTab } from '../components/datacenter-tabs/IscsiMultipathTab'
+import { ScopedEventsTab } from '../components/events/ScopedEventsTab'
+import { scopedEventsSearch } from '../lib/scopedEvents'
 import { useDataCenter } from '../hooks/useDataCenterDetail'
 import { statusText } from '../lib/format'
 import { dataCenterDetailRoute } from '../routes/router'
@@ -412,6 +414,15 @@ export function DataCenterDetailPage() {
             >
               <TabContentBody hasPadding>
                 <DataCenterPermissionsTab dataCenterId={dataCenterId} />
+              </TabContentBody>
+            </Tab>
+            <Tab eventKey="events" title={<TabTitleText>{t('dcDetail.tab.events')}</TabTitleText>}>
+              <TabContentBody hasPadding>
+                <ScopedEventsTab
+                  search={scopedEventsSearch.dataCenter(dataCenter.data.name)}
+                  ariaLabel={t('dcEvents.table.ariaLabel')}
+                  emptyBody={t('dcEvents.empty.body')}
+                />
               </TabContentBody>
             </Tab>
             {extensionTabs}
