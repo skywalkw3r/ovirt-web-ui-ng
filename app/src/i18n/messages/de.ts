@@ -3816,7 +3816,7 @@ export const de: LocaleCatalog = {
     'Jeder Faktor muss eine ganze Zahl von mindestens 1 sein.',
   'schedulingPolicy.weights.label': 'Gewichtungsmodule',
   'setupNetworks.aria.configureSriov': 'SR-IOV für {name} konfigurieren',
-  'setupNetworks.aria.customPropertyAdd': 'Benutzerdefinierte Eigenschaft zu {name} hinzufügen',
+  'setupNetworks.aria.customPropertyAdd': 'Benutzerdefinierte Eigenschaft hinzufügen ({name})',
   'setupNetworks.aria.customPropertyKey':
     'Schlüssel der benutzerdefinierten Eigenschaft {index} auf {name}',
   'setupNetworks.aria.customPropertyRemove':

@@ -34,7 +34,7 @@ const KEY_1 = 'Key of custom property 1 on ovirtmgmt'
 const KEY_2 = 'Key of custom property 2 on ovirtmgmt'
 const VALUE_1 = 'Value of custom property 1 on ovirtmgmt'
 const VALUE_2 = 'Value of custom property 2 on ovirtmgmt'
-const ADD = 'Add a custom property to ovirtmgmt'
+const ADD = 'Add custom property to ovirtmgmt'
 
 // Mock fixture: host-01's ovirtmgmt attachment (a VM network on bond0) carries
 // bridge_opts = 'forward_delay=1500 multicast_snooping=1'.

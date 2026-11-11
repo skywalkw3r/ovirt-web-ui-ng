@@ -3776,7 +3776,7 @@ export const ptBR: LocaleCatalog = {
   'schedulingPolicy.weights.factorError': 'Cada fator deve ser um número inteiro de pelo menos 1.',
   'schedulingPolicy.weights.label': 'Módulos de peso',
   'setupNetworks.aria.configureSriov': 'Configurar SR-IOV para {name}',
-  'setupNetworks.aria.customPropertyAdd': 'Adicionar uma propriedade personalizada a {name}',
+  'setupNetworks.aria.customPropertyAdd': 'Adicionar propriedade personalizada a {name}',
   'setupNetworks.aria.customPropertyKey': 'Chave da propriedade personalizada {index} em {name}',
   'setupNetworks.aria.customPropertyRemove':
     'Remover a propriedade personalizada {index} de {name}',

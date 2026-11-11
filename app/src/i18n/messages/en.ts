@@ -4327,7 +4327,7 @@ export const en = {
   'schedulingPolicy.weights.label': 'Weight modules',
   // setupNetworks.* -----------------------------------------------
   'setupNetworks.aria.configureSriov': 'Configure SR-IOV for {name}',
-  'setupNetworks.aria.customPropertyAdd': 'Add a custom property to {name}',
+  'setupNetworks.aria.customPropertyAdd': 'Add custom property to {name}',
   'setupNetworks.aria.customPropertyKey': 'Key of custom property {index} on {name}',
   'setupNetworks.aria.customPropertyRemove': 'Remove custom property {index} from {name}',
   'setupNetworks.aria.customPropertyValue': 'Value of custom property {index} on {name}',
