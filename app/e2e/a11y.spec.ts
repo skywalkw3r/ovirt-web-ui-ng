@@ -141,6 +141,21 @@ test('New affinity group dialog with members selected has no serious violations'
   await expectNoSeriousViolations(page)
 })
 
+test('Add permission dialog with directory picks has no serious violations', async ({ page }) => {
+  // The multi-select table, the selected-principal chips and the directory
+  // hint only render once a directory is searched and rows are picked.
+  await login(page, { path: '/vms/vm-01' })
+  await page.getByRole('tab', { name: 'Permissions' }).click()
+  await page.getByRole('button', { name: 'Add permission' }).click()
+  const dialog = page.getByRole('dialog')
+  await dialog.getByRole('combobox', { name: 'Search in' }).selectOption('ldap.corp-authz')
+  await dialog.getByRole('checkbox', { name: 'Select bnewhire@ldap.corp' }).check()
+  await dialog.getByRole('checkbox', { name: 'Select rpatel@ldap.corp' }).check()
+  await expect(dialog.getByText('2 principals selected')).toBeVisible()
+
+  await expectNoSeriousViolations(page)
+})
+
 test('VM list with a folder selected has no serious accessibility violations', async ({ page }) => {
   // Breadcrumb, count badges and the folder empty-state variants all render
   // in this state — the surfaces the folder work added to the VMs page.

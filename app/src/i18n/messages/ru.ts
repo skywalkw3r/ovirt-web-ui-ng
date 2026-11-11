@@ -1065,6 +1065,42 @@ export const ru: LocaleCatalog = {
   'permissions.add.role.none': 'На этом движке нет назначаемых ролей.',
   'permissions.add.role.userGroup': 'Роли пользователей',
   'permissions.add.role.adminGroup': 'Административные роли',
+  // Add Permission picker depth (issue #31): multi-select, My groups,
+  // Everyone, and directory search.
+  'permissions.add.kind.myGroups': 'Мои группы',
+  'permissions.add.kind.everyone': 'Все',
+  'permissions.add.source.label': 'Искать в',
+  'permissions.add.source.engine': 'База данных движка',
+  'permissions.add.source.directory': 'Каталог: {domain}',
+  'permissions.add.source.domainsLoading': 'Загрузка каталогов...',
+  'permissions.add.source.domainsError': 'Не удалось загрузить каталоги: {message}',
+  'permissions.add.source.directoryHint':
+    'Субъекты из каталога, которых ещё нет в движке, добавляются в него при предоставлении роли.',
+  'permissions.add.empty.directory.users': 'Каталог не вернул ни одного пользователя.',
+  'permissions.add.empty.directory.groups': 'Каталог не вернул ни одной группы.',
+  'permissions.add.myGroups.loading': 'Загрузка ваших групп...',
+  'permissions.add.myGroups.error': 'Не удалось загрузить ваши группы: {message}',
+  'permissions.add.myGroups.empty.title': 'Нет групп',
+  'permissions.add.myGroups.empty.body': 'Ваша учётная запись не входит ни в одну группу каталога.',
+  'permissions.add.myGroups.table.ariaLabel': 'Мои группы',
+  'permissions.add.everyone.body':
+    'Роль предоставляется встроенной группе Everyone, поэтому её получает каждый пользователь для этого объекта ({noun}).',
+  'permissions.add.selectMany.user':
+    'Выберите одного или нескольких пользователей для предоставления роли.',
+  'permissions.add.selectMany.group': 'Выберите одну или несколько групп для предоставления роли.',
+  'permissions.add.selected.count':
+    '{count, plural, one {Выбран # субъект} few {Выбрано # субъекта} many {Выбрано # субъектов} other {Выбрано # субъекта}}',
+  'permissions.add.selected.ariaLabel': 'Выбранные субъекты',
+  'permissions.add.selected.remove': 'Убрать {name} из выбора',
+  'permissions.add.result.failed.title':
+    '{count, plural, one {Не удалось предоставить роль # субъекту} few {Не удалось предоставить роль # субъектам} many {Не удалось предоставить роль # субъектам} other {Не удалось предоставить роль # субъекта}}',
+  'permissions.add.result.failed.body':
+    'Субъекты с ошибкой остаются выбранными. Устраните причину и повторите попытку или уберите их из выбора.',
+  'permissions.add.result.failed.item': '{name}: {message}',
+  'permissions.add.submit.retry': 'Повторить неудачные',
+  'permissions.add.toast.granted': 'Роль {role} предоставлена: {name}',
+  'permissions.add.toast.grantedMany':
+    'Роль {role} предоставлена {count, plural, one {# субъекту} few {# субъектам} many {# субъектам} other {# субъекта}}',
   'users.notPermitted': 'Пользователи',
   'users.title': 'Пользователи',
   'users.search.hint': 'usrname=jdoe* — или обычный текст',

@@ -3857,6 +3857,25 @@ const initialGroups = (): MockGroup[] => [
 // multi-row read. The internal built-ins have no memberships, so their ids are
 // absent and the read serves the engine's omitted-key empty-list quirk.
 const userGroupMemberships: Record<string, MockGroup[]> = {
+  // The built-in admin (the default mock session) gets two memberships so the
+  // Add Permission dialog's "My groups" has rows. These are DIRECTORY-shaped
+  // (encoded directory ids, like the live GetAuthzGroupsByUserId read):
+  // dev-team is already in the engine DB (group-01, matched by name + domain),
+  // platform-team is not, so granting to it materializes it via POST /groups.
+  'user-01': [
+    {
+      id: 'dir-group-dev',
+      name: 'dev-team',
+      namespace: 'dc=ldap,dc=corp',
+      domain: { id: 'ldap.corp-authz', name: 'ldap.corp' },
+    },
+    {
+      id: 'dir-group-platform',
+      name: 'platform-team',
+      namespace: 'dc=ldap,dc=corp',
+      domain: { id: 'ldap.corp-authz', name: 'ldap.corp' },
+    },
+  ],
   'user-04': [
     {
       id: 'group-01',
@@ -11383,6 +11402,18 @@ function addEntityPermission(collection: string, id: string, rawBody: unknown): 
     // exactly one of user.id / group.id
     throw new ApiError(400, 'Bad Request', 'Permission entity requires user.id or group.id.')
   }
+  // PERMISSION_ADD_FAILED_PERMISSION_ALREADY_EXISTS — the same role granted
+  // to the same principal on the same object is refused, which also gives the
+  // Add Permission dialog's partial-failure path something to hit.
+  const principalId = hasUser ? body.user?.id : body.group?.id
+  const existing = effectivePermissions(collection, id) ?? []
+  if (
+    existing.some(
+      (p) => p.role?.id === role.id && (hasUser ? p.user?.id : p.group?.id) === principalId,
+    )
+  ) {
+    throw new ApiError(409, 'Operation Failed', 'Cannot add Permission. Permission already exists.')
+  }
   const created: MockHostPermission = {
     id: `perm-new-${++permissionSeq}`,
     role: { id: role.id, name: role.name, administrative: role.administrative },
@@ -11854,9 +11885,15 @@ const routes: MockRoute[] = [
     pattern: /^$/,
     // authenticated_user feeds fetchCapabilityProfile's tier heuristic; the
     // live engine serializes it as a bare link, the mock inlines user_name.
+    // The id is the signed-in principal's DB row when there is one (the live
+    // engine links the session's DbUser), so per-user reads such as the Add
+    // Permission dialog's My groups (GET /users/{id}/groups) resolve.
     handle: () => ({
       ...API_ROOT,
-      authenticated_user: { id: 'mock-user', user_name: mockUsername },
+      authenticated_user: {
+        id: users.find((u) => u.user_name === mockUsername)?.id ?? 'mock-user',
+        user_name: mockUsername,
+      },
     }),
   },
   {

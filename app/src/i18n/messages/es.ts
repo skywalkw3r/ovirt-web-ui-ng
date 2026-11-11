@@ -1070,6 +1070,41 @@ export const es: LocaleCatalog = {
   'permissions.add.role.none': 'No hay roles asignables disponibles en este motor.',
   'permissions.add.role.userGroup': 'Roles de usuario',
   'permissions.add.role.adminGroup': 'Roles administrativos',
+  // Add Permission picker depth (issue #31): multi-select, My groups,
+  // Everyone, and directory search.
+  'permissions.add.kind.myGroups': 'Mis grupos',
+  'permissions.add.kind.everyone': 'Todos',
+  'permissions.add.source.label': 'Buscar en',
+  'permissions.add.source.engine': 'Base de datos del motor',
+  'permissions.add.source.directory': 'Directorio: {domain}',
+  'permissions.add.source.domainsLoading': 'Cargando directorios',
+  'permissions.add.source.domainsError': 'No se pudieron cargar los directorios: {message}',
+  'permissions.add.source.directoryHint':
+    'Los principales encontrados en un directorio que aún no están en el motor se añaden a él al conceder el rol.',
+  'permissions.add.empty.directory.users': 'Este directorio no devolvió ningún usuario.',
+  'permissions.add.empty.directory.groups': 'Este directorio no devolvió ningún grupo.',
+  'permissions.add.myGroups.loading': 'Cargando sus grupos',
+  'permissions.add.myGroups.error': 'No se pudieron cargar sus grupos: {message}',
+  'permissions.add.myGroups.empty.title': 'No hay grupos',
+  'permissions.add.myGroups.empty.body': 'Su cuenta no es miembro de ningún grupo del directorio.',
+  'permissions.add.myGroups.table.ariaLabel': 'Mis grupos',
+  'permissions.add.everyone.body':
+    'El rol se concede al grupo integrado Everyone, por lo que todos los usuarios lo obtienen en este {noun}.',
+  'permissions.add.selectMany.user': 'Seleccione uno o más usuarios a los que conceder el rol.',
+  'permissions.add.selectMany.group': 'Seleccione uno o más grupos a los que conceder el rol.',
+  'permissions.add.selected.count':
+    '{count, plural, one {# principal seleccionado} other {# principales seleccionados}}',
+  'permissions.add.selected.ariaLabel': 'Principales seleccionados',
+  'permissions.add.selected.remove': 'Quitar {name} de la selección',
+  'permissions.add.result.failed.title':
+    '{count, plural, one {No se pudo conceder el rol a # principal} other {No se pudo conceder el rol a # principales}}',
+  'permissions.add.result.failed.body':
+    'Los principales con error siguen seleccionados. Corrija la causa y vuelva a intentarlo, o quítelos de la selección.',
+  'permissions.add.result.failed.item': '{name}: {message}',
+  'permissions.add.submit.retry': 'Reintentar los fallidos',
+  'permissions.add.toast.granted': '{role} concedido a {name}',
+  'permissions.add.toast.grantedMany':
+    '{role} concedido a {count, plural, one {# principal} other {# principales}}',
   'users.notPermitted': 'Usuarios',
   'users.title': 'Usuarios',
   'users.search.hint': 'usrname=jdoe* — o texto sin formato',

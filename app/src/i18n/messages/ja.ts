@@ -1050,6 +1050,41 @@ export const ja: LocaleCatalog = {
   'permissions.add.role.none': 'このエンジンで利用できる割り当て可能な役割はありません。',
   'permissions.add.role.userGroup': 'ユーザーの役割',
   'permissions.add.role.adminGroup': '管理者の役割',
+  // Add Permission picker depth (issue #31): multi-select, My groups,
+  // Everyone, and directory search.
+  'permissions.add.kind.myGroups': 'マイグループ',
+  'permissions.add.kind.everyone': '全員',
+  'permissions.add.source.label': '検索対象',
+  'permissions.add.source.engine': 'エンジンデータベース',
+  'permissions.add.source.directory': 'ディレクトリ: {domain}',
+  'permissions.add.source.domainsLoading': 'ディレクトリを読み込み中...',
+  'permissions.add.source.domainsError': 'ディレクトリを読み込めませんでした: {message}',
+  'permissions.add.source.directoryHint':
+    'ディレクトリで見つかったプリンシパルのうちエンジンに未登録のものは、役割の付与時にエンジンに追加されます。',
+  'permissions.add.empty.directory.users': 'このディレクトリはユーザーを返しませんでした。',
+  'permissions.add.empty.directory.groups': 'このディレクトリはグループを返しませんでした。',
+  'permissions.add.myGroups.loading': 'グループを読み込み中...',
+  'permissions.add.myGroups.error': 'グループを読み込めませんでした: {message}',
+  'permissions.add.myGroups.empty.title': 'グループがありません',
+  'permissions.add.myGroups.empty.body':
+    'このアカウントはどのディレクトリグループのメンバーでもありません。',
+  'permissions.add.myGroups.table.ariaLabel': 'マイグループ',
+  'permissions.add.everyone.body':
+    '役割は組み込みの Everyone グループに付与されるため、すべてのユーザーがこの{noun}でその役割を持ちます。',
+  'permissions.add.selectMany.user': '役割を付与するユーザーを 1 人以上選択します。',
+  'permissions.add.selectMany.group': '役割を付与するグループを 1 つ以上選択します。',
+  'permissions.add.selected.count': '{count, plural, other {# 件のプリンシパルを選択済み}}',
+  'permissions.add.selected.ariaLabel': '選択したプリンシパル',
+  'permissions.add.selected.remove': '{name} を選択から削除',
+  'permissions.add.result.failed.title':
+    '{count, plural, other {# 件のプリンシパルに役割を付与できませんでした}}',
+  'permissions.add.result.failed.body':
+    '失敗したプリンシパルは選択されたままです。原因を解決して再試行するか、選択から削除してください。',
+  'permissions.add.result.failed.item': '{name}: {message}',
+  'permissions.add.submit.retry': '失敗分を再試行',
+  'permissions.add.toast.granted': '{role} を {name} に付与しました',
+  'permissions.add.toast.grantedMany':
+    '{role} を {count, plural, other {# 件のプリンシパル}}に付与しました',
   'users.notPermitted': 'ユーザー',
   'users.title': 'ユーザー',
   'users.search.hint': 'usrname = jdoe * —またはプレーンテキスト',
