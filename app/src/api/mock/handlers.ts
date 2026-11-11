@@ -533,20 +533,32 @@ interface MockVnicProfile {
   failover?: { id?: string }
 }
 
-// Instance types share the VM hardware surface but the modal edits a lean subset
-// (memory, memory_policy, cpu.topology, high_availability). Scalars are typed
-// number|string / boolean|string so the fixtures can deliberately mix wire forms
-// and exercise InstanceTypeSchema's coercion (house rule).
+// Instance types carry the part of VmBase the engine maps for them (see
+// INSTANCE_TYPE_REST_KEYS). Scalars are typed number|string / boolean|string so
+// the fixtures can deliberately mix wire forms and exercise InstanceTypeSchema's
+// coercion (house rule).
 interface MockInstanceType {
   id: string
   name: string
   description?: string
   memory?: number | string
-  memory_policy?: { guaranteed?: number | string; max?: number | string }
+  memory_policy?: {
+    guaranteed?: number | string
+    max?: number | string
+    ballooning?: boolean | string
+  }
   cpu?: {
     topology?: { sockets?: number | string; cores?: number | string; threads?: number | string }
   }
   high_availability?: { enabled?: boolean | string; priority?: number | string }
+  display?: { type?: string; monitors?: number | string; smartcard_enabled?: boolean | string }
+  usb?: { enabled?: boolean | string }
+  soundcard_enabled?: boolean | string
+  console?: { enabled?: boolean | string }
+  io?: { threads?: number | string }
+  virtio_scsi?: { enabled?: boolean | string }
+  custom_cpu_model?: string
+  custom_emulated_machine?: string
 }
 
 interface MockNetworkFilter {
@@ -2720,27 +2732,46 @@ const initialInstanceTypes = (): MockInstanceType[] => [
     name: 'Small',
     description: '1 vCPU, 1 GiB',
     memory: '1073741824',
-    memory_policy: { guaranteed: '1073741824' },
+    memory_policy: { guaranteed: '1073741824', ballooning: 'true' },
     cpu: { topology: { sockets: 1, cores: 1, threads: 1 } },
     high_availability: { enabled: 'false', priority: 1 },
+    display: { type: 'spice', monitors: '1', smartcard_enabled: 'false' },
+    usb: { enabled: 'false' },
+    soundcard_enabled: 'false',
+    console: { enabled: 'false' },
+    io: { threads: '0' },
+    virtio_scsi: { enabled: 'false' },
   },
   {
     id: 'instance-type-medium',
     name: 'Medium',
     description: '2 vCPU, 2 GiB',
     memory: 2147483648,
-    memory_policy: { guaranteed: 1073741824, max: 4294967296 },
+    memory_policy: { guaranteed: 1073741824, max: 4294967296, ballooning: true },
     cpu: { topology: { sockets: 2, cores: 1, threads: 1 } },
     high_availability: { enabled: false, priority: 1 },
+    display: { type: 'vnc', monitors: 1, smartcard_enabled: false },
+    usb: { enabled: true },
+    soundcard_enabled: true,
+    console: { enabled: true },
+    io: { threads: 1 },
+    virtio_scsi: { enabled: true },
   },
   {
     id: 'instance-type-large',
     name: 'Large',
     description: '4 vCPU, 4 GiB',
     memory: 4294967296,
-    memory_policy: { guaranteed: '2147483648' },
+    memory_policy: { guaranteed: '2147483648', ballooning: false },
     cpu: { topology: { sockets: '2', cores: 2, threads: 1 } },
     high_availability: { enabled: 'true', priority: 50 },
+    display: { type: 'spice', monitors: 2, smartcard_enabled: 'true' },
+    usb: { enabled: false },
+    soundcard_enabled: false,
+    console: { enabled: false },
+    io: { threads: 2 },
+    virtio_scsi: { enabled: 'true' },
+    custom_cpu_model: 'Skylake-Server',
   },
 ]
 
@@ -9403,13 +9434,57 @@ function validateInstanceTypeMemory(entity: MockInstanceType): void {
   }
 }
 
+// The instance-type body keys the engine applies. InstanceTypeMapper maps an
+// instance type through VmBaseMapper.mapCommonModelToEntity only, and the
+// resource adds the device-backed flags; every other VmBase key (time_zone,
+// sso, custom_properties, cpu_profile, ...) is silently ignored. usb is applied
+// on update only: BackendInstanceTypesResource.add never reads it. display is
+// narrowed to the subkeys the engine reads for an instance type.
+const INSTANCE_TYPE_REST_KEYS = [
+  'name',
+  'description',
+  'memory',
+  'memory_policy',
+  'cpu',
+  'high_availability',
+  'display',
+  'usb',
+  'soundcard_enabled',
+  'console',
+  'io',
+  'virtio_scsi',
+  'custom_cpu_model',
+  'custom_emulated_machine',
+]
+const INSTANCE_TYPE_DISPLAY_KEYS = ['type', 'monitors', 'smartcard_enabled']
+
+function instanceTypeBody(body: unknown, mode: 'add' | 'update'): Record<string, unknown> {
+  const spec = (body ?? {}) as Record<string, unknown>
+  const kept: Record<string, unknown> = {}
+  for (const key of INSTANCE_TYPE_REST_KEYS) {
+    if (spec[key] === undefined || (mode === 'add' && key === 'usb')) continue
+    kept[key] = spec[key]
+  }
+  if (kept.display !== undefined) {
+    const display = kept.display as Record<string, unknown>
+    kept.display = Object.fromEntries(
+      INSTANCE_TYPE_DISPLAY_KEYS.filter((key) => display[key] !== undefined).map((key) => [
+        key,
+        display[key],
+      ]),
+    )
+  }
+  return kept
+}
+
 // POST /instancetypes — webadmin-style create. Only `name` is mandatory (the
 // engine defaults memory/CPU); a duplicate name 409s. Assigns a deterministic id
 // from the current count (no Date/Math.random, so tests stay deterministic) and
-// returns the created instance type so GET /instancetypes sees it. Mirrors
-// addCluster.
+// returns the created instance type so GET /instancetypes sees it. The device
+// flags read back false unless the body set them, and USB reads back off: the
+// add path ignores it, as the engine's does. Mirrors addCluster.
 function addInstanceType(body: unknown): unknown {
-  const spec = (body ?? {}) as MockInstanceType
+  const spec = instanceTypeBody(body, 'add') as Partial<MockInstanceType>
   if (!spec.name) {
     throw new ApiError(400, 'Incomplete parameters', 'InstanceType [name] required for add')
   }
@@ -9417,30 +9492,35 @@ function addInstanceType(body: unknown): unknown {
     throw new ApiError(409, 'Operation Failed', `InstanceType name ${spec.name} is already in use`)
   }
   const created: MockInstanceType = {
+    usb: { enabled: false },
+    soundcard_enabled: false,
+    console: { enabled: false },
+    virtio_scsi: { enabled: false },
+    ...spec,
     id: `instance-type-new-${instanceTypes.length}`,
     name: spec.name,
-    description: spec.description,
-    memory: spec.memory,
-    memory_policy: spec.memory_policy,
-    cpu: spec.cpu,
-    high_availability: spec.high_availability,
   }
   validateInstanceTypeMemory(created)
   instanceTypes.push(created)
   return created
 }
 
-// PUT /instancetypes/{id} — webadmin-style edit. Shallow-merges the request body
-// onto the matching fixture and returns the merged instance type. There is no
-// create-only/immutable key to strip (unlike a cluster's data center). Unknown
-// id 404s. Mirrors updateCluster. The merged entity is validated against the
-// engine's max>=memory rule (against a throwaway copy) so a bad edit 400s
-// without corrupting the stored fixture.
+// PUT /instancetypes/{id} — webadmin-style edit. Merges the keys the engine
+// applies onto the matching fixture the engine's way (mergeEntity: nested
+// blocks key by key, so a body carrying only memory_policy.ballooning keeps the
+// max) and returns the merged instance type. There is no create-only/immutable
+// key to strip (unlike a cluster's data center). Unknown id 404s. The merged
+// entity is validated against the engine's max>=memory rule on a throwaway copy
+// so a bad edit 400s without corrupting the stored fixture.
 function updateInstanceTypeMock(id: string, body: unknown): unknown {
   const instanceType = requireInstanceType(id)
-  const patch = (body ?? {}) as Partial<MockInstanceType>
-  validateInstanceTypeMemory({ ...instanceType, ...patch })
-  Object.assign(instanceType, patch)
+  const patch = instanceTypeBody(body, 'update')
+  const merged = mergeEntity(
+    structuredClone(instanceType) as unknown as Record<string, unknown>,
+    patch,
+  )
+  validateInstanceTypeMemory(merged as unknown as MockInstanceType)
+  mergeEntity(instanceType as unknown as Record<string, unknown>, patch)
   return instanceType
 }
 

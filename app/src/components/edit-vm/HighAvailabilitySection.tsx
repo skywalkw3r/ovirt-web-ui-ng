@@ -63,15 +63,20 @@ export function HighAvailabilitySection({
   draft,
   onChange,
   watchdog,
+  hiddenFields,
   idPrefix = 'edit-vm',
 }: {
   draft: HighAvailabilityFields
   onChange: SectionChange<HighAvailabilityFields>
   watchdog?: WatchdogContext
+  // Fields this form does not offer (e.g. webadmin hides the lease and resume
+  // behaviour for instance types). Absent ⇒ every field shows.
+  hiddenFields?: readonly (keyof HighAvailabilityFields)[]
   idPrefix?: string
 }) {
   const t = useT()
   const set = fieldSetter(onChange)
+  const shown = (key: keyof HighAvailabilityFields) => !hiddenFields?.includes(key)
   // The lease target must be an active data domain (read-only reuse of the
   // shared storage-domains query — cached with the rest of the app).
   const domains = useStorageDomains()
@@ -121,63 +126,67 @@ export function HighAvailabilitySection({
         </FormSelect>
       </FormGroup>
 
-      <FormGroup
-        label={t('vm.edit.ha.leaseSd')}
-        fieldId={`${idPrefix}-ha-lease-sd`}
-        labelHelp={
-          <FieldHelp field={t('vm.edit.ha.leaseSd')} content={t('fieldHelp.vm.leaseSd')} />
-        }
-      >
-        <FormSelect
-          id={`${idPrefix}-ha-lease-sd`}
-          aria-label={t('vm.edit.ha.leaseSd')}
-          value={draft.leaseStorageDomainId}
-          isDisabled={domains.isPending || domains.isError}
-          onChange={(_event, value) => set('leaseStorageDomainId', value)}
+      {shown('leaseStorageDomainId') && (
+        <FormGroup
+          label={t('vm.edit.ha.leaseSd')}
+          fieldId={`${idPrefix}-ha-lease-sd`}
+          labelHelp={
+            <FieldHelp field={t('vm.edit.ha.leaseSd')} content={t('fieldHelp.vm.leaseSd')} />
+          }
         >
-          <FormSelectOption value="" label={t('vm.edit.ha.leaseSd.none')} />
-          {missingLease && (
-            <FormSelectOption
-              value={draft.leaseStorageDomainId}
-              label={draft.leaseStorageDomainId}
-            />
+          <FormSelect
+            id={`${idPrefix}-ha-lease-sd`}
+            aria-label={t('vm.edit.ha.leaseSd')}
+            value={draft.leaseStorageDomainId}
+            isDisabled={domains.isPending || domains.isError}
+            onChange={(_event, value) => set('leaseStorageDomainId', value)}
+          >
+            <FormSelectOption value="" label={t('vm.edit.ha.leaseSd.none')} />
+            {missingLease && (
+              <FormSelectOption
+                value={draft.leaseStorageDomainId}
+                label={draft.leaseStorageDomainId}
+              />
+            )}
+            {dataDomains.map((domain) => (
+              <FormSelectOption key={domain.id} value={domain.id} label={domain.name} />
+            ))}
+          </FormSelect>
+          {domains.isError && (
+            <FormHelperText>
+              <HelperText>
+                <HelperTextItem variant="error">
+                  {t('vm.edit.ha.leaseSd.error')}{' '}
+                  <Button variant="link" isInline onClick={() => void domains.refetch()}>
+                    {t('common.action.retry')}
+                  </Button>
+                </HelperTextItem>
+              </HelperText>
+            </FormHelperText>
           )}
-          {dataDomains.map((domain) => (
-            <FormSelectOption key={domain.id} value={domain.id} label={domain.name} />
-          ))}
-        </FormSelect>
-        {domains.isError && (
-          <FormHelperText>
-            <HelperText>
-              <HelperTextItem variant="error">
-                {t('vm.edit.ha.leaseSd.error')}{' '}
-                <Button variant="link" isInline onClick={() => void domains.refetch()}>
-                  {t('common.action.retry')}
-                </Button>
-              </HelperTextItem>
-            </HelperText>
-          </FormHelperText>
-        )}
-      </FormGroup>
+        </FormGroup>
+      )}
 
-      <FormGroup
-        label={t('vm.edit.ha.resume')}
-        fieldId={`${idPrefix}-ha-resume`}
-        labelHelp={
-          <FieldHelp field={t('vm.edit.ha.resume')} content={t('fieldHelp.vm.resumeBehaviour')} />
-        }
-      >
-        <FormSelect
-          id={`${idPrefix}-ha-resume`}
-          aria-label={t('vm.edit.ha.resume')}
-          value={draft.storageErrorResumeBehaviour}
-          onChange={(_event, value) => set('storageErrorResumeBehaviour', value)}
+      {shown('storageErrorResumeBehaviour') && (
+        <FormGroup
+          label={t('vm.edit.ha.resume')}
+          fieldId={`${idPrefix}-ha-resume`}
+          labelHelp={
+            <FieldHelp field={t('vm.edit.ha.resume')} content={t('fieldHelp.vm.resumeBehaviour')} />
+          }
         >
-          {STORAGE_ERROR_RESUME_OPTIONS.map((option) => (
-            <FormSelectOption key={option.value} value={option.value} label={t(option.labelId)} />
-          ))}
-        </FormSelect>
-      </FormGroup>
+          <FormSelect
+            id={`${idPrefix}-ha-resume`}
+            aria-label={t('vm.edit.ha.resume')}
+            value={draft.storageErrorResumeBehaviour}
+            onChange={(_event, value) => set('storageErrorResumeBehaviour', value)}
+          >
+            {STORAGE_ERROR_RESUME_OPTIONS.map((option) => (
+              <FormSelectOption key={option.value} value={option.value} label={t(option.labelId)} />
+            ))}
+          </FormSelect>
+        </FormGroup>
+      )}
 
       {watchdog !== undefined && <WatchdogFormGroups {...watchdog} idPrefix={idPrefix} />}
     </Form>

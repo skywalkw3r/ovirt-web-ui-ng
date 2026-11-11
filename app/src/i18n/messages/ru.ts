@@ -2338,24 +2338,9 @@ export const ru: LocaleCatalog = {
   'templateForm.stateless': 'Без сохранения состояния',
   'templateForm.deleteProtection': 'Защита от удаления',
   'templateForm.aria.deleteProtection': 'Защита от удаления',
-  'templateForm.section.system': 'Система',
-  'templateForm.memory': 'Объём памяти (МБ)',
-  'templateForm.guaranteedMemory': 'Гарантированная физическая память (МБ)',
-  'templateForm.maxMemory': 'Максимальный объём памяти (МБ)',
   'templateForm.sockets': 'Виртуальные сокеты',
   'templateForm.cores': 'Ядер на виртуальный сокет',
   'templateForm.threads': 'Потоков на ядро',
-  'templateForm.section.ha': 'Высокая доступность',
-  'templateForm.ha': 'Высокодоступный',
-  'templateForm.ha.priority': 'Приоритет',
-  'templateForm.aria.haPriority': 'Приоритет высокой доступности',
-  'templateForm.ha.priorityHelp':
-    'Значения повыше перезапускаются первыми (webadmin делит на группы: низкий 1, средний 50, высокий 100).',
-  'templateForm.section.console': 'Консоль',
-  'templateForm.monitors': 'Мониторы',
-  'templateForm.usb': 'USB включён',
-  'templateForm.smartcard': 'Смарт-карта включена',
-  'templateForm.soundcard': 'Звуковая карта включена',
   'templateForm.memory.error.positive': 'Объём памяти должен быть больше 0',
   'templateForm.memory.error.guaranteed':
     'Гарантированная физическая память не может превышать объём памяти',
@@ -3607,11 +3592,7 @@ export const ru: LocaleCatalog = {
   // instanceTypeForm
   'instanceTypeForm.aria.description': 'Описание типа экземпляра',
   'instanceTypeForm.aria.name': 'Имя типа экземпляра',
-  'instanceTypeForm.memory.error.guaranteed':
-    'Гарантированная физическая память не может превышать размер памяти',
-  'instanceTypeForm.memory.error.max': 'Максимальная память не может быть меньше размера памяти',
-  'instanceTypeForm.memory.error.positive': 'Размер памяти должен быть больше 0',
-  'instanceTypeForm.section.cpu': 'Виртуальные ЦП',
+  'instanceTypeForm.sections.ariaLabel': 'Разделы типа экземпляра',
   'instanceTypeForm.title.edit': 'Изменить тип экземпляра — {name}',
   'instanceTypeForm.title.new': 'Новый тип экземпляра',
 

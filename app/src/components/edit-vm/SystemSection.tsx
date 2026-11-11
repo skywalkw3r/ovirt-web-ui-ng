@@ -43,6 +43,9 @@ interface SystemSectionProps {
   // The engine sizes the CPU topology at start (Edit VM: the Resize and Pin
   // NUMA pinning policy), so the three counts are read-only.
   topologyLocked?: boolean
+  // Fields this form does not offer (e.g. an instance type has no time zone or
+  // serial number over REST). Absent ⇒ every field shows.
+  hiddenFields?: readonly (keyof SystemFields)[]
   idPrefix?: string
 }
 
@@ -63,10 +66,12 @@ export function SystemSection({
   onChange,
   overcommitPercent,
   topologyLocked = false,
+  hiddenFields,
   idPrefix = 'edit-vm',
 }: SystemSectionProps) {
   const t = useT()
   const set = fieldSetter(onChange)
+  const shown = (key: keyof SystemFields) => !hiddenFields?.includes(key)
   // Resize and Pin NUMA sizes the CPU topology from the host at start, so
   // webadmin disables the three counts under it (UnitVmModel.updateCpuFields);
   // same here.
@@ -217,52 +222,60 @@ export function SystemSection({
       </FormSection>
 
       <FormSection title={t('vm.edit.system.advancedParams')} titleElement="h3">
-        <FormGroup
-          label={t('vm.edit.system.timezone')}
-          fieldId={`${idPrefix}-timezone`}
-          labelHelp={
-            <FieldHelp
-              field={t('vm.edit.system.timezone')}
-              content={t('fieldHelp.vm.hardwareClock')}
-            />
-          }
-        >
-          <FormSelect
-            id={`${idPrefix}-timezone`}
-            aria-label={t('vm.edit.system.timezone')}
-            value={draft.hardwareClockTimezone}
-            onChange={(_event, value) => set('hardwareClockTimezone', value)}
+        {shown('hardwareClockTimezone') && (
+          <FormGroup
+            label={t('vm.edit.system.timezone')}
+            fieldId={`${idPrefix}-timezone`}
+            labelHelp={
+              <FieldHelp
+                field={t('vm.edit.system.timezone')}
+                content={t('fieldHelp.vm.hardwareClock')}
+              />
+            }
           >
-            <FormSelectOption value="" label={t('vm.edit.system.timezone.default')} />
-            {timezoneOptions(draft.hardwareClockTimezone).map((zone) => (
-              <FormSelectOption key={zone} value={zone} label={zone} />
-            ))}
-          </FormSelect>
-        </FormGroup>
+            <FormSelect
+              id={`${idPrefix}-timezone`}
+              aria-label={t('vm.edit.system.timezone')}
+              value={draft.hardwareClockTimezone}
+              onChange={(_event, value) => set('hardwareClockTimezone', value)}
+            >
+              <FormSelectOption value="" label={t('vm.edit.system.timezone.default')} />
+              {timezoneOptions(draft.hardwareClockTimezone).map((zone) => (
+                <FormSelectOption key={zone} value={zone} label={zone} />
+              ))}
+            </FormSelect>
+          </FormGroup>
+        )}
 
-        <FormGroup
-          label={t('vm.edit.system.serialPolicy')}
-          fieldId={`${idPrefix}-serial-policy`}
-          labelHelp={
-            <FieldHelp
-              field={t('vm.edit.system.serialPolicy')}
-              content={t('fieldHelp.vm.serialNumberPolicy')}
-            />
-          }
-        >
-          <FormSelect
-            id={`${idPrefix}-serial-policy`}
-            aria-label={t('vm.edit.system.serialPolicy')}
-            value={draft.serialNumberPolicy}
-            onChange={(_event, value) => set('serialNumberPolicy', value)}
+        {shown('serialNumberPolicy') && (
+          <FormGroup
+            label={t('vm.edit.system.serialPolicy')}
+            fieldId={`${idPrefix}-serial-policy`}
+            labelHelp={
+              <FieldHelp
+                field={t('vm.edit.system.serialPolicy')}
+                content={t('fieldHelp.vm.serialNumberPolicy')}
+              />
+            }
           >
-            {SERIAL_NUMBER_POLICY_OPTIONS.map((option) => (
-              <FormSelectOption key={option.value} value={option.value} label={t(option.labelId)} />
-            ))}
-          </FormSelect>
-        </FormGroup>
+            <FormSelect
+              id={`${idPrefix}-serial-policy`}
+              aria-label={t('vm.edit.system.serialPolicy')}
+              value={draft.serialNumberPolicy}
+              onChange={(_event, value) => set('serialNumberPolicy', value)}
+            >
+              {SERIAL_NUMBER_POLICY_OPTIONS.map((option) => (
+                <FormSelectOption
+                  key={option.value}
+                  value={option.value}
+                  label={t(option.labelId)}
+                />
+              ))}
+            </FormSelect>
+          </FormGroup>
+        )}
 
-        {draft.serialNumberPolicy === 'custom' && (
+        {shown('serialNumberPolicy') && draft.serialNumberPolicy === 'custom' && (
           <FormGroup label={t('vm.edit.system.customSerial')} fieldId={`${idPrefix}-custom-serial`}>
             <TextInput
               id={`${idPrefix}-custom-serial`}

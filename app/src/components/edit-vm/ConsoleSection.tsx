@@ -36,6 +36,7 @@ export function ConsoleSection({
   draft,
   onChange,
   allowHeadless = true,
+  hiddenFields,
   idPrefix = 'edit-vm',
 }: {
   draft: ConsoleFields
@@ -45,10 +46,14 @@ export function ConsoleSection({
   // headless only while the entity already is headless, so the select still
   // shows the loaded value.
   allowHeadless?: boolean
+  // Fields this form does not offer (e.g. an instance type has no SSO or SPICE
+  // channel settings over REST). Absent ⇒ every field shows.
+  hiddenFields?: readonly (keyof ConsoleFields)[]
   idPrefix?: string
 }) {
   const t = useT()
   const set = fieldSetter(onChange)
+  const shown = (key: keyof ConsoleFields) => !hiddenFields?.includes(key)
   const isVnc = draft.graphicsProtocol === 'vnc'
   const isSpice = draft.graphicsProtocol === 'spice'
   const isHeadless = draft.graphicsProtocol === 'headless'
@@ -92,20 +97,25 @@ export function ConsoleSection({
         )}
       </FormGroup>
 
-      <FormGroup label={t('vm.edit.console.vncKeyboard')} fieldId={`${idPrefix}-console-keyboard`}>
-        <FormSelect
-          id={`${idPrefix}-console-keyboard`}
-          aria-label={t('vm.edit.console.vncKeyboard')}
-          value={draft.vncKeyboardLayout}
-          isDisabled={!isVnc}
-          onChange={(_event, value) => set('vncKeyboardLayout', value)}
+      {shown('vncKeyboardLayout') && (
+        <FormGroup
+          label={t('vm.edit.console.vncKeyboard')}
+          fieldId={`${idPrefix}-console-keyboard`}
         >
-          <FormSelectOption value="" label={t('vm.edit.console.vncKeyboard.default')} />
-          {keyboardLayoutOptions(draft.vncKeyboardLayout).map((layout) => (
-            <FormSelectOption key={layout} value={layout} label={layout} />
-          ))}
-        </FormSelect>
-      </FormGroup>
+          <FormSelect
+            id={`${idPrefix}-console-keyboard`}
+            aria-label={t('vm.edit.console.vncKeyboard')}
+            value={draft.vncKeyboardLayout}
+            isDisabled={!isVnc}
+            onChange={(_event, value) => set('vncKeyboardLayout', value)}
+          >
+            <FormSelectOption value="" label={t('vm.edit.console.vncKeyboard.default')} />
+            {keyboardLayoutOptions(draft.vncKeyboardLayout).map((layout) => (
+              <FormSelectOption key={layout} value={layout} label={layout} />
+            ))}
+          </FormSelect>
+        </FormGroup>
+      )}
 
       <FormGroup
         label={t('vm.edit.console.monitors')}
@@ -156,63 +166,69 @@ export function ConsoleSection({
         />
       </FormGroup>
 
-      <FormGroup
-        label={t('vm.edit.console.sso.field')}
-        fieldId={`${idPrefix}-console-sso`}
-        labelHelp={
-          <FieldHelp field={t('vm.edit.console.sso.field')} content={t('fieldHelp.vm.sso')} />
-        }
-      >
-        <Switch
-          id={`${idPrefix}-console-sso`}
-          label={t('vm.edit.console.sso')}
-          aria-label={t('vm.edit.console.sso')}
-          isChecked={draft.ssoEnabled}
-          onChange={(_event, checked) => set('ssoEnabled', checked)}
-        />
-      </FormGroup>
+      {shown('ssoEnabled') && (
+        <FormGroup
+          label={t('vm.edit.console.sso.field')}
+          fieldId={`${idPrefix}-console-sso`}
+          labelHelp={
+            <FieldHelp field={t('vm.edit.console.sso.field')} content={t('fieldHelp.vm.sso')} />
+          }
+        >
+          <Switch
+            id={`${idPrefix}-console-sso`}
+            label={t('vm.edit.console.sso')}
+            aria-label={t('vm.edit.console.sso')}
+            isChecked={draft.ssoEnabled}
+            onChange={(_event, checked) => set('ssoEnabled', checked)}
+          />
+        </FormGroup>
+      )}
 
       {/* SPICE-only guest channels, greyed out for VNC/headless like the
           smartcard toggle below. */}
-      <FormGroup
-        label={t('vm.edit.console.fileTransfer.field')}
-        fieldId={`${idPrefix}-console-file-transfer`}
-        labelHelp={
-          <FieldHelp
-            field={t('vm.edit.console.fileTransfer.field')}
-            content={t('fieldHelp.vm.spiceFileTransfer')}
+      {shown('spiceFileTransfer') && (
+        <FormGroup
+          label={t('vm.edit.console.fileTransfer.field')}
+          fieldId={`${idPrefix}-console-file-transfer`}
+          labelHelp={
+            <FieldHelp
+              field={t('vm.edit.console.fileTransfer.field')}
+              content={t('fieldHelp.vm.spiceFileTransfer')}
+            />
+          }
+        >
+          <Switch
+            id={`${idPrefix}-console-file-transfer`}
+            label={t('vm.edit.console.fileTransfer')}
+            aria-label={t('vm.edit.console.fileTransfer')}
+            isChecked={draft.spiceFileTransfer}
+            isDisabled={!isSpice}
+            onChange={(_event, checked) => set('spiceFileTransfer', checked)}
           />
-        }
-      >
-        <Switch
-          id={`${idPrefix}-console-file-transfer`}
-          label={t('vm.edit.console.fileTransfer')}
-          aria-label={t('vm.edit.console.fileTransfer')}
-          isChecked={draft.spiceFileTransfer}
-          isDisabled={!isSpice}
-          onChange={(_event, checked) => set('spiceFileTransfer', checked)}
-        />
-      </FormGroup>
+        </FormGroup>
+      )}
 
-      <FormGroup
-        label={t('vm.edit.console.copyPaste.field')}
-        fieldId={`${idPrefix}-console-copy-paste`}
-        labelHelp={
-          <FieldHelp
-            field={t('vm.edit.console.copyPaste.field')}
-            content={t('fieldHelp.vm.spiceCopyPaste')}
+      {shown('spiceCopyPaste') && (
+        <FormGroup
+          label={t('vm.edit.console.copyPaste.field')}
+          fieldId={`${idPrefix}-console-copy-paste`}
+          labelHelp={
+            <FieldHelp
+              field={t('vm.edit.console.copyPaste.field')}
+              content={t('fieldHelp.vm.spiceCopyPaste')}
+            />
+          }
+        >
+          <Switch
+            id={`${idPrefix}-console-copy-paste`}
+            label={t('vm.edit.console.copyPaste')}
+            aria-label={t('vm.edit.console.copyPaste')}
+            isChecked={draft.spiceCopyPaste}
+            isDisabled={!isSpice}
+            onChange={(_event, checked) => set('spiceCopyPaste', checked)}
           />
-        }
-      >
-        <Switch
-          id={`${idPrefix}-console-copy-paste`}
-          label={t('vm.edit.console.copyPaste')}
-          aria-label={t('vm.edit.console.copyPaste')}
-          isChecked={draft.spiceCopyPaste}
-          isDisabled={!isSpice}
-          onChange={(_event, checked) => set('spiceCopyPaste', checked)}
-        />
-      </FormGroup>
+        </FormGroup>
+      )}
 
       <FormGroup
         label={t('vm.edit.console.soundcard.field')}
@@ -246,27 +262,29 @@ export function ConsoleSection({
         />
       </FormGroup>
 
-      <FormGroup
-        label={t('vm.edit.console.disconnectAction')}
-        fieldId={`${idPrefix}-console-disconnect-action`}
-        labelHelp={
-          <FieldHelp
-            field={t('vm.edit.console.disconnectAction')}
-            content={t('fieldHelp.vm.disconnectAction')}
-          />
-        }
-      >
-        <FormSelect
-          id={`${idPrefix}-console-disconnect-action`}
-          aria-label={t('vm.edit.console.disconnectAction')}
-          value={draft.disconnectAction}
-          onChange={(_event, value) => set('disconnectAction', value)}
+      {shown('disconnectAction') && (
+        <FormGroup
+          label={t('vm.edit.console.disconnectAction')}
+          fieldId={`${idPrefix}-console-disconnect-action`}
+          labelHelp={
+            <FieldHelp
+              field={t('vm.edit.console.disconnectAction')}
+              content={t('fieldHelp.vm.disconnectAction')}
+            />
+          }
         >
-          {DISCONNECT_ACTION_OPTIONS.map((option) => (
-            <FormSelectOption key={option.value} value={option.value} label={t(option.labelId)} />
-          ))}
-        </FormSelect>
-      </FormGroup>
+          <FormSelect
+            id={`${idPrefix}-console-disconnect-action`}
+            aria-label={t('vm.edit.console.disconnectAction')}
+            value={draft.disconnectAction}
+            onChange={(_event, value) => set('disconnectAction', value)}
+          >
+            {DISCONNECT_ACTION_OPTIONS.map((option) => (
+              <FormSelectOption key={option.value} value={option.value} label={t(option.labelId)} />
+            ))}
+          </FormSelect>
+        </FormGroup>
+      )}
     </Form>
   )
 }

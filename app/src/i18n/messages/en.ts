@@ -2758,24 +2758,9 @@ export const en = {
   'templateForm.stateless': 'Stateless',
   'templateForm.deleteProtection': 'Delete Protection',
   'templateForm.aria.deleteProtection': 'Delete protection',
-  'templateForm.section.system': 'System',
-  'templateForm.memory': 'Memory Size (MB)',
-  'templateForm.guaranteedMemory': 'Physical Memory Guaranteed (MB)',
-  'templateForm.maxMemory': 'Maximum memory (MB)',
   'templateForm.sockets': 'Virtual Sockets',
   'templateForm.cores': 'Cores per Virtual Socket',
   'templateForm.threads': 'Threads per Core',
-  'templateForm.section.ha': 'High Availability',
-  'templateForm.ha': 'Highly available',
-  'templateForm.ha.priority': 'Priority',
-  'templateForm.aria.haPriority': 'High availability priority',
-  'templateForm.ha.priorityHelp':
-    'Higher values are restarted first (webadmin buckets Low 1, Medium 50, High 100).',
-  'templateForm.section.console': 'Console',
-  'templateForm.monitors': 'Monitors',
-  'templateForm.usb': 'USB enabled',
-  'templateForm.smartcard': 'Smartcard enabled',
-  'templateForm.soundcard': 'Soundcard enabled',
   'templateForm.memory.error.positive': 'Memory Size must be greater than 0',
   'templateForm.memory.error.guaranteed':
     'Physical Memory Guaranteed cannot exceed the Memory Size',
@@ -4047,11 +4032,7 @@ export const en = {
   // instanceTypeForm.* --------------------------------------------
   'instanceTypeForm.aria.description': 'Instance type description',
   'instanceTypeForm.aria.name': 'Instance type name',
-  'instanceTypeForm.memory.error.guaranteed':
-    'Physical memory guaranteed cannot exceed the memory size',
-  'instanceTypeForm.memory.error.max': 'Maximum memory cannot be smaller than the memory size',
-  'instanceTypeForm.memory.error.positive': 'Memory size must be greater than 0',
-  'instanceTypeForm.section.cpu': 'Virtual CPUs',
+  'instanceTypeForm.sections.ariaLabel': 'Instance type sections',
   'instanceTypeForm.title.edit': 'Edit instance type — {name}',
   'instanceTypeForm.title.new': 'New instance type',
   // instanceTypes.* -----------------------------------------------

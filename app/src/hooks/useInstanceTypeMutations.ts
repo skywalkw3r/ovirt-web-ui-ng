@@ -11,12 +11,26 @@ import { instanceTypeKeys } from './useCatalogPages'
 // notify on success/failure and invalidate the instance type list query so the
 // refetch shows the new one. The list key is ['instancetypes'] — the key
 // useInstanceTypes registers.
+//
+// `followUp` is a PUT applied to the new instance type right after the POST,
+// for fields the engine's add path ignores (USB: BackendInstanceTypesResource
+// .add never reads it, only update does). If that PUT fails, the instance type
+// exists without it and the error toast says why.
 export function useCreateInstanceType() {
   const queryClient = useQueryClient()
   const { notify } = useNotify()
 
   return useMutation({
-    mutationFn: (payload: Record<string, unknown>) => createInstanceType(payload),
+    mutationFn: async ({
+      payload,
+      followUp,
+    }: {
+      payload: Record<string, unknown>
+      followUp?: Record<string, unknown>
+    }) => {
+      const created = await createInstanceType(payload)
+      return followUp ? updateInstanceType(created.id, followUp) : created
+    },
     onSuccess: (instanceType) => {
       notify({ title: `Instance type ${instanceType.name} created`, variant: 'success' })
     },
