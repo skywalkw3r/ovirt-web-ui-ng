@@ -3781,6 +3781,11 @@ export const ptBR: LocaleCatalog = {
   'schedulingPolicy.weights.factorError': 'Cada fator deve ser um número inteiro de pelo menos 1.',
   'schedulingPolicy.weights.label': 'Módulos de peso',
   'setupNetworks.aria.configureSriov': 'Configurar SR-IOV para {name}',
+  'setupNetworks.aria.customPropertyAdd': 'Adicionar propriedade personalizada a {name}',
+  'setupNetworks.aria.customPropertyKey': 'Chave da propriedade personalizada {index} em {name}',
+  'setupNetworks.aria.customPropertyRemove':
+    'Remover a propriedade personalizada {index} de {name}',
+  'setupNetworks.aria.customPropertyValue': 'Valor da propriedade personalizada {index} em {name}',
   'setupNetworks.aria.labelsOn': 'Rótulos em {name}',
   'setupNetworks.aria.newLabel': 'Novo rótulo para {name}',
   'setupNetworks.aria.qosField': '{label} para {name}',
@@ -3791,6 +3796,15 @@ export const ptBR: LocaleCatalog = {
   'setupNetworks.bondMode.mode4': 'Agregação de links dinâmica — 802.3ad (modo 4)',
   'setupNetworks.bondMode.mode5':
     'Balanceamento de carga de transmissão adaptativo — balance-tlb (modo 5)',
+  'setupNetworks.customProperties.add': 'Adicionar propriedade personalizada',
+  'setupNetworks.customProperties.freeForm':
+    'O engine não informou quais chaves ele permite, portanto as chaves só são verificadas ao salvar.',
+  'setupNetworks.customProperties.help':
+    'Opções de chave/valor aplicadas a esta rede no host, como bridge_opts para ajustar a bridge de uma rede de VM. As chaves disponíveis vêm da configuração do engine.',
+  'setupNetworks.customProperties.keyPlaceholder': 'Selecione uma chave',
+  'setupNetworks.customProperties.label': 'Propriedades personalizadas',
+  'setupNetworks.customProperties.noKeys':
+    'O engine não permite nenhuma chave de propriedade personalizada para esta rede.',
   'setupNetworks.labels.add': 'Adicionar rótulo',
   'setupNetworks.labels.help':
     'Rótulos de rede anexados a esta NIC. O engine conecta automaticamente à NIC todas as redes que carregam um rótulo correspondente.',
@@ -3842,6 +3856,15 @@ export const ptBR: LocaleCatalog = {
   'setupNetworks.sriov.networks.removeAria': 'Remover rede permitida {name}',
   'setupNetworks.sriov.networks.selectPlaceholder': 'Selecione uma rede',
   'setupNetworks.sriov.title': 'Configuração de SR-IOV — {name}',
+  'setupNetworks.validation.customPropertyBridgeOpts': '{key} só se aplica a redes de VM',
+  'setupNetworks.validation.customPropertyDuplicate': '{key} já está definida',
+  'setupNetworks.validation.customPropertyKey':
+    'Uma chave só pode conter letras, dígitos e sublinhados',
+  'setupNetworks.validation.customPropertyKeyRequired': 'Digite uma chave para este valor',
+  'setupNetworks.validation.customPropertyUnknown':
+    '{key} não é uma propriedade personalizada permitida por este engine',
+  'setupNetworks.validation.customPropertyValue': 'O valor de {key} deve corresponder a {format}',
+  'setupNetworks.validation.customPropertyValueSyntax': 'Um valor não pode conter ponto e vírgula',
   'setupNetworks.validation.ipv4': 'Digite um endereço IPv4 válido',
   'setupNetworks.validation.ipv6': 'Digite um endereço IPv6 válido',
   'setupNetworks.validation.managementGuard':

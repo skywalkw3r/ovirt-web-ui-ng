@@ -637,6 +637,20 @@ interface MockNetworkAttachment {
     outbound_average_upperlimit?: number | string
     outbound_average_realtime?: number | string
   }
+  // Custom properties (bridge_opts and admin-defined keys). Round-tripped by
+  // setupnetworks; the key is absent when the attachment has none, like the
+  // live NetworkAttachmentMapper.
+  properties?: { property?: Array<{ name?: string; value?: string }> }
+}
+
+// The engine-config values behind network custom properties, as GET
+// /options/{name} serves them: one row per cluster compatibility level and no
+// 'general' row. The predefined value is the engine's shipped default
+// (0000_config.sql: bridge_opts only); the user-defined one models an admin
+// who added the documented ethtool_opts example with engine-config.
+const NETWORK_CUSTOM_PROPERTY_OPTIONS: Record<string, string> = {
+  PreDefinedNetworkCustomProperties: 'bridge_opts=^[^\\s=]+=[^\\s=]+(\\s+[^\\s=]+=[^\\s=]+)*$',
+  UserDefinedNetworkCustomProperties: 'ethtool_opts=.*',
 }
 
 interface MockHostDevice {
@@ -2910,6 +2924,11 @@ const initialHostNetworkAttachments = (): Map<string, MockNetworkAttachment[]> =
                 },
               },
             ],
+          },
+          // a seeded custom property so the Setup Networks editor opens with a
+          // live row (the api-model's own bridge_opts example value)
+          properties: {
+            property: [{ name: 'bridge_opts', value: 'forward_delay=1500 multicast_snooping=1' }],
           },
         },
         {
@@ -9097,6 +9116,19 @@ function runHostReinstall(id: string, body: unknown): unknown {
   return { status: 'complete' }
 }
 
+// key -> value regex from the two engine-config options, the same merge
+// HostSetupNetworksValidator.validateCustomProperties performs.
+function networkCustomPropertyDefinitions(): Map<string, string> {
+  const definitions = new Map<string, string>()
+  for (const value of Object.values(NETWORK_CUSTOM_PROPERTY_OPTIONS)) {
+    for (const pair of value.split(';')) {
+      const index = pair.indexOf('=')
+      if (index > 0) definitions.set(pair.slice(0, index), pair.slice(index + 1))
+    }
+  }
+  return definitions
+}
+
 // The wire shape of the POST /hosts/{id}/setupnetworks action body — the
 // wrapped-list convention setupHostNetworks builds.
 interface SetupNetworksBody {
@@ -9115,6 +9147,8 @@ interface SetupNetworksBody {
         outbound_average_upperlimit?: number | string
         outbound_average_realtime?: number | string
       }
+      // custom properties; a present block replaces the whole set
+      properties?: { property?: Array<{ name?: string; value?: string }> }
     }>
   }
   removed_network_attachments?: { network_attachment?: Array<{ id?: string }> }
@@ -9154,6 +9188,11 @@ interface SetupNetworksBody {
 // must stay attached somewhere — webadmin's mgmtNotAttachedToolTip guard,
 // answered as the 409 fault the engine raises. Static assignments also
 // rewrite the NIC's reported ip so the NICs tab round-trips the change.
+// Custom properties are checked the way HostSetupNetworksValidator
+// .validateCustomProperties does (valid keys from the two engine-config values,
+// bridge_opts dropped for a non-VM network, value matched against the key's
+// regex) and refused with a 409 like the engine's
+// ACTION_TYPE_FAILED_NETWORK_CUSTOM_PROPERTIES_BAD_INPUT (message paraphrased).
 function setupNetworks(hostId: string, rawBody: unknown): unknown {
   requireHost(hostId)
   if (typeof rawBody !== 'object' || rawBody === null) {
@@ -9226,6 +9265,36 @@ function setupNetworks(hostId: string, rawBody: unknown): unknown {
         'Not Found',
         `host ${hostId} has no NIC ${entry.host_nic?.name ?? entry.host_nic?.id}`,
       )
+    }
+    const properties = entry.properties?.property ?? []
+    if (properties.length > 0) {
+      const valid = networkCustomPropertyDefinitions()
+      // the cluster attachment carries the network's usages; 'vm' marks a
+      // bridged network
+      const isVmNetwork = Object.values(clusterNetworkAttachments).some((attached) =>
+        attached.some((n) => n.id === network.id && n.usages?.usage?.includes('vm')),
+      )
+      if (!isVmNetwork) valid.delete('bridge_opts')
+      const seenKeys = new Set<string>()
+      for (const property of properties) {
+        const key = property.name ?? ''
+        const pattern = valid.get(key)
+        let matches = false
+        try {
+          matches =
+            pattern !== undefined && new RegExp(`^(?:${pattern})$`).test(property.value ?? '')
+        } catch {
+          matches = false
+        }
+        if (seenKeys.has(key) || !matches) {
+          throw new ApiError(
+            409,
+            'Operation Failed',
+            `Cannot setup Networks. Bad input for custom properties of network '${network.name}'`,
+          )
+        }
+        seenKeys.add(key)
+      }
     }
   }
   for (const entry of [...removed, ...synced]) {
@@ -9309,6 +9378,13 @@ function setupNetworks(hostId: string, rawBody: unknown): unknown {
     // empty { type: 'hostnetwork' } clears the outbound values)
     if (entry.qos) {
       target.qos = entry.qos
+    }
+    // custom properties: a present block replaces the whole set, and an empty
+    // one clears it (the read then omits the key, as the live mapper does)
+    if (entry.properties) {
+      const properties = entry.properties.property ?? []
+      if (properties.length > 0) target.properties = { property: properties }
+      else delete target.properties
     }
     // reflect a static assignment on the NIC itself so the NICs tab
     // round-trips the new address without a lab engine
@@ -11659,6 +11735,22 @@ const routes: MockRoute[] = [
     handle: () => ({
       ...API_ROOT,
       authenticated_user: { id: 'mock-user', user_name: mockUsername },
+    }),
+  },
+  {
+    // The network custom-property key lists (fetchNetworkCustomPropertyDefinitions).
+    // Versioned config values: one row per cluster level, no 'general' row.
+    method: 'GET',
+    pattern: /^\/options\/(PreDefinedNetworkCustomProperties|UserDefinedNetworkCustomProperties)$/,
+    handle: ([name]) => ({
+      name,
+      id: name,
+      values: {
+        system_option_value: ['4.6', '4.7', '4.8'].map((version) => ({
+          value: NETWORK_CUSTOM_PROPERTY_OPTIONS[name],
+          version,
+        })),
+      },
     }),
   },
   {

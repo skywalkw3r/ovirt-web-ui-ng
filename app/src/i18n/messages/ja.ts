@@ -3749,6 +3749,10 @@ export const ja: LocaleCatalog = {
   'schedulingPolicy.weights.factorError': '各ファクターは1以上の整数である必要があります。',
   'schedulingPolicy.weights.label': 'ウェイトモジュール',
   'setupNetworks.aria.configureSriov': '{name}のSR-IOVを構成',
+  'setupNetworks.aria.customPropertyAdd': '{name}にカスタムプロパティを追加',
+  'setupNetworks.aria.customPropertyKey': '{name}のカスタムプロパティ{index}のキー',
+  'setupNetworks.aria.customPropertyRemove': '{name}からカスタムプロパティ{index}を削除',
+  'setupNetworks.aria.customPropertyValue': '{name}のカスタムプロパティ{index}の値',
   'setupNetworks.aria.labelsOn': '{name}上のラベル',
   'setupNetworks.aria.newLabel': '{name}の新しいラベル',
   'setupNetworks.aria.qosField': '{name}の{label}',
@@ -3758,6 +3762,15 @@ export const ja: LocaleCatalog = {
   'setupNetworks.bondMode.mode2': '負荷分散 — balance-xor（mode 2）',
   'setupNetworks.bondMode.mode4': '動的リンクアグリゲーション — 802.3ad（mode 4）',
   'setupNetworks.bondMode.mode5': 'アダプティブ送信負荷分散 — balance-tlb（mode 5）',
+  'setupNetworks.customProperties.add': 'カスタムプロパティを追加',
+  'setupNetworks.customProperties.freeForm':
+    'エンジンが許可するキーを報告しなかったため、キーは保存時にのみ検証されます。',
+  'setupNetworks.customProperties.help':
+    'ホスト上でこのネットワークに適用されるキー/値オプションです。たとえば bridge_opts はVMネットワークのブリッジを調整します。使用できるキーはエンジンの設定で決まります。',
+  'setupNetworks.customProperties.keyPlaceholder': 'キーを選択',
+  'setupNetworks.customProperties.label': 'カスタムプロパティ',
+  'setupNetworks.customProperties.noKeys':
+    'このネットワークに対してエンジンが許可するカスタムプロパティのキーはありません。',
   'setupNetworks.labels.add': 'ラベルを追加',
   'setupNetworks.labels.help':
     'このNICに添付されたネットワークラベル。エンジンは、一致するラベルを持つすべてのネットワークをNICに自動的に配線します。',
@@ -3809,6 +3822,15 @@ export const ja: LocaleCatalog = {
   'setupNetworks.sriov.networks.removeAria': '許可されたネットワーク{name}を削除',
   'setupNetworks.sriov.networks.selectPlaceholder': 'ネットワークを選択',
   'setupNetworks.sriov.title': 'SR-IOV構成 — {name}',
+  'setupNetworks.validation.customPropertyBridgeOpts': '{key}はVMネットワークにのみ適用できます',
+  'setupNetworks.validation.customPropertyDuplicate': '{key}はすでに設定されています',
+  'setupNetworks.validation.customPropertyKey':
+    'キーに使用できるのは英字、数字、アンダースコアのみです',
+  'setupNetworks.validation.customPropertyKeyRequired': 'この値のキーを入力してください',
+  'setupNetworks.validation.customPropertyUnknown':
+    '{key}はこのエンジンが許可するカスタムプロパティではありません',
+  'setupNetworks.validation.customPropertyValue': '{key}の値は{format}に一致する必要があります',
+  'setupNetworks.validation.customPropertyValueSyntax': '値にセミコロンを含めることはできません',
   'setupNetworks.validation.ipv4': '有効なIPv4アドレスを入力してください',
   'setupNetworks.validation.ipv6': '有効なIPv6アドレスを入力してください',
   'setupNetworks.validation.managementGuard':

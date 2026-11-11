@@ -3925,6 +3925,11 @@ export const ru: LocaleCatalog = {
 
   // setupNetworks
   'setupNetworks.aria.configureSriov': 'Настроить SR-IOV для {name}',
+  'setupNetworks.aria.customPropertyAdd': 'Добавить пользовательское свойство для {name}',
+  'setupNetworks.aria.customPropertyKey': 'Ключ пользовательского свойства {index} для {name}',
+  'setupNetworks.aria.customPropertyRemove': 'Удалить пользовательское свойство {index} из {name}',
+  'setupNetworks.aria.customPropertyValue':
+    'Значение пользовательского свойства {index} для {name}',
   'setupNetworks.aria.labelsOn': 'Метки на {name}',
   'setupNetworks.aria.newLabel': 'Новая метка для {name}',
   'setupNetworks.aria.qosField': '{label} для {name}',
@@ -3935,6 +3940,15 @@ export const ru: LocaleCatalog = {
   'setupNetworks.bondMode.mode4': 'Динамическая агрегация каналов — 802.3ad (режим 4)',
   'setupNetworks.bondMode.mode5':
     'Адаптивная балансировка нагрузки передачи — balance-tlb (режим 5)',
+  'setupNetworks.customProperties.add': 'Добавить пользовательское свойство',
+  'setupNetworks.customProperties.freeForm':
+    'Engine не сообщил, какие ключи он допускает, поэтому ключи проверяются только при сохранении.',
+  'setupNetworks.customProperties.help':
+    'Параметры «ключ/значение», применяемые к этой сети на хосте, например bridge_opts для настройки моста сети ВМ. Доступные ключи берутся из конфигурации engine.',
+  'setupNetworks.customProperties.keyPlaceholder': 'Выберите ключ',
+  'setupNetworks.customProperties.label': 'Пользовательские свойства',
+  'setupNetworks.customProperties.noKeys':
+    'Engine не допускает ни одного ключа пользовательских свойств для этой сети.',
   'setupNetworks.labels.add': 'Добавить метку',
   'setupNetworks.labels.help':
     'Метки сети, прикреплённые к этому NIC. Движок автоматически подключает к NIC каждую сеть с соответствующей меткой.',
@@ -3986,6 +4000,16 @@ export const ru: LocaleCatalog = {
   'setupNetworks.sriov.networks.removeAria': 'Удалить разрешённую сеть {name}',
   'setupNetworks.sriov.networks.selectPlaceholder': 'Выберите сеть',
   'setupNetworks.sriov.title': 'Конфигурация SR-IOV — {name}',
+  'setupNetworks.validation.customPropertyBridgeOpts': '{key} применяется только к сетям ВМ',
+  'setupNetworks.validation.customPropertyDuplicate': '{key} уже задан',
+  'setupNetworks.validation.customPropertyKey':
+    'Ключ может содержать только буквы, цифры и символы подчёркивания',
+  'setupNetworks.validation.customPropertyKeyRequired': 'Введите ключ для этого значения',
+  'setupNetworks.validation.customPropertyUnknown':
+    '{key} не входит в число пользовательских свойств, допускаемых этим engine',
+  'setupNetworks.validation.customPropertyValue': 'Значение {key} должно соответствовать {format}',
+  'setupNetworks.validation.customPropertyValueSyntax':
+    'Значение не может содержать точку с запятой',
   'setupNetworks.validation.ipv4': 'Введите корректный IPv4-адрес',
   'setupNetworks.validation.ipv6': 'Введите корректный IPv6-адрес',
   'setupNetworks.validation.managementGuard':

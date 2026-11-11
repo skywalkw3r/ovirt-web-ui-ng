@@ -3804,6 +3804,11 @@ export const es: LocaleCatalog = {
   'schedulingPolicy.weights.factorError': 'Cada factor debe ser un número entero de al menos 1.',
   'schedulingPolicy.weights.label': 'Módulos de peso',
   'setupNetworks.aria.configureSriov': 'Configurar SR-IOV para {name}',
+  'setupNetworks.aria.customPropertyAdd': 'Añadir propiedad personalizada a {name}',
+  'setupNetworks.aria.customPropertyKey': 'Clave de la propiedad personalizada {index} en {name}',
+  'setupNetworks.aria.customPropertyRemove':
+    'Eliminar la propiedad personalizada {index} de {name}',
+  'setupNetworks.aria.customPropertyValue': 'Valor de la propiedad personalizada {index} en {name}',
   'setupNetworks.aria.labelsOn': 'Etiquetas en {name}',
   'setupNetworks.aria.newLabel': 'Nueva etiqueta para {name}',
   'setupNetworks.aria.qosField': '{label} para {name}',
@@ -3814,6 +3819,15 @@ export const es: LocaleCatalog = {
   'setupNetworks.bondMode.mode4': 'Agregación dinámica de enlaces — 802.3ad (modo 4)',
   'setupNetworks.bondMode.mode5':
     'Equilibrio de carga de transmisión adaptativo — balance-tlb (modo 5)',
+  'setupNetworks.customProperties.add': 'Añadir propiedad personalizada',
+  'setupNetworks.customProperties.freeForm':
+    'El motor no ha indicado qué claves admite, por lo que las claves solo se comprueban al guardar.',
+  'setupNetworks.customProperties.help':
+    'Opciones de clave/valor que se aplican a esta red en el host, como bridge_opts para ajustar el puente de una red de VM. Las claves disponibles proceden de la configuración del motor.',
+  'setupNetworks.customProperties.keyPlaceholder': 'Seleccione una clave',
+  'setupNetworks.customProperties.label': 'Propiedades personalizadas',
+  'setupNetworks.customProperties.noKeys':
+    'El motor no admite ninguna clave de propiedad personalizada para esta red.',
   'setupNetworks.labels.add': 'Añadir etiqueta',
   'setupNetworks.labels.help':
     'Etiquetas de red adjuntas a esta NIC. El motor conecta automáticamente cada red que lleva una etiqueta coincidente a la NIC.',
@@ -3865,6 +3879,16 @@ export const es: LocaleCatalog = {
   'setupNetworks.sriov.networks.removeAria': 'Eliminar la red permitida {name}',
   'setupNetworks.sriov.networks.selectPlaceholder': 'Seleccione una red',
   'setupNetworks.sriov.title': 'Configuración de SR-IOV — {name}',
+  'setupNetworks.validation.customPropertyBridgeOpts': '{key} solo se aplica a redes de VM',
+  'setupNetworks.validation.customPropertyDuplicate': '{key} ya está definida',
+  'setupNetworks.validation.customPropertyKey':
+    'Una clave solo puede contener letras, dígitos y guiones bajos',
+  'setupNetworks.validation.customPropertyKeyRequired': 'Introduzca una clave para este valor',
+  'setupNetworks.validation.customPropertyUnknown':
+    '{key} no es una propiedad personalizada que este motor admita',
+  'setupNetworks.validation.customPropertyValue': 'El valor de {key} debe coincidir con {format}',
+  'setupNetworks.validation.customPropertyValueSyntax':
+    'Un valor no puede contener un punto y coma',
   'setupNetworks.validation.ipv4': 'Introduzca una dirección IPv4 válida',
   'setupNetworks.validation.ipv6': 'Introduzca una dirección IPv6 válida',
   'setupNetworks.validation.managementGuard':

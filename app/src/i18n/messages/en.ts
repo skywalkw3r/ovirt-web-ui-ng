@@ -4334,6 +4334,10 @@ export const en = {
   'schedulingPolicy.weights.label': 'Weight modules',
   // setupNetworks.* -----------------------------------------------
   'setupNetworks.aria.configureSriov': 'Configure SR-IOV for {name}',
+  'setupNetworks.aria.customPropertyAdd': 'Add custom property to {name}',
+  'setupNetworks.aria.customPropertyKey': 'Key of custom property {index} on {name}',
+  'setupNetworks.aria.customPropertyRemove': 'Remove custom property {index} from {name}',
+  'setupNetworks.aria.customPropertyValue': 'Value of custom property {index} on {name}',
   'setupNetworks.aria.labelsOn': 'Labels on {name}',
   'setupNetworks.aria.newLabel': 'New label for {name}',
   'setupNetworks.aria.qosField': '{label} for {name}',
@@ -4343,6 +4347,15 @@ export const en = {
   'setupNetworks.bondMode.mode2': 'Load balance — balance-xor (mode 2)',
   'setupNetworks.bondMode.mode4': 'Dynamic link aggregation — 802.3ad (mode 4)',
   'setupNetworks.bondMode.mode5': 'Adaptive transmit load balancing — balance-tlb (mode 5)',
+  'setupNetworks.customProperties.add': 'Add custom property',
+  'setupNetworks.customProperties.freeForm':
+    'The engine did not report which keys it allows, so keys are only checked when you save.',
+  'setupNetworks.customProperties.help':
+    'Key/value options applied to this network on the host, such as bridge_opts to tune the bridge of a VM network. The available keys come from the engine configuration.',
+  'setupNetworks.customProperties.keyPlaceholder': 'Select a key',
+  'setupNetworks.customProperties.label': 'Custom properties',
+  'setupNetworks.customProperties.noKeys':
+    'The engine allows no custom property keys for this network.',
   'setupNetworks.labels.add': 'Add label',
   'setupNetworks.labels.help':
     'Network labels attached to this NIC. The engine auto-wires every network that carries a matching label onto the NIC.',
@@ -4394,6 +4407,15 @@ export const en = {
   'setupNetworks.sriov.networks.removeAria': 'Remove allowed network {name}',
   'setupNetworks.sriov.networks.selectPlaceholder': 'Select a network',
   'setupNetworks.sriov.title': 'SR-IOV configuration — {name}',
+  'setupNetworks.validation.customPropertyBridgeOpts': '{key} only applies to VM networks',
+  'setupNetworks.validation.customPropertyDuplicate': '{key} is already set',
+  'setupNetworks.validation.customPropertyKey':
+    'A key may only contain letters, digits and underscores',
+  'setupNetworks.validation.customPropertyKeyRequired': 'Enter a key for this value',
+  'setupNetworks.validation.customPropertyUnknown':
+    '{key} is not a custom property this engine allows',
+  'setupNetworks.validation.customPropertyValue': 'The value of {key} must match {format}',
+  'setupNetworks.validation.customPropertyValueSyntax': 'A value cannot contain a semicolon',
   'setupNetworks.validation.ipv4': 'Enter a valid IPv4 address',
   'setupNetworks.validation.ipv6': 'Enter a valid IPv6 address',
   'setupNetworks.validation.managementGuard':
