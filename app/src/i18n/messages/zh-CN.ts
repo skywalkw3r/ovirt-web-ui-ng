@@ -4615,4 +4615,13 @@ export const zhCN: LocaleCatalog = {
   'host.configureLocalStorage.outcome.undoStopped': '撤消部分设置时停止：{error}',
   'host.configureLocalStorage.outcome.rerunHint':
     '要完成配置，请在需要时将主机置于维护模式，然后再次运行“配置本地存储”；它会重新使用空的本地数据中心。',
+  // EDIT VM: Foreman/Satellite section (provider picker)
+  'vm.edit.section.foreman': 'Foreman/Satellite',
+  'vm.edit.foreman.provider': '提供商',
+  'vm.edit.foreman.none': '无提供商',
+  'vm.edit.foreman.unknown': '未知提供商 ({id})',
+  'vm.edit.foreman.loading': '正在加载 Foreman/Satellite 提供商',
+  'vm.edit.foreman.empty':
+    '尚未注册任何 Foreman/Satellite 提供商。请在“提供商”页面添加一个，以便将此虚拟机绑定到它。',
+  'vm.edit.foreman.help': '引擎从所选的 Foreman/Satellite 提供商读取此虚拟机的勘误表。',
 }

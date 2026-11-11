@@ -4843,4 +4843,14 @@ export const tr: LocaleCatalog = {
   'host.configureLocalStorage.outcome.undoStopped': 'Kısmi kurulumun geri alınması durdu: {error}',
   'host.configureLocalStorage.outcome.rerunHint':
     'Tamamlamak için gerekirse ana makineyi bakıma alın ve "Yerel depolamayı yapılandır" işlemini yeniden çalıştırın; boş yerel veri merkezi yeniden kullanılır.',
+  // EDIT VM: Foreman/Satellite section (provider picker)
+  'vm.edit.section.foreman': 'Foreman/Satellite',
+  'vm.edit.foreman.provider': 'Sağlayıcı',
+  'vm.edit.foreman.none': 'Sağlayıcı yok',
+  'vm.edit.foreman.unknown': 'Bilinmeyen sağlayıcı ({id})',
+  'vm.edit.foreman.loading': 'Foreman/Satellite sağlayıcıları yükleniyor',
+  'vm.edit.foreman.empty':
+    'Kayıtlı Foreman/Satellite sağlayıcısı yok. Bu VM’yi bağlamak için Sağlayıcılar sayfasından bir sağlayıcı ekleyin.',
+  'vm.edit.foreman.help':
+    'Motor, bu VM’nin errata bilgilerini seçilen Foreman/Satellite sağlayıcısından okur.',
 }

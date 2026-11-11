@@ -5411,6 +5411,16 @@ export const en = {
   'host.configureLocalStorage.outcome.undoStopped': 'Undoing the partial setup stopped: {error}',
   'host.configureLocalStorage.outcome.rerunHint':
     'To finish, put the host into maintenance if needed and run Configure local storage again; it reuses the empty local data center.',
+  // EDIT VM: Foreman/Satellite section (provider picker)
+  'vm.edit.section.foreman': 'Foreman/Satellite',
+  'vm.edit.foreman.provider': 'Provider',
+  'vm.edit.foreman.none': 'No provider',
+  'vm.edit.foreman.unknown': 'Unknown provider ({id})',
+  'vm.edit.foreman.loading': 'Loading Foreman/Satellite providers',
+  'vm.edit.foreman.empty':
+    'No Foreman/Satellite providers are registered. Add one on the Providers page to bind this VM to it.',
+  'vm.edit.foreman.help':
+    'The engine reads the errata for this VM from the chosen Foreman/Satellite provider.',
 } as const
 
 // The id union — source of truth for every typed i18n surface (useT, the

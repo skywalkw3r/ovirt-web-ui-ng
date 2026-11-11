@@ -4853,4 +4853,14 @@ export const ja: LocaleCatalog = {
     '部分的なセットアップの取り消しが停止しました: {error}',
   'host.configureLocalStorage.outcome.rerunHint':
     '完了するには、必要に応じてホストをメンテナンスモードにし、「ローカルストレージを設定」をもう一度実行してください。空のローカルデータセンターが再利用されます。',
+  // EDIT VM: Foreman/Satellite section (provider picker)
+  'vm.edit.section.foreman': 'Foreman/Satellite',
+  'vm.edit.foreman.provider': 'プロバイダー',
+  'vm.edit.foreman.none': 'プロバイダーなし',
+  'vm.edit.foreman.unknown': '不明なプロバイダー ({id})',
+  'vm.edit.foreman.loading': 'Foreman/Satellite プロバイダーを読み込んでいます',
+  'vm.edit.foreman.empty':
+    'Foreman/Satellite プロバイダーが登録されていません。この VM をバインドするには、プロバイダーページで追加してください。',
+  'vm.edit.foreman.help':
+    'エンジンは、選択した Foreman/Satellite プロバイダーからこの VM の正誤表を取得します。',
 }

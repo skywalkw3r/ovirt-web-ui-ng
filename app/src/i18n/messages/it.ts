@@ -4923,4 +4923,14 @@ export const it: LocaleCatalog = {
     "L'annullamento della configurazione parziale si è interrotto: {error}",
   'host.configureLocalStorage.outcome.rerunHint':
     "Per completare, metti l'host in manutenzione se necessario ed esegui di nuovo “Configura storage locale”; il data center locale vuoto verrà riutilizzato.",
+  // EDIT VM: Foreman/Satellite section (provider picker)
+  'vm.edit.section.foreman': 'Foreman/Satellite',
+  'vm.edit.foreman.provider': 'Provider',
+  'vm.edit.foreman.none': 'Nessun provider',
+  'vm.edit.foreman.unknown': 'Provider sconosciuto ({id})',
+  'vm.edit.foreman.loading': 'Caricamento dei provider Foreman/Satellite',
+  'vm.edit.foreman.empty':
+    'Nessun provider Foreman/Satellite registrato. Aggiungine uno nella pagina Provider per associarvi questa VM.',
+  'vm.edit.foreman.help':
+    'Il motore legge le errata di questa VM dal provider Foreman/Satellite scelto.',
 }

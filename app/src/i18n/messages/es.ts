@@ -4922,4 +4922,14 @@ export const es: LocaleCatalog = {
     'Se detuvo la reversión de la configuración parcial: {error}',
   'host.configureLocalStorage.outcome.rerunHint':
     'Para terminar, ponga el host en mantenimiento si es necesario y vuelva a ejecutar «Configurar almacenamiento local»; reutiliza el centro de datos local vacío.',
+  // EDIT VM: Foreman/Satellite section (provider picker)
+  'vm.edit.section.foreman': 'Foreman/Satellite',
+  'vm.edit.foreman.provider': 'Proveedor',
+  'vm.edit.foreman.none': 'Sin proveedor',
+  'vm.edit.foreman.unknown': 'Proveedor desconocido ({id})',
+  'vm.edit.foreman.loading': 'Cargando proveedores de Foreman/Satellite',
+  'vm.edit.foreman.empty':
+    'No hay proveedores de Foreman/Satellite registrados. Agregue uno en la página Proveedores para vincularle esta VM.',
+  'vm.edit.foreman.help':
+    'El motor obtiene las erratas de esta VM del proveedor de Foreman/Satellite elegido.',
 }

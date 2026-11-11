@@ -4954,4 +4954,14 @@ export const de: LocaleCatalog = {
     'Das Rückgängigmachen der teilweisen Einrichtung wurde abgebrochen: {error}',
   'host.configureLocalStorage.outcome.rerunHint':
     'Versetzen Sie zum Abschließen den Host bei Bedarf in die Wartung und führen Sie „Lokalen Speicher konfigurieren“ erneut aus; dabei wird das leere lokale Rechenzentrum wiederverwendet.',
+  // EDIT VM: Foreman/Satellite section (provider picker)
+  'vm.edit.section.foreman': 'Foreman/Satellite',
+  'vm.edit.foreman.provider': 'Anbieter',
+  'vm.edit.foreman.none': 'Kein Anbieter',
+  'vm.edit.foreman.unknown': 'Unbekannter Anbieter ({id})',
+  'vm.edit.foreman.loading': 'Foreman/Satellite-Anbieter werden geladen',
+  'vm.edit.foreman.empty':
+    'Es sind keine Foreman/Satellite-Anbieter registriert. Fügen Sie auf der Seite „Anbieter“ einen hinzu, um diese VM daran zu binden.',
+  'vm.edit.foreman.help':
+    'Die Engine bezieht die Errata dieser VM vom ausgewählten Foreman/Satellite-Anbieter.',
 }

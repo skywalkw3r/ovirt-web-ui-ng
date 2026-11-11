@@ -4790,4 +4790,13 @@ export const ko: LocaleCatalog = {
   'host.configureLocalStorage.outcome.undoStopped': '부분 설정 취소가 중단되었습니다: {error}',
   'host.configureLocalStorage.outcome.rerunHint':
     '완료하려면 필요한 경우 호스트를 유지 관리 모드로 전환한 후 "로컬 스토리지 구성"을 다시 실행하십시오. 빈 로컬 데이터 센터가 다시 사용됩니다.',
+  // EDIT VM: Foreman/Satellite section (provider picker)
+  'vm.edit.section.foreman': 'Foreman/Satellite',
+  'vm.edit.foreman.provider': '공급자',
+  'vm.edit.foreman.none': '공급자 없음',
+  'vm.edit.foreman.unknown': '알 수 없는 공급자 ({id})',
+  'vm.edit.foreman.loading': 'Foreman/Satellite 공급자 로드 중',
+  'vm.edit.foreman.empty':
+    '등록된 Foreman/Satellite 공급자가 없습니다. 이 VM을 바인딩하려면 공급자 페이지에서 공급자를 추가하십시오.',
+  'vm.edit.foreman.help': '엔진은 선택한 Foreman/Satellite 공급자에서 이 VM의 정오표를 가져옵니다.',
 }

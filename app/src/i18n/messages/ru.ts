@@ -5083,4 +5083,14 @@ export const ru: LocaleCatalog = {
   'host.configureLocalStorage.outcome.undoStopped': 'Отмена частичной настройки прервана: {error}',
   'host.configureLocalStorage.outcome.rerunHint':
     'Чтобы завершить, при необходимости переведите хост в режим обслуживания и снова запустите «Настроить локальное хранилище»; будет повторно использован пустой локальный дата-центр.',
+  // EDIT VM: Foreman/Satellite section (provider picker)
+  'vm.edit.section.foreman': 'Foreman/Satellite',
+  'vm.edit.foreman.provider': 'Провайдер',
+  'vm.edit.foreman.none': 'Без провайдера',
+  'vm.edit.foreman.unknown': 'Неизвестный провайдер ({id})',
+  'vm.edit.foreman.loading': 'Загрузка провайдеров Foreman/Satellite',
+  'vm.edit.foreman.empty':
+    'Провайдеры Foreman/Satellite не зарегистрированы. Добавьте провайдера на странице «Провайдеры», чтобы привязать к нему эту ВМ.',
+  'vm.edit.foreman.help':
+    'Движок получает errata для этой ВМ от выбранного провайдера Foreman/Satellite.',
 }
