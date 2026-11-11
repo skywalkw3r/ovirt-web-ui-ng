@@ -3339,6 +3339,9 @@ export const ja: LocaleCatalog = {
   'hostForm.field.rootPassword': 'Rootパスワード',
   'hostForm.field.sshPort': 'SSHポート',
   'hostForm.field.sshUser': 'SSHユーザー',
+  'hostForm.firewall.configure': 'ホストのファイアウォールを自動的に設定',
+  'hostForm.firewall.configure.help':
+    'インストール時に、クラスターのファイアウォールタイプを使用して、oVirt に必要なポートをホストのファイアウォールで開きます。ホストのファイアウォールを自分で管理している場合にのみオフにしてください。その場合、必要なポートは手動で開く必要があります。',
   'hostForm.hostedEngine.deploy': 'Hosted engineをデプロイ',
   'hostForm.hostedEngine.deploy.help':
     'インストールでは、self-hosted engineコンポーネントもデプロイされるため、このホストは既存のhosted-engineホストと並んでエンジンVMを実行できます。通常の仮想化ホストの場合はオフのままにします。',

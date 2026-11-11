@@ -3333,6 +3333,9 @@ export const tr: LocaleCatalog = {
   'hostForm.field.rootPassword': 'Root parolası',
   'hostForm.field.sshPort': 'SSH bağlantı noktası',
   'hostForm.field.sshUser': 'SSH kullanıcısı',
+  'hostForm.firewall.configure': 'Ana makine güvenlik duvarını otomatik yapılandır',
+  'hostForm.firewall.configure.help':
+    "Kurulumun, kümenin güvenlik duvarı türünü kullanarak oVirt'in ihtiyaç duyduğu bağlantı noktalarını ana makinenin güvenlik duvarında açmasını sağlar. Yalnızca ana makine güvenlik duvarını kendiniz yönetiyorsanız kapatın; bu durumda gerekli bağlantı noktalarını elle açmanız gerekir.",
   'hostForm.hostedEngine.deploy': 'Hosted engine dağıt',
   'hostForm.hostedEngine.deploy.help':
     'Kurulum ayrıca kendi kendine barındırılan motor bileşenlerini de dağıtır, böylece bu ana makine motor VM’sini mevcut hosted-engine ana makineleriyle birlikte çalıştırabilir. Normal bir sanallaştırma ana makinesi için kapalı bırakın.',

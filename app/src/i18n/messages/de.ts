@@ -3399,6 +3399,9 @@ export const de: LocaleCatalog = {
   'hostForm.field.rootPassword': 'Root-Passwort',
   'hostForm.field.sshPort': 'SSH-Port',
   'hostForm.field.sshUser': 'SSH-Benutzer',
+  'hostForm.firewall.configure': 'Host-Firewall automatisch konfigurieren',
+  'hostForm.firewall.configure.help':
+    'Die Installation öffnet die von oVirt benötigten Ports in der Firewall des Hosts und verwendet dabei den Firewall-Typ des Clusters. Nur deaktivieren, wenn Sie die Host-Firewall selbst verwalten; die benötigten Ports müssen dann manuell geöffnet werden.',
   'hostForm.hostedEngine.deploy': 'Hosted Engine bereitstellen',
   'hostForm.hostedEngine.deploy.help':
     'Die Installation stellt auch die Self-Hosted-Engine-Komponenten bereit, sodass dieser Host die Engine-VM neben den vorhandenen Hosted-Engine-Hosts ausführen kann. Für einen regulären Virtualisierungshost deaktiviert lassen.',

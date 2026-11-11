@@ -3385,6 +3385,9 @@ export const it: LocaleCatalog = {
   'hostForm.field.rootPassword': 'Password root',
   'hostForm.field.sshPort': 'Porta SSH',
   'hostForm.field.sshUser': 'Utente SSH',
+  'hostForm.firewall.configure': "Configura automaticamente il firewall dell'host",
+  'hostForm.firewall.configure.help':
+    "Consente all'installazione di aprire nel firewall dell'host le porte necessarie a oVirt, usando il tipo di firewall del cluster. Disattivalo solo se gestisci tu il firewall dell'host; in tal caso le porte richieste vanno aperte a mano.",
   'hostForm.hostedEngine.deploy': 'Distribuisci hosted engine',
   'hostForm.hostedEngine.deploy.help':
     "L'installazione distribuisce anche i componenti del self-hosted engine, così questo host può eseguire la VM del motore insieme agli host hosted-engine esistenti. Lascia disattivato per un normale host di virtualizzazione.",

@@ -3386,6 +3386,9 @@ export const fr: LocaleCatalog = {
   'hostForm.field.rootPassword': 'Mot de passe root',
   'hostForm.field.sshPort': 'Port SSH',
   'hostForm.field.sshUser': 'Utilisateur SSH',
+  'hostForm.firewall.configure': 'Configurer automatiquement le pare-feu de l’hôte',
+  'hostForm.firewall.configure.help':
+    'Laisser l’installation ouvrir dans le pare-feu de l’hôte les ports dont oVirt a besoin, selon le type de pare-feu du cluster. Ne désactivez cette option que si vous gérez vous-même le pare-feu de l’hôte ; les ports requis devront alors être ouverts manuellement.',
   'hostForm.hostedEngine.deploy': 'Déployer le hosted engine',
   'hostForm.hostedEngine.deploy.help':
     "L'installation déploie également les composants du self-hosted engine, afin que cet hôte puisse exécuter la VM du moteur aux côtés des hôtes hosted-engine existants. Laissez désactivé pour un hôte de virtualisation standard.",

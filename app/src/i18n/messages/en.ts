@@ -3890,6 +3890,9 @@ export const en = {
   'hostForm.field.rootPassword': 'Root password',
   'hostForm.field.sshPort': 'SSH port',
   'hostForm.field.sshUser': 'SSH user',
+  'hostForm.firewall.configure': 'Automatically configure host firewall',
+  'hostForm.firewall.configure.help':
+    'Let the install open the ports oVirt needs in the host’s firewall, using the cluster’s firewall type. Turn this off only if you manage the host firewall yourself; the required ports must then be opened by hand.',
   'hostForm.hostedEngine.deploy': 'Deploy hosted engine',
   'hostForm.hostedEngine.deploy.help':
     'The install also deploys the self-hosted engine components, so this host can run the engine VM alongside the existing hosted-engine hosts. Leave off for a regular virtualization host.',

@@ -3384,6 +3384,9 @@ export const es: LocaleCatalog = {
   'hostForm.field.rootPassword': 'Contraseña de root',
   'hostForm.field.sshPort': 'Puerto SSH',
   'hostForm.field.sshUser': 'Usuario SSH',
+  'hostForm.firewall.configure': 'Configurar automáticamente el firewall del host',
+  'hostForm.firewall.configure.help':
+    'Permite que la instalación abra en el firewall del host los puertos que oVirt necesita, usando el tipo de firewall del clúster. Desactívelo solo si gestiona usted mismo el firewall del host; en ese caso deberá abrir a mano los puertos necesarios.',
   'hostForm.hostedEngine.deploy': 'Implementar hosted engine',
   'hostForm.hostedEngine.deploy.help':
     'La instalación también implementa los componentes del motor autoalojado, de modo que este host puede ejecutar la VM del motor junto a los hosts de hosted-engine existentes. Déjelo desactivado para un host de virtualización normal.',
