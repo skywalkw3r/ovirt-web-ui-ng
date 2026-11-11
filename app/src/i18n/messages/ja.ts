@@ -187,7 +187,7 @@ export const ja: LocaleCatalog = {
   'inventory.tree.ariaLabel': 'VMとテンプレートフォルダー',
   'inventory.sidebar.resize': 'サイドバーのサイズを変更',
   'inventory.filter.ariaLabel': '名前でVMとテンプレートを絞り込む',
-  'inventory.filter.hint': '名称でフィルタ',
+  'inventory.filter.hint': '名称、folder:/prod/web、tag:pci-dss でフィルタ',
   'infra.filter.ariaLabel': '名前でインフラを絞り込む',
   'infra.filter.hint': '名称でフィルタ',
   'inventory.column.type': 'タイプ',
@@ -417,7 +417,8 @@ export const ja: LocaleCatalog = {
   'vms.searchEmpty.matches': '{query}に一致するものはありません',
   'vms.empty.title': '仮想マシンがありません',
   'vms.empty.body': '表示する権限のあるVMがここに表示されます。',
-  'vms.search.hint': 'name = web * and status = up —またはプレーンテキスト',
+  'vms.search.hint':
+    'name=web* and status=up、folder:/prod/web、tag:pci-dss、またはプレーンテキスト',
   'vms.search.ariaLabel': '仮想マシンの検索',
   'vms.pagination.ariaLabel': '仮想マシンのページネーション',
   'vms.table.ariaLabel': '仮想マシン',
@@ -1049,6 +1050,41 @@ export const ja: LocaleCatalog = {
   'permissions.add.role.none': 'このエンジンで利用できる割り当て可能な役割はありません。',
   'permissions.add.role.userGroup': 'ユーザーの役割',
   'permissions.add.role.adminGroup': '管理者の役割',
+  // Add Permission picker depth (issue #31): multi-select, My groups,
+  // Everyone, and directory search.
+  'permissions.add.kind.myGroups': 'マイグループ',
+  'permissions.add.kind.everyone': '全員',
+  'permissions.add.source.label': '検索対象',
+  'permissions.add.source.engine': 'エンジンデータベース',
+  'permissions.add.source.directory': 'ディレクトリ: {domain}',
+  'permissions.add.source.domainsLoading': 'ディレクトリを読み込み中...',
+  'permissions.add.source.domainsError': 'ディレクトリを読み込めませんでした: {message}',
+  'permissions.add.source.directoryHint':
+    'ディレクトリで見つかったプリンシパルのうちエンジンに未登録のものは、役割の付与時にエンジンに追加されます。',
+  'permissions.add.empty.directory.users': 'このディレクトリはユーザーを返しませんでした。',
+  'permissions.add.empty.directory.groups': 'このディレクトリはグループを返しませんでした。',
+  'permissions.add.myGroups.loading': 'グループを読み込み中...',
+  'permissions.add.myGroups.error': 'グループを読み込めませんでした: {message}',
+  'permissions.add.myGroups.empty.title': 'グループがありません',
+  'permissions.add.myGroups.empty.body':
+    'このアカウントはどのディレクトリグループのメンバーでもありません。',
+  'permissions.add.myGroups.table.ariaLabel': 'マイグループ',
+  'permissions.add.everyone.body':
+    '役割は組み込みの Everyone グループに付与されるため、すべてのユーザーがこの{noun}でその役割を持ちます。',
+  'permissions.add.selectMany.user': '役割を付与するユーザーを 1 人以上選択します。',
+  'permissions.add.selectMany.group': '役割を付与するグループを 1 つ以上選択します。',
+  'permissions.add.selected.count': '{count, plural, other {# 件のプリンシパルを選択済み}}',
+  'permissions.add.selected.ariaLabel': '選択したプリンシパル',
+  'permissions.add.selected.remove': '{name} を選択から削除',
+  'permissions.add.result.failed.title':
+    '{count, plural, other {# 件のプリンシパルに役割を付与できませんでした}}',
+  'permissions.add.result.failed.body':
+    '失敗したプリンシパルは選択されたままです。原因を解決して再試行するか、選択から削除してください。',
+  'permissions.add.result.failed.item': '{name}: {message}',
+  'permissions.add.submit.retry': '失敗分を再試行',
+  'permissions.add.toast.granted': '{role} を {name} に付与しました',
+  'permissions.add.toast.grantedMany':
+    '{role} を {count, plural, other {# 件のプリンシパル}}に付与しました',
   'users.notPermitted': 'ユーザー',
   'users.title': 'ユーザー',
   'users.search.hint': 'usrname = jdoe * —またはプレーンテキスト',
@@ -1744,6 +1780,11 @@ export const ja: LocaleCatalog = {
     'noVNCおよびほとんどのデスクトップビューアーで動作します。',
   'settings.pref.console.spiceDescription': 'virt-viewerを介したよりリッチなリモート体験。',
   'settings.pref.language': '言語',
+  // Roaming note (components/UserMenu, settings/RoamingSettingsProvider)
+  'settings.pref.roaming.synced':
+    'oVirt ユーザープロファイルに保存されるため、他のブラウザーでも同じ設定が使われます。',
+  'settings.pref.roaming.local':
+    'このブラウザーにのみ保存されます。oVirt ユーザープロファイルには保存できません。',
   'settings.refresh.seconds': '{count, plural, other {# 秒}}',
   'settings.timeout.minutes': '{count, plural, other {# 分}}',
   'settings.timeout.hours': '{count, plural, other {# 時間}}',
@@ -1920,7 +1961,9 @@ export const ja: LocaleCatalog = {
   'hostNuma.empty.body': 'このホストはNUMAノードを報告していません。',
   'hostNuma.error.title': 'NUMAトポロジーを読み込めませんでした',
   'hostNuma.loading': 'NUMAトポロジーを読み込んでいます',
-  'host.cockpit.open': 'Cockpit',
+  'host.console.open': 'ホストコンソール',
+  'host.console.newTab': '新しいタブで Cockpit を開きます',
+  'host.console.tooltip': '{name} の Cockpit インターフェイスを開く',
   'datacenters.forceRemove.action': '強制削除',
   'datacenters.forceRemove.confirm.title': 'データセンター「{name}」を強制削除しますか？',
   'datacenters.forceRemove.confirm.body':
@@ -2227,7 +2270,7 @@ export const ja: LocaleCatalog = {
   'dc.field.macPool': 'MACアドレスプール',
   'search.autocomplete.hint': '検索構文',
   'templates.title': 'テンプレート',
-  'templates.search.hint': 'name=web* — またはプレーンテキスト',
+  'templates.search.hint': 'name=web*、folder:/prod、tag:legacy、またはプレーンテキスト',
   'templates.search.ariaLabel': 'テンプレートを検索',
   'templates.pagination.ariaLabel': 'テンプレートのページネーション',
   'templates.loading': 'テンプレートを読み込んでいます',
@@ -2274,27 +2317,28 @@ export const ja: LocaleCatalog = {
   'templateForm.stateless': 'ステートレス',
   'templateForm.deleteProtection': '削除保護',
   'templateForm.aria.deleteProtection': '削除保護',
-  'templateForm.section.system': 'システム',
-  'templateForm.memory': 'メモリサイズ（MB）',
-  'templateForm.guaranteedMemory': '物理メモリ保証（MB）',
-  'templateForm.maxMemory': '最大メモリ（MB）',
   'templateForm.sockets': '仮想ソケット',
   'templateForm.cores': '仮想ソケットあたりのコア数',
   'templateForm.threads': 'コアあたりのスレッド数',
-  'templateForm.section.ha': '高可用性',
-  'templateForm.ha': '高可用性',
-  'templateForm.ha.priority': '優先度',
-  'templateForm.aria.haPriority': '高可用性の優先度',
-  'templateForm.ha.priorityHelp':
-    '値が大きいほど先に再起動されます（webadminではLow 1、Medium 50、High 100に分類）。',
-  'templateForm.section.console': 'コンソール',
-  'templateForm.monitors': 'モニター数',
-  'templateForm.usb': 'USBを有効化',
-  'templateForm.smartcard': 'スマートカードを有効化',
-  'templateForm.soundcard': 'サウンドカードを有効化',
   'templateForm.memory.error.positive': 'メモリサイズは0より大きくする必要があります',
   'templateForm.memory.error.guaranteed': '物理メモリ保証はメモリサイズを超えることはできません',
   'templateForm.memory.error.max': '最大メモリはメモリサイズより小さくすることはできません',
+  // New template (standalone) and the sectioned template dialog (#28)
+  'templateForm.title.new': '新規テンプレート',
+  'templateForm.newAction': '新規テンプレート',
+  'templateForm.sections.ariaLabel': 'テンプレートのセクション',
+  'templateForm.sourceVm': 'ソースVM',
+  'templateForm.sourceVm.placeholder': '電源オフのVMを選択',
+  'templateForm.sourceVm.help':
+    '新しいテンプレートは、このVMのディスクと設定をコピーします。使用できるのは電源オフのVMのみです。このダイアログで変更した内容は、VMの設定より優先されます。',
+  'templateForm.sourceVm.empty':
+    '電源オフのVMがありません。VMをシャットダウンしてから、テンプレートを作成してください。',
+  'templateForm.sourceVm.disksNote':
+    'ディスクは現在のストレージドメインにコピーされます。ディスク割り当て、サブバージョン、シールが必要な場合は、VMの「テンプレートを作成」を使用してください。',
+  'templateForm.sourceVm.loading': 'VMの設定を読み込んでいます',
+  'templateForm.sourceVm.error': 'VMの設定を読み込めませんでした。',
+  'templateForm.sourceVm.hint':
+    'ソースVMを選択すると、テンプレートのシステム、コンソールなどを設定できます。',
   'templateExport.title': '{name}をOVAとしてエクスポート',
   'templateExport.host': 'ホスト',
   'templateExport.host.placeholder': 'ホストを選択',
@@ -3301,6 +3345,9 @@ export const ja: LocaleCatalog = {
   'hostForm.field.rootPassword': 'Rootパスワード',
   'hostForm.field.sshPort': 'SSHポート',
   'hostForm.field.sshUser': 'SSHユーザー',
+  'hostForm.firewall.configure': 'ホストのファイアウォールを自動的に設定',
+  'hostForm.firewall.configure.help':
+    'インストール時に、クラスターのファイアウォールタイプを使用して、oVirt に必要なポートをホストのファイアウォールで開きます。ホストのファイアウォールを自分で管理している場合にのみオフにしてください。その場合、必要なポートは手動で開く必要があります。',
   'hostForm.hostedEngine.deploy': 'Hosted engineをデプロイ',
   'hostForm.hostedEngine.deploy.help':
     'インストールでは、self-hosted engineコンポーネントもデプロイされるため、このホストは既存のhosted-engineホストと並んでエンジンVMを実行できます。通常の仮想化ホストの場合はオフのままにします。',
@@ -3427,11 +3474,7 @@ export const ja: LocaleCatalog = {
   'importStorage.domainId.label': 'ストレージドメインID',
   'instanceTypeForm.aria.description': 'インスタンスタイプの説明',
   'instanceTypeForm.aria.name': 'インスタンスタイプ名',
-  'instanceTypeForm.memory.error.guaranteed':
-    '物理メモリ保証はメモリサイズを超えることはできません',
-  'instanceTypeForm.memory.error.max': '最大メモリはメモリサイズより小さくすることはできません',
-  'instanceTypeForm.memory.error.positive': 'メモリサイズは0より大きくする必要があります',
-  'instanceTypeForm.section.cpu': '仮想CPU',
+  'instanceTypeForm.sections.ariaLabel': 'インスタンスタイプのセクション',
   'instanceTypeForm.title.edit': 'インスタンスタイプを編集 — {name}',
   'instanceTypeForm.title.new': '新規インスタンスタイプ',
   'instanceTypes.column.guaranteed': '保証メモリ',
@@ -3743,6 +3786,10 @@ export const ja: LocaleCatalog = {
   'schedulingPolicy.weights.factorError': '各ファクターは1以上の整数である必要があります。',
   'schedulingPolicy.weights.label': 'ウェイトモジュール',
   'setupNetworks.aria.configureSriov': '{name}のSR-IOVを構成',
+  'setupNetworks.aria.customPropertyAdd': '{name}にカスタムプロパティを追加',
+  'setupNetworks.aria.customPropertyKey': '{name}のカスタムプロパティ{index}のキー',
+  'setupNetworks.aria.customPropertyRemove': '{name}からカスタムプロパティ{index}を削除',
+  'setupNetworks.aria.customPropertyValue': '{name}のカスタムプロパティ{index}の値',
   'setupNetworks.aria.labelsOn': '{name}上のラベル',
   'setupNetworks.aria.newLabel': '{name}の新しいラベル',
   'setupNetworks.aria.qosField': '{name}の{label}',
@@ -3752,6 +3799,15 @@ export const ja: LocaleCatalog = {
   'setupNetworks.bondMode.mode2': '負荷分散 — balance-xor（mode 2）',
   'setupNetworks.bondMode.mode4': '動的リンクアグリゲーション — 802.3ad（mode 4）',
   'setupNetworks.bondMode.mode5': 'アダプティブ送信負荷分散 — balance-tlb（mode 5）',
+  'setupNetworks.customProperties.add': 'カスタムプロパティを追加',
+  'setupNetworks.customProperties.freeForm':
+    'エンジンが許可するキーを報告しなかったため、キーは保存時にのみ検証されます。',
+  'setupNetworks.customProperties.help':
+    'ホスト上でこのネットワークに適用されるキー/値オプションです。たとえば bridge_opts はVMネットワークのブリッジを調整します。使用できるキーはエンジンの設定で決まります。',
+  'setupNetworks.customProperties.keyPlaceholder': 'キーを選択',
+  'setupNetworks.customProperties.label': 'カスタムプロパティ',
+  'setupNetworks.customProperties.noKeys':
+    'このネットワークに対してエンジンが許可するカスタムプロパティのキーはありません。',
   'setupNetworks.labels.add': 'ラベルを追加',
   'setupNetworks.labels.help':
     'このNICに添付されたネットワークラベル。エンジンは、一致するラベルを持つすべてのネットワークをNICに自動的に配線します。',
@@ -3803,6 +3859,15 @@ export const ja: LocaleCatalog = {
   'setupNetworks.sriov.networks.removeAria': '許可されたネットワーク{name}を削除',
   'setupNetworks.sriov.networks.selectPlaceholder': 'ネットワークを選択',
   'setupNetworks.sriov.title': 'SR-IOV構成 — {name}',
+  'setupNetworks.validation.customPropertyBridgeOpts': '{key}はVMネットワークにのみ適用できます',
+  'setupNetworks.validation.customPropertyDuplicate': '{key}はすでに設定されています',
+  'setupNetworks.validation.customPropertyKey':
+    'キーに使用できるのは英字、数字、アンダースコアのみです',
+  'setupNetworks.validation.customPropertyKeyRequired': 'この値のキーを入力してください',
+  'setupNetworks.validation.customPropertyUnknown':
+    '{key}はこのエンジンが許可するカスタムプロパティではありません',
+  'setupNetworks.validation.customPropertyValue': '{key}の値は{format}に一致する必要があります',
+  'setupNetworks.validation.customPropertyValueSyntax': '値にセミコロンを含めることはできません',
   'setupNetworks.validation.ipv4': '有効なIPv4アドレスを入力してください',
   'setupNetworks.validation.ipv6': '有効なIPv6アドレスを入力してください',
   'setupNetworks.validation.managementGuard':
@@ -4545,6 +4610,83 @@ export const ja: LocaleCatalog = {
     'ウォッチドッグの変更に失敗したため、何も保存されませんでした: {message}。再試行するには、もう一度保存してください。',
   'vm.edit.save.nextRunRefreshFailed':
     'ウォッチドッグは保存されましたが、VMの保留中の次回起動用設定が更新されなかったため、次回のシャットダウン時にエンジンが変更を元に戻す可能性があります: {message}。再試行するには、もう一度保存してください。',
+  'vm.edit.pinning.title': 'CPU 固定',
+  'vm.edit.pinning.policy': 'CPU 固定ポリシー',
+  'vm.edit.pinning.policy.none': 'なし',
+  'vm.edit.pinning.policy.manual': '手動',
+  'vm.edit.pinning.policy.resizeAndPin': 'サイズ変更と NUMA の固定',
+  'vm.edit.pinning.policy.dedicated': '専有',
+  'vm.edit.pinning.policy.isolateThreads': 'スレッドの分離',
+  'vm.edit.pinning.topology': 'CPU 固定トポロジー',
+  'vm.edit.pinning.hint.manualNeedsHost':
+    '手動固定には、VM を特定のホストで実行する必要があります。',
+  'vm.edit.pinning.hint.dedicatedNeedsVersion':
+    '専有とスレッドの分離には、クラスター互換バージョン 4.7 以降が必要です。',
+  'vm.edit.pinning.hint.dedicatedNumaPinned':
+    '仮想 NUMA ノードが固定されている間は、専有とスレッドの分離は使用できません。',
+  'vm.edit.pinning.hint.resizeAndPin':
+    'サイズ変更と NUMA の固定では、VM の起動時にホストに合わせて CPU トポロジーと仮想 NUMA ノードが決まります。',
+  'vm.edit.pinning.error.required': '固定トポロジーを入力してください (例: 0#0_1#1-3)。',
+  'vm.edit.pinning.error.syntax':
+    'vCPU#ホストCPU 形式のエントリーを _ でつないで記述してください (例: 0#0_1#1-3 または 0#0-3,^2)。',
+  'vm.edit.pinning.error.needsHost': '手動固定には、VM を特定のホストで実行する必要があります。',
+  'vm.edit.pinning.error.vcpuMissing':
+    'vCPU {vcpu} は存在しません。この VM の vCPU は 0 から {max} です。',
+  'vm.edit.pinning.error.duplicate': 'vCPU {vcpu} が複数回固定されています。',
+  'vm.edit.pinning.error.noCpu': 'vCPU {vcpu} はどのホスト CPU にも固定されていません。',
+  'fieldHelp.vm.cpuPinningPolicy':
+    'vCPU をホスト CPU にどう割り当てるか。なしはホストに任せます。手動は下の固定トポロジーを使用します。サイズ変更と NUMA の固定はホストに合わせて VM のサイズを決めて固定します。専有はこの VM 専用にホスト CPU を予約します。スレッドの分離はさらに各 vCPU に専用の物理コアを割り当てます。実行中の VM では次回起動時に適用されます。',
+  'fieldHelp.vm.cpuPinningTopology':
+    '各 vCPU を vCPU#CPU の形式でホスト CPU に固定し、エントリーを _ でつなぎます。CPU セットには CPU (0,2)、範囲 (1-3)、除外 (^2) を指定できます。例: 0#0_1#1-3 は vCPU 0 をホスト CPU 0 に、vCPU 1 をホスト CPU 1 から 3 に固定します。',
+  'fieldHelp.vm.numaCount':
+    'ゲストに見える仮想 NUMA ノードの数。vCPU とメモリーはこれらに分配されます。ノードをホストの NUMA ノードに固定すると、そのメモリーをローカルに保てます。電源オフの VM でのみ変更できます。',
+  'vm.edit.numa.title': '仮想 NUMA',
+  'vm.edit.numa.count': 'NUMA ノード数',
+  'vm.edit.numa.loading': '仮想 NUMA ノードを読み込み中',
+  'vm.edit.numa.loadError': '仮想 NUMA ノードを読み込めませんでした。変更されません',
+  'vm.edit.numa.hint.running': '仮想 NUMA ノードは VM の停止中にのみ変更できます。',
+  'vm.edit.numa.hint.needsHost':
+    'ノードをホストの NUMA ノードに固定するには、VM を特定のホストで実行する必要があります。',
+  'vm.edit.numa.hint.hostLoading': 'ホストの NUMA トポロジーを読み込み中',
+  'vm.edit.numa.hint.hostError': 'ホストの NUMA トポロジーを読み込めませんでした',
+  'vm.edit.numa.table': '仮想 NUMA ノード',
+  'vm.edit.numa.column.node': 'ノード',
+  'vm.edit.numa.column.resources': 'vCPU とメモリー',
+  'vm.edit.numa.column.tune': 'チューニングモード',
+  'vm.edit.numa.column.hostNode': 'ホスト NUMA ノード',
+  'vm.edit.numa.resources': 'vCPU {cpus}、{memory} MB',
+  'vm.edit.numa.tuneLabel': 'NUMA ノード {index} のチューニングモード',
+  'vm.edit.numa.pinLabel': 'NUMA ノード {index} のホスト NUMA ノード',
+  'vm.edit.numa.pin.none': '固定なし',
+  'vm.edit.numa.pin.hostNode': 'ホストノード {index}',
+  'vm.edit.numa.tune.interleave': 'インターリーブ (Interleave)',
+  'vm.edit.numa.tune.strict': '厳格 (Strict)',
+  'vm.edit.numa.tune.preferred': '優先 (Preferred)',
+  'vm.edit.numa.error.preferred':
+    '優先は、単一のホストノードに固定された単一の仮想 NUMA ノードでのみ機能します。',
+  'vm.edit.numa.error.tooManyNodes':
+    'この VM の vCPU は {cpus} 個なので、NUMA ノードを {count} 個持つことはできません。',
+  'vm.edit.numa.error.pinsNeedHost':
+    '固定された NUMA ノードには、VM を特定のホストで実行する必要があります。',
+  'vm.edit.numa.error.pinsWithDedicated':
+    '専有とスレッドの分離は、固定された NUMA ノードと組み合わせられません。',
+  'vm.edit.numa.error.hostUnsupported':
+    'ホスト {host} は NUMA トポロジーを報告していないため、そこで実行される VM は仮想 NUMA ノードを持てません。',
+  'vm.edit.numa.error.hostNodeMissing': 'ホスト {host} には NUMA ノード {hostNode} がありません。',
+  'vm.edit.numa.error.memory':
+    '仮想 NUMA ノード {node} には、ホスト {host} のノード {hostNode} より多くのメモリーが必要です。厳格ではこれは許可されません。',
+  'vm.edit.save.numaBeforeVmFailed':
+    '古い仮想 NUMA ノードを削除できなかったため、VM は保存されていません: {message}。再試行するにはもう一度保存してください。',
+  'vm.edit.save.vmFailedAfterNuma':
+    '古い仮想 NUMA ノードは削除されましたが、VM を保存できなかったため、新しいノードは追加されていません: {message}。再試行するにはもう一度保存してください。',
+  'vm.edit.save.numaAfterVmFailed':
+    'VM は保存されましたが、仮想 NUMA の変更に失敗しました: {message}。再試行するにはもう一度保存してください。',
+  'vm.edit.save.numaFailed':
+    '仮想 NUMA の変更に失敗しました: {message}。再試行するにはもう一度保存してください。',
+  'vm.edit.save.numaState':
+    'この VM の仮想 NUMA ノードは現在 {count, plural, =0 {ありません} other {# 個です}}。',
+  'vm.edit.save.numaStateUnknown':
+    '仮想 NUMA ノードを再読み込みできませんでした。現在のトポロジーを確認するには、ダイアログを開き直してください。',
   'vm.edit.save.cdFailed':
     'VMは保存されましたが、CDの変更に失敗しました: {message}。再試行するには、もう一度保存してください。',
   'vm.create.watchdog.templateError':
@@ -4748,6 +4890,125 @@ export const ja: LocaleCatalog = {
     '部分的なセットアップの取り消しが停止しました: {error}',
   'host.configureLocalStorage.outcome.rerunHint':
     '完了するには、必要に応じてホストをメンテナンスモードにし、「ローカルストレージを設定」をもう一度実行してください。空のローカルデータセンターが再利用されます。',
+  // Guide Me (data center and cluster next steps)
+  'guideMe.action': 'ガイド',
+  'guideMe.title': 'ガイド: {name}',
+  'guideMe.loading': '次の手順を読み込み中',
+  'guideMe.error.title': '次の手順を読み込めませんでした',
+  'guideMe.dataCenter.created': 'データセンターを作成しました。',
+  'guideMe.dataCenter.configured': 'データセンターは完全に設定され、使用できる状態です。',
+  'guideMe.cluster.created': 'クラスターを作成しました。',
+  'guideMe.cluster.configured': 'クラスターは完全に設定され、使用できる状態です。',
+  'guideMe.configured.title': '設定が完了しました',
+  'guideMe.unconfigured': 'まだ設定が必要なエンティティがあります。',
+  'guideMe.section.required': '必須の手順',
+  'guideMe.section.optional': '任意の手順',
+  'guideMe.configureLater': '後で設定',
+  'guideMe.step.configureCluster': 'クラスターを設定',
+  'guideMe.step.addAnotherCluster': '別のクラスターを追加',
+  'guideMe.step.configureHost': 'ホストを設定',
+  'guideMe.step.addAnotherHost': '別のホストを追加',
+  'guideMe.step.configureStorage': 'ストレージを設定',
+  'guideMe.step.addMoreStorage': 'ストレージを追加',
+  'guideMe.step.attachStorage': 'ストレージを接続',
+  'guideMe.step.attachMoreStorage': 'さらにストレージを接続',
+  'guideMe.step.configureIsoLibrary': 'ISO ライブラリーを設定',
+  'guideMe.step.attachIsoLibrary': 'ISO ライブラリーを接続',
+  'guideMe.step.addLocalStorage': 'ローカルストレージを追加',
+  'guideMe.reason.noUpHost': 'データセンターには少なくとも 1 台のアクティブなホストが必要です。',
+  'guideMe.reason.noCluster': '先にデータセンターにクラスターを追加してください。',
+  'guideMe.reason.noUnattachedData': '接続可能な未接続のデータドメインがありません。',
+  'guideMe.reason.noActiveMaster':
+    'データセンターには先にアクティブなマスターデータドメインが必要です。',
+  'guideMe.reason.noIsoDomain': '接続可能な ISO ドメインがありません。',
+  'guideMe.reason.localDcHasHost':
+    'ローカルデータセンターに置けるホストは 1 台だけで、このデータセンターにはすでにあります。',
+  'guideMe.reason.dcInitialized': 'データセンターはすでに初期化されています。',
+  'guideMe.reason.clusterLocalHasHost':
+    'このクラスターは、唯一のホストをすでに持つローカルデータセンターに属しています。',
+  'guideMe.note.localStorage':
+    'データセンターを完全に設定するには、ローカルストレージドメインを少なくとも 1 つ接続して有効化してください。',
+  'guideMe.note.clusterNoActions':
+    'このクラスターで使用できる操作はありません: どのデータセンターにも接続されていません。',
+  // Configure aggregate entry point (pages/ConfigurePage.tsx): the webadmin
+  // Administration › Configure index linking to its five surfaces.
+  'nav.configure': '構成',
+  'configure.title': '構成',
+  'configure.intro':
+    'すべてのデータセンターとクラスターで共有される、エンジン全体の定義です。それぞれ専用のページで開きます。',
+  'configure.loading': '構成領域を読み込んでいます',
+  'configure.notPermitted': 'システム構成',
+  'configure.list.ariaLabel': '構成領域',
+  'configure.card.roles': 'ロールと、各ロールがユーザーおよび管理者に付与する権限を定義します。',
+  'configure.card.systemPermissions': 'システム全体でユーザーとグループにロールを割り当てます。',
+  'configure.card.schedulingPolicies':
+    'クラスターがVMの配置に使用するフィルター、重み付け、負荷分散のルールを管理します。',
+  'configure.card.instanceTypes':
+    '新しい仮想マシン用の再利用可能なハードウェアプロファイルを定義します。',
+  'configure.card.macPools': '仮想NICに割り当てるMACアドレスの範囲を管理します。',
+  // EDIT VM: Foreman/Satellite section (provider picker)
+  'vm.edit.section.foreman': 'Foreman/Satellite',
+  'vm.edit.foreman.provider': 'プロバイダー',
+  'vm.edit.foreman.none': 'プロバイダーなし',
+  'vm.edit.foreman.unknown': '不明なプロバイダー ({id})',
+  'vm.edit.foreman.loading': 'Foreman/Satellite プロバイダーを読み込んでいます',
+  'vm.edit.foreman.empty':
+    'Foreman/Satellite プロバイダーが登録されていません。この VM をバインドするには、プロバイダーページで追加してください。',
+  'vm.edit.foreman.help':
+    'エンジンは、選択した Foreman/Satellite プロバイダーからこの VM の正誤表を取得します。',
+  // Template Storage tab + scoped Events tabs (issue #33) ----------------
+  'scopedEvents.loading': 'イベントを読み込んでいます',
+  'scopedEvents.error.title': 'イベントを読み込めませんでした',
+  'scopedEvents.empty.title': 'イベントがありません',
+  'templateDetail.tab.storage': 'ストレージ',
+  'templateDetail.tab.events': 'イベント',
+  'templateEvents.empty.body': 'このテンプレートのエンジン監査ログイベントがここに表示されます。',
+  'templateEvents.table.ariaLabel': 'このテンプレートのイベント',
+  'templateStorage.empty.body':
+    'このテンプレートのディスクはどのストレージドメインにもありません。',
+  'templateStorage.table.ariaLabel': 'このテンプレートのディスクを保持するストレージドメイン',
+  'templateStorage.column.used': '使用領域',
+  'templateStorage.column.disks': 'ディスク',
+  'templateStorage.expand.ariaLabel': 'ディスクを表示',
+  'templateStorage.disks.ariaLabel': '{name} 上のテンプレートディスク',
+  'clusterDetail.tab.events': 'イベント',
+  'clusterEvents.empty.body': 'このクラスターのエンジン監査ログイベントがここに表示されます。',
+  'clusterEvents.table.ariaLabel': 'このクラスターのイベント',
+  'dcDetail.tab.events': 'イベント',
+  'dcEvents.empty.body': 'このデータセンターのエンジン監査ログイベントがここに表示されます。',
+  'dcEvents.table.ariaLabel': 'このデータセンターのイベント',
+  'storageDetail.tab.events': 'イベント',
+  'storageEvents.empty.body':
+    'このストレージドメインのエンジン監査ログイベントがここに表示されます。',
+  'storageEvents.table.ariaLabel': 'このストレージドメインのイベント',
+  'quotaDetail.tab.events': 'イベント',
+  'quotaEvents.empty.body': 'このクォータのエンジン監査ログイベントがここに表示されます。',
+  'quotaEvents.table.ariaLabel': 'このクォータのイベント',
+  // List-grid columns filled by a follow= or one shared read (issue #34)
+  'vms.column.cpu': 'CPU',
+  'vms.column.network': 'ネットワーク',
+  'vms.column.ips': 'IPアドレス',
+  'disks.column.attachedTo': 'アタッチ先',
+  'disks.column.quota': 'クォータ',
+  'networks.column.qos': 'QoS名',
+  'vnicProfiles.column.qos': 'QoS名',
+  'vnicProfiles.column.networkFilter': 'ネットワークフィルター',
+  'pools.column.running': '実行中のVM',
+  'volumes.column.spaceUsed': '使用容量',
+  // UI extensions (docs/PLUGINS.md): sidebar group, plugin error state,
+  // plugin page states, About dialog plugin list ------------------------
+  'nav.group.extensions': '拡張機能',
+  'extensions.error.title': '{plugin} はこのコンテンツを表示できませんでした',
+  'extensions.page.loading': '拡張機能のページを読み込んでいます',
+  'extensions.page.notFound.title': '拡張機能のページを利用できません',
+  'extensions.page.notFound.body':
+    'このページを提供する読み込み済みの拡張機能はありません。デプロイメント設定から削除されたか、読み込みに失敗したか、お使いのアカウントでは利用できない可能性があります。',
+  'extensions.page.notFound.back': 'ダッシュボードに戻る',
+  'about.extensions': '拡張機能',
+  'about.extensions.status.active': '読み込み済み',
+  'about.extensions.status.loading': '読み込み中',
+  'about.extensions.status.skipped': 'このエンジンでは読み込まれません',
+  'about.extensions.status.failed': '失敗: {reason}',
   // VM TPM device (Edit VM Resource Allocation, New VM wizard, General tab)
   'vm.edit.resources.tpm': 'TPMデバイスを有効化',
   'vm.edit.resources.tpm.loading': 'TPMデバイスを読み込んでいます',

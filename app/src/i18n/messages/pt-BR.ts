@@ -187,7 +187,7 @@ export const ptBR: LocaleCatalog = {
   'inventory.tree.ariaLabel': 'Pastas VM e de modelos',
   'inventory.sidebar.resize': 'Redimensionar a barra lateral',
   'inventory.filter.ariaLabel': 'Filtrar VMs e modelos por nome',
-  'inventory.filter.hint': 'Filtrar por nome',
+  'inventory.filter.hint': 'Filtrar por nome, folder:/prod/web ou tag:pci-dss',
   'infra.filter.ariaLabel': 'Filtrar infraestrutura por nome',
   'infra.filter.hint': 'Filtrar por nome',
   'inventory.column.type': 'Tipo',
@@ -424,7 +424,7 @@ export const ptBR: LocaleCatalog = {
   'vms.searchEmpty.matches': 'Nada corresponde a {query}',
   'vms.empty.title': 'Nenhuma máquina virtual',
   'vms.empty.body': 'As VMs que você tem permissão para ver aparecerão aqui.',
-  'vms.search.hint': 'name=web* e status=up — ou texto simples',
+  'vms.search.hint': 'name=web* and status=up, folder:/prod/web, tag:pci-dss ou texto simples',
   'vms.search.ariaLabel': 'Pesquisar máquinas virtuais',
   'vms.pagination.ariaLabel': 'Paginação de máquinas virtuais',
   'vms.table.ariaLabel': 'Máquinas virtuais',
@@ -1064,6 +1064,41 @@ export const ptBR: LocaleCatalog = {
   'permissions.add.role.none': 'Nenhuma função atribuível está disponível neste engine.',
   'permissions.add.role.userGroup': 'Funções de usuário',
   'permissions.add.role.adminGroup': 'Funções administrativas',
+  // Add Permission picker depth (issue #31): multi-select, My groups,
+  // Everyone, and directory search.
+  'permissions.add.kind.myGroups': 'Meus grupos',
+  'permissions.add.kind.everyone': 'Todos',
+  'permissions.add.source.label': 'Pesquisar em',
+  'permissions.add.source.engine': 'Banco de dados do engine',
+  'permissions.add.source.directory': 'Diretório: {domain}',
+  'permissions.add.source.domainsLoading': 'Carregando diretórios',
+  'permissions.add.source.domainsError': 'Não foi possível carregar diretórios: {message}',
+  'permissions.add.source.directoryHint':
+    'Principais encontrados em um diretório que ainda não estão no engine são adicionados a ele quando a função é concedida.',
+  'permissions.add.empty.directory.users': 'Este diretório não retornou usuários.',
+  'permissions.add.empty.directory.groups': 'Este diretório não retornou grupos.',
+  'permissions.add.myGroups.loading': 'Carregando seus grupos',
+  'permissions.add.myGroups.error': 'Não foi possível carregar seus grupos: {message}',
+  'permissions.add.myGroups.empty.title': 'Nenhum grupo',
+  'permissions.add.myGroups.empty.body': 'Sua conta não é membro de nenhum grupo do diretório.',
+  'permissions.add.myGroups.table.ariaLabel': 'Meus grupos',
+  'permissions.add.everyone.body':
+    'A função é concedida ao grupo integrado Everyone, então todos os usuários a recebem neste {noun}.',
+  'permissions.add.selectMany.user': 'Selecione um ou mais usuários a quem conceder a função.',
+  'permissions.add.selectMany.group': 'Selecione um ou mais grupos aos quais conceder a função.',
+  'permissions.add.selected.count':
+    '{count, plural, one {# principal selecionado} other {# principais selecionados}}',
+  'permissions.add.selected.ariaLabel': 'Principais selecionados',
+  'permissions.add.selected.remove': 'Remover {name} da seleção',
+  'permissions.add.result.failed.title':
+    '{count, plural, one {Não foi possível conceder a função a # principal} other {Não foi possível conceder a função a # principais}}',
+  'permissions.add.result.failed.body':
+    'Os principais com falha continuam selecionados. Corrija a causa e tente novamente, ou remova-os da seleção.',
+  'permissions.add.result.failed.item': '{name}: {message}',
+  'permissions.add.submit.retry': 'Tentar novamente as falhas',
+  'permissions.add.toast.granted': '{role} concedida a {name}',
+  'permissions.add.toast.grantedMany':
+    '{role} concedida a {count, plural, one {# principal} other {# principais}}',
   'users.notPermitted': 'Usuários',
   'users.title': 'Usuários',
   'users.search.hint': 'usrname=jdoe* — ou texto simples',
@@ -1758,6 +1793,11 @@ export const ptBR: LocaleCatalog = {
     'Funciona com noVNC e a maioria dos visualizadores de desktop.',
   'settings.pref.console.spiceDescription': 'Experiência remota mais rica via virt-viewer.',
   'settings.pref.language': 'Idioma',
+  // Roaming note (components/UserMenu, settings/RoamingSettingsProvider)
+  'settings.pref.roaming.synced':
+    'Salvas no seu perfil de usuário do oVirt, por isso acompanham você em outros navegadores.',
+  'settings.pref.roaming.local':
+    'Salvas somente neste navegador; seu perfil de usuário do oVirt não está disponível para armazená-las.',
   'settings.refresh.seconds': '{count, plural, one {# segundo} other {# segundos}}',
   'settings.timeout.minutes': '{count, plural, one {# minuto} other {# minutos}}',
   'settings.timeout.hours': '{count, plural, one {# hora} other {# horas}}',
@@ -1938,7 +1978,9 @@ export const ptBR: LocaleCatalog = {
   'hostNuma.empty.body': 'Este host não informa nós NUMA.',
   'hostNuma.error.title': 'Não foi possível carregar a topologia NUMA',
   'hostNuma.loading': 'Carregando topologia NUMA',
-  'host.cockpit.open': 'Cockpit',
+  'host.console.open': 'Console do host',
+  'host.console.newTab': 'Abre o Cockpit em uma nova aba',
+  'host.console.tooltip': 'Abrir a interface do Cockpit de {name}',
   'datacenters.forceRemove.action': 'Forçar remoção',
   'datacenters.forceRemove.confirm.title': "Forçar a remoção do data center ''{name}''?",
   'datacenters.forceRemove.confirm.body':
@@ -2244,7 +2286,7 @@ export const ptBR: LocaleCatalog = {
   'dc.field.macPool': 'Pool de endereços MAC',
   'search.autocomplete.hint': 'Sintaxe de pesquisa',
   'templates.title': 'Modelos',
-  'templates.search.hint': 'name=web* — ou texto simples',
+  'templates.search.hint': 'name=web*, folder:/prod, tag:legacy ou texto simples',
   'templates.search.ariaLabel': 'Pesquisar modelos',
   'templates.pagination.ariaLabel': 'Paginação de modelos',
   'templates.loading': 'Carregando modelos',
@@ -2291,28 +2333,29 @@ export const ptBR: LocaleCatalog = {
   'templateForm.stateless': 'Sem estado',
   'templateForm.deleteProtection': 'Proteção contra exclusão',
   'templateForm.aria.deleteProtection': 'Proteção contra exclusão',
-  'templateForm.section.system': 'Sistema',
-  'templateForm.memory': 'Tamanho da memória (MB)',
-  'templateForm.guaranteedMemory': 'Memória física garantida (MB)',
-  'templateForm.maxMemory': 'Memória máxima (MB)',
   'templateForm.sockets': 'Sockets virtuais',
   'templateForm.cores': 'Núcleos por socket virtual',
   'templateForm.threads': 'Threads por núcleo',
-  'templateForm.section.ha': 'Alta disponibilidade',
-  'templateForm.ha': 'Altamente disponível',
-  'templateForm.ha.priority': 'Prioridade',
-  'templateForm.aria.haPriority': 'Prioridade de alta disponibilidade',
-  'templateForm.ha.priorityHelp':
-    'Valores mais altos são reiniciados primeiro (o webadmin agrupa em Baixa 1, Média 50, Alta 100).',
-  'templateForm.section.console': 'Console',
-  'templateForm.monitors': 'Monitores',
-  'templateForm.usb': 'USB habilitado',
-  'templateForm.smartcard': 'Smartcard habilitado',
-  'templateForm.soundcard': 'Placa de som habilitada',
   'templateForm.memory.error.positive': 'O tamanho da memória deve ser maior que 0',
   'templateForm.memory.error.guaranteed':
     'A memória física garantida não pode exceder o tamanho da memória',
   'templateForm.memory.error.max': 'A memória máxima não pode ser menor que o tamanho da memória',
+  // New template (standalone) and the sectioned template dialog (#28)
+  'templateForm.title.new': 'Novo modelo',
+  'templateForm.newAction': 'Novo modelo',
+  'templateForm.sections.ariaLabel': 'Seções do modelo',
+  'templateForm.sourceVm': 'VM de origem',
+  'templateForm.sourceVm.placeholder': 'Selecione uma VM desligada',
+  'templateForm.sourceVm.help':
+    'O novo modelo copia os discos e a configuração desta VM. Somente uma VM desligada pode ser usada. O que você alterar nesta caixa de diálogo substitui as configurações da VM.',
+  'templateForm.sourceVm.empty':
+    'Nenhuma VM está desligada. Desligue uma VM para criar um modelo a partir dela.',
+  'templateForm.sourceVm.disksNote':
+    'Os discos são copiados para os domínios de armazenamento atuais. Para alocação de disco, subversões ou selagem, use Criar modelo na VM.',
+  'templateForm.sourceVm.loading': 'Carregando a configuração da VM',
+  'templateForm.sourceVm.error': 'Não foi possível carregar a configuração da VM.',
+  'templateForm.sourceVm.hint':
+    'Selecione uma VM de origem para definir o sistema, o console e outras configurações do modelo.',
   'templateExport.title': 'Exportar {name} como OVA',
   'templateExport.host': 'Host',
   'templateExport.host.placeholder': 'Selecione um host',
@@ -3327,6 +3370,9 @@ export const ptBR: LocaleCatalog = {
   'hostForm.field.rootPassword': 'Senha de root',
   'hostForm.field.sshPort': 'Porta SSH',
   'hostForm.field.sshUser': 'Usuário SSH',
+  'hostForm.firewall.configure': 'Configurar automaticamente o firewall do host',
+  'hostForm.firewall.configure.help':
+    'Permite que a instalação abra no firewall do host as portas de que o oVirt precisa, usando o tipo de firewall do cluster. Desative somente se você mesmo gerencia o firewall do host; nesse caso, as portas necessárias devem ser abertas manualmente.',
   'hostForm.hostedEngine.deploy': 'Implantar hosted engine',
   'hostForm.hostedEngine.deploy.help':
     'A instalação também implanta os componentes do self-hosted engine, para que este host possa executar a VM do engine junto com os hosts hosted-engine existentes. Deixe desativado para um host de virtualização comum.',
@@ -3453,12 +3499,7 @@ export const ptBR: LocaleCatalog = {
   'importStorage.domainId.label': 'ID do domínio de armazenamento',
   'instanceTypeForm.aria.description': 'Descrição do tipo de instância',
   'instanceTypeForm.aria.name': 'Nome do tipo de instância',
-  'instanceTypeForm.memory.error.guaranteed':
-    'A memória física garantida não pode exceder o tamanho da memória',
-  'instanceTypeForm.memory.error.max':
-    'A memória máxima não pode ser menor que o tamanho da memória',
-  'instanceTypeForm.memory.error.positive': 'O tamanho da memória deve ser maior que 0',
-  'instanceTypeForm.section.cpu': 'CPUs virtuais',
+  'instanceTypeForm.sections.ariaLabel': 'Seções do tipo de instância',
   'instanceTypeForm.title.edit': 'Editar tipo de instância — {name}',
   'instanceTypeForm.title.new': 'Novo tipo de instância',
   'instanceTypes.column.guaranteed': 'Memória garantida',
@@ -3776,6 +3817,11 @@ export const ptBR: LocaleCatalog = {
   'schedulingPolicy.weights.factorError': 'Cada fator deve ser um número inteiro de pelo menos 1.',
   'schedulingPolicy.weights.label': 'Módulos de peso',
   'setupNetworks.aria.configureSriov': 'Configurar SR-IOV para {name}',
+  'setupNetworks.aria.customPropertyAdd': 'Adicionar propriedade personalizada a {name}',
+  'setupNetworks.aria.customPropertyKey': 'Chave da propriedade personalizada {index} em {name}',
+  'setupNetworks.aria.customPropertyRemove':
+    'Remover a propriedade personalizada {index} de {name}',
+  'setupNetworks.aria.customPropertyValue': 'Valor da propriedade personalizada {index} em {name}',
   'setupNetworks.aria.labelsOn': 'Rótulos em {name}',
   'setupNetworks.aria.newLabel': 'Novo rótulo para {name}',
   'setupNetworks.aria.qosField': '{label} para {name}',
@@ -3786,6 +3832,15 @@ export const ptBR: LocaleCatalog = {
   'setupNetworks.bondMode.mode4': 'Agregação de links dinâmica — 802.3ad (modo 4)',
   'setupNetworks.bondMode.mode5':
     'Balanceamento de carga de transmissão adaptativo — balance-tlb (modo 5)',
+  'setupNetworks.customProperties.add': 'Adicionar propriedade personalizada',
+  'setupNetworks.customProperties.freeForm':
+    'O engine não informou quais chaves ele permite, portanto as chaves só são verificadas ao salvar.',
+  'setupNetworks.customProperties.help':
+    'Opções de chave/valor aplicadas a esta rede no host, como bridge_opts para ajustar a bridge de uma rede de VM. As chaves disponíveis vêm da configuração do engine.',
+  'setupNetworks.customProperties.keyPlaceholder': 'Selecione uma chave',
+  'setupNetworks.customProperties.label': 'Propriedades personalizadas',
+  'setupNetworks.customProperties.noKeys':
+    'O engine não permite nenhuma chave de propriedade personalizada para esta rede.',
   'setupNetworks.labels.add': 'Adicionar rótulo',
   'setupNetworks.labels.help':
     'Rótulos de rede anexados a esta NIC. O engine conecta automaticamente à NIC todas as redes que carregam um rótulo correspondente.',
@@ -3837,6 +3892,15 @@ export const ptBR: LocaleCatalog = {
   'setupNetworks.sriov.networks.removeAria': 'Remover rede permitida {name}',
   'setupNetworks.sriov.networks.selectPlaceholder': 'Selecione uma rede',
   'setupNetworks.sriov.title': 'Configuração de SR-IOV — {name}',
+  'setupNetworks.validation.customPropertyBridgeOpts': '{key} só se aplica a redes de VM',
+  'setupNetworks.validation.customPropertyDuplicate': '{key} já está definida',
+  'setupNetworks.validation.customPropertyKey':
+    'Uma chave só pode conter letras, dígitos e sublinhados',
+  'setupNetworks.validation.customPropertyKeyRequired': 'Digite uma chave para este valor',
+  'setupNetworks.validation.customPropertyUnknown':
+    '{key} não é uma propriedade personalizada permitida por este engine',
+  'setupNetworks.validation.customPropertyValue': 'O valor de {key} deve corresponder a {format}',
+  'setupNetworks.validation.customPropertyValueSyntax': 'Um valor não pode conter ponto e vírgula',
   'setupNetworks.validation.ipv4': 'Digite um endereço IPv4 válido',
   'setupNetworks.validation.ipv6': 'Digite um endereço IPv6 válido',
   'setupNetworks.validation.managementGuard':
@@ -4588,6 +4652,85 @@ export const ptBR: LocaleCatalog = {
     'A alteração do watchdog falhou, portanto nada foi salvo: {message}. Salve novamente para tentar outra vez.',
   'vm.edit.save.nextRunRefreshFailed':
     'O watchdog foi salvo, mas a configuração pendente da VM para a próxima inicialização não foi atualizada, então o engine pode desfazer a alteração no próximo desligamento: {message}. Salve novamente para tentar outra vez.',
+  'vm.edit.pinning.title': 'Fixação de CPU',
+  'vm.edit.pinning.policy': 'Política de fixação de CPU',
+  'vm.edit.pinning.policy.none': 'Nenhuma',
+  'vm.edit.pinning.policy.manual': 'Manual',
+  'vm.edit.pinning.policy.resizeAndPin': 'Redimensionar e fixar NUMA',
+  'vm.edit.pinning.policy.dedicated': 'Dedicada',
+  'vm.edit.pinning.policy.isolateThreads': 'Isolar threads',
+  'vm.edit.pinning.topology': 'Topologia de fixação de CPU',
+  'vm.edit.pinning.hint.manualNeedsHost':
+    'A fixação manual exige que a VM seja executada em hosts específicos.',
+  'vm.edit.pinning.hint.dedicatedNeedsVersion':
+    'Dedicada e Isolar threads exigem a versão de compatibilidade do cluster 4.7 ou posterior.',
+  'vm.edit.pinning.hint.dedicatedNumaPinned':
+    'Dedicada e Isolar threads ficam indisponíveis enquanto um nó NUMA virtual estiver fixado.',
+  'vm.edit.pinning.hint.resizeAndPin':
+    'Redimensionar e fixar NUMA dimensiona a topologia de CPU e os nós NUMA virtuais a partir do host quando a VM inicia.',
+  'vm.edit.pinning.error.required': 'Informe uma topologia de fixação, por exemplo 0#0_1#1-3.',
+  'vm.edit.pinning.error.syntax':
+    'Escreva entradas vCPU#CPUs do host unidas por _, por exemplo 0#0_1#1-3 ou 0#0-3,^2.',
+  'vm.edit.pinning.error.needsHost':
+    'A fixação manual exige que a VM seja executada em hosts específicos.',
+  'vm.edit.pinning.error.vcpuMissing': 'A vCPU {vcpu} não existe; esta VM tem as vCPUs 0 a {max}.',
+  'vm.edit.pinning.error.duplicate': 'A vCPU {vcpu} está fixada mais de uma vez.',
+  'vm.edit.pinning.error.noCpu': 'A vCPU {vcpu} não está fixada a nenhuma CPU do host.',
+  'fieldHelp.vm.cpuPinningPolicy':
+    'Como as vCPUs são mapeadas para as CPUs do host. Nenhuma deixa a cargo do host; Manual usa a topologia de fixação abaixo; Redimensionar e fixar NUMA dimensiona a VM conforme o host e a fixa; Dedicada reserva CPUs do host só para esta VM; Isolar threads também dá a cada vCPU um núcleo físico próprio. Em uma VM em execução, aplicado na próxima inicialização.',
+  'fieldHelp.vm.cpuPinningTopology':
+    'Fixe cada vCPU a CPUs do host como vCPU#CPUs, com as entradas unidas por _. Um conjunto de CPUs lista CPUs (0,2), intervalos (1-3) e exclusões (^2). Exemplo: 0#0_1#1-3 fixa a vCPU 0 na CPU 0 do host e a vCPU 1 nas CPUs 1 a 3 do host.',
+  'fieldHelp.vm.numaCount':
+    'Quantos nós NUMA virtuais o convidado vê. As vCPUs e a memória são distribuídas entre eles; fixe um nó a um nó NUMA do host para manter a memória dele local. Alterado apenas com a VM desligada.',
+  'vm.edit.numa.title': 'NUMA virtual',
+  'vm.edit.numa.count': 'Quantidade de nós NUMA',
+  'vm.edit.numa.loading': 'Carregando nós NUMA virtuais',
+  'vm.edit.numa.loadError':
+    'Não foi possível carregar os nós NUMA virtuais; eles ficam inalterados',
+  'vm.edit.numa.hint.running':
+    'Os nós NUMA virtuais só podem ser alterados enquanto a VM está desligada.',
+  'vm.edit.numa.hint.needsHost':
+    'Fixar um nó a um nó NUMA do host exige que a VM seja executada em hosts específicos.',
+  'vm.edit.numa.hint.hostLoading': 'Carregando a topologia NUMA do host',
+  'vm.edit.numa.hint.hostError': 'Não foi possível carregar a topologia NUMA do host',
+  'vm.edit.numa.table': 'Nós NUMA virtuais',
+  'vm.edit.numa.column.node': 'Nó',
+  'vm.edit.numa.column.resources': 'vCPUs e memória',
+  'vm.edit.numa.column.tune': 'Modo de ajuste',
+  'vm.edit.numa.column.hostNode': 'Nó NUMA do host',
+  'vm.edit.numa.resources': 'vCPUs {cpus}, {memory} MB',
+  'vm.edit.numa.tuneLabel': 'Modo de ajuste do nó NUMA {index}',
+  'vm.edit.numa.pinLabel': 'Nó NUMA do host para o nó NUMA {index}',
+  'vm.edit.numa.pin.none': 'Não fixado',
+  'vm.edit.numa.pin.hostNode': 'Nó do host {index}',
+  'vm.edit.numa.tune.interleave': 'Intercalado (Interleave)',
+  'vm.edit.numa.tune.strict': 'Estrito (Strict)',
+  'vm.edit.numa.tune.preferred': 'Preferido (Preferred)',
+  'vm.edit.numa.error.preferred':
+    'Preferido só funciona com um único nó NUMA virtual fixado a um único nó do host.',
+  'vm.edit.numa.error.tooManyNodes':
+    'A VM tem {cpus} vCPUs, portanto não pode ter {count} nós NUMA.',
+  'vm.edit.numa.error.pinsNeedHost':
+    'Nós NUMA fixados exigem que a VM seja executada em hosts específicos.',
+  'vm.edit.numa.error.pinsWithDedicated':
+    'Dedicada e Isolar threads não podem ser combinadas com nós NUMA fixados.',
+  'vm.edit.numa.error.hostUnsupported':
+    'O host {host} não informa nenhuma topologia NUMA, portanto uma VM executada nele não pode ter nós NUMA virtuais.',
+  'vm.edit.numa.error.hostNodeMissing': 'O host {host} não tem o nó NUMA {hostNode}.',
+  'vm.edit.numa.error.memory':
+    'O nó NUMA virtual {node} precisa de mais memória do que o nó {hostNode} do host {host} tem, o que Estrito não permite.',
+  'vm.edit.save.numaBeforeVmFailed':
+    'A remoção dos nós NUMA virtuais antigos falhou, então a VM não foi salva: {message}. Salve novamente para tentar de novo.',
+  'vm.edit.save.vmFailedAfterNuma':
+    'Os nós NUMA virtuais antigos foram removidos, mas a VM não pôde ser salva, então os novos nós não foram adicionados: {message}. Salve novamente para tentar de novo.',
+  'vm.edit.save.numaAfterVmFailed':
+    'A VM foi salva, mas a alteração do NUMA virtual falhou: {message}. Salve novamente para tentar de novo.',
+  'vm.edit.save.numaFailed':
+    'A alteração do NUMA virtual falhou: {message}. Salve novamente para tentar de novo.',
+  'vm.edit.save.numaState':
+    'A VM agora tem {count, plural, =0 {nenhum nó NUMA virtual} one {# nó NUMA virtual} other {# nós NUMA virtuais}}.',
+  'vm.edit.save.numaStateUnknown':
+    'Não foi possível ler novamente os nós NUMA virtuais; reabra a caixa de diálogo para ver a topologia atual.',
   'vm.edit.save.cdFailed':
     'A VM foi salva, mas a alteração do CD falhou: {message}. Salve novamente para tentar outra vez.',
   'vm.create.watchdog.templateError':
@@ -4787,6 +4930,128 @@ export const ptBR: LocaleCatalog = {
     'A reversão da configuração parcial foi interrompida: {error}',
   'host.configureLocalStorage.outcome.rerunHint':
     'Para concluir, coloque o host em manutenção, se necessário, e execute “Configurar armazenamento local” novamente; o data center local vazio será reutilizado.',
+  // Guide Me (data center and cluster next steps)
+  'guideMe.action': 'Guie-me',
+  'guideMe.title': 'Guie-me: {name}',
+  'guideMe.loading': 'Carregando as próximas etapas',
+  'guideMe.error.title': 'Não foi possível carregar as próximas etapas',
+  'guideMe.dataCenter.created': 'Data center criado.',
+  'guideMe.dataCenter.configured': 'O data center está totalmente configurado e pronto para uso.',
+  'guideMe.cluster.created': 'Cluster criado.',
+  'guideMe.cluster.configured': 'O cluster está totalmente configurado e pronto para uso.',
+  'guideMe.configured.title': 'Configuração concluída',
+  'guideMe.unconfigured': 'Ainda há entidades a configurar.',
+  'guideMe.section.required': 'Etapas obrigatórias',
+  'guideMe.section.optional': 'Etapas opcionais',
+  'guideMe.configureLater': 'Configurar depois',
+  'guideMe.step.configureCluster': 'Configurar cluster',
+  'guideMe.step.addAnotherCluster': 'Adicionar outro cluster',
+  'guideMe.step.configureHost': 'Configurar host',
+  'guideMe.step.addAnotherHost': 'Adicionar outro host',
+  'guideMe.step.configureStorage': 'Configurar armazenamento',
+  'guideMe.step.addMoreStorage': 'Adicionar mais armazenamento',
+  'guideMe.step.attachStorage': 'Anexar armazenamento',
+  'guideMe.step.attachMoreStorage': 'Anexar mais armazenamento',
+  'guideMe.step.configureIsoLibrary': 'Configurar biblioteca ISO',
+  'guideMe.step.attachIsoLibrary': 'Anexar biblioteca ISO',
+  'guideMe.step.addLocalStorage': 'Adicionar armazenamento local',
+  'guideMe.reason.noUpHost': 'O data center precisa de pelo menos um host ativo.',
+  'guideMe.reason.noCluster': 'Primeiro adicione um cluster ao data center.',
+  'guideMe.reason.noUnattachedData': 'Nenhum domínio de dados não anexado está disponível.',
+  'guideMe.reason.noActiveMaster':
+    'O data center precisa primeiro de um domínio de dados mestre ativo.',
+  'guideMe.reason.noIsoDomain': 'Nenhum domínio ISO está disponível para anexar.',
+  'guideMe.reason.localDcHasHost': 'Um data center local comporta apenas um host, e este já o tem.',
+  'guideMe.reason.dcInitialized': 'O data center já está inicializado.',
+  'guideMe.reason.clusterLocalHasHost':
+    'Este cluster pertence a um data center local que já tem seu único host.',
+  'guideMe.note.localStorage':
+    'Para configurar totalmente o data center, anexe e ative pelo menos um domínio de armazenamento local.',
+  'guideMe.note.clusterNoActions':
+    'Nenhuma ação está disponível para este cluster: ele não está anexado a um data center.',
+  // Configure aggregate entry point (pages/ConfigurePage.tsx): the webadmin
+  // Administration › Configure index linking to its five surfaces.
+  'nav.configure': 'Configurar',
+  'configure.title': 'Configurar',
+  'configure.intro':
+    'Definições de todo o motor compartilhadas por todos os data centers e clusters. Cada uma abre em sua própria página.',
+  'configure.loading': 'Carregando áreas de configuração',
+  'configure.notPermitted': 'a configuração do sistema',
+  'configure.list.ariaLabel': 'Áreas de configuração',
+  'configure.card.roles':
+    'Defina funções e as permissões que cada uma concede a usuários e administradores.',
+  'configure.card.systemPermissions': 'Atribua funções a usuários e grupos em todo o sistema.',
+  'configure.card.schedulingPolicies':
+    'Gerencie as regras de filtro, peso e balanceamento que os clusters usam para posicionar VMs.',
+  'configure.card.instanceTypes':
+    'Defina perfis de hardware reutilizáveis para novas máquinas virtuais.',
+  'configure.card.macPools': 'Gerencie os intervalos de endereços MAC atribuídos às NICs virtuais.',
+  // EDIT VM: Foreman/Satellite section (provider picker)
+  'vm.edit.section.foreman': 'Foreman/Satellite',
+  'vm.edit.foreman.provider': 'Provedor',
+  'vm.edit.foreman.none': 'Nenhum provedor',
+  'vm.edit.foreman.unknown': 'Provedor desconhecido ({id})',
+  'vm.edit.foreman.loading': 'Carregando provedores Foreman/Satellite',
+  'vm.edit.foreman.empty':
+    'Nenhum provedor Foreman/Satellite está registrado. Adicione um na página Fornecedores para vincular esta VM a ele.',
+  'vm.edit.foreman.help':
+    'O mecanismo obtém as errata desta VM do provedor Foreman/Satellite escolhido.',
+  // Template Storage tab + scoped Events tabs (issue #33) ----------------
+  'scopedEvents.loading': 'Carregando eventos',
+  'scopedEvents.error.title': 'Não foi possível carregar eventos',
+  'scopedEvents.empty.title': 'Nenhum evento',
+  'templateDetail.tab.storage': 'Armazenamento',
+  'templateDetail.tab.events': 'Eventos',
+  'templateEvents.empty.body':
+    'Os eventos do log de auditoria do engine para este modelo aparecerão aqui.',
+  'templateEvents.table.ariaLabel': 'Eventos deste modelo',
+  'templateStorage.empty.body': 'Nenhum disco deste modelo está em um domínio de armazenamento.',
+  'templateStorage.table.ariaLabel': 'Domínios de armazenamento com os discos deste modelo',
+  'templateStorage.column.used': 'Espaço usado',
+  'templateStorage.column.disks': 'Discos',
+  'templateStorage.expand.ariaLabel': 'Mostrar discos',
+  'templateStorage.disks.ariaLabel': 'Discos do modelo em {name}',
+  'clusterDetail.tab.events': 'Eventos',
+  'clusterEvents.empty.body':
+    'Os eventos do log de auditoria do engine para este cluster aparecerão aqui.',
+  'clusterEvents.table.ariaLabel': 'Eventos deste cluster',
+  'dcDetail.tab.events': 'Eventos',
+  'dcEvents.empty.body':
+    'Os eventos do log de auditoria do engine para este centro de dados aparecerão aqui.',
+  'dcEvents.table.ariaLabel': 'Eventos deste centro de dados',
+  'storageDetail.tab.events': 'Eventos',
+  'storageEvents.empty.body':
+    'Os eventos do log de auditoria do engine para este domínio de armazenamento aparecerão aqui.',
+  'storageEvents.table.ariaLabel': 'Eventos deste domínio de armazenamento',
+  'quotaDetail.tab.events': 'Eventos',
+  'quotaEvents.empty.body':
+    'Os eventos do log de auditoria do engine para esta cota aparecerão aqui.',
+  'quotaEvents.table.ariaLabel': 'Eventos desta cota',
+  // List-grid columns filled by a follow= or one shared read (issue #34)
+  'vms.column.cpu': 'CPU',
+  'vms.column.network': 'Rede',
+  'vms.column.ips': 'Endereços IP',
+  'disks.column.attachedTo': 'Anexado a',
+  'disks.column.quota': 'Cota',
+  'networks.column.qos': 'Nome da QoS',
+  'vnicProfiles.column.qos': 'Nome da QoS',
+  'vnicProfiles.column.networkFilter': 'Filtro de rede',
+  'pools.column.running': 'VMs em execução',
+  'volumes.column.spaceUsed': 'Espaço usado',
+  // UI extensions (docs/PLUGINS.md): sidebar group, plugin error state,
+  // plugin page states, About dialog plugin list ------------------------
+  'nav.group.extensions': 'Extensões',
+  'extensions.error.title': '{plugin} não pôde exibir este conteúdo',
+  'extensions.page.loading': 'Carregando a página da extensão',
+  'extensions.page.notFound.title': 'Página de extensão indisponível',
+  'extensions.page.notFound.body':
+    'Nenhuma extensão carregada fornece esta página. Ela pode ter sido removida da configuração da implantação, falhado ao carregar ou não estar disponível para sua conta.',
+  'extensions.page.notFound.back': 'Voltar para o painel de controle',
+  'about.extensions': 'Extensões',
+  'about.extensions.status.active': 'Carregada',
+  'about.extensions.status.loading': 'Carregando',
+  'about.extensions.status.skipped': 'Não carregada para este engine',
+  'about.extensions.status.failed': 'Falhou: {reason}',
   // VM TPM device (Edit VM Resource Allocation, New VM wizard, General tab)
   'vm.edit.resources.tpm': 'Dispositivo TPM habilitado',
   'vm.edit.resources.tpm.loading': 'Carregando dispositivo TPM',

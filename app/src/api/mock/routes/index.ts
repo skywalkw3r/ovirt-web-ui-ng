@@ -2,6 +2,7 @@ import { clusterRoutes, resetClusterRouteMocks } from './cluster'
 import { hostNetworkRoutes } from './host-network'
 import { storageRoutes } from './storage'
 import type { MockRoute } from './types'
+import { resetUserOptionRouteMocks, userOptionRoutes } from './user-options'
 import { resetVmRouteMocks, vmRoutes } from './vm'
 
 export type { MockRoute } from './types'
@@ -13,6 +14,7 @@ export const extraRoutes: MockRoute[] = [
   ...hostNetworkRoutes,
   ...storageRoutes,
   ...clusterRoutes,
+  ...userOptionRoutes,
 ]
 
 // Restores every area module's mutable mock state; test/mockState calls it
@@ -20,4 +22,5 @@ export const extraRoutes: MockRoute[] = [
 export function resetAreaRouteMocks(): void {
   resetClusterRouteMocks()
   resetVmRouteMocks()
+  resetUserOptionRouteMocks()
 }

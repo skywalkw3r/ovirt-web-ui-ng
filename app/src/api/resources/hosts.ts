@@ -194,6 +194,12 @@ export interface AddHostSpec {
   // they are sent only when false
   activateAfterInstall?: boolean
   rebootAfterInstall?: boolean
+  // override_iptables — a Host body field (not a query param) that
+  // BackendHostsResource.add copies into AddVdsActionParameters.overrideFirewall;
+  // host-deploy then configures the cluster's firewall type. Engine default
+  // true, so callers send it only to turn the configuration off. Write-only:
+  // the engine does not return it on GET
+  overrideFirewall?: boolean
   powerManagement?: { enabled?: boolean; kdumpDetection?: boolean; automaticPm?: boolean }
   spmPriority?: number
   // display.address override — HostMapper maps it into VdsStatic on POST just
@@ -226,6 +232,7 @@ export async function addHost(spec: AddHostSpec): Promise<Host> {
   // root_password is the canonical password path (takes priority over
   // ssh.user.password in HostMapper); publickey installs send no secret at all
   if (authMethod === 'password') body.root_password = spec.rootPassword
+  if (spec.overrideFirewall !== undefined) body.override_iptables = spec.overrideFirewall
   if (spec.powerManagement) {
     body.power_management = {
       enabled: spec.powerManagement.enabled,
@@ -560,6 +567,79 @@ export async function listHostNetworkAttachments(id: string): Promise<NetworkAtt
   return data.network_attachment ?? []
 }
 
+// The engine's valid network custom-property keys mapped to the regex each
+// value must match, e.g. { bridge_opts: '^[^\s=]+=[^\s=]+(\s+[^\s=]+=[^\s=]+)*$' }.
+export type NetworkCustomPropertyDefinitions = Record<string, string>
+
+const SystemOptionSchema = z.looseObject({
+  values: z
+    .looseObject({
+      system_option_value: z
+        .array(z.looseObject({ value: z.string().optional(), version: z.string().optional() }))
+        .optional(),
+    })
+    .optional(),
+})
+
+// "key=regex;key=regex" (engine CustomPropertiesUtils.convertProperties: pairs
+// split on ';', each pair on its FIRST '=' since the regex may hold more).
+export function parseCustomPropertyDefinitions(value: string): NetworkCustomPropertyDefinitions {
+  const definitions: NetworkCustomPropertyDefinitions = {}
+  for (const pair of value.split(';')) {
+    const index = pair.indexOf('=')
+    if (index <= 0) continue
+    definitions[pair.slice(0, index).trim()] = pair.slice(index + 1)
+  }
+  return definitions
+}
+
+async function fetchVersionedOption(name: string, version: string | undefined): Promise<string> {
+  const data = SystemOptionSchema.parse(await request(`/options/${name}`))
+  const rows = data.values?.system_option_value ?? []
+  // One row per cluster compatibility level. Take the host cluster's row; with
+  // the version unknown (or no row for it) fall back to 'general', then to the
+  // newest level the engine reports.
+  const numeric = rows
+    .filter((row) => /^\d+\.\d+$/.test(row.version ?? ''))
+    .sort((a, b) => {
+      const [aMajor, aMinor] = (a.version as string).split('.').map(Number)
+      const [bMajor, bMinor] = (b.version as string).split('.').map(Number)
+      return bMajor - aMajor || bMinor - aMinor
+    })
+  const row =
+    rows.find((candidate) => version !== undefined && candidate.version === version) ??
+    rows.find((candidate) => candidate.version === 'general') ??
+    numeric[0] ??
+    rows[0]
+  return row?.value ?? ''
+}
+
+// The custom-property keys a network attachment may carry on this engine, for
+// the Setup Host Networks custom-properties editor. There is no dedicated REST
+// collection for them: webadmin reads the two engine-config values over GWT
+// RPC. Both are ClientAccessLevel.Admin in ConfigValues, which GET
+// /options/{name} (BackendSystemOptionResource, GetSystemOptionQuery) serves to
+// admins, so that is the surface used here:
+//   PreDefinedNetworkCustomProperties  - ships as bridge_opts only
+//   UserDefinedNetworkCustomProperties - empty until an admin adds keys with
+//                                        engine-config (ethtool_opts is the
+//                                        documented example)
+// version is the host cluster's compatibility level ("4.7"); the values are
+// versioned. Rejects when the options read fails (older engine, non-admin):
+// callers fall back to a free-form editor.
+export async function fetchNetworkCustomPropertyDefinitions(
+  version?: string,
+): Promise<NetworkCustomPropertyDefinitions> {
+  const [predefined, userDefined] = await Promise.all([
+    fetchVersionedOption('PreDefinedNetworkCustomProperties', version),
+    fetchVersionedOption('UserDefinedNetworkCustomProperties', version),
+  ])
+  return {
+    ...parseCustomPropertyDefinitions(predefined),
+    ...parseCustomPropertyDefinitions(userDefined),
+  }
+}
+
 // One row of the Setup Networks diff: attach a network to a NIC, or move /
 // re-IP an existing attachment (attachmentId set — webadmin reuses the prior
 // attachment id on reattach rather than remove+add).
@@ -604,6 +684,13 @@ export interface NetworkAttachmentSpec {
   // outbound_average_realtime (committed rate, Mbps). An empty object ({}) emits
   // a bare type='hostnetwork' qos, which clears the custom values.
   qos?: { linkshare?: number; upperlimit?: number; realtime?: number }
+  // Custom properties (api-model NetworkAttachment.properties, Property[] of
+  // name/value: bridge_opts and any admin-defined key). Presence of the key
+  // REPLACES the attachment's whole set: NetworkAttachmentMapper checks
+  // isSetProperties and then calls setProperties with the given map, so callers
+  // send the complete set and [] to clear it. Omission keeps the existing
+  // properties, since mapNetworkAttachment maps over the stored attachment.
+  properties?: { name: string; value: string }[]
 }
 
 // A bond to create (no id) or edit (id set) in modified_bonds. HostService
@@ -734,6 +821,17 @@ export async function setupHostNetworks(id: string, spec: SetupNetworksSpec): Pr
             qos.outbound_average_upperlimit = entry.qos.upperlimit
           if (entry.qos.realtime !== undefined) qos.outbound_average_realtime = entry.qos.realtime
           attachment.qos = qos
+        }
+        // Custom properties ride as the wrapped list properties.property[]; an
+        // empty list keeps the wrapper so the key is still present and the
+        // engine clears the set (see NetworkAttachmentSpec.properties).
+        if (entry.properties) {
+          attachment.properties = {
+            property: entry.properties.map((property) => ({
+              name: property.name,
+              value: property.value,
+            })),
+          }
         }
         return attachment
       }),

@@ -255,12 +255,34 @@ function parseLocalPath(raw: string): string | undefined {
 export function NewStorageDomainModal({
   isOpen,
   onClose,
+  initialDataCenter,
+  initialDomainFunction,
+  initialHostName,
 }: {
   isOpen: boolean
   onClose: () => void
+  // Pre-scoping for surfaces that open this from inside one data center (the
+  // Guide Me steps). Defaults only: every field stays editable. A local data
+  // center preselects "Local on Host", as picking it in the select does.
+  initialDataCenter?: { id: string; local?: boolean }
+  initialDomainFunction?: 'data' | 'iso'
+  initialHostName?: string
 }) {
   const t = useT()
-  const [draft, setDraft] = useState<StorageDomainDraft>(blankDraft)
+  // The blank draft with the pre-scoping applied; also what a save resets to.
+  const seededDraft = (): StorageDomainDraft => {
+    const draft = blankDraft()
+    if (initialDataCenter) {
+      draft.dataCenterId = initialDataCenter.id
+      if (initialDataCenter.local === true) draft.storageType = 'localfs'
+    }
+    if (initialDomainFunction) {
+      draft.type = coerceDomainFunction(draft.storageType, initialDomainFunction)
+    }
+    if (initialHostName) draft.hostName = initialHostName
+    return draft
+  }
+  const [draft, setDraft] = useState<StorageDomainDraft>(seededDraft)
   const [connectionExpanded, setConnectionExpanded] = useState(false)
   const [advancedExpanded, setAdvancedExpanded] = useState(false)
 
@@ -420,7 +442,7 @@ export function NewStorageDomainModal({
     criticalError !== undefined
 
   const onSaved = () => {
-    setDraft(blankDraft())
+    setDraft(seededDraft())
     setConnectionExpanded(false)
     setAdvancedExpanded(false)
     setVgDataLoss([])

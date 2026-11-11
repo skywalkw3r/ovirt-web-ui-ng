@@ -284,6 +284,24 @@ export async function listUserGroups(userId: string): Promise<OvirtGroup[]> {
   }
 }
 
+// The signed-in principal's directory groups — webadmin's "My Groups" radio in
+// the Add Permission dialog (AdElementListModel.searchMyGroups →
+// GetDirectoryGroupsForUser, which reads the CURRENT session's user). REST has
+// no "me" alias, so resolve the session's DB user id off the api root
+// (authenticated_user is a bare { id, href } link on live engines) and read
+// GET /users/{id}/groups (DomainUserGroupsService → GetAuthzGroupsByUserId).
+// These rows are DIRECTORY groups: their id is the encoded external id
+// (GroupMapper.map(AuthzGroup)), not an engine-DB GUID, so granting one goes
+// through the materialize-then-grant path (permissionGrants.ts). A root
+// without an authenticated user (should not happen on a live session) yields
+// an empty list rather than an error.
+export async function listMyGroups(): Promise<OvirtGroup[]> {
+  const root = AuthenticatedRootSchema.parse(await request(''))
+  const userId = root.authenticated_user?.id
+  if (userId === undefined || userId === '') return []
+  return listUserGroups(userId)
+}
+
 // GET /users/{id}/permissions?follow=role — AssignedPermissionsService under a
 // user: the grants where this user is the assignee. Only the role is followed
 // — follow=user,group makes live engines answer HTTP 500 (see

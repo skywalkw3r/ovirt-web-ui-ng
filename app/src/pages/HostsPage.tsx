@@ -20,6 +20,7 @@ import { useCapabilities } from '../auth/capabilities'
 import { useT } from '../i18n/useT'
 import type { MessageId } from '../i18n/messages/en'
 import { useClustersInventory, useDataCenters } from '../hooks/useAdminResources'
+import { useContextMenu } from '../components/context-menu/ContextMenu'
 import { HostActionsMenu } from '../components/host-actions/HostActionsMenu'
 import { HostedEngineCrown } from '../components/HostedEngineCrown'
 import { HostStatusCell, UsageBar, VmCountCell } from '../components/HostListCells'
@@ -233,6 +234,12 @@ export function HostsPage() {
   )
   const prefs = useColumnPrefs('hosts', columns)
   const [creating, setCreating] = useState(false)
+  // Right-clicking a row opens the row kebab's item set at the cursor (same
+  // wiring as VmsPage). ctx is the Host snapshot from the click; the target
+  // lives until that menu (and any modal/mutation it owns) settles. The page
+  // is admin-only (gate below), so the menu inherits the kebab's gating.
+  const contextMenu = useContextMenu<Host>()
+  const menuTarget = contextMenu.target
 
   // Header sorting: no default — the engine's search-DSL order (or SORTBY in
   // the query) stands until a header is clicked. A sort change re-orders the
@@ -394,7 +401,7 @@ export function HostsPage() {
             </Thead>
             <Tbody>
               {paged.map((host) => (
-                <Tr key={host.id}>
+                <Tr key={host.id} onContextMenu={(event) => contextMenu.open(event, host)}>
                   {visibleColumns.map((column) => (
                     <Td key={column.key} dataLabel={column.label}>
                       {column.cell(host, columnCtx)}
@@ -408,6 +415,18 @@ export function HostsPage() {
             </Tbody>
           </Table>
         </div>
+      )}
+
+      {/* Right-click twin of the row kebab: the same dual-mode menu component
+          rendered once at the cursor with this page's kebab props (plain
+          host: no Open details or Add VM, exactly like the kebab), keyed by
+          token so re-opening (same or another row) remounts fresh. */}
+      {menuTarget !== null && (
+        <HostActionsMenu
+          key={`${menuTarget.ctx.id}-${menuTarget.token}`}
+          host={menuTarget.ctx}
+          contextMenu={{ position: menuTarget.position, onClose: contextMenu.close }}
+        />
       )}
     </PageSection>
   )

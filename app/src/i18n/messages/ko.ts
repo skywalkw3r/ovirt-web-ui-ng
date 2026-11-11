@@ -187,7 +187,7 @@ export const ko: LocaleCatalog = {
   'inventory.tree.ariaLabel': 'VM 및 템플릿 폴더',
   'inventory.sidebar.resize': '사이드바 크기 조정',
   'inventory.filter.ariaLabel': '이름별로 VM 및 템플릿 필터링',
-  'inventory.filter.hint': '이름으로 필터링',
+  'inventory.filter.hint': '이름, folder:/prod/web 또는 tag:pci-dss로 필터링',
   'infra.filter.ariaLabel': '이름으로 인프라 필터링',
   'infra.filter.hint': '이름으로 필터링',
   'inventory.column.type': '유형',
@@ -417,7 +417,7 @@ export const ko: LocaleCatalog = {
   'vms.searchEmpty.matches': '{query}와 일치하는 항목이 없습니다.',
   'vms.empty.title': '가상 머신 없음',
   'vms.empty.body': '볼 수 있는 권한이 있는 VM이 여기에 표시됩니다.',
-  'vms.search.hint': 'name = web * 및 status = up — 또는 일반 텍스트',
+  'vms.search.hint': 'name=web* and status=up, folder:/prod/web, tag:pci-dss 또는 일반 텍스트',
   'vms.search.ariaLabel': '가상 머신 검색',
   'vms.pagination.ariaLabel': '가상 머신 페이지 매김',
   'vms.table.ariaLabel': '가상 머신',
@@ -1040,6 +1040,39 @@ export const ko: LocaleCatalog = {
   'permissions.add.role.none': '이 엔진에서 할당할 수 있는 역할이 없습니다.',
   'permissions.add.role.userGroup': '사용자 권한',
   'permissions.add.role.adminGroup': '관리 역할',
+  // Add Permission picker depth (issue #31): multi-select, My groups,
+  // Everyone, and directory search.
+  'permissions.add.kind.myGroups': '내 그룹',
+  'permissions.add.kind.everyone': '모든 사용자',
+  'permissions.add.source.label': '검색 대상',
+  'permissions.add.source.engine': '엔진 데이터베이스',
+  'permissions.add.source.directory': '디렉터리: {domain}',
+  'permissions.add.source.domainsLoading': '디렉터리 로드 중',
+  'permissions.add.source.domainsError': '디렉터리를 로드할 수 없음: {message}',
+  'permissions.add.source.directoryHint':
+    '디렉터리에서 찾은 주체 중 아직 엔진에 없는 주체는 역할을 부여할 때 엔진에 추가됩니다.',
+  'permissions.add.empty.directory.users': '이 디렉터리에서 반환된 사용자가 없습니다.',
+  'permissions.add.empty.directory.groups': '이 디렉터리에서 반환된 그룹이 없습니다.',
+  'permissions.add.myGroups.loading': '내 그룹 로드 중',
+  'permissions.add.myGroups.error': '내 그룹을 로드할 수 없음: {message}',
+  'permissions.add.myGroups.empty.title': '그룹 없음',
+  'permissions.add.myGroups.empty.body': '이 계정은 어떤 디렉터리 그룹의 구성원도 아닙니다.',
+  'permissions.add.myGroups.table.ariaLabel': '내 그룹',
+  'permissions.add.everyone.body':
+    '역할이 기본 제공 Everyone 그룹에 부여되므로 모든 사용자가 이 {noun}에서 해당 역할을 갖습니다.',
+  'permissions.add.selectMany.user': '역할을 부여할 사용자를 하나 이상 선택합니다.',
+  'permissions.add.selectMany.group': '역할을 부여할 그룹을 하나 이상 선택합니다.',
+  'permissions.add.selected.count': '{count, plural, other {주체 #개 선택됨}}',
+  'permissions.add.selected.ariaLabel': '선택한 주체',
+  'permissions.add.selected.remove': '선택에서 {name} 제거',
+  'permissions.add.result.failed.title':
+    '{count, plural, other {주체 #개에 역할을 부여할 수 없음}}',
+  'permissions.add.result.failed.body':
+    '실패한 주체는 선택된 상태로 유지됩니다. 원인을 해결한 후 다시 시도하거나 선택에서 제거하십시오.',
+  'permissions.add.result.failed.item': '{name}: {message}',
+  'permissions.add.submit.retry': '실패 항목 재시도',
+  'permissions.add.toast.granted': '{name}에게 {role} 부여됨',
+  'permissions.add.toast.grantedMany': '주체 {count, plural, other {#개}}에게 {role} 부여됨',
   'users.notPermitted': '사용자',
   'users.title': '사용자',
   'users.search.hint': 'usrname = jdoe * — 또는 일반 텍스트',
@@ -1723,6 +1756,11 @@ export const ko: LocaleCatalog = {
   'settings.pref.console.vncDescription': 'noVNC 및 대부분의 데스크톱 뷰어와 작동합니다.',
   'settings.pref.console.spiceDescription': 'virt-viewer를 통한 더 풍부한 원격 환경입니다.',
   'settings.pref.language': '언어',
+  // Roaming note (components/UserMenu, settings/RoamingSettingsProvider)
+  'settings.pref.roaming.synced':
+    'oVirt 사용자 프로필에 저장되므로 다른 브라우저에서도 적용됩니다.',
+  'settings.pref.roaming.local':
+    '이 브라우저에만 저장됩니다. oVirt 사용자 프로필에 저장할 수 없습니다.',
   'settings.refresh.seconds': '{count, plural, other {#초}}',
   'settings.timeout.minutes': '{count, plural, other {#분}}',
   'settings.timeout.hours': '{count, plural, other {#시간}}',
@@ -1899,7 +1937,9 @@ export const ko: LocaleCatalog = {
   'hostNuma.empty.body': '이 호스트는 NUMA 노드를 보고하지 않습니다.',
   'hostNuma.error.title': 'NUMA 토폴로지를 로드할 수 없습니다',
   'hostNuma.loading': 'NUMA 토폴로지 로드 중',
-  'host.cockpit.open': 'Cockpit',
+  'host.console.open': '호스트 콘솔',
+  'host.console.newTab': '새 탭에서 Cockpit을 엽니다',
+  'host.console.tooltip': '{name}의 Cockpit 인터페이스 열기',
   'datacenters.forceRemove.action': '강제 제거',
   'datacenters.forceRemove.confirm.title': "''{name}'' 데이터 센터를 강제로 제거하시겠습니까?",
   'datacenters.forceRemove.confirm.body':
@@ -2194,7 +2234,7 @@ export const ko: LocaleCatalog = {
   'dc.field.macPool': 'MAC 주소 풀',
   'search.autocomplete.hint': '검색 구문',
   'templates.title': '템플릿',
-  'templates.search.hint': 'name=web* — 또는 일반 텍스트',
+  'templates.search.hint': 'name=web*, folder:/prod, tag:legacy 또는 일반 텍스트',
   'templates.search.ariaLabel': '템플릿 검색',
   'templates.pagination.ariaLabel': '템플릿 페이지 매김',
   'templates.loading': '템플릿 로드 중',
@@ -2240,27 +2280,27 @@ export const ko: LocaleCatalog = {
   'templateForm.stateless': '무상태',
   'templateForm.deleteProtection': '삭제 보호',
   'templateForm.aria.deleteProtection': '삭제 보호',
-  'templateForm.section.system': '시스템',
-  'templateForm.memory': '메모리 크기 (MB)',
-  'templateForm.guaranteedMemory': '보장된 물리 메모리 (MB)',
-  'templateForm.maxMemory': '최대 메모리 (MB)',
   'templateForm.sockets': '가상 소켓',
   'templateForm.cores': '가상 소켓당 코어',
   'templateForm.threads': '코어당 스레드',
-  'templateForm.section.ha': '고가용성',
-  'templateForm.ha': '고가용성',
-  'templateForm.ha.priority': '우선순위',
-  'templateForm.aria.haPriority': '고가용성 우선순위',
-  'templateForm.ha.priorityHelp':
-    '값이 높을수록 먼저 다시 시작됩니다 (webadmin은 낮음 1, 중간 50, 높음 100으로 분류).',
-  'templateForm.section.console': '콘솔',
-  'templateForm.monitors': '모니터',
-  'templateForm.usb': 'USB 활성화됨',
-  'templateForm.smartcard': '스마트카드 활성화됨',
-  'templateForm.soundcard': '사운드카드 활성화됨',
   'templateForm.memory.error.positive': '메모리 크기는 0보다 커야 합니다',
   'templateForm.memory.error.guaranteed': '보장된 물리 메모리는 메모리 크기를 초과할 수 없습니다',
   'templateForm.memory.error.max': '최대 메모리는 메모리 크기보다 작을 수 없습니다',
+  // New template (standalone) and the sectioned template dialog (#28)
+  'templateForm.title.new': '새 템플릿',
+  'templateForm.newAction': '새 템플릿',
+  'templateForm.sections.ariaLabel': '템플릿 섹션',
+  'templateForm.sourceVm': '소스 VM',
+  'templateForm.sourceVm.placeholder': '전원이 꺼진 VM 선택',
+  'templateForm.sourceVm.help':
+    '새 템플릿은 이 VM의 디스크와 구성을 복사합니다. 전원이 꺼진 VM만 사용할 수 있습니다. 이 대화 상자에서 변경한 내용이 VM의 설정을 대체합니다.',
+  'templateForm.sourceVm.empty': '전원이 꺼진 VM이 없습니다. VM을 종료한 후 템플릿을 만드십시오.',
+  'templateForm.sourceVm.disksNote':
+    '디스크는 현재 스토리지 도메인에 복사됩니다. 디스크 할당, 하위 버전 또는 봉인이 필요하면 VM에서 템플릿 만들기를 사용하십시오.',
+  'templateForm.sourceVm.loading': 'VM 구성 로드 중',
+  'templateForm.sourceVm.error': 'VM 구성을 로드할 수 없습니다.',
+  'templateForm.sourceVm.hint':
+    '소스 VM을 선택하면 템플릿의 시스템, 콘솔 및 기타 설정을 지정할 수 있습니다.',
   'templateExport.title': '{name}을(를) OVA로 내보내기',
   'templateExport.host': '호스트',
   'templateExport.host.placeholder': '호스트 선택',
@@ -3257,6 +3297,9 @@ export const ko: LocaleCatalog = {
   'hostForm.field.rootPassword': 'root 비밀번호',
   'hostForm.field.sshPort': 'SSH 포트',
   'hostForm.field.sshUser': 'SSH 사용자',
+  'hostForm.firewall.configure': '호스트 방화벽 자동 구성',
+  'hostForm.firewall.configure.help':
+    '설치 과정에서 클러스터의 방화벽 유형을 사용해 oVirt에 필요한 포트를 호스트 방화벽에서 엽니다. 호스트 방화벽을 직접 관리하는 경우에만 끄십시오. 이 경우 필요한 포트를 수동으로 열어야 합니다.',
   'hostForm.hostedEngine.deploy': 'Hosted engine 배포',
   'hostForm.hostedEngine.deploy.help':
     '설치 시 자체 호스팅 엔진 구성 요소도 배포되므로, 이 호스트는 기존 hosted-engine 호스트와 함께 엔진 VM을 실행할 수 있습니다. 일반 가상화 호스트의 경우 끄십시오.',
@@ -3382,11 +3425,7 @@ export const ko: LocaleCatalog = {
   'importStorage.domainId.label': '스토리지 도메인 ID',
   'instanceTypeForm.aria.description': '인스턴스 유형 설명',
   'instanceTypeForm.aria.name': '인스턴스 유형 이름',
-  'instanceTypeForm.memory.error.guaranteed':
-    '보장된 물리 메모리는 메모리 크기를 초과할 수 없습니다',
-  'instanceTypeForm.memory.error.max': '최대 메모리는 메모리 크기보다 작을 수 없습니다',
-  'instanceTypeForm.memory.error.positive': '메모리 크기는 0보다 커야 합니다',
-  'instanceTypeForm.section.cpu': '가상 CPU',
+  'instanceTypeForm.sections.ariaLabel': '인스턴스 유형 섹션',
   'instanceTypeForm.title.edit': '인스턴스 유형 편집 — {name}',
   'instanceTypeForm.title.new': '새 인스턴스 유형',
   'instanceTypes.column.guaranteed': '보장된 메모리',
@@ -3695,6 +3734,10 @@ export const ko: LocaleCatalog = {
   'schedulingPolicy.weights.factorError': '각 계수는 1 이상의 정수여야 합니다.',
   'schedulingPolicy.weights.label': '가중치 모듈',
   'setupNetworks.aria.configureSriov': '{name}의 SR-IOV 구성',
+  'setupNetworks.aria.customPropertyAdd': '{name}에 사용자 지정 속성 추가',
+  'setupNetworks.aria.customPropertyKey': '{name}의 사용자 지정 속성 {index} 키',
+  'setupNetworks.aria.customPropertyRemove': '{name}에서 사용자 지정 속성 {index} 제거',
+  'setupNetworks.aria.customPropertyValue': '{name}의 사용자 지정 속성 {index} 값',
   'setupNetworks.aria.labelsOn': '{name}의 레이블',
   'setupNetworks.aria.newLabel': '{name}의 새 레이블',
   'setupNetworks.aria.qosField': '{name}의 {label}',
@@ -3704,6 +3747,15 @@ export const ko: LocaleCatalog = {
   'setupNetworks.bondMode.mode2': '부하 분산 — balance-xor (모드 2)',
   'setupNetworks.bondMode.mode4': '동적 링크 집계 — 802.3ad (모드 4)',
   'setupNetworks.bondMode.mode5': '적응형 전송 부하 분산 — balance-tlb (모드 5)',
+  'setupNetworks.customProperties.add': '사용자 지정 속성 추가',
+  'setupNetworks.customProperties.freeForm':
+    '엔진이 허용하는 키를 보고하지 않았으므로 키는 저장할 때만 확인됩니다.',
+  'setupNetworks.customProperties.help':
+    '호스트에서 이 네트워크에 적용되는 키/값 옵션입니다. 예를 들어 bridge_opts는 VM 네트워크의 브리지를 조정합니다. 사용 가능한 키는 엔진 구성에서 가져옵니다.',
+  'setupNetworks.customProperties.keyPlaceholder': '키 선택',
+  'setupNetworks.customProperties.label': '사용자 지정 속성',
+  'setupNetworks.customProperties.noKeys':
+    '엔진이 이 네트워크에 허용하는 사용자 지정 속성 키가 없습니다.',
   'setupNetworks.labels.add': '레이블 추가',
   'setupNetworks.labels.help':
     '이 NIC에 연결된 네트워크 레이블입니다. 엔진은 일치하는 레이블을 지닌 모든 네트워크를 NIC에 자동으로 연결합니다.',
@@ -3754,6 +3806,14 @@ export const ko: LocaleCatalog = {
   'setupNetworks.sriov.networks.removeAria': '허용된 네트워크 {name} 제거',
   'setupNetworks.sriov.networks.selectPlaceholder': '네트워크 선택',
   'setupNetworks.sriov.title': 'SR-IOV 구성 — {name}',
+  'setupNetworks.validation.customPropertyBridgeOpts': '{key}은(는) VM 네트워크에만 적용됩니다',
+  'setupNetworks.validation.customPropertyDuplicate': '{key}은(는) 이미 설정되어 있습니다',
+  'setupNetworks.validation.customPropertyKey': '키에는 문자, 숫자, 밑줄만 사용할 수 있습니다',
+  'setupNetworks.validation.customPropertyKeyRequired': '이 값의 키를 입력하십시오',
+  'setupNetworks.validation.customPropertyUnknown':
+    '{key}은(는) 이 엔진이 허용하는 사용자 지정 속성이 아닙니다',
+  'setupNetworks.validation.customPropertyValue': '{key} 값은 {format}과(와) 일치해야 합니다',
+  'setupNetworks.validation.customPropertyValueSyntax': '값에는 세미콜론을 사용할 수 없습니다',
   'setupNetworks.validation.ipv4': '유효한 IPv4 주소를 입력하십시오',
   'setupNetworks.validation.ipv6': '유효한 IPv6 주소를 입력하십시오',
   'setupNetworks.validation.managementGuard':
@@ -4492,6 +4552,84 @@ export const ko: LocaleCatalog = {
     'watchdog 변경에 실패하여 아무것도 저장되지 않았습니다: {message}. 다시 시도하려면 다시 저장하십시오.',
   'vm.edit.save.nextRunRefreshFailed':
     'watchdog은 저장되었지만 VM의 보류 중인 다음 실행 구성이 갱신되지 않아 다음 종료 시 엔진이 변경 사항을 되돌릴 수 있습니다: {message}. 다시 시도하려면 다시 저장하십시오.',
+  'vm.edit.pinning.title': 'CPU 고정',
+  'vm.edit.pinning.policy': 'CPU 고정 정책',
+  'vm.edit.pinning.policy.none': '없음',
+  'vm.edit.pinning.policy.manual': '수동',
+  'vm.edit.pinning.policy.resizeAndPin': '크기 조정 및 NUMA 고정',
+  'vm.edit.pinning.policy.dedicated': '전용',
+  'vm.edit.pinning.policy.isolateThreads': '스레드 격리',
+  'vm.edit.pinning.topology': 'CPU 고정 토폴로지',
+  'vm.edit.pinning.hint.manualNeedsHost':
+    '수동 고정을 사용하려면 VM이 특정 호스트에서 실행되어야 합니다.',
+  'vm.edit.pinning.hint.dedicatedNeedsVersion':
+    '전용 및 스레드 격리에는 클러스터 호환 버전 4.7 이상이 필요합니다.',
+  'vm.edit.pinning.hint.dedicatedNumaPinned':
+    '가상 NUMA 노드가 고정되어 있는 동안에는 전용 및 스레드 격리를 사용할 수 없습니다.',
+  'vm.edit.pinning.hint.resizeAndPin':
+    '크기 조정 및 NUMA 고정은 VM이 시작될 때 호스트에 맞춰 CPU 토폴로지와 가상 NUMA 노드를 정합니다.',
+  'vm.edit.pinning.error.required': '고정 토폴로지를 입력하십시오(예: 0#0_1#1-3).',
+  'vm.edit.pinning.error.syntax':
+    'vCPU#호스트CPU 형식의 항목을 _로 연결하여 작성하십시오(예: 0#0_1#1-3 또는 0#0-3,^2).',
+  'vm.edit.pinning.error.needsHost':
+    '수동 고정을 사용하려면 VM이 특정 호스트에서 실행되어야 합니다.',
+  'vm.edit.pinning.error.vcpuMissing':
+    'vCPU {vcpu}이(가) 없습니다. 이 VM의 vCPU는 0부터 {max}까지입니다.',
+  'vm.edit.pinning.error.duplicate': 'vCPU {vcpu}이(가) 두 번 이상 고정되었습니다.',
+  'vm.edit.pinning.error.noCpu': 'vCPU {vcpu}이(가) 어떤 호스트 CPU에도 고정되지 않았습니다.',
+  'fieldHelp.vm.cpuPinningPolicy':
+    'vCPU를 호스트 CPU에 매핑하는 방식입니다. 없음은 호스트에 맡기고, 수동은 아래 고정 토폴로지를 사용하며, 크기 조정 및 NUMA 고정은 호스트에 맞춰 VM 크기를 정하고 고정하고, 전용은 이 VM만을 위해 호스트 CPU를 예약하며, 스레드 격리는 여기에 더해 각 vCPU에 자체 물리 코어를 할당합니다. 실행 중인 VM에는 다음 시작 시 적용됩니다.',
+  'fieldHelp.vm.cpuPinningTopology':
+    '각 vCPU를 vCPU#CPU 형식으로 호스트 CPU에 고정하고 항목은 _로 연결합니다. CPU 집합에는 CPU(0,2), 범위(1-3), 제외(^2)를 나열합니다. 예: 0#0_1#1-3은 vCPU 0을 호스트 CPU 0에, vCPU 1을 호스트 CPU 1~3에 고정합니다.',
+  'fieldHelp.vm.numaCount':
+    '게스트에 보이는 가상 NUMA 노드 수입니다. vCPU와 메모리가 노드에 분배되며, 노드를 호스트 NUMA 노드에 고정하면 메모리를 로컬로 유지할 수 있습니다. 전원이 꺼진 VM에서만 변경할 수 있습니다.',
+  'vm.edit.numa.title': '가상 NUMA',
+  'vm.edit.numa.count': 'NUMA 노드 수',
+  'vm.edit.numa.loading': '가상 NUMA 노드 불러오는 중',
+  'vm.edit.numa.loadError': '가상 NUMA 노드를 불러올 수 없습니다. 변경되지 않습니다',
+  'vm.edit.numa.hint.running': '가상 NUMA 노드는 VM이 중지된 동안에만 변경할 수 있습니다.',
+  'vm.edit.numa.hint.needsHost':
+    '노드를 호스트 NUMA 노드에 고정하려면 VM이 특정 호스트에서 실행되어야 합니다.',
+  'vm.edit.numa.hint.hostLoading': '호스트 NUMA 토폴로지 불러오는 중',
+  'vm.edit.numa.hint.hostError': '호스트 NUMA 토폴로지를 불러올 수 없습니다',
+  'vm.edit.numa.table': '가상 NUMA 노드',
+  'vm.edit.numa.column.node': '노드',
+  'vm.edit.numa.column.resources': 'vCPU 및 메모리',
+  'vm.edit.numa.column.tune': '튜닝 모드',
+  'vm.edit.numa.column.hostNode': '호스트 NUMA 노드',
+  'vm.edit.numa.resources': 'vCPU {cpus}, {memory} MB',
+  'vm.edit.numa.tuneLabel': 'NUMA 노드 {index}의 튜닝 모드',
+  'vm.edit.numa.pinLabel': 'NUMA 노드 {index}의 호스트 NUMA 노드',
+  'vm.edit.numa.pin.none': '고정 안 함',
+  'vm.edit.numa.pin.hostNode': '호스트 노드 {index}',
+  'vm.edit.numa.tune.interleave': '인터리브(Interleave)',
+  'vm.edit.numa.tune.strict': '엄격(Strict)',
+  'vm.edit.numa.tune.preferred': '우선(Preferred)',
+  'vm.edit.numa.error.preferred':
+    '우선은 단일 호스트 노드에 고정된 단일 가상 NUMA 노드에서만 작동합니다.',
+  'vm.edit.numa.error.tooManyNodes':
+    'VM의 vCPU가 {cpus}개이므로 NUMA 노드를 {count}개 가질 수 없습니다.',
+  'vm.edit.numa.error.pinsNeedHost':
+    '고정된 NUMA 노드를 사용하려면 VM이 특정 호스트에서 실행되어야 합니다.',
+  'vm.edit.numa.error.pinsWithDedicated':
+    '전용 및 스레드 격리는 고정된 NUMA 노드와 함께 사용할 수 없습니다.',
+  'vm.edit.numa.error.hostUnsupported':
+    '호스트 {host}이(가) NUMA 토폴로지를 보고하지 않으므로 이 호스트에서 실행되는 VM은 가상 NUMA 노드를 가질 수 없습니다.',
+  'vm.edit.numa.error.hostNodeMissing': '호스트 {host}에 NUMA 노드 {hostNode}이(가) 없습니다.',
+  'vm.edit.numa.error.memory':
+    '가상 NUMA 노드 {node}에는 호스트 {host}의 노드 {hostNode}보다 많은 메모리가 필요하며, 엄격 모드에서는 허용되지 않습니다.',
+  'vm.edit.save.numaBeforeVmFailed':
+    '이전 가상 NUMA 노드를 제거하지 못해 VM이 저장되지 않았습니다: {message}. 다시 시도하려면 다시 저장하십시오.',
+  'vm.edit.save.vmFailedAfterNuma':
+    '이전 가상 NUMA 노드는 제거되었지만 VM을 저장할 수 없어 새 노드가 추가되지 않았습니다: {message}. 다시 시도하려면 다시 저장하십시오.',
+  'vm.edit.save.numaAfterVmFailed':
+    'VM은 저장되었지만 가상 NUMA 변경에 실패했습니다: {message}. 다시 시도하려면 다시 저장하십시오.',
+  'vm.edit.save.numaFailed':
+    '가상 NUMA 변경에 실패했습니다: {message}. 다시 시도하려면 다시 저장하십시오.',
+  'vm.edit.save.numaState':
+    '이제 VM에 {count, plural, =0 {가상 NUMA 노드가 없습니다} other {가상 NUMA 노드가 #개 있습니다}}.',
+  'vm.edit.save.numaStateUnknown':
+    '가상 NUMA 노드를 다시 읽을 수 없습니다. 현재 토폴로지를 보려면 대화 상자를 다시 여십시오.',
   'vm.edit.save.cdFailed':
     'VM은 저장되었지만 CD 변경에 실패했습니다: {message}. 다시 시도하려면 다시 저장하십시오.',
   'vm.create.watchdog.templateError':
@@ -4686,6 +4824,120 @@ export const ko: LocaleCatalog = {
   'host.configureLocalStorage.outcome.undoStopped': '부분 설정 취소가 중단되었습니다: {error}',
   'host.configureLocalStorage.outcome.rerunHint':
     '완료하려면 필요한 경우 호스트를 유지 관리 모드로 전환한 후 "로컬 스토리지 구성"을 다시 실행하십시오. 빈 로컬 데이터 센터가 다시 사용됩니다.',
+  // Guide Me (data center and cluster next steps)
+  'guideMe.action': '가이드',
+  'guideMe.title': '가이드: {name}',
+  'guideMe.loading': '다음 단계를 불러오는 중',
+  'guideMe.error.title': '다음 단계를 불러올 수 없습니다',
+  'guideMe.dataCenter.created': '데이터 센터가 생성되었습니다.',
+  'guideMe.dataCenter.configured': '데이터 센터가 완전히 구성되어 사용할 준비가 되었습니다.',
+  'guideMe.cluster.created': '클러스터가 생성되었습니다.',
+  'guideMe.cluster.configured': '클러스터가 완전히 구성되어 사용할 준비가 되었습니다.',
+  'guideMe.configured.title': '구성 완료',
+  'guideMe.unconfigured': '아직 구성해야 할 엔터티가 있습니다.',
+  'guideMe.section.required': '필수 단계',
+  'guideMe.section.optional': '선택 단계',
+  'guideMe.configureLater': '나중에 구성',
+  'guideMe.step.configureCluster': '클러스터 구성',
+  'guideMe.step.addAnotherCluster': '다른 클러스터 추가',
+  'guideMe.step.configureHost': '호스트 구성',
+  'guideMe.step.addAnotherHost': '다른 호스트 추가',
+  'guideMe.step.configureStorage': '스토리지 구성',
+  'guideMe.step.addMoreStorage': '스토리지 추가',
+  'guideMe.step.attachStorage': '스토리지 연결',
+  'guideMe.step.attachMoreStorage': '스토리지 더 연결',
+  'guideMe.step.configureIsoLibrary': 'ISO 라이브러리 구성',
+  'guideMe.step.attachIsoLibrary': 'ISO 라이브러리 연결',
+  'guideMe.step.addLocalStorage': '로컬 스토리지 추가',
+  'guideMe.reason.noUpHost': '데이터 센터에 활성 호스트가 하나 이상 있어야 합니다.',
+  'guideMe.reason.noCluster': '먼저 데이터 센터에 클러스터를 추가하세요.',
+  'guideMe.reason.noUnattachedData': '연결할 수 있는 미연결 데이터 도메인이 없습니다.',
+  'guideMe.reason.noActiveMaster': '데이터 센터에 먼저 활성 마스터 데이터 도메인이 있어야 합니다.',
+  'guideMe.reason.noIsoDomain': '연결할 수 있는 ISO 도메인이 없습니다.',
+  'guideMe.reason.localDcHasHost':
+    '로컬 데이터 센터에는 호스트를 하나만 둘 수 있으며 이 데이터 센터에는 이미 있습니다.',
+  'guideMe.reason.dcInitialized': '데이터 센터가 이미 초기화되었습니다.',
+  'guideMe.reason.clusterLocalHasHost':
+    '이 클러스터는 이미 유일한 호스트가 있는 로컬 데이터 센터에 속합니다.',
+  'guideMe.note.localStorage':
+    '데이터 센터를 완전히 구성하려면 로컬 스토리지 도메인을 하나 이상 연결하고 활성화하세요.',
+  'guideMe.note.clusterNoActions':
+    '이 클러스터에 사용할 수 있는 작업이 없습니다: 데이터 센터에 연결되어 있지 않습니다.',
+  // Configure aggregate entry point (pages/ConfigurePage.tsx): the webadmin
+  // Administration › Configure index linking to its five surfaces.
+  'nav.configure': '구성',
+  'configure.title': '구성',
+  'configure.intro':
+    '모든 데이터 센터와 클러스터가 공유하는 엔진 전체 정의입니다. 각 항목은 자체 페이지에서 열립니다.',
+  'configure.loading': '구성 영역 로드 중',
+  'configure.notPermitted': '시스템 구성',
+  'configure.list.ariaLabel': '구성 영역',
+  'configure.card.roles': '역할과 각 역할이 사용자 및 관리자에게 부여하는 권한을 정의합니다.',
+  'configure.card.systemPermissions': '시스템 전체에서 사용자와 그룹에 역할을 할당합니다.',
+  'configure.card.schedulingPolicies':
+    '클러스터가 VM을 배치할 때 사용하는 필터, 가중치, 밸런싱 규칙을 관리합니다.',
+  'configure.card.instanceTypes': '새 가상 머신에 재사용할 하드웨어 프로필을 정의합니다.',
+  'configure.card.macPools': '가상 NIC에 할당되는 MAC 주소 범위를 관리합니다.',
+  // EDIT VM: Foreman/Satellite section (provider picker)
+  'vm.edit.section.foreman': 'Foreman/Satellite',
+  'vm.edit.foreman.provider': '공급자',
+  'vm.edit.foreman.none': '공급자 없음',
+  'vm.edit.foreman.unknown': '알 수 없는 공급자 ({id})',
+  'vm.edit.foreman.loading': 'Foreman/Satellite 공급자 로드 중',
+  'vm.edit.foreman.empty':
+    '등록된 Foreman/Satellite 공급자가 없습니다. 이 VM을 바인딩하려면 공급자 페이지에서 공급자를 추가하십시오.',
+  'vm.edit.foreman.help': '엔진은 선택한 Foreman/Satellite 공급자에서 이 VM의 정오표를 가져옵니다.',
+  // Template Storage tab + scoped Events tabs (issue #33) ----------------
+  'scopedEvents.loading': '이벤트 로드 중',
+  'scopedEvents.error.title': '이벤트를 로드할 수 없습니다',
+  'scopedEvents.empty.title': '이벤트 없음',
+  'templateDetail.tab.storage': '스토리지',
+  'templateDetail.tab.events': '이벤트',
+  'templateEvents.empty.body': '이 템플릿의 엔진 감사 로그 이벤트가 여기에 표시됩니다.',
+  'templateEvents.table.ariaLabel': '이 템플릿의 이벤트',
+  'templateStorage.empty.body': '이 템플릿의 디스크가 스토리지 도메인에 없습니다.',
+  'templateStorage.table.ariaLabel': '이 템플릿의 디스크를 보유한 스토리지 도메인',
+  'templateStorage.column.used': '사용 공간',
+  'templateStorage.column.disks': '디스크',
+  'templateStorage.expand.ariaLabel': '디스크 표시',
+  'templateStorage.disks.ariaLabel': '{name}의 템플릿 디스크',
+  'clusterDetail.tab.events': '이벤트',
+  'clusterEvents.empty.body': '이 클러스터의 엔진 감사 로그 이벤트가 여기에 표시됩니다.',
+  'clusterEvents.table.ariaLabel': '이 클러스터의 이벤트',
+  'dcDetail.tab.events': '이벤트',
+  'dcEvents.empty.body': '이 데이터 센터의 엔진 감사 로그 이벤트가 여기에 표시됩니다.',
+  'dcEvents.table.ariaLabel': '이 데이터 센터의 이벤트',
+  'storageDetail.tab.events': '이벤트',
+  'storageEvents.empty.body': '이 스토리지 도메인의 엔진 감사 로그 이벤트가 여기에 표시됩니다.',
+  'storageEvents.table.ariaLabel': '이 스토리지 도메인의 이벤트',
+  'quotaDetail.tab.events': '이벤트',
+  'quotaEvents.empty.body': '이 할당량의 엔진 감사 로그 이벤트가 여기에 표시됩니다.',
+  'quotaEvents.table.ariaLabel': '이 할당량의 이벤트',
+  // List-grid columns filled by a follow= or one shared read (issue #34)
+  'vms.column.cpu': 'CPU',
+  'vms.column.network': '네트워크',
+  'vms.column.ips': 'IP 주소',
+  'disks.column.attachedTo': '연결 대상',
+  'disks.column.quota': '할당량',
+  'networks.column.qos': 'QoS 이름',
+  'vnicProfiles.column.qos': 'QoS 이름',
+  'vnicProfiles.column.networkFilter': '네트워크 필터',
+  'pools.column.running': '실행 중인 VM',
+  'volumes.column.spaceUsed': '사용된 공간',
+  // UI extensions (docs/PLUGINS.md): sidebar group, plugin error state,
+  // plugin page states, About dialog plugin list ------------------------
+  'nav.group.extensions': '확장',
+  'extensions.error.title': '{plugin}에서 이 콘텐츠를 표시할 수 없습니다',
+  'extensions.page.loading': '확장 페이지를 불러오는 중',
+  'extensions.page.notFound.title': '확장 페이지를 사용할 수 없음',
+  'extensions.page.notFound.body':
+    '이 페이지를 제공하는 로드된 확장이 없습니다. 배포 구성에서 제거되었거나, 로드하지 못했거나, 계정에서 사용할 수 없을 수 있습니다.',
+  'extensions.page.notFound.back': '대시보드로 돌아가기',
+  'about.extensions': '확장',
+  'about.extensions.status.active': '로드됨',
+  'about.extensions.status.loading': '로드 중',
+  'about.extensions.status.skipped': '이 엔진에서는 로드되지 않음',
+  'about.extensions.status.failed': '실패: {reason}',
   // VM TPM device (Edit VM Resource Allocation, New VM wizard, General tab)
   'vm.edit.resources.tpm': 'TPM 장치 활성화됨',
   'vm.edit.resources.tpm.loading': 'TPM 장치 로드 중',

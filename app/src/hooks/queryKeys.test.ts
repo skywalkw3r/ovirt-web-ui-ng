@@ -326,6 +326,19 @@ describe('query-key builders', () => {
     expect(errataKeys.detail('e1').slice(0, 1)).toEqual([...errataKeys.all])
   })
 
+  it('pins the opt-in list-grid column joins (issue #34)', () => {
+    // under their list prefix so mutations refresh them, but three elements
+    // long so no searched list(search) entry can ever collide with them
+    expect(diskKeys.ownerNames).toEqual(['disks', 'owner-names', ''])
+    expect(diskKeys.ownerNames.slice(0, 1)).toEqual([...diskKeys.all])
+    expect(networkKeys.labelTexts).toEqual(['networks', 'label-texts', ''])
+    expect(networkKeys.labelTexts.slice(0, 1)).toEqual([...networkKeys.all])
+    expect(dataCenterKeys.allQoss).toEqual(['datacenter-qoss-all'])
+    // deliberately OUTSIDE ['vms']: prefix readers there expect Vm[] entries
+    expect(vmKeys.reportedIps('name=web*')).toEqual(['vm-reported-ips', 'name=web*'])
+    expect(vmKeys.reportedIps().slice(0, 1)).not.toEqual([...vmKeys.all])
+  })
+
   it('nests every id-keyed slice under its detail entry (detail invalidation reaches the tabs)', () => {
     // A detail-page mutation invalidates detail(id) and expects the tabs'
     // subcollection reads to refetch by prefix match. The name-keyed feeds

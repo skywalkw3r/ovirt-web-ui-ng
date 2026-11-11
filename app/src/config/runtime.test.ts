@@ -134,6 +134,58 @@ describe('getRuntimeConfig', () => {
   })
 })
 
+describe('getRuntimeConfig cockpit', () => {
+  it('defaults to enabled, port 9090, no SSO', () => {
+    inject(undefined)
+    expect(getRuntimeConfig().cockpit).toEqual({
+      enabled: true,
+      port: 9090,
+      ssoUrl: '',
+      ssoPage: 'machines',
+    })
+  })
+
+  it('honors enabled:false and a valid port', () => {
+    inject({ cockpit: { enabled: false, port: 9443 } })
+    expect(getRuntimeConfig().cockpit).toMatchObject({ enabled: false, port: 9443 })
+  })
+
+  it('falls back to 9090 on a bad port without dropping the rest of the config', () => {
+    for (const port of ['9090', 0, 70000, 90.5, null]) {
+      inject({ cockpit: { port }, login: { notice: 'kept' } })
+      expect(getRuntimeConfig().cockpit.port).toBe(9090)
+      expect(getRuntimeConfig().login.notice).toBe('kept')
+    }
+  })
+
+  it('keeps only the https origin of the SSO URL', () => {
+    inject({ cockpit: { ssoUrl: ' https://engine.example.com:9986/some/path?x=1 ' } })
+    expect(getRuntimeConfig().cockpit.ssoUrl).toBe('https://engine.example.com:9986')
+  })
+
+  it('drops an SSO URL that is not a plain https origin', () => {
+    for (const ssoUrl of [
+      'http://engine.example.com:9986',
+      'javascript:alert(1)',
+      '//engine.example.com:9986',
+      'https://user:pw@engine.example.com:9986',
+      'engine.example.com:9986',
+    ]) {
+      inject({ cockpit: { ssoUrl } })
+      expect(getRuntimeConfig().cockpit.ssoUrl).toBe('')
+    }
+  })
+
+  it('accepts a simple SSO page name and rejects anything path-like', () => {
+    inject({ cockpit: { ssoPage: 'system' } })
+    expect(getRuntimeConfig().cockpit.ssoPage).toBe('system')
+    for (const ssoPage of ['../x', 'a/b', 'a#b', '', 42]) {
+      inject({ cockpit: { ssoPage } })
+      expect(getRuntimeConfig().cockpit.ssoPage).toBe('machines')
+    }
+  })
+})
+
 describe('getRuntimeConfig servers', () => {
   // The server list is honored only in multi-engine-capable builds
   // (VITE_MULTI_ENGINE=1 — the Containerfile's proxy/external build); the
@@ -247,6 +299,21 @@ describe('getRuntimeConfig servers', () => {
   it('still accepts a same-origin path base (no cross-origin scheme to downgrade)', () => {
     injectAt({ servers: { list: [{ name: 'HE BBN', url: '/e/bbn' }] } })
     expect(getRuntimeConfig().servers).toEqual([{ name: 'HE BBN', base: '/e/bbn' }])
+  })
+
+  it('carries a per-engine Cockpit SSO origin and drops an unsafe one', () => {
+    injectAt({
+      servers: {
+        list: [
+          { name: 'HE 1', url: '/e/he1', cockpitSsoUrl: 'https://engine1.example.com:9986/x' },
+          { name: 'HE 2', url: '/e/he2', cockpitSsoUrl: 'http://engine2.example.com:9986' },
+        ],
+      },
+    })
+    expect(getRuntimeConfig().servers).toEqual([
+      { name: 'HE 1', base: '/e/he1', cockpitSsoUrl: 'https://engine1.example.com:9986' },
+      { name: 'HE 2', base: '/e/he2' },
+    ])
   })
 
   it('carries a per-engine profile and drops a blank one', () => {

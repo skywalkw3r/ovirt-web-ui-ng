@@ -28,15 +28,19 @@ import { ListPageHeader } from '../components/ListPageHeader'
 import { StatusBadge } from '../components/StatusBadge'
 import { TemplateExportModal } from '../components/template-form/TemplateExportModal'
 import { TemplateFormModal } from '../components/template-form/TemplateFormModal'
+import { ScopedEventsTab } from '../components/events/ScopedEventsTab'
 import { TemplateDisksTab } from '../components/template-tabs/TemplateDisksTab'
 import { TemplateGeneralTab } from '../components/template-tabs/TemplateGeneralTab'
 import { TemplateNicsTab } from '../components/template-tabs/TemplateNicsTab'
 import { TemplatePermissionsTab } from '../components/template-tabs/TemplatePermissionsTab'
+import { TemplateStorageTab } from '../components/template-tabs/TemplateStorageTab'
 import { TemplateVmsTab } from '../components/template-tabs/TemplateVmsTab'
 import { useTemplate } from '../hooks/useTemplateDetail'
 import { useDeleteTemplate } from '../hooks/useTemplateMutations'
 import { statusText } from '../lib/format'
+import { scopedEventsSearch } from '../lib/scopedEvents'
 import { templateDetailRoute } from '../routes/router'
+import { useExtensionTabs } from '../extensions/useExtensionTabs'
 
 // A template's status is an open string ('ok' | 'locked' | 'illegal'). Only the
 // two states that block use get a signal color; a healthy template stays quiet.
@@ -50,6 +54,8 @@ function TemplateStatusLabel({ status }: { status?: string }) {
 export function TemplateDetailPage() {
   const { templateId } = templateDetailRoute.useParams()
   const template = useTemplate(templateId)
+  // plugin subtabs (docs/PLUGINS.md); a hook, so above any early return
+  const extensionTabs = useExtensionTabs('template', template.data)
   const navigate = useNavigate()
   const t = useT()
   const [activeKey, setActiveKey] = useState<string | number>('general')
@@ -264,6 +270,14 @@ export function TemplateDetailPage() {
               </TabContentBody>
             </Tab>
             <Tab
+              eventKey="storage"
+              title={<TabTitleText>{t('templateDetail.tab.storage')}</TabTitleText>}
+            >
+              <TabContentBody hasPadding>
+                <TemplateStorageTab templateId={templateId} />
+              </TabContentBody>
+            </Tab>
+            <Tab
               eventKey="permissions"
               title={<TabTitleText>{t('templateDetail.tab.permissions')}</TabTitleText>}
             >
@@ -271,6 +285,19 @@ export function TemplateDetailPage() {
                 <TemplatePermissionsTab templateId={templateId} />
               </TabContentBody>
             </Tab>
+            <Tab
+              eventKey="events"
+              title={<TabTitleText>{t('templateDetail.tab.events')}</TabTitleText>}
+            >
+              <TabContentBody hasPadding>
+                <ScopedEventsTab
+                  search={scopedEventsSearch.template(template.data.name)}
+                  ariaLabel={t('templateEvents.table.ariaLabel')}
+                  emptyBody={t('templateEvents.empty.body')}
+                />
+              </TabContentBody>
+            </Tab>
+            {extensionTabs}
           </Tabs>
         </>
       )}

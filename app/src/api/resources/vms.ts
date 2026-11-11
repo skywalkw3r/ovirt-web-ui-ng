@@ -47,6 +47,49 @@ export async function listVms(
   )
 }
 
+// The VMs grid's IP Addresses column. The REST Vm never carries the guest IPs
+// (VmMapper maps vm_dynamic's fqdn but not its ip), so they come from each VM's
+// reporteddevices subcollection (guest-agent NICs). follow=reported_devices
+// inlines that subcollection on ONE list read instead of a per-VM fan-out; it
+// is a modeled link (types/Vm.java `@Link ReportedDevice[] reportedDevices`)
+// present on every VM, so an agent-less VM answers an empty wrapper rather
+// than the absent-link 500. The engine still runs one guest-interface query
+// per VM server-side, so the hook only issues this read while the column is
+// shown and the install is small (see useVmReportedIps). Degrades like the
+// main list: a 5xx / 400 / timeout is a sticky denial and the column renders
+// em dashes ({}) with no bare re-read, since a bare list has no IPs to show.
+const VmReportedDevicesListSchema = z.looseObject({
+  vm: z
+    .array(
+      z.looseObject({
+        id: z.string(),
+        reported_devices: ReportedDeviceListSchema.optional(),
+      }),
+    )
+    .optional(),
+})
+
+export async function listVmsReportedDevices(
+  opts: { search?: string; signal?: AbortSignal } = {},
+): Promise<Record<string, ReportedDevice[]>> {
+  const params = [
+    opts.search !== undefined ? `search=${encodeURIComponent(opts.search)}` : undefined,
+    'follow=reported_devices',
+  ].filter((param) => param !== undefined)
+  return fetchWithFollowFallback(
+    'vms.list:reported_devices',
+    async () => {
+      const data = VmReportedDevicesListSchema.parse(
+        await request(`/vms?${params.join('&')}`, { signal: opts.signal }),
+      )
+      return Object.fromEntries(
+        (data.vm ?? []).map((vm) => [vm.id, vm.reported_devices?.reported_device ?? []]),
+      )
+    },
+    async () => ({}),
+  )
+}
+
 // follow=cluster,template,host inlines the linked entities (name, etc.); the
 // live engine otherwise returns them as bare { id, href } links, so the
 // General tab would show an em dash instead of the cluster/template/run-on

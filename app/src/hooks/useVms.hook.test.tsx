@@ -4,7 +4,7 @@ import { act, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { resetMockVms } from '../api/mock/handlers'
 import { FIND_TIMEOUT_MS, renderHookWithProviders } from '../test/render'
-import { useVms } from './useVms'
+import { useVmReportedIps, useVms } from './useVms'
 
 // The pure pieces (vmPollIntervalMs, vmListFollow) are covered in
 // useVms.test.ts. This spec watches the HOOK's wire behaviour against the mock
@@ -121,5 +121,34 @@ describe('useVms (hook)', () => {
     // the 30 s infra floor does
     await elapse(21_000, 500)
     expect(vmReads()).toHaveLength(2)
+  })
+})
+
+describe('useVmReportedIps (hook)', () => {
+  const ipReads = () => vmReads().filter((path) => path.includes('reported_devices'))
+
+  it('issues no read while the IP column is hidden', async () => {
+    const { result } = renderHookWithProviders(() =>
+      useVmReportedIps(undefined, { enabled: false, vmCount: 10 }),
+    )
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    expect(result.current.fetchStatus).toBe('idle')
+    expect(ipReads()).toEqual([])
+  })
+
+  it('reads /vms?follow=reported_devices once the column shows on a small install', async () => {
+    const { result } = renderHookWithProviders(() =>
+      useVmReportedIps(undefined, { enabled: true, vmCount: 10 }),
+    )
+    await waitFor(() => expect(result.current.isSuccess).toBe(true), { timeout: FIND_TIMEOUT_MS })
+    expect(ipReads()).toEqual(['/vms?follow=reported_devices'])
+    expect(result.current.data?.['vm-01']?.[0]?.ips?.ip?.[0]?.address).toBe('10.0.0.51')
+  })
+
+  it('stays off the wire past the statistics threshold or before the count is known', async () => {
+    renderHookWithProviders(() => useVmReportedIps(undefined, { enabled: true, vmCount: 501 }))
+    renderHookWithProviders(() => useVmReportedIps('name=x', { enabled: true, vmCount: undefined }))
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    expect(ipReads()).toEqual([])
   })
 })

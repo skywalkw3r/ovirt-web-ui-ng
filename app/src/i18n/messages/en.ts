@@ -223,7 +223,7 @@ export const en = {
   'inventory.tree.ariaLabel': 'VM and template folders',
   'inventory.sidebar.resize': 'Resize sidebar',
   'inventory.filter.ariaLabel': 'Filter VMs and templates by name',
-  'inventory.filter.hint': 'Filter by name',
+  'inventory.filter.hint': 'Filter by name, folder:/prod/web or tag:pci-dss',
   'inventory.column.type': 'Type',
   'inventory.column.name': 'Name',
   'inventory.column.status': 'Status',
@@ -553,7 +553,7 @@ export const en = {
   'vms.searchEmpty.matches': 'Nothing matches {query}',
   'vms.empty.title': 'No virtual machines',
   'vms.empty.body': 'VMs you have permission to see will appear here.',
-  'vms.search.hint': 'name=web* and status=up — or plain text',
+  'vms.search.hint': 'name=web* and status=up, folder:/prod/web, tag:pci-dss, or plain text',
   'vms.search.ariaLabel': 'Search virtual machines',
   'vms.pagination.ariaLabel': 'Virtual machines pagination',
   'vms.table.ariaLabel': 'Virtual machines',
@@ -1438,6 +1438,41 @@ export const en = {
   'permissions.add.role.none': 'No assignable roles are available on this engine.',
   'permissions.add.role.userGroup': 'User roles',
   'permissions.add.role.adminGroup': 'Administrative roles',
+  // Add Permission picker depth (issue #31): multi-select, My groups,
+  // Everyone, and directory search.
+  'permissions.add.kind.myGroups': 'My groups',
+  'permissions.add.kind.everyone': 'Everyone',
+  'permissions.add.source.label': 'Search in',
+  'permissions.add.source.engine': 'Engine database',
+  'permissions.add.source.directory': 'Directory: {domain}',
+  'permissions.add.source.domainsLoading': 'Loading directories',
+  'permissions.add.source.domainsError': 'Could not load directories: {message}',
+  'permissions.add.source.directoryHint':
+    'Principals found in a directory that are not in the engine yet are added to it when the role is granted.',
+  'permissions.add.empty.directory.users': 'This directory returned no users.',
+  'permissions.add.empty.directory.groups': 'This directory returned no groups.',
+  'permissions.add.myGroups.loading': 'Loading your groups',
+  'permissions.add.myGroups.error': 'Could not load your groups: {message}',
+  'permissions.add.myGroups.empty.title': 'No groups',
+  'permissions.add.myGroups.empty.body': 'Your account is not a member of any directory group.',
+  'permissions.add.myGroups.table.ariaLabel': 'My groups',
+  'permissions.add.everyone.body':
+    'The role is granted to the built-in Everyone group, so every user gets it on this {noun}.',
+  'permissions.add.selectMany.user': 'Select one or more users to grant the role to.',
+  'permissions.add.selectMany.group': 'Select one or more groups to grant the role to.',
+  'permissions.add.selected.count':
+    '{count, plural, one {# principal selected} other {# principals selected}}',
+  'permissions.add.selected.ariaLabel': 'Selected principals',
+  'permissions.add.selected.remove': 'Remove {name} from the selection',
+  'permissions.add.result.failed.title':
+    '{count, plural, one {The role could not be granted to # principal} other {The role could not be granted to # principals}}',
+  'permissions.add.result.failed.body':
+    'The failed principals stay selected. Fix the cause and retry, or remove them from the selection.',
+  'permissions.add.result.failed.item': '{name}: {message}',
+  'permissions.add.submit.retry': 'Retry failed',
+  'permissions.add.toast.granted': '{role} granted to {name}',
+  'permissions.add.toast.grantedMany':
+    '{role} granted to {count, plural, one {# principal} other {# principals}}',
 
   // ==========================================================================
   // USERS (pages/UsersPage) — admin-gated directory of engine users.
@@ -2121,6 +2156,11 @@ export const en = {
   'settings.pref.console.vncDescription': 'Works with noVNC and most desktop viewers.',
   'settings.pref.console.spiceDescription': 'Richer remote experience via virt-viewer.',
   'settings.pref.language': 'Language',
+  // Roaming note (components/UserMenu, settings/RoamingSettingsProvider)
+  'settings.pref.roaming.synced':
+    'Saved to your oVirt user profile, so they follow you to other browsers.',
+  'settings.pref.roaming.local':
+    'Saved in this browser only; your oVirt user profile is not available to store them.',
   'settings.refresh.seconds': '{count, plural, one {# second} other {# seconds}}',
   'settings.timeout.minutes': '{count, plural, one {# minute} other {# minutes}}',
   'settings.timeout.hours': '{count, plural, one {# hour} other {# hours}}',
@@ -2337,7 +2377,10 @@ export const en = {
   'hostNuma.empty.body': 'This host reports no NUMA nodes.',
   'hostNuma.error.title': 'Could not load NUMA topology',
   'hostNuma.loading': 'Loading NUMA topology',
-  'host.cockpit.open': 'Cockpit',
+  // Host console (Cockpit): kebab item, host detail header button (lib/hostConsole.ts)
+  'host.console.open': 'Host console',
+  'host.console.newTab': 'Opens Cockpit in a new tab',
+  'host.console.tooltip': 'Open the Cockpit interface for {name}',
 
   // Data center force remove
   'datacenters.forceRemove.action': 'Force remove',
@@ -2663,7 +2706,7 @@ export const en = {
 
   // Templates list (pages/TemplatesPage)
   'templates.title': 'Templates',
-  'templates.search.hint': 'name=web* — or plain text',
+  'templates.search.hint': 'name=web*, folder:/prod, tag:legacy, or plain text',
   'templates.search.ariaLabel': 'Search templates',
   'templates.pagination.ariaLabel': 'Templates pagination',
   'templates.loading': 'Loading templates',
@@ -2715,28 +2758,28 @@ export const en = {
   'templateForm.stateless': 'Stateless',
   'templateForm.deleteProtection': 'Delete Protection',
   'templateForm.aria.deleteProtection': 'Delete protection',
-  'templateForm.section.system': 'System',
-  'templateForm.memory': 'Memory Size (MB)',
-  'templateForm.guaranteedMemory': 'Physical Memory Guaranteed (MB)',
-  'templateForm.maxMemory': 'Maximum memory (MB)',
   'templateForm.sockets': 'Virtual Sockets',
   'templateForm.cores': 'Cores per Virtual Socket',
   'templateForm.threads': 'Threads per Core',
-  'templateForm.section.ha': 'High Availability',
-  'templateForm.ha': 'Highly available',
-  'templateForm.ha.priority': 'Priority',
-  'templateForm.aria.haPriority': 'High availability priority',
-  'templateForm.ha.priorityHelp':
-    'Higher values are restarted first (webadmin buckets Low 1, Medium 50, High 100).',
-  'templateForm.section.console': 'Console',
-  'templateForm.monitors': 'Monitors',
-  'templateForm.usb': 'USB enabled',
-  'templateForm.smartcard': 'Smartcard enabled',
-  'templateForm.soundcard': 'Soundcard enabled',
   'templateForm.memory.error.positive': 'Memory Size must be greater than 0',
   'templateForm.memory.error.guaranteed':
     'Physical Memory Guaranteed cannot exceed the Memory Size',
   'templateForm.memory.error.max': 'Maximum memory cannot be smaller than the Memory Size',
+  // New template (standalone) and the sectioned template dialog (#28)
+  'templateForm.title.new': 'New template',
+  'templateForm.newAction': 'New template',
+  'templateForm.sections.ariaLabel': 'Template sections',
+  'templateForm.sourceVm': 'Source VM',
+  'templateForm.sourceVm.placeholder': 'Select a powered-off VM',
+  'templateForm.sourceVm.help':
+    "The new template copies this VM's disks and configuration. Only a powered-off VM can be used. What you change in this dialog overrides the VM's settings.",
+  'templateForm.sourceVm.empty': 'No VM is powered off. Shut down a VM to make a template from it.',
+  'templateForm.sourceVm.disksNote':
+    'The disks are copied to their current storage domains. For disk allocation, sub-versions or sealing, use Make Template on the VM.',
+  'templateForm.sourceVm.loading': 'Loading the VM configuration',
+  'templateForm.sourceVm.error': 'The VM configuration could not be loaded.',
+  'templateForm.sourceVm.hint':
+    "Select a source VM to set the template's system, console and other settings.",
 
   // Export template as OVA modal (components/template-form/TemplateExportModal)
   'templateExport.title': 'Export {name} as OVA',
@@ -3852,6 +3895,9 @@ export const en = {
   'hostForm.field.rootPassword': 'Root password',
   'hostForm.field.sshPort': 'SSH port',
   'hostForm.field.sshUser': 'SSH user',
+  'hostForm.firewall.configure': 'Automatically configure host firewall',
+  'hostForm.firewall.configure.help':
+    'Let the install open the ports oVirt needs in the host’s firewall, using the cluster’s firewall type. Turn this off only if you manage the host firewall yourself; the required ports must then be opened by hand.',
   'hostForm.hostedEngine.deploy': 'Deploy hosted engine',
   'hostForm.hostedEngine.deploy.help':
     'The install also deploys the self-hosted engine components, so this host can run the engine VM alongside the existing hosted-engine hosts. Leave off for a regular virtualization host.',
@@ -3986,11 +4032,7 @@ export const en = {
   // instanceTypeForm.* --------------------------------------------
   'instanceTypeForm.aria.description': 'Instance type description',
   'instanceTypeForm.aria.name': 'Instance type name',
-  'instanceTypeForm.memory.error.guaranteed':
-    'Physical memory guaranteed cannot exceed the memory size',
-  'instanceTypeForm.memory.error.max': 'Maximum memory cannot be smaller than the memory size',
-  'instanceTypeForm.memory.error.positive': 'Memory size must be greater than 0',
-  'instanceTypeForm.section.cpu': 'Virtual CPUs',
+  'instanceTypeForm.sections.ariaLabel': 'Instance type sections',
   'instanceTypeForm.title.edit': 'Edit instance type — {name}',
   'instanceTypeForm.title.new': 'New instance type',
   // instanceTypes.* -----------------------------------------------
@@ -4327,6 +4369,10 @@ export const en = {
   'schedulingPolicy.weights.label': 'Weight modules',
   // setupNetworks.* -----------------------------------------------
   'setupNetworks.aria.configureSriov': 'Configure SR-IOV for {name}',
+  'setupNetworks.aria.customPropertyAdd': 'Add custom property to {name}',
+  'setupNetworks.aria.customPropertyKey': 'Key of custom property {index} on {name}',
+  'setupNetworks.aria.customPropertyRemove': 'Remove custom property {index} from {name}',
+  'setupNetworks.aria.customPropertyValue': 'Value of custom property {index} on {name}',
   'setupNetworks.aria.labelsOn': 'Labels on {name}',
   'setupNetworks.aria.newLabel': 'New label for {name}',
   'setupNetworks.aria.qosField': '{label} for {name}',
@@ -4336,6 +4382,15 @@ export const en = {
   'setupNetworks.bondMode.mode2': 'Load balance — balance-xor (mode 2)',
   'setupNetworks.bondMode.mode4': 'Dynamic link aggregation — 802.3ad (mode 4)',
   'setupNetworks.bondMode.mode5': 'Adaptive transmit load balancing — balance-tlb (mode 5)',
+  'setupNetworks.customProperties.add': 'Add custom property',
+  'setupNetworks.customProperties.freeForm':
+    'The engine did not report which keys it allows, so keys are only checked when you save.',
+  'setupNetworks.customProperties.help':
+    'Key/value options applied to this network on the host, such as bridge_opts to tune the bridge of a VM network. The available keys come from the engine configuration.',
+  'setupNetworks.customProperties.keyPlaceholder': 'Select a key',
+  'setupNetworks.customProperties.label': 'Custom properties',
+  'setupNetworks.customProperties.noKeys':
+    'The engine allows no custom property keys for this network.',
   'setupNetworks.labels.add': 'Add label',
   'setupNetworks.labels.help':
     'Network labels attached to this NIC. The engine auto-wires every network that carries a matching label onto the NIC.',
@@ -4387,6 +4442,15 @@ export const en = {
   'setupNetworks.sriov.networks.removeAria': 'Remove allowed network {name}',
   'setupNetworks.sriov.networks.selectPlaceholder': 'Select a network',
   'setupNetworks.sriov.title': 'SR-IOV configuration — {name}',
+  'setupNetworks.validation.customPropertyBridgeOpts': '{key} only applies to VM networks',
+  'setupNetworks.validation.customPropertyDuplicate': '{key} is already set',
+  'setupNetworks.validation.customPropertyKey':
+    'A key may only contain letters, digits and underscores',
+  'setupNetworks.validation.customPropertyKeyRequired': 'Enter a key for this value',
+  'setupNetworks.validation.customPropertyUnknown':
+    '{key} is not a custom property this engine allows',
+  'setupNetworks.validation.customPropertyValue': 'The value of {key} must match {format}',
+  'setupNetworks.validation.customPropertyValueSyntax': 'A value cannot contain a semicolon',
   'setupNetworks.validation.ipv4': 'Enter a valid IPv4 address',
   'setupNetworks.validation.ipv6': 'Enter a valid IPv6 address',
   'setupNetworks.validation.managementGuard':
@@ -5096,6 +5160,79 @@ export const en = {
     'The watchdog change failed, so nothing was saved: {message}. Save again to retry.',
   'vm.edit.save.nextRunRefreshFailed':
     "The watchdog was saved, but the VM's pending next-run configuration was not refreshed, so the engine could undo the change at the next shutdown: {message}. Save again to retry.",
+  'vm.edit.pinning.title': 'CPU pinning',
+  'vm.edit.pinning.policy': 'CPU pinning policy',
+  'vm.edit.pinning.policy.none': 'None',
+  'vm.edit.pinning.policy.manual': 'Manual',
+  'vm.edit.pinning.policy.resizeAndPin': 'Resize and Pin NUMA',
+  'vm.edit.pinning.policy.dedicated': 'Dedicated',
+  'vm.edit.pinning.policy.isolateThreads': 'Isolate Threads',
+  'vm.edit.pinning.topology': 'CPU pinning topology',
+  'vm.edit.pinning.hint.manualNeedsHost': 'Manual pinning needs the VM to run on specific hosts.',
+  'vm.edit.pinning.hint.dedicatedNeedsVersion':
+    'Dedicated and Isolate Threads need cluster compatibility version 4.7 or later.',
+  'vm.edit.pinning.hint.dedicatedNumaPinned':
+    'Dedicated and Isolate Threads are unavailable while a virtual NUMA node is pinned.',
+  'vm.edit.pinning.hint.resizeAndPin':
+    'Resize and Pin NUMA sizes the CPU topology and the virtual NUMA nodes from the host when the VM starts.',
+  'vm.edit.pinning.error.required': 'Enter a pinning topology, for example 0#0_1#1-3.',
+  'vm.edit.pinning.error.syntax':
+    'Write vCPU#host CPUs entries joined by _, for example 0#0_1#1-3 or 0#0-3,^2.',
+  'vm.edit.pinning.error.needsHost': 'Manual pinning needs the VM to run on specific hosts.',
+  'vm.edit.pinning.error.vcpuMissing': 'vCPU {vcpu} does not exist; this VM has vCPUs 0 to {max}.',
+  'vm.edit.pinning.error.duplicate': 'vCPU {vcpu} is pinned more than once.',
+  'vm.edit.pinning.error.noCpu': 'vCPU {vcpu} is pinned to no host CPU.',
+  'fieldHelp.vm.cpuPinningPolicy':
+    'How the vCPUs map to host CPUs. None leaves it to the host; Manual uses the pinning topology below; Resize and Pin NUMA sizes the VM to its host and pins it; Dedicated reserves host CPUs for this VM alone; Isolate Threads also gives each vCPU a physical core of its own. Applied on the next start of a running VM.',
+  'fieldHelp.vm.cpuPinningTopology':
+    'Pin each vCPU to host CPUs as vCPU#CPUs, entries joined by _. A CPU set lists CPUs (0,2), ranges (1-3) and exclusions (^2). Example: 0#0_1#1-3 pins vCPU 0 to host CPU 0 and vCPU 1 to host CPUs 1 to 3.',
+  'fieldHelp.vm.numaCount':
+    'How many virtual NUMA nodes the guest sees. The vCPUs and memory are spread over them; pin a node to a host NUMA node to keep its memory local. Changed on a powered-off VM only.',
+  'vm.edit.numa.title': 'Virtual NUMA',
+  'vm.edit.numa.count': 'NUMA node count',
+  'vm.edit.numa.loading': 'Loading virtual NUMA nodes',
+  'vm.edit.numa.loadError': 'Could not load the virtual NUMA nodes; they are left unchanged',
+  'vm.edit.numa.hint.running': 'The virtual NUMA nodes can only be changed while the VM is down.',
+  'vm.edit.numa.hint.needsHost':
+    'Pinning a node to a host NUMA node needs the VM to run on specific hosts.',
+  'vm.edit.numa.hint.hostLoading': 'Loading the host NUMA topology',
+  'vm.edit.numa.hint.hostError': 'Could not load the host NUMA topology',
+  'vm.edit.numa.table': 'Virtual NUMA nodes',
+  'vm.edit.numa.column.node': 'Node',
+  'vm.edit.numa.column.resources': 'vCPUs and memory',
+  'vm.edit.numa.column.tune': 'Tune mode',
+  'vm.edit.numa.column.hostNode': 'Host NUMA node',
+  'vm.edit.numa.resources': 'vCPUs {cpus}, {memory} MB',
+  'vm.edit.numa.tuneLabel': 'Tune mode of NUMA node {index}',
+  'vm.edit.numa.pinLabel': 'Host NUMA node for NUMA node {index}',
+  'vm.edit.numa.pin.none': 'Not pinned',
+  'vm.edit.numa.pin.hostNode': 'Host node {index}',
+  'vm.edit.numa.tune.interleave': 'Interleave',
+  'vm.edit.numa.tune.strict': 'Strict',
+  'vm.edit.numa.tune.preferred': 'Preferred',
+  'vm.edit.numa.error.preferred':
+    'Preferred only works with a single virtual NUMA node pinned to a single host node.',
+  'vm.edit.numa.error.tooManyNodes':
+    'The VM has {cpus} vCPUs, so it cannot have {count} NUMA nodes.',
+  'vm.edit.numa.error.pinsNeedHost': 'Pinned NUMA nodes need the VM to run on specific hosts.',
+  'vm.edit.numa.error.pinsWithDedicated':
+    'Dedicated and Isolate Threads cannot be combined with pinned NUMA nodes.',
+  'vm.edit.numa.error.hostUnsupported':
+    'Host {host} reports no NUMA topology, so a VM that runs on it cannot have virtual NUMA nodes.',
+  'vm.edit.numa.error.hostNodeMissing': 'Host {host} has no NUMA node {hostNode}.',
+  'vm.edit.numa.error.memory':
+    'Virtual NUMA node {node} needs more memory than node {hostNode} of host {host} has, which Strict does not allow.',
+  'vm.edit.save.numaBeforeVmFailed':
+    'Removing the old virtual NUMA nodes failed, so the VM was not saved: {message}. Save again to retry.',
+  'vm.edit.save.vmFailedAfterNuma':
+    'The old virtual NUMA nodes were removed, but the VM could not be saved, so the new nodes were not added: {message}. Save again to retry.',
+  'vm.edit.save.numaAfterVmFailed':
+    'The VM was saved, but the virtual NUMA change failed: {message}. Save again to retry.',
+  'vm.edit.save.numaFailed': 'The virtual NUMA change failed: {message}. Save again to retry.',
+  'vm.edit.save.numaState':
+    'The VM now has {count, plural, =0 {no virtual NUMA nodes} one {# virtual NUMA node} other {# virtual NUMA nodes}}.',
+  'vm.edit.save.numaStateUnknown':
+    'Its virtual NUMA nodes could not be read back; reopen the dialog to see the current topology.',
   'vm.edit.save.cdFailed':
     'The VM was saved, but the CD change failed: {message}. Save again to retry.',
   'vm.create.watchdog.templateError':
@@ -5309,6 +5446,122 @@ export const en = {
   'host.configureLocalStorage.outcome.undoStopped': 'Undoing the partial setup stopped: {error}',
   'host.configureLocalStorage.outcome.rerunHint':
     'To finish, put the host into maintenance if needed and run Configure local storage again; it reuses the empty local data center.',
+  // Guide Me (data center and cluster next steps)
+  'guideMe.action': 'Guide Me',
+  'guideMe.title': 'Guide Me: {name}',
+  'guideMe.loading': 'Loading the next steps',
+  'guideMe.error.title': 'Could not load the next steps',
+  'guideMe.dataCenter.created': 'Data center created.',
+  'guideMe.dataCenter.configured': 'The data center is fully configured and ready for use.',
+  'guideMe.cluster.created': 'Cluster created.',
+  'guideMe.cluster.configured': 'The cluster is fully configured and ready for use.',
+  'guideMe.configured.title': 'Configuration completed',
+  'guideMe.unconfigured': 'Some entities still need to be configured.',
+  'guideMe.section.required': 'Required steps',
+  'guideMe.section.optional': 'Optional steps',
+  'guideMe.configureLater': 'Configure later',
+  'guideMe.step.configureCluster': 'Configure cluster',
+  'guideMe.step.addAnotherCluster': 'Add another cluster',
+  'guideMe.step.configureHost': 'Configure host',
+  'guideMe.step.addAnotherHost': 'Add another host',
+  'guideMe.step.configureStorage': 'Configure storage',
+  'guideMe.step.addMoreStorage': 'Add more storage',
+  'guideMe.step.attachStorage': 'Attach storage',
+  'guideMe.step.attachMoreStorage': 'Attach more storage',
+  'guideMe.step.configureIsoLibrary': 'Configure ISO library',
+  'guideMe.step.attachIsoLibrary': 'Attach ISO library',
+  'guideMe.step.addLocalStorage': 'Add local storage',
+  'guideMe.reason.noUpHost': 'The data center needs at least one active host.',
+  'guideMe.reason.noCluster': 'Add a cluster to the data center first.',
+  'guideMe.reason.noUnattachedData': 'No unattached data domain is available to attach.',
+  'guideMe.reason.noActiveMaster': 'The data center needs an active master data domain first.',
+  'guideMe.reason.noIsoDomain': 'No ISO domain is available to attach.',
+  'guideMe.reason.localDcHasHost':
+    'A local data center holds only one host, and this one already has it.',
+  'guideMe.reason.dcInitialized': 'The data center is already initialized.',
+  'guideMe.reason.clusterLocalHasHost':
+    'This cluster belongs to a local data center that already has its one host.',
+  'guideMe.note.localStorage':
+    'To fully configure the data center, attach and activate at least one local storage domain.',
+  'guideMe.note.clusterNoActions':
+    'No actions are available for this cluster: it is not attached to a data center.',
+  // Configure aggregate entry point (pages/ConfigurePage.tsx): the webadmin
+  // Administration › Configure index linking to its five surfaces.
+  'nav.configure': 'Configure',
+  'configure.title': 'Configure',
+  'configure.intro':
+    'Engine-wide definitions shared by every data center and cluster. Each one opens on its own page.',
+  'configure.loading': 'Loading configuration areas',
+  'configure.notPermitted': 'system configuration',
+  'configure.list.ariaLabel': 'Configuration areas',
+  'configure.card.roles':
+    'Define roles and the permissions each one grants to users and administrators.',
+  'configure.card.systemPermissions': 'Grant roles to users and groups across the whole system.',
+  'configure.card.schedulingPolicies':
+    'Manage the filter, weight and balancing rules clusters use to place VMs.',
+  'configure.card.instanceTypes': 'Define reusable hardware profiles for new virtual machines.',
+  'configure.card.macPools': 'Manage the MAC address ranges assigned to virtual NICs.',
+  // EDIT VM: Foreman/Satellite section (provider picker)
+  'vm.edit.section.foreman': 'Foreman/Satellite',
+  'vm.edit.foreman.provider': 'Provider',
+  'vm.edit.foreman.none': 'No provider',
+  'vm.edit.foreman.unknown': 'Unknown provider ({id})',
+  'vm.edit.foreman.loading': 'Loading Foreman/Satellite providers',
+  'vm.edit.foreman.empty':
+    'No Foreman/Satellite providers are registered. Add one on the Providers page to bind this VM to it.',
+  'vm.edit.foreman.help':
+    'The engine reads the errata for this VM from the chosen Foreman/Satellite provider.',
+  // Template Storage tab + scoped Events tabs (issue #33) ----------------
+  'scopedEvents.loading': 'Loading events',
+  'scopedEvents.error.title': 'Could not load events',
+  'scopedEvents.empty.title': 'No events',
+  'templateDetail.tab.storage': 'Storage',
+  'templateDetail.tab.events': 'Events',
+  'templateEvents.empty.body': 'Engine audit log events for this template will appear here.',
+  'templateEvents.table.ariaLabel': 'Events for this template',
+  'templateStorage.empty.body': 'None of this template’s disks is on a storage domain.',
+  'templateStorage.table.ariaLabel': 'Storage domains holding this template’s disks',
+  'templateStorage.column.used': 'Used Space',
+  'templateStorage.column.disks': 'Disks',
+  'templateStorage.expand.ariaLabel': 'Show disks',
+  'templateStorage.disks.ariaLabel': 'Template disks on {name}',
+  'clusterDetail.tab.events': 'Events',
+  'clusterEvents.empty.body': 'Engine audit log events for this cluster will appear here.',
+  'clusterEvents.table.ariaLabel': 'Events for this cluster',
+  'dcDetail.tab.events': 'Events',
+  'dcEvents.empty.body': 'Engine audit log events for this data center will appear here.',
+  'dcEvents.table.ariaLabel': 'Events for this data center',
+  'storageDetail.tab.events': 'Events',
+  'storageEvents.empty.body': 'Engine audit log events for this storage domain will appear here.',
+  'storageEvents.table.ariaLabel': 'Events for this storage domain',
+  'quotaDetail.tab.events': 'Events',
+  'quotaEvents.empty.body': 'Engine audit log events for this quota will appear here.',
+  'quotaEvents.table.ariaLabel': 'Events for this quota',
+  // List-grid columns filled by a follow= or one shared read (issue #34)
+  'vms.column.cpu': 'CPU',
+  'vms.column.network': 'Network',
+  'vms.column.ips': 'IP Addresses',
+  'disks.column.attachedTo': 'Attached To',
+  'disks.column.quota': 'Quota',
+  'networks.column.qos': 'QoS Name',
+  'vnicProfiles.column.qos': 'QoS Name',
+  'vnicProfiles.column.networkFilter': 'Network Filter',
+  'pools.column.running': 'Running VMs',
+  'volumes.column.spaceUsed': 'Space Used',
+  // UI extensions (docs/PLUGINS.md): sidebar group, plugin error state,
+  // plugin page states, About dialog plugin list ------------------------
+  'nav.group.extensions': 'Extensions',
+  'extensions.error.title': '{plugin} could not display this content',
+  'extensions.page.loading': 'Loading extension page',
+  'extensions.page.notFound.title': 'Extension page not available',
+  'extensions.page.notFound.body':
+    'No loaded extension provides this page. It may have been removed from the deployment configuration, failed to load, or not be available to your account.',
+  'extensions.page.notFound.back': 'Back to dashboard',
+  'about.extensions': 'Extensions',
+  'about.extensions.status.active': 'Loaded',
+  'about.extensions.status.loading': 'Loading',
+  'about.extensions.status.skipped': 'Not loaded for this engine',
+  'about.extensions.status.failed': 'Failed: {reason}',
   // VM TPM device (Edit VM Resource Allocation, New VM wizard, General tab)
   'vm.edit.resources.tpm': 'TPM Device Enabled',
   'vm.edit.resources.tpm.loading': 'Loading TPM device',

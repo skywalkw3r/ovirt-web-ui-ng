@@ -20,6 +20,7 @@ import { useT } from '../i18n/useT'
 import type { MessageId } from '../i18n/messages/en'
 import { ListPageHeader } from '../components/ListPageHeader'
 import { TemplateStatusLabel } from '../components/TemplateStatusLabel'
+import { useContextMenu } from '../components/context-menu/ContextMenu'
 import { RefreshControl } from '../components/RefreshControl'
 import { BookmarkMenu } from '../components/list-toolbar/BookmarkMenu'
 import { ColumnPicker } from '../components/list-toolbar/ColumnPicker'
@@ -27,11 +28,20 @@ import { ResizableTh, resizableTableProps } from '../components/list-toolbar/Res
 import { SearchInput } from '../components/list-toolbar/SearchInput'
 import { TemplateActionsMenu } from '../components/template-actions/TemplateActionsMenu'
 import { CreateVmButton } from '../components/vm-create/CreateVmWizard'
+import { NewTemplateButton } from '../components/template-form/NewTemplateButton'
+import { useCapabilities } from '../auth/capabilities'
 import { useTemplatesList } from '../hooks/useCatalogPages'
 import { useClustersInventory, useDataCenters } from '../hooks/useAdminResources'
 import { useColumnPrefs } from '../hooks/useColumnPrefs'
 import { sortRows, useColumnSort } from '../hooks/useColumnSort'
 import { useListSearch } from '../hooks/useListSearch'
+import { useTags } from '../hooks/useTags'
+import {
+  hasFilterTokens,
+  matchesFilterTokens,
+  resolveFilterTokens,
+  splitFilterTokens,
+} from '../lib/filter-tokens'
 import { usePagination } from '../hooks/usePagination'
 
 // Cluster/DC names via client-side joins (flat /templates carries id links)
@@ -146,7 +156,19 @@ const COLUMNS: TemplateColumn[] = [
 export function TemplatesPage() {
   const t = useT()
   const { query, draft, setDraft, commit, apply } = useListSearch()
-  const templates = useTemplatesList(query)
+  // folder:/tag: tokens are lifted out of the query (lib/filter-tokens
+  // explains why they filter client-side): only the remainder reaches the
+  // engine, and the tokens narrow its results over the followed tags.
+  const filterTokens = useMemo(() => splitFilterTokens(query), [query])
+  const templates = useTemplatesList(filterTokens.rest)
+  const tags = useTags()
+  const tokenIds = useMemo(
+    () => resolveFilterTokens(filterTokens, tags.data ?? []),
+    [filterTokens, tags.data],
+  )
+  // a token-filtered list holds back while the tag tree it resolves against
+  // is still loading, so it never flashes "no matches" first
+  const isFiltering = hasFilterTokens(filterTokens) && tags.isPending
   const clustersInventory = useClustersInventory()
   const dataCentersInventory = useDataCenters()
   const columnCtx: TemplateColumnCtx = {
@@ -163,12 +185,20 @@ export function TemplatesPage() {
     [t],
   )
   const prefs = useColumnPrefs('templates', columns)
+  const { isAdmin } = useCapabilities()
   // client-side header sort; no default — the engine list order stands
   // until a header is clicked (see hooks/useColumnSort)
   const { sort, thSort } = useColumnSort()
+  // Right-clicking a row opens the row kebab's item set at the cursor (same
+  // wiring as VmsPage). ctx is the Template snapshot from the click; the
+  // target lives until that menu (and any modal/mutation it owns) settles.
+  const contextMenu = useContextMenu<Template>()
+  const menuTarget = contextMenu.target
 
-  const items = sortRows(templates.data ?? [], sort, (row, key) =>
-    columns.find((column) => column.key === key)?.sortValue?.(row, columnCtx),
+  const items = sortRows(
+    (templates.data ?? []).filter((template) => matchesFilterTokens(template, tokenIds)),
+    sort,
+    (row, key) => columns.find((column) => column.key === key)?.sortValue?.(row, columnCtx),
   )
 
   // clamp rather than effect-reset: polling refetches can shrink the list
@@ -195,6 +225,12 @@ export function TemplatesPage() {
               trailing={<BookmarkMenu area="templates" currentQuery={query} onApply={apply} />}
             />
           </ToolbarItem>
+          {/* creating a template is an admin action, as on the inventory view */}
+          {isAdmin && (
+            <ToolbarItem>
+              <NewTemplateButton />
+            </ToolbarItem>
+          )}
           <ToolbarGroup align={{ default: 'alignEnd' }}>
             <ToolbarItem variant="pagination">
               <Pagination
@@ -224,7 +260,7 @@ export function TemplatesPage() {
         </ToolbarContent>
       </Toolbar>
 
-      {templates.isPending && (
+      {(templates.isPending || (templates.isSuccess && isFiltering)) && (
         <>
           <Skeleton height="2.5rem" style={{ marginBottom: '0.5rem' }} />
           <Skeleton height="2.5rem" style={{ marginBottom: '0.5rem' }} />
@@ -247,7 +283,7 @@ export function TemplatesPage() {
         </EmptyState>
       )}
 
-      {templates.isSuccess && items.length === 0 && (
+      {templates.isSuccess && !isFiltering && items.length === 0 && (
         <EmptyState
           titleText={query !== '' ? t('templates.emptyFiltered.title') : t('templates.empty.title')}
         >
@@ -266,7 +302,7 @@ export function TemplatesPage() {
         </EmptyState>
       )}
 
-      {templates.isSuccess && items.length > 0 && (
+      {templates.isSuccess && !isFiltering && items.length > 0 && (
         <div className="app-table-viewport">
           <Table
             aria-label={t('templates.table.ariaLabel')}
@@ -298,7 +334,7 @@ export function TemplatesPage() {
             </Thead>
             <Tbody>
               {paged.map((template) => (
-                <Tr key={template.id}>
+                <Tr key={template.id} onContextMenu={(event) => contextMenu.open(event, template)}>
                   {visibleColumns.map((column) => (
                     <Td key={column.key} dataLabel={column.label}>
                       {column.cell(template, columnCtx)}
@@ -322,6 +358,18 @@ export function TemplatesPage() {
             </Tbody>
           </Table>
         </div>
+      )}
+
+      {/* Right-click twin of the row kebab: the same dual-mode menu component
+          rendered once at the cursor with this page's kebab props (plain
+          template, so Create VM stays the row's visible button), keyed by
+          token so re-opening (same or another row) remounts fresh. */}
+      {menuTarget !== null && (
+        <TemplateActionsMenu
+          key={`${menuTarget.ctx.id}-${menuTarget.token}`}
+          template={menuTarget.ctx}
+          contextMenu={{ position: menuTarget.position, onClose: contextMenu.close }}
+        />
       )}
     </PageSection>
   )

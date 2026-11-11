@@ -31,14 +31,19 @@ import { ClusterNetworksTab } from '../components/cluster-tabs/ClusterNetworksTa
 import { ClusterPermissionsTab } from '../components/cluster-tabs/ClusterPermissionsTab'
 import { ClusterVmsTab } from '../components/cluster-tabs/ClusterVmsTab'
 import { ClusterMonitoringTab } from '../components/cluster-tabs/ClusterMonitoringTab'
+import { ScopedEventsTab } from '../components/events/ScopedEventsTab'
+import { scopedEventsSearch } from '../lib/scopedEvents'
 import { useCluster } from '../hooks/useClusterDetail'
 import { clusterDetailRoute } from '../routes/router'
+import { useExtensionTabs } from '../extensions/useExtensionTabs'
 
 export function ClusterDetailPage() {
   const t = useT()
   const { clusterId } = clusterDetailRoute.useParams()
   const { loaded, isAdmin } = useCapabilities()
   const cluster = useCluster(clusterId)
+  // plugin subtabs (docs/PLUGINS.md); a hook, so above any early return
+  const extensionTabs = useExtensionTabs('cluster', cluster.data)
   const navigate = useNavigate()
   const [activeKey, setActiveKey] = useState<string | number>('general')
 
@@ -214,6 +219,19 @@ export function ClusterDetailPage() {
                 <ClusterPermissionsTab clusterId={clusterId} />
               </TabContentBody>
             </Tab>
+            <Tab
+              eventKey="events"
+              title={<TabTitleText>{t('clusterDetail.tab.events')}</TabTitleText>}
+            >
+              <TabContentBody hasPadding>
+                <ScopedEventsTab
+                  search={scopedEventsSearch.cluster(cluster.data.name)}
+                  ariaLabel={t('clusterEvents.table.ariaLabel')}
+                  emptyBody={t('clusterEvents.empty.body')}
+                />
+              </TabContentBody>
+            </Tab>
+            {extensionTabs}
           </Tabs>
         </>
       )}

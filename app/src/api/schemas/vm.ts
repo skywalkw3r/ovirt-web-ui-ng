@@ -46,6 +46,10 @@ export const VmSchema = z.looseObject({
   // detail VMs tab client-filters the /vms feed on this — webadmin's
   // QuotaVmListModel has no REST subcollection.
   quota: LinkedEntity.optional(),
+  // The pool this VM belongs to (VmMapper sets it whenever vm_pool_id is
+  // non-null), a bare { id } link on every list read. The pool VMs tab and the
+  // Pools grid's Running VMs column client-filter the /vms feed on it.
+  vm_pool: LinkedEntity.optional(),
   // Present only when the read used ?follow=tags (listVms does): key absent =
   // tags not followed; wrapper present with the inner "tag" key omitted =
   // followed but zero tags (the usual empty-list quirk). Consumers normalize
@@ -150,14 +154,41 @@ export const VmSchema = z.looseObject({
           threads: z.coerce.number().optional(),
         })
         .optional(),
+      // Manual CPU pinning (api-model types/CpuTune, a VcpuPin list): one entry
+      // per pinned vCPU, cpu_set being the host CPU set in the engine's own
+      // syntax ("1-3", "0,2", "0-3,^2"). Absent when the VM has no pinning
+      // string.
+      cpu_tune: z
+        .looseObject({
+          vcpu_pins: z
+            .looseObject({
+              vcpu_pin: z
+                .array(
+                  z.looseObject({
+                    vcpu: z.coerce.number().optional(),
+                    cpu_set: z.string().optional(),
+                  }),
+                )
+                .optional(),
+            })
+            .optional(),
+        })
+        .optional(),
     })
     .optional(),
+  // api-model types/CpuPinningPolicy (4.5+): none | manual |
+  // resize_and_pin_numa | dedicated | isolate_threads (the last since 4.5.1).
+  cpu_pinning_policy: z.string().optional(),
   // Top-level CPU shares (Resource Allocation): 0 disabled / 512 low / 1024
   // medium / 2048 high / any other = custom. JSON-string on the live engine.
   cpu_shares: z.coerce.number().optional(),
   // The CPU profile bound to the VM (Resource Allocation). Bare { id } link;
   // the name is resolved client-side against the cluster's cpuprofiles list.
   cpu_profile: z.looseObject({ id: z.string().optional() }).optional(),
+  // The Foreman/Satellite provider the VM is bound to (Edit VM's
+  // Foreman/Satellite section). A bare { id } link on a plain read, absent when
+  // none: VmMapper maps VmStatic.providerId both ways.
+  external_host_provider: z.looseObject({ id: z.string().optional() }).optional(),
   // IO threads count (Resource Allocation). JSON-string on the live engine.
   io: z.looseObject({ threads: z.coerce.number().optional() }).optional(),
   // VirtIO-SCSI controller toggle (Resource Allocation).

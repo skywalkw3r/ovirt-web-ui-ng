@@ -1,5 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { listVmNumaNodes, pinnedHostNodeIndices, vmNumaNodeCpuIndices } from './vmNuma'
+import {
+  addVmNumaNode,
+  applyVmNumaSteps,
+  listVmNumaNodes,
+  pinnedHostNodeIndices,
+  removeVmNumaNode,
+  updateVmNumaNodePinning,
+  vmNumaNodeBody,
+  vmNumaNodeCpuIndices,
+} from './vmNuma'
 import { ApiError } from '../transport'
 import { clearSessionToken, setSessionToken } from '../session'
 
@@ -86,5 +95,86 @@ describe('pinnedHostNodeIndices', () => {
 
   it('is empty for an unpinned virtual node', () => {
     expect(pinnedHostNodeIndices({ index: 0 })).toEqual([])
+  })
+})
+
+describe('vNUMA writes', () => {
+  beforeEach(() => setSessionToken('tok-123'))
+  afterEach(() => {
+    clearSessionToken()
+    vi.unstubAllGlobals()
+  })
+
+  const spec = { index: 1, memoryMb: 2048, cpuIds: [2, 3], tuneMode: 'strict', pins: [1] }
+  const call = (fetchMock: ReturnType<typeof mockFetch>, n = 0) => {
+    const [url, init] = fetchMock.mock.calls[n] as [string, RequestInit]
+    return { url, method: init.method, body: init.body ? JSON.parse(String(init.body)) : undefined }
+  }
+
+  it('builds the Add body, leaving an unpinned node without numa_node_pins', () => {
+    expect(vmNumaNodeBody(spec)).toEqual({
+      index: 1,
+      memory: 2048,
+      cpu: { cores: { core: [{ index: 2 }, { index: 3 }] } },
+      numa_tune_mode: 'strict',
+      numa_node_pins: { numa_node_pin: [{ index: 1 }] },
+    })
+    expect(vmNumaNodeBody({ ...spec, pins: [] })).not.toHaveProperty('numa_node_pins')
+  })
+
+  it('POSTs a new node and parses the echo', async () => {
+    const fetchMock = mockFetch(201, { id: 'vnode-1', index: '1', memory: '2048' })
+    const node = await addVmNumaNode('vm-01', spec)
+    expect(call(fetchMock)).toMatchObject({
+      url: '/ovirt-engine/api/vms/vm-01/numanodes',
+      method: 'POST',
+    })
+    expect(node).toMatchObject({ id: 'vnode-1', index: 1, memory: 2048 })
+  })
+
+  it('PUTs only the tune mode and the pins, an empty pin list unpinning', async () => {
+    const fetchMock = mockFetch(200, {})
+    await updateVmNumaNodePinning('vm-01', 'vnode-1', { tuneMode: 'interleave', pins: [] })
+    expect(call(fetchMock)).toEqual({
+      url: '/ovirt-engine/api/vms/vm-01/numanodes/vnode-1',
+      method: 'PUT',
+      body: { numa_tune_mode: 'interleave', numa_node_pins: { numa_node_pin: [] } },
+    })
+  })
+
+  it('DELETEs a node and treats a 404 as already removed', async () => {
+    const fetchMock = mockFetch(200, {})
+    await removeVmNumaNode('vm-01', 'vnode-1')
+    expect(call(fetchMock)).toMatchObject({
+      url: '/ovirt-engine/api/vms/vm-01/numanodes/vnode-1',
+      method: 'DELETE',
+    })
+    mockFetch(404, { fault: { reason: 'Not Found', detail: 'gone' } })
+    await expect(removeVmNumaNode('vm-01', 'vnode-1')).resolves.toBeUndefined()
+    mockFetch(409, { fault: { reason: 'Operation Failed', detail: 'locked' } })
+    await expect(removeVmNumaNode('vm-01', 'vnode-1')).rejects.toMatchObject({ status: 409 })
+  })
+
+  it('runs steps in order and stops at the first fault', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: true, status: 200, json: () => Promise.resolve({}) })
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 409,
+        json: () => Promise.resolve({ fault: { reason: 'Operation Failed', detail: 'bad index' } }),
+      })
+    vi.stubGlobal('fetch', fetchMock)
+    await expect(
+      applyVmNumaSteps('vm-01', [
+        { kind: 'remove', nodeId: 'vnode-1' },
+        { kind: 'add', node: spec },
+        { kind: 'update', nodeId: 'vnode-0', tuneMode: 'strict', pins: [0] },
+      ]),
+    ).rejects.toMatchObject({ status: 409, message: 'bad index' })
+    expect(fetchMock.mock.calls.map(([, init]) => (init as RequestInit).method)).toEqual([
+      'DELETE',
+      'POST',
+    ])
   })
 })

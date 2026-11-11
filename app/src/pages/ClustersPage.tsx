@@ -24,6 +24,7 @@ import { useCapabilities } from '../auth/capabilities'
 import { useT } from '../i18n/useT'
 import type { MessageId } from '../i18n/messages/en'
 import { ClusterFormModal } from '../components/cluster-form/ClusterFormModal'
+import { useGuideMeLauncher } from '../components/guide-me/guideMeContext'
 import { ClusterUpgradeModal } from '../components/cluster-upgrade/ClusterUpgradeModal'
 import { ConfirmModal } from '../components/ConfirmModal'
 import { ListPageHeader } from '../components/ListPageHeader'
@@ -178,6 +179,7 @@ export function ClustersPage() {
   const [removing, setRemoving] = useState<{ cluster: Cluster; nameInput: string } | null>(null)
   const [upgrading, setUpgrading] = useState<Cluster | null>(null)
   const deleteMutation = useDeleteCluster()
+  const guideMe = useGuideMeLauncher()
   const [page, setPage] = useState(1)
   const [perPage, setPerPage] = useState(50)
 
@@ -403,6 +405,14 @@ export function ClustersPage() {
                     <ActionsColumn
                       isDisabled={deleteMutation.isPending}
                       items={[
+                        ...(guideMe
+                          ? [
+                              {
+                                title: t('guideMe.action'),
+                                onClick: () => guideMe.open({ kind: 'cluster', id: cluster.id }),
+                              },
+                            ]
+                          : []),
                         {
                           title: t('clusterUpgrade.action'),
                           onClick: () => setUpgrading(cluster),
