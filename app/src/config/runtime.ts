@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { PLUGIN_NAME_PATTERN, resolveManifestUrl } from '../extensions/urls'
 
 // Deployment-provided runtime config. Everything else in this app is build-time
 // (import.meta.env); this is the one runtime seam. A deployer sets
@@ -117,6 +118,27 @@ export interface SupportConfig {
   url: string
 }
 
+// UI plugins (docs/ADR-0001-UI-EXTENSIONS.md, docs/PLUGINS.md). This block is
+// the allow-list: only plugins named here load, and nothing loads unless
+// `enabled` is true. A user cannot add a plugin from the browser, and no
+// engine response can either.
+export interface PluginEntry {
+  // [a-z0-9-], must equal the manifest's `name`
+  name: string
+  // absolute manifest URL, resolved and validated (extensions/urls.ts)
+  manifest: string
+  // Multi-engine: load only for sessions on these configured engines (names
+  // from servers.list). Absent = every engine. A filter never matches on a
+  // single-engine console, where no engine has a configured name.
+  servers?: string[]
+}
+
+export interface PluginsConfig {
+  // the feature flag; false (the default) loads nothing
+  enabled: boolean
+  list: PluginEntry[]
+}
+
 export interface RuntimeConfig {
   monitoring: MonitoringConfig
   servers: ServerEntry[]
@@ -124,6 +146,7 @@ export interface RuntimeConfig {
   motd: MotdConfig
   support: SupportConfig
   cockpit: CockpitConfig
+  plugins: PluginsConfig
 }
 
 const DEFAULT_GRAFANA_BASE_URL = '/ovirt-engine-grafana'
@@ -286,8 +309,65 @@ const InjectedConfigSchema = z
         ssoPage: z.unknown().optional(),
       })
       .optional(),
+    // Narrowed by toPlugins with its own schema, so a malformed plugins
+    // block disables plugins without taking the rest of the config down.
+    plugins: z.unknown().optional(),
   })
   .optional()
+
+const InjectedPluginsSchema = z.looseObject({
+  enabled: z.boolean().optional(),
+  list: z.array(z.unknown()).optional(),
+})
+
+const InjectedPluginEntrySchema = z.looseObject({
+  name: z.string(),
+  manifest: z.string(),
+  servers: z.array(z.string()).optional(),
+})
+
+// The app's base path ('/' in dev, '/ovirt-engine/web-ui-ng/' in production)
+// anchors manifest paths written without a leading slash.
+function appBase(): string {
+  return import.meta.env.BASE_URL ?? '/'
+}
+
+// Narrow the plugin allow-list. Invalid entries are dropped one by one with a
+// warning naming them (a deployer typo should be diagnosable from the browser
+// console); duplicate names keep the first entry.
+function toPlugins(injected: unknown): PluginsConfig {
+  const parsed = InjectedPluginsSchema.safeParse(injected)
+  if (!parsed.success || parsed.data.enabled !== true) {
+    return { enabled: false, list: [] }
+  }
+  const origin =
+    typeof window !== 'undefined' && window.location !== undefined ? window.location.origin : ''
+  const list: PluginEntry[] = []
+  const seen = new Set<string>()
+  for (const raw of parsed.data.list ?? []) {
+    const entry = InjectedPluginEntrySchema.safeParse(raw)
+    const name = entry.success ? entry.data.name.trim() : ''
+    const manifest =
+      entry.success && origin !== ''
+        ? resolveManifestUrl(entry.data.manifest, origin, appBase())
+        : undefined
+    if (!entry.success || !PLUGIN_NAME_PATTERN.test(name) || manifest === undefined) {
+      console.warn('[plugins] ignoring an invalid plugins.list entry', raw)
+      continue
+    }
+    if (seen.has(name)) {
+      console.warn(`[plugins] ignoring a duplicate plugins.list entry for "${name}"`)
+      continue
+    }
+    seen.add(name)
+    const item: PluginEntry = { name, manifest }
+    if (entry.data.servers !== undefined) {
+      item.servers = entry.data.servers.map((server) => server.trim()).filter(Boolean)
+    }
+    list.push(item)
+  }
+  return { enabled: true, list }
+}
 
 // Multi-engine is a BUILD-TIME capability, not just a config switch: only
 // proxy/external builds (the Containerfile sets VITE_MULTI_ENGINE=1; source
@@ -430,6 +510,7 @@ function resolve(): RuntimeConfig {
       url: safeHttpUrl(parsed.success ? parsed.data?.support?.url : undefined) ?? '',
     },
     cockpit: toCockpit(parsed.success ? parsed.data?.cockpit : undefined),
+    plugins: toPlugins(parsed.success ? parsed.data?.plugins : undefined),
   }
 }
 

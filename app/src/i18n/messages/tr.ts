@@ -4917,4 +4917,18 @@ export const tr: LocaleCatalog = {
     'Veri merkezini tamamen yapılandırmak için en az bir yerel depolama alanı bağlayıp etkinleştirin.',
   'guideMe.note.clusterNoActions':
     'Bu küme için kullanılabilir eylem yok: herhangi bir veri merkezine bağlı değil.',
+  // UI extensions (docs/PLUGINS.md): sidebar group, plugin error state,
+  // plugin page states, About dialog plugin list ------------------------
+  'nav.group.extensions': 'Uzantılar',
+  'extensions.error.title': '{plugin} bu içeriği görüntüleyemedi',
+  'extensions.page.loading': 'Uzantı sayfası yükleniyor',
+  'extensions.page.notFound.title': 'Uzantı sayfası kullanılamıyor',
+  'extensions.page.notFound.body':
+    'Bu sayfayı sağlayan yüklü bir uzantı yok. Dağıtım yapılandırmasından kaldırılmış, yüklenememiş veya hesabınız için kullanılamıyor olabilir.',
+  'extensions.page.notFound.back': 'Kontrol Paneline geri dön',
+  'about.extensions': 'Uzantılar',
+  'about.extensions.status.active': 'Yüklendi',
+  'about.extensions.status.loading': 'Yükleniyor',
+  'about.extensions.status.skipped': 'Bu motor için yüklenmedi',
+  'about.extensions.status.failed': 'Başarısız: {reason}',
 }

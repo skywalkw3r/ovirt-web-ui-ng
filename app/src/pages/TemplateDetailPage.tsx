@@ -37,6 +37,7 @@ import { useTemplate } from '../hooks/useTemplateDetail'
 import { useDeleteTemplate } from '../hooks/useTemplateMutations'
 import { statusText } from '../lib/format'
 import { templateDetailRoute } from '../routes/router'
+import { useExtensionTabs } from '../extensions/useExtensionTabs'
 
 // A template's status is an open string ('ok' | 'locked' | 'illegal'). Only the
 // two states that block use get a signal color; a healthy template stays quiet.
@@ -50,6 +51,8 @@ function TemplateStatusLabel({ status }: { status?: string }) {
 export function TemplateDetailPage() {
   const { templateId } = templateDetailRoute.useParams()
   const template = useTemplate(templateId)
+  // plugin subtabs (docs/PLUGINS.md); a hook, so above any early return
+  const extensionTabs = useExtensionTabs('template', template.data)
   const navigate = useNavigate()
   const t = useT()
   const [activeKey, setActiveKey] = useState<string | number>('general')
@@ -271,6 +274,7 @@ export function TemplateDetailPage() {
                 <TemplatePermissionsTab templateId={templateId} />
               </TabContentBody>
             </Tab>
+            {extensionTabs}
           </Tabs>
         </>
       )}

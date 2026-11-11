@@ -4968,4 +4968,18 @@ export const ptBR: LocaleCatalog = {
     'Para configurar totalmente o data center, anexe e ative pelo menos um domínio de armazenamento local.',
   'guideMe.note.clusterNoActions':
     'Nenhuma ação está disponível para este cluster: ele não está anexado a um data center.',
+  // UI extensions (docs/PLUGINS.md): sidebar group, plugin error state,
+  // plugin page states, About dialog plugin list ------------------------
+  'nav.group.extensions': 'Extensões',
+  'extensions.error.title': '{plugin} não pôde exibir este conteúdo',
+  'extensions.page.loading': 'Carregando a página da extensão',
+  'extensions.page.notFound.title': 'Página de extensão indisponível',
+  'extensions.page.notFound.body':
+    'Nenhuma extensão carregada fornece esta página. Ela pode ter sido removida da configuração da implantação, falhado ao carregar ou não estar disponível para sua conta.',
+  'extensions.page.notFound.back': 'Voltar para o painel de controle',
+  'about.extensions': 'Extensões',
+  'about.extensions.status.active': 'Carregada',
+  'about.extensions.status.loading': 'Carregando',
+  'about.extensions.status.skipped': 'Não carregada para este engine',
+  'about.extensions.status.failed': 'Falhou: {reason}',
 }

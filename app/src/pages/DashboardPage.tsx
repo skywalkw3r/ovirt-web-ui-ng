@@ -107,6 +107,7 @@ import {
 } from '../lib/inventory'
 import { useT } from '../i18n/useT'
 import type { MessageId } from '../i18n/messages/en'
+import { ExtensionDashboardCards } from '../extensions/ExtensionDashboardCards'
 
 const SUBTLE_TEXT: React.CSSProperties = {
   color: 'var(--pf-t--global--text--color--subtle)',
@@ -1350,6 +1351,9 @@ export function DashboardPage() {
             isAdmin={isAdmin}
           />
         </GridItem>
+
+        {/* Cards registered by UI plugins (docs/PLUGINS.md) */}
+        <ExtensionDashboardCards />
       </Grid>
     </PageSection>
   )

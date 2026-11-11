@@ -37,6 +37,7 @@ import { useNetwork } from '../hooks/useNetworkDetail'
 import { useT } from '../i18n/useT'
 import { statusText } from '../lib/format'
 import { networkDetailRoute } from '../routes/router'
+import { useExtensionTabs } from '../extensions/useExtensionTabs'
 
 // Same coloring policy as NetworksPage's NetworkStatusLabel: green/red for the
 // two operational states, grey for anything unexpected.
@@ -52,6 +53,8 @@ export function NetworkDetailPage() {
   const t = useT()
   const { networkId } = networkDetailRoute.useParams()
   const network = useNetwork(networkId)
+  // plugin subtabs (docs/PLUGINS.md); a hook, so above any early return
+  const extensionTabs = useExtensionTabs('network', network.data)
   const navigate = useNavigate()
   const [activeKey, setActiveKey] = useState<string | number>('general')
   const [editing, setEditing] = useState(false)
@@ -255,6 +258,7 @@ export function NetworkDetailPage() {
                 <NetworkPermissionsTab networkId={networkId} />
               </TabContentBody>
             </Tab>
+            {extensionTabs}
           </Tabs>
         </>
       )}

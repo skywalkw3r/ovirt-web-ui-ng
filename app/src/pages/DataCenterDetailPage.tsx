@@ -51,6 +51,7 @@ import { IscsiMultipathTab } from '../components/datacenter-tabs/IscsiMultipathT
 import { useDataCenter } from '../hooks/useDataCenterDetail'
 import { statusText } from '../lib/format'
 import { dataCenterDetailRoute } from '../routes/router'
+import { useExtensionTabs } from '../extensions/useExtensionTabs'
 
 // Re-Initialize recovers a data center whose master storage domain is lost or
 // inactive (webadmin's Re-Initialize / RecoveryStoragePool). It is meaningful
@@ -82,6 +83,8 @@ export function DataCenterDetailPage() {
   const { dataCenterId } = dataCenterDetailRoute.useParams()
   const { loaded, isAdmin } = useCapabilities()
   const dataCenter = useDataCenter(dataCenterId)
+  // plugin subtabs (docs/PLUGINS.md); a hook, so above any early return
+  const extensionTabs = useExtensionTabs('dataCenter', dataCenter.data)
   const navigate = useNavigate()
   const [activeKey, setActiveKey] = useState<string | number>('general')
   const [editing, setEditing] = useState(false)
@@ -411,6 +414,7 @@ export function DataCenterDetailPage() {
                 <DataCenterPermissionsTab dataCenterId={dataCenterId} />
               </TabContentBody>
             </Tab>
+            {extensionTabs}
           </Tabs>
         </>
       )}

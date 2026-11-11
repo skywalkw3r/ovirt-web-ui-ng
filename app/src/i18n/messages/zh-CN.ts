@@ -4682,4 +4682,18 @@ export const zhCN: LocaleCatalog = {
   'guideMe.reason.clusterLocalHasHost': '此集群属于一个已有唯一主机的本地数据中心。',
   'guideMe.note.localStorage': '要完全配置数据中心，请至少附加并激活一个本地存储域。',
   'guideMe.note.clusterNoActions': '此集群没有可用操作：它未附加到任何数据中心。',
+  // UI extensions (docs/PLUGINS.md): sidebar group, plugin error state,
+  // plugin page states, About dialog plugin list ------------------------
+  'nav.group.extensions': '扩展',
+  'extensions.error.title': '{plugin} 无法显示此内容',
+  'extensions.page.loading': '正在加载扩展页面',
+  'extensions.page.notFound.title': '扩展页面不可用',
+  'extensions.page.notFound.body':
+    '没有已加载的扩展提供此页面。它可能已从部署配置中移除、加载失败，或对您的帐户不可用。',
+  'extensions.page.notFound.back': '返回仪表板',
+  'about.extensions': '扩展',
+  'about.extensions.status.active': '已加载',
+  'about.extensions.status.loading': '正在加载',
+  'about.extensions.status.skipped': '未针对此引擎加载',
+  'about.extensions.status.failed': '失败：{reason}',
 }

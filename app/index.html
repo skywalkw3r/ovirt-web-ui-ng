@@ -35,13 +35,18 @@
                                   at runtime; without 'unsafe-inline' layout
                                   breaks. Scripts are NOT granted this.
         script-src 'self'       — no inline/eval scripts; our bundle is 'self'.
+                                  %VITE_CSP_SCRIPT_EXTRA% (build env, default
+                                  empty) appends the origins of UI plugins
+                                  served from another origin (docs/PLUGINS.md);
+                                  same placeholder/sub_filter scheme as
+                                  connect-src above.
         base-uri 'self'         — block <base> injection redirecting relative URLs.
         object-src 'none'       — no plugins/embeds.
       frame-ancestors 'none' (clickjacking defense) is header-only — see the doc.
     -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; connect-src 'self' wss: %VITE_CSP_CONNECT_EXTRA%; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; base-uri 'self'; object-src 'none'"
+      content="default-src 'self'; connect-src 'self' wss: %VITE_CSP_CONNECT_EXTRA%; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' %VITE_CSP_SCRIPT_EXTRA%; base-uri 'self'; object-src 'none'"
     />
     <title>oVirt Console</title>
   </head>

@@ -5031,4 +5031,18 @@ export const de: LocaleCatalog = {
     'Um das Rechenzentrum vollständig zu konfigurieren, hängen Sie mindestens eine lokale Speicherdomäne an und aktivieren Sie sie.',
   'guideMe.note.clusterNoActions':
     'Für diesen Cluster sind keine Aktionen verfügbar: Er ist keinem Rechenzentrum zugeordnet.',
+  // UI extensions (docs/PLUGINS.md): sidebar group, plugin error state,
+  // plugin page states, About dialog plugin list ------------------------
+  'nav.group.extensions': 'Erweiterungen',
+  'extensions.error.title': '{plugin} konnte diesen Inhalt nicht anzeigen',
+  'extensions.page.loading': 'Erweiterungsseite wird geladen',
+  'extensions.page.notFound.title': 'Erweiterungsseite nicht verfügbar',
+  'extensions.page.notFound.body':
+    'Keine geladene Erweiterung stellt diese Seite bereit. Sie wurde möglicherweise aus der Bereitstellungskonfiguration entfernt, konnte nicht geladen werden oder ist für Ihr Konto nicht verfügbar.',
+  'extensions.page.notFound.back': 'Zurück zum Dashboard',
+  'about.extensions': 'Erweiterungen',
+  'about.extensions.status.active': 'Geladen',
+  'about.extensions.status.loading': 'Wird geladen',
+  'about.extensions.status.skipped': 'Für diese Engine nicht geladen',
+  'about.extensions.status.failed': 'Fehlgeschlagen: {reason}',
 }

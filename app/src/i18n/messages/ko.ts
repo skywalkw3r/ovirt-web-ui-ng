@@ -4862,4 +4862,18 @@ export const ko: LocaleCatalog = {
     '데이터 센터를 완전히 구성하려면 로컬 스토리지 도메인을 하나 이상 연결하고 활성화하세요.',
   'guideMe.note.clusterNoActions':
     '이 클러스터에 사용할 수 있는 작업이 없습니다: 데이터 센터에 연결되어 있지 않습니다.',
+  // UI extensions (docs/PLUGINS.md): sidebar group, plugin error state,
+  // plugin page states, About dialog plugin list ------------------------
+  'nav.group.extensions': '확장',
+  'extensions.error.title': '{plugin}에서 이 콘텐츠를 표시할 수 없습니다',
+  'extensions.page.loading': '확장 페이지를 불러오는 중',
+  'extensions.page.notFound.title': '확장 페이지를 사용할 수 없음',
+  'extensions.page.notFound.body':
+    '이 페이지를 제공하는 로드된 확장이 없습니다. 배포 구성에서 제거되었거나, 로드하지 못했거나, 계정에서 사용할 수 없을 수 있습니다.',
+  'extensions.page.notFound.back': '대시보드로 돌아가기',
+  'about.extensions': '확장',
+  'about.extensions.status.active': '로드됨',
+  'about.extensions.status.loading': '로드 중',
+  'about.extensions.status.skipped': '이 엔진에서는 로드되지 않음',
+  'about.extensions.status.failed': '실패: {reason}',
 }

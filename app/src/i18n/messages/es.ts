@@ -4997,4 +4997,18 @@ export const es: LocaleCatalog = {
     'Para configurar totalmente el centro de datos, adjunte y active al menos un dominio de almacenamiento local.',
   'guideMe.note.clusterNoActions':
     'No hay acciones disponibles para este clúster: no está adjunto a ningún centro de datos.',
+  // UI extensions (docs/PLUGINS.md): sidebar group, plugin error state,
+  // plugin page states, About dialog plugin list ------------------------
+  'nav.group.extensions': 'Extensiones',
+  'extensions.error.title': '{plugin} no pudo mostrar este contenido',
+  'extensions.page.loading': 'Cargando la página de la extensión',
+  'extensions.page.notFound.title': 'Página de extensión no disponible',
+  'extensions.page.notFound.body':
+    'Ninguna extensión cargada proporciona esta página. Puede que se haya quitado de la configuración de la implementación, que no se haya podido cargar o que no esté disponible para su cuenta.',
+  'extensions.page.notFound.back': 'Volver al panel de control',
+  'about.extensions': 'Extensiones',
+  'about.extensions.status.active': 'Cargada',
+  'about.extensions.status.loading': 'Cargando',
+  'about.extensions.status.skipped': 'No se carga para este motor',
+  'about.extensions.status.failed': 'Error: {reason}',
 }

@@ -39,6 +39,7 @@ import { useStorageDomain } from '../hooks/useStorageDomainDetail'
 import { useT } from '../i18n/useT'
 import { statusText } from '../lib/format'
 import { storageDomainDetailRoute } from '../routes/router'
+import { useExtensionTabs } from '../extensions/useExtensionTabs'
 
 // Same coloring policy as StorageDomainsPage's StatusCell: attached domains
 // report "status" ('active', ...), unattached ones only "external_status"
@@ -59,6 +60,8 @@ export function StorageDomainDetailPage() {
   const { storageDomainId } = storageDomainDetailRoute.useParams()
   const { loaded, isAdmin } = useCapabilities()
   const storageDomain = useStorageDomain(storageDomainId)
+  // plugin subtabs (docs/PLUGINS.md); a hook, so above any early return
+  const extensionTabs = useExtensionTabs('storageDomain', storageDomain.data)
   const navigate = useNavigate()
   const [activeKey, setActiveKey] = useState<string | number>('general')
 
@@ -312,6 +315,7 @@ export function StorageDomainDetailPage() {
                 <StorageDomainPermissionsTab storageDomainId={storageDomainId} />
               </TabContentBody>
             </Tab>
+            {extensionTabs}
           </Tabs>
         </>
       )}
