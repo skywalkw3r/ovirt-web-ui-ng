@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { getVm, listVmAffinityGroups, listVms } from './vms'
+import { createVm, getVm, getVmTpmEnabled, listVmAffinityGroups, listVms } from './vms'
 import { clearSessionToken, setSessionToken } from '../session'
 import { isFollowDenied, resetFollowDenials } from '../followDegrade'
 
@@ -148,5 +148,43 @@ describe('listVmAffinityGroups — follow=vms degrade', () => {
     ])
     const groups = await listVmAffinityGroups('cluster-01', 'vm-01')
     expect(groups.map((g) => g.id)).toEqual(['ag-1'])
+  })
+})
+
+describe('getVmTpmEnabled', () => {
+  it('reads the VM with all_content=true and coerces the string boolean', async () => {
+    const fetchMock = mockFetchSequence([
+      { status: 200, payload: { id: 'vm-01', name: 'one', tpm_enabled: 'true' } },
+    ])
+    await expect(getVmTpmEnabled('vm-01')).resolves.toBe(true)
+    expect(urlsOf(fetchMock)[0]).toMatch(/\/vms\/vm-01\?all_content=true$/)
+  })
+
+  it('reads an engine without the key (older than 4.4.5) as no TPM', async () => {
+    mockFetchSequence([{ status: 200, payload: { id: 'vm-01', name: 'one' } }])
+    await expect(getVmTpmEnabled('vm-01')).resolves.toBe(false)
+  })
+
+  it('surfaces a fault instead of guessing', async () => {
+    mockFetchSequence([{ status: 403, payload: { fault: { reason: 'Forbidden' } } }])
+    await expect(getVmTpmEnabled('vm-01')).rejects.toMatchObject({ status: 403 })
+  })
+})
+
+describe('createVm tpm_enabled', () => {
+  const spec = { name: 'n', templateName: 'Blank', clusterName: 'Default', memoryBytes: 1024 }
+  const bodyOf = (fn: ReturnType<typeof vi.fn>) =>
+    JSON.parse((fn.mock.calls[0]![1] as { body: string }).body) as Record<string, unknown>
+
+  it('omits tpm_enabled when unset so the engine copies the template device', async () => {
+    const fetchMock = mockFetchSequence([{ status: 201, payload: { id: 'vm-9', name: 'n' } }])
+    await createVm(spec)
+    expect(bodyOf(fetchMock)).not.toHaveProperty('tpm_enabled')
+  })
+
+  it('sends an explicit value', async () => {
+    const fetchMock = mockFetchSequence([{ status: 201, payload: { id: 'vm-9', name: 'n' } }])
+    await createVm({ ...spec, tpmEnabled: false })
+    expect(bodyOf(fetchMock)).toMatchObject({ tpm_enabled: false })
   })
 })

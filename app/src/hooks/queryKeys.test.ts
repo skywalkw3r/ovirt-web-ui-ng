@@ -22,6 +22,7 @@ import { tagKeys } from './useTags'
 import { directoryKeys } from './useUserMutations'
 import { isoImageKeys } from './useVmCd'
 import { vmKeys } from './useVms'
+import { tpmKeys } from './useVmTpm'
 
 // The key builders exist so a hand-typed key can never drift from the observer
 // it is meant to hit. These pins are the shapes that were in use across the app
@@ -453,5 +454,16 @@ describe('query-key builders', () => {
     expect(tagKeys.entity('template', 't1')).toEqual(templateKeys.tags('t1'))
     expect(tagKeys.taggedList('vms')).toBe(vmKeys.all)
     expect(tagKeys.taggedList('templates')).toBe(templateKeys.all)
+  })
+})
+
+describe('tpmKeys', () => {
+  // nested under the detail keys, so a VM save (vmKeys.detail invalidation)
+  // refetches the all_content TPM read by prefix
+  it('nests the TPM slices under the VM and template detail keys', () => {
+    expect(tpmKeys.vm('v1')).toEqual(['vm', 'v1', 'tpm'])
+    expect(tpmKeys.vm('v1').slice(0, 2)).toEqual(vmKeys.detail('v1'))
+    expect(tpmKeys.template('t1')).toEqual(['template', 't1', 'tpm'])
+    expect(tpmKeys.template('t1').slice(0, 2)).toEqual(templateKeys.detail('t1'))
   })
 })
