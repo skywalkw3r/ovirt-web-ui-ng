@@ -175,6 +175,24 @@ test('VMs & Templates view has no serious accessibility violations', async ({ pa
   await expectNoSeriousViolations(page)
 })
 
+// The template dialog (#28) in create mode with a source VM picked, so the
+// General tab and the shared Edit VM sections render populated. Scanned on
+// General and on Resource Allocation.
+test('New template dialog has no serious accessibility violations', async ({ page }) => {
+  await login(page, { path: '/vms-templates' })
+  await page.getByRole('button', { name: 'New template' }).click()
+  const dialog = page.getByRole('dialog', { name: 'New template' })
+  await dialog.getByRole('combobox', { name: 'Source VM' }).selectOption({ label: 'legacy-erp' })
+  await expect(dialog.getByRole('tab', { name: 'Custom Properties' })).toBeVisible()
+
+  await expectNoSeriousViolations(page)
+
+  await dialog.getByRole('tab', { name: 'Resource Allocation' }).click()
+  await expect(dialog.getByRole('combobox', { name: 'CPU Shares' })).toBeVisible()
+
+  await expectNoSeriousViolations(page)
+})
+
 test('Hosts & Clusters view has no serious accessibility violations', async ({ page }) => {
   await login(page, { path: '/hosts-clusters' })
   // role=tree, not getByLabel: the pane's Tabs carry the same aria-label, so

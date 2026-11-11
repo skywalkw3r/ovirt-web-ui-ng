@@ -2740,6 +2740,21 @@ export const en = {
   'templateForm.memory.error.guaranteed':
     'Physical Memory Guaranteed cannot exceed the Memory Size',
   'templateForm.memory.error.max': 'Maximum memory cannot be smaller than the Memory Size',
+  // New template (standalone) and the sectioned template dialog (#28)
+  'templateForm.title.new': 'New template',
+  'templateForm.newAction': 'New template',
+  'templateForm.sections.ariaLabel': 'Template sections',
+  'templateForm.sourceVm': 'Source VM',
+  'templateForm.sourceVm.placeholder': 'Select a powered-off VM',
+  'templateForm.sourceVm.help':
+    "The new template copies this VM's disks and configuration. Only a powered-off VM can be used. What you change in this dialog overrides the VM's settings.",
+  'templateForm.sourceVm.empty': 'No VM is powered off. Shut down a VM to make a template from it.',
+  'templateForm.sourceVm.disksNote':
+    'The disks are copied to their current storage domains. For disk allocation, sub-versions or sealing, use Make Template on the VM.',
+  'templateForm.sourceVm.loading': 'Loading the VM configuration',
+  'templateForm.sourceVm.error': 'The VM configuration could not be loaded.',
+  'templateForm.sourceVm.hint':
+    "Select a source VM to set the template's system, console and other settings.",
 
   // Export template as OVA modal (components/template-form/TemplateExportModal)
   'templateExport.title': 'Export {name} as OVA',

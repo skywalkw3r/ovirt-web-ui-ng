@@ -28,6 +28,8 @@ import { ResizableTh, resizableTableProps } from '../components/list-toolbar/Res
 import { SearchInput } from '../components/list-toolbar/SearchInput'
 import { TemplateActionsMenu } from '../components/template-actions/TemplateActionsMenu'
 import { CreateVmButton } from '../components/vm-create/CreateVmWizard'
+import { NewTemplateButton } from '../components/template-form/NewTemplateButton'
+import { useCapabilities } from '../auth/capabilities'
 import { useTemplatesList } from '../hooks/useCatalogPages'
 import { useClustersInventory, useDataCenters } from '../hooks/useAdminResources'
 import { useColumnPrefs } from '../hooks/useColumnPrefs'
@@ -183,6 +185,7 @@ export function TemplatesPage() {
     [t],
   )
   const prefs = useColumnPrefs('templates', columns)
+  const { isAdmin } = useCapabilities()
   // client-side header sort; no default — the engine list order stands
   // until a header is clicked (see hooks/useColumnSort)
   const { sort, thSort } = useColumnSort()
@@ -222,6 +225,12 @@ export function TemplatesPage() {
               trailing={<BookmarkMenu area="templates" currentQuery={query} onApply={apply} />}
             />
           </ToolbarItem>
+          {/* creating a template is an admin action, as on the inventory view */}
+          {isAdmin && (
+            <ToolbarItem>
+              <NewTemplateButton />
+            </ToolbarItem>
+          )}
           <ToolbarGroup align={{ default: 'alignEnd' }}>
             <ToolbarItem variant="pagination">
               <Pagination

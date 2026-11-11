@@ -59,6 +59,7 @@ export const TemplateSchema = z.looseObject({
     .looseObject({
       guaranteed: z.coerce.number().optional(),
       max: z.coerce.number().optional(),
+      ballooning: BooleanishSchema.optional(),
     })
     .optional(),
   cpu: z
@@ -83,6 +84,9 @@ export const TemplateSchema = z.looseObject({
     .looseObject({
       type: z.string().optional(),
       monitors: z.coerce.number().optional(),
+      disconnect_action: z.string().optional(),
+      keyboard_layout: z.string().optional(),
+      smartcard_enabled: BooleanishSchema.optional(),
       single_qxl_pci: BooleanishSchema.optional(),
       file_transfer_enabled: BooleanishSchema.optional(),
       copy_paste_enabled: BooleanishSchema.optional(),
@@ -105,6 +109,44 @@ export const TemplateSchema = z.looseObject({
         .optional(),
     })
     .optional(),
+  // ── VmBase depth the Edit Template dialog edits through the shared Edit VM
+  // sections (components/edit-vm/vmBaseDraft.ts). Same wire shapes as
+  // schemas/vm.ts; booleans and numbers ride as JSON strings on the live engine.
+  delete_protected: BooleanishSchema.optional(),
+  // Resource Allocation
+  cpu_profile: LinkedEntity.optional(),
+  cpu_shares: z.coerce.number().optional(),
+  io: z.looseObject({ threads: z.coerce.number().optional() }).optional(),
+  virtio_scsi: z.looseObject({ enabled: BooleanishSchema.optional() }).optional(),
+  multi_queues_enabled: BooleanishSchema.optional(),
+  virtio_scsi_multi_queues_enabled: BooleanishSchema.optional(),
+  virtio_scsi_multi_queues: z.coerce.number().optional(),
+  // Console. The engine fills soundcard_enabled / console / virtio_scsi from
+  // the template's devices on every read (BackendTemplateResource.doPopulate).
+  soundcard_enabled: BooleanishSchema.optional(),
+  console: z.looseObject({ enabled: BooleanishSchema.optional() }).optional(),
+  sso: z
+    .looseObject({
+      methods: z
+        .looseObject({
+          method: z.array(z.looseObject({ id: z.string().optional() })).optional(),
+        })
+        .optional(),
+    })
+    .optional(),
+  // High Availability
+  lease: z
+    .looseObject({ storage_domain: z.looseObject({ id: z.string().optional() }).optional() })
+    .optional(),
+  storage_error_resume_behaviour: z.string().optional(),
+  // System
+  serial_number: z
+    .looseObject({ policy: z.string().optional(), value: z.string().optional() })
+    .optional(),
+  custom_emulated_machine: z.string().optional(),
+  custom_cpu_model: z.string().optional(),
+  // Icon: a bare { id } link on a plain read
+  large_icon: z.looseObject({ id: z.string().optional() }).optional(),
 })
 
 // JSON quirk: the "template" key is omitted when the list is empty.

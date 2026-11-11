@@ -2328,6 +2328,22 @@ export const fr: LocaleCatalog = {
     'La mémoire physique garantie ne peut pas dépasser la taille de la mémoire',
   'templateForm.memory.error.max':
     'La mémoire maximale ne peut pas être inférieure à la taille de la mémoire',
+  // New template (standalone) and the sectioned template dialog (#28)
+  'templateForm.title.new': 'Nouveau modèle',
+  'templateForm.newAction': 'Nouveau modèle',
+  'templateForm.sections.ariaLabel': 'Sections du modèle',
+  'templateForm.sourceVm': 'VM source',
+  'templateForm.sourceVm.placeholder': 'Sélectionnez une VM éteinte',
+  'templateForm.sourceVm.help':
+    'Le nouveau modèle copie les disques et la configuration de cette VM. Seule une VM éteinte peut être utilisée. Ce que vous modifiez dans cette boîte de dialogue remplace les paramètres de la VM.',
+  'templateForm.sourceVm.empty':
+    "Aucune VM n'est éteinte. Arrêtez une VM pour créer un modèle à partir de celle-ci.",
+  'templateForm.sourceVm.disksNote':
+    "Les disques sont copiés dans leurs domaines de stockage actuels. Pour l'allocation des disques, les sous-versions ou le scellement, utilisez Créer un modèle sur la VM.",
+  'templateForm.sourceVm.loading': 'Chargement de la configuration de la VM',
+  'templateForm.sourceVm.error': "La configuration de la VM n'a pas pu être chargée.",
+  'templateForm.sourceVm.hint':
+    'Sélectionnez une VM source pour définir le système, la console et les autres paramètres du modèle.',
   'templateExport.title': 'Exporter {name} en OVA',
   'templateExport.host': 'Hôte',
   'templateExport.host.placeholder': 'Sélectionnez un hôte',

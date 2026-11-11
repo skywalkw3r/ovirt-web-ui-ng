@@ -33,6 +33,7 @@ import { FolderTreePanel } from '../components/tags/FolderTreePanel'
 import { TagManagerButton } from '../components/tags/TagManagerModal'
 import { TemplateActionsMenu } from '../components/template-actions/TemplateActionsMenu'
 import { ImportVmButton } from '../components/vm-import/ImportVmWizard'
+import { NewTemplateButton } from '../components/template-form/NewTemplateButton'
 import { VmActionsMenu } from '../components/VmActionsMenu'
 import {
   rowEntity,
@@ -720,6 +721,7 @@ export function VmsAndTemplatesPage() {
               isAdmin ? (
                 <>
                   <TagManagerButton />
+                  <NewTemplateButton />
                   <ImportVmButton />
                 </>
               ) : undefined
