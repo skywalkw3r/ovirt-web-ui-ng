@@ -4615,4 +4615,15 @@ export const zhCN: LocaleCatalog = {
   'host.configureLocalStorage.outcome.undoStopped': '撤消部分设置时停止：{error}',
   'host.configureLocalStorage.outcome.rerunHint':
     '要完成配置，请在需要时将主机置于维护模式，然后再次运行“配置本地存储”；它会重新使用空的本地数据中心。',
+  // List-grid columns filled by a follow= or one shared read (issue #34)
+  'vms.column.cpu': 'CPU',
+  'vms.column.network': '网络',
+  'vms.column.ips': 'IP 地址',
+  'disks.column.attachedTo': '附加到',
+  'disks.column.quota': '配额',
+  'networks.column.qos': 'QoS 名称',
+  'vnicProfiles.column.qos': 'QoS 名称',
+  'vnicProfiles.column.networkFilter': '网络过滤器',
+  'pools.column.running': '运行中的虚拟机',
+  'volumes.column.spaceUsed': '已用空间',
 }

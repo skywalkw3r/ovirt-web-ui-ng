@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { ApiError, request } from '../transport'
+import { fetchWithFollowFallback } from '../followDegrade'
 import {
   GlusterVolumeListSchema,
   GlusterVolumeSchema,
@@ -9,6 +10,17 @@ import { listClusters } from './clusters'
 
 // Gluster volumes only exist as a per-cluster subcollection, so the flat
 // list the UI wants is the concatenation across every cluster.
+//
+// follow=statistics inlines each volume's capacity gauges (the Space Used
+// column) on the same per-cluster read — GlusterVolumeService is a
+// MeasurableService, so every volume carries the statistics link, and the
+// engine serves the figures from its stored volume details (no gluster CLI
+// call). A degradable fault on the followed read sticks as a denial and the
+// bare read stands in (Space Used then shows em dashes). Bricks are NOT
+// followed: the volume's brick subcollection link is `glusterbricks` while the
+// GlusterVolume attribute is `bricks`, and the engine's LinkFollower needs the
+// two to match (it calls set<CamelCasedFollowTerm> on the entity) — both
+// follow=bricks and follow=gluster_bricks fail with a server error.
 export async function listGlusterVolumes(): Promise<GlusterVolume[]> {
   const clusters = await listClusters()
   // Per-cluster tolerance (Promise.allSettled): virt-only clusters answer 404
@@ -19,10 +31,14 @@ export async function listGlusterVolumes(): Promise<GlusterVolume[]> {
   // listProviders).
   const settled = await Promise.allSettled(
     clusters.map(async (cluster) => {
-      const data = GlusterVolumeListSchema.parse(
-        await request(`/clusters/${encodeURIComponent(cluster.id)}/glustervolumes`),
+      const path = `/clusters/${encodeURIComponent(cluster.id)}/glustervolumes`
+      const read = async (query: string) =>
+        GlusterVolumeListSchema.parse(await request(`${path}${query}`)).gluster_volume ?? []
+      return fetchWithFollowFallback(
+        'glustervolumes.list:statistics',
+        () => read('?follow=statistics'),
+        () => read(''),
       )
-      return data.gluster_volume ?? []
     }),
   )
 

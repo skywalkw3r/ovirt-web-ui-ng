@@ -4929,4 +4929,15 @@ export const fr: LocaleCatalog = {
     "L'annulation de la configuration partielle s'est arrêtée : {error}",
   'host.configureLocalStorage.outcome.rerunHint':
     "Pour terminer, mettez l'hôte en maintenance si nécessaire et relancez « Configurer le stockage local » ; le centre de données local vide sera réutilisé.",
+  // List-grid columns filled by a follow= or one shared read (issue #34)
+  'vms.column.cpu': 'CPU',
+  'vms.column.network': 'Réseau',
+  'vms.column.ips': 'Adresses IP',
+  'disks.column.attachedTo': 'Attaché à',
+  'disks.column.quota': 'Quota',
+  'networks.column.qos': 'Nom de la QoS',
+  'vnicProfiles.column.qos': 'Nom de la QoS',
+  'vnicProfiles.column.networkFilter': 'Filtre réseau',
+  'pools.column.running': 'VM en cours d’exécution',
+  'volumes.column.spaceUsed': 'Espace utilisé',
 }

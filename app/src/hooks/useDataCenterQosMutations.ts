@@ -12,9 +12,11 @@ import { dataCenterKeys } from './useAdminResources'
 // and the pickers that consume them:
 //   ['datacenter', dcId, 'qoss']  — useDataCenterQoss + the network form picker
 //   ['datacenter-qoss', dcId]     — the vNIC profile modal's QoS picker
+//   ['datacenter-qoss-all']       — the list grids' QoS Name columns
 function invalidateQosQueries(queryClient: ReturnType<typeof useQueryClient>, dcId: string) {
   void queryClient.invalidateQueries({ queryKey: dataCenterKeys.qoss(dcId) })
   void queryClient.invalidateQueries({ queryKey: dataCenterKeys.qosPicker(dcId) })
+  void queryClient.invalidateQueries({ queryKey: dataCenterKeys.allQoss })
 }
 
 // The New QoS modal's save mutation. Mirrors useCreateVnicProfile: notify on

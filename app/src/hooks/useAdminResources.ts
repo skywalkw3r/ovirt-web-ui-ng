@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { listClusters } from '../api/resources/clusters'
-import { listDataCenters } from '../api/resources/datacenters'
+import { listAllDataCenterQoss, listDataCenters } from '../api/resources/datacenters'
 import { listPools } from '../api/resources/pools'
 import { listGroups, listUsers } from '../api/resources/users'
 import { useCapabilities } from '../auth/capabilities'
@@ -65,6 +65,10 @@ export const dataCenterKeys = {
   // over by invalidating both (useDataCenterQosMutations). Unifying the two
   // is a cache-contract change for a follow-up; both shapes stay verbatim.
   qosPicker: (id: string | undefined) => ['datacenter-qoss', id] as const,
+  // every data center's QoS entries flattened (useAllDataCenterQoss — the
+  // Networks / vNIC Profiles grids' QoS Name joins); invalidated with the two
+  // per-DC keys above by every QoS mutation
+  allQoss: ['datacenter-qoss-all'] as const,
   quotas: (id: string) => ['datacenter', id, 'quotas'] as const,
   permissions: (id: string) => ['datacenter', id, 'permissions'] as const,
   iscsiBonds: (id: string) => ['datacenter', id, 'iscsiBonds'] as const,
@@ -108,6 +112,20 @@ export function usePools() {
     queryKey: poolKeys.all,
     queryFn: () => listPools(),
     refetchInterval,
+  })
+}
+
+// The QoS Name columns' join source: one /qoss read per data center, flattened
+// (listAllDataCenterQoss). Admin-gated like the other DC reads, and `enabled`
+// so the opt-in columns only pay for it while one is shown.
+export function useAllDataCenterQoss(enabled: boolean) {
+  const { isAdmin } = useCapabilities()
+  const refetchInterval = useAdminResourcePollInterval()
+  return useQuery({
+    queryKey: dataCenterKeys.allQoss,
+    queryFn: () => listAllDataCenterQoss(),
+    refetchInterval,
+    enabled: isAdmin && enabled,
   })
 }
 

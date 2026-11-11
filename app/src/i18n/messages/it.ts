@@ -4923,4 +4923,15 @@ export const it: LocaleCatalog = {
     "L'annullamento della configurazione parziale si è interrotto: {error}",
   'host.configureLocalStorage.outcome.rerunHint':
     "Per completare, metti l'host in manutenzione se necessario ed esegui di nuovo “Configura storage locale”; il data center locale vuoto verrà riutilizzato.",
+  // List-grid columns filled by a follow= or one shared read (issue #34)
+  'vms.column.cpu': 'CPU',
+  'vms.column.network': 'Rete',
+  'vms.column.ips': 'Indirizzi IP',
+  'disks.column.attachedTo': 'Collegato a',
+  'disks.column.quota': 'Quota',
+  'networks.column.qos': 'Nome QoS',
+  'vnicProfiles.column.qos': 'Nome QoS',
+  'vnicProfiles.column.networkFilter': 'Filtro di rete',
+  'pools.column.running': 'VM in esecuzione',
+  'volumes.column.spaceUsed': 'Spazio utilizzato',
 }

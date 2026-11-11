@@ -4853,4 +4853,15 @@ export const ja: LocaleCatalog = {
     '部分的なセットアップの取り消しが停止しました: {error}',
   'host.configureLocalStorage.outcome.rerunHint':
     '完了するには、必要に応じてホストをメンテナンスモードにし、「ローカルストレージを設定」をもう一度実行してください。空のローカルデータセンターが再利用されます。',
+  // List-grid columns filled by a follow= or one shared read (issue #34)
+  'vms.column.cpu': 'CPU',
+  'vms.column.network': 'ネットワーク',
+  'vms.column.ips': 'IPアドレス',
+  'disks.column.attachedTo': 'アタッチ先',
+  'disks.column.quota': 'クォータ',
+  'networks.column.qos': 'QoS名',
+  'vnicProfiles.column.qos': 'QoS名',
+  'vnicProfiles.column.networkFilter': 'ネットワークフィルター',
+  'pools.column.running': '実行中のVM',
+  'volumes.column.spaceUsed': '使用容量',
 }

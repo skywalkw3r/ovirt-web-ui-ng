@@ -5083,4 +5083,15 @@ export const ru: LocaleCatalog = {
   'host.configureLocalStorage.outcome.undoStopped': 'Отмена частичной настройки прервана: {error}',
   'host.configureLocalStorage.outcome.rerunHint':
     'Чтобы завершить, при необходимости переведите хост в режим обслуживания и снова запустите «Настроить локальное хранилище»; будет повторно использован пустой локальный дата-центр.',
+  // List-grid columns filled by a follow= or one shared read (issue #34)
+  'vms.column.cpu': 'ЦП',
+  'vms.column.network': 'Сеть',
+  'vms.column.ips': 'IP-адреса',
+  'disks.column.attachedTo': 'Подключён к',
+  'disks.column.quota': 'Квота',
+  'networks.column.qos': 'Имя QoS',
+  'vnicProfiles.column.qos': 'Имя QoS',
+  'vnicProfiles.column.networkFilter': 'Сетевой фильтр',
+  'pools.column.running': 'Запущенные ВМ',
+  'volumes.column.spaceUsed': 'Использовано места',
 }

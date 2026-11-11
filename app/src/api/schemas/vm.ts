@@ -46,6 +46,10 @@ export const VmSchema = z.looseObject({
   // detail VMs tab client-filters the /vms feed on this — webadmin's
   // QuotaVmListModel has no REST subcollection.
   quota: LinkedEntity.optional(),
+  // The pool this VM belongs to (VmMapper sets it whenever vm_pool_id is
+  // non-null), a bare { id } link on every list read. The pool VMs tab and the
+  // Pools grid's Running VMs column client-filter the /vms feed on it.
+  vm_pool: LinkedEntity.optional(),
   // Present only when the read used ?follow=tags (listVms does): key absent =
   // tags not followed; wrapper present with the inner "tag" key omitted =
   // followed but zero tags (the usual empty-list quirk). Consumers normalize

@@ -33,8 +33,10 @@ function gauge(stats: VmStat[], name: string): number | undefined {
 // live 4.5 engine): 4.5 reports cpu.current.total but cpu.current.guest can
 // read 0, and it has NO memory.usage gauge — only memory.usage.history and the
 // memory.used/installed byte pair. Each helper walks a fallback chain so the
-// row is correct on 4.5 and older engines alike.
-function cpuPercent(stats: VmStat[]): number | undefined {
+// row is correct on 4.5 and older engines alike. cpuPercent/networkPercent are
+// also read by the VMs grid's CPU / Network columns off the list rows' own
+// followed statistics (no per-VM statistics read).
+export function cpuPercent(stats: VmStat[]): number | undefined {
   return (
     gauge(stats, 'cpu.current.total') ??
     gauge(stats, 'cpu.usage.history') ??
@@ -53,7 +55,7 @@ function memoryPercent(stats: VmStat[]): number | undefined {
   return undefined
 }
 
-function networkPercent(stats: VmStat[]): number | undefined {
+export function networkPercent(stats: VmStat[]): number | undefined {
   return gauge(stats, 'network.current.total') ?? gauge(stats, 'network.usage.history')
 }
 

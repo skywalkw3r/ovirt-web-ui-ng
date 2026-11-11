@@ -4954,4 +4954,15 @@ export const de: LocaleCatalog = {
     'Das Rückgängigmachen der teilweisen Einrichtung wurde abgebrochen: {error}',
   'host.configureLocalStorage.outcome.rerunHint':
     'Versetzen Sie zum Abschließen den Host bei Bedarf in die Wartung und führen Sie „Lokalen Speicher konfigurieren“ erneut aus; dabei wird das leere lokale Rechenzentrum wiederverwendet.',
+  // List-grid columns filled by a follow= or one shared read (issue #34)
+  'vms.column.cpu': 'CPU',
+  'vms.column.network': 'Netzwerk',
+  'vms.column.ips': 'IP-Adressen',
+  'disks.column.attachedTo': 'Angehängt an',
+  'disks.column.quota': 'Kontingent',
+  'networks.column.qos': 'QoS-Name',
+  'vnicProfiles.column.qos': 'QoS-Name',
+  'vnicProfiles.column.networkFilter': 'Netzwerkfilter',
+  'pools.column.running': 'Laufende VMs',
+  'volumes.column.spaceUsed': 'Belegter Speicher',
 }

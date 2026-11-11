@@ -4894,4 +4894,15 @@ export const ptBR: LocaleCatalog = {
     'A reversão da configuração parcial foi interrompida: {error}',
   'host.configureLocalStorage.outcome.rerunHint':
     'Para concluir, coloque o host em manutenção, se necessário, e execute “Configurar armazenamento local” novamente; o data center local vazio será reutilizado.',
+  // List-grid columns filled by a follow= or one shared read (issue #34)
+  'vms.column.cpu': 'CPU',
+  'vms.column.network': 'Rede',
+  'vms.column.ips': 'Endereços IP',
+  'disks.column.attachedTo': 'Anexado a',
+  'disks.column.quota': 'Cota',
+  'networks.column.qos': 'Nome da QoS',
+  'vnicProfiles.column.qos': 'Nome da QoS',
+  'vnicProfiles.column.networkFilter': 'Filtro de rede',
+  'pools.column.running': 'VMs em execução',
+  'volumes.column.spaceUsed': 'Espaço usado',
 }

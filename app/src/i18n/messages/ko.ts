@@ -4790,4 +4790,15 @@ export const ko: LocaleCatalog = {
   'host.configureLocalStorage.outcome.undoStopped': '부분 설정 취소가 중단되었습니다: {error}',
   'host.configureLocalStorage.outcome.rerunHint':
     '완료하려면 필요한 경우 호스트를 유지 관리 모드로 전환한 후 "로컬 스토리지 구성"을 다시 실행하십시오. 빈 로컬 데이터 센터가 다시 사용됩니다.',
+  // List-grid columns filled by a follow= or one shared read (issue #34)
+  'vms.column.cpu': 'CPU',
+  'vms.column.network': '네트워크',
+  'vms.column.ips': 'IP 주소',
+  'disks.column.attachedTo': '연결 대상',
+  'disks.column.quota': '할당량',
+  'networks.column.qos': 'QoS 이름',
+  'vnicProfiles.column.qos': 'QoS 이름',
+  'vnicProfiles.column.networkFilter': '네트워크 필터',
+  'pools.column.running': '실행 중인 VM',
+  'volumes.column.spaceUsed': '사용된 공간',
 }

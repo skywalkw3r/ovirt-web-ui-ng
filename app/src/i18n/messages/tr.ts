@@ -4843,4 +4843,15 @@ export const tr: LocaleCatalog = {
   'host.configureLocalStorage.outcome.undoStopped': 'Kısmi kurulumun geri alınması durdu: {error}',
   'host.configureLocalStorage.outcome.rerunHint':
     'Tamamlamak için gerekirse ana makineyi bakıma alın ve "Yerel depolamayı yapılandır" işlemini yeniden çalıştırın; boş yerel veri merkezi yeniden kullanılır.',
+  // List-grid columns filled by a follow= or one shared read (issue #34)
+  'vms.column.cpu': 'CPU',
+  'vms.column.network': 'Ağ',
+  'vms.column.ips': 'IP Adresleri',
+  'disks.column.attachedTo': 'Bağlı Olduğu',
+  'disks.column.quota': 'Kota',
+  'networks.column.qos': 'QoS Adı',
+  'vnicProfiles.column.qos': 'QoS Adı',
+  'vnicProfiles.column.networkFilter': 'Ağ filtresi',
+  'pools.column.running': 'Çalışan VM’ler',
+  'volumes.column.spaceUsed': 'Kullanılan Alan',
 }
