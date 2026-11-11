@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { PLUGIN_NAME_PATTERN, resolveManifestUrl } from '../extensions/urls'
 
 // Deployment-provided runtime config. Everything else in this app is build-time
 // (import.meta.env); this is the one runtime seam. A deployer sets
@@ -61,6 +62,29 @@ export interface ServerEntry {
   // Purely a performance profile — omitting it costs nothing but the first
   // 30s probe per shape per 10-min window on such a link.
   wan?: boolean
+  // Origin of this engine's legacy ovirt-cockpit-sso service (see
+  // CockpitConfig.ssoUrl). Per engine because the session token handed to it
+  // is only valid on the engine that issued it. https only; omit for the
+  // direct host link.
+  cockpitSsoUrl?: string
+}
+
+// Host console: the "Host console" action and host detail button that open a
+// host's Cockpit web console in a new browser tab (lib/hostConsole.ts,
+// docs/HOST-CONSOLE.md).
+export interface CockpitConfig {
+  // false hides every host console entry point; true (the default) shows them
+  enabled: boolean
+  // TCP port Cockpit listens on on the hosts (default 9090)
+  port: number
+  // Origin of the engine-side ovirt-cockpit-sso service (legacy oVirt 4.2/4.3,
+  // usually https://<engine-fqdn>:9986), or '' (the default) to open the host
+  // directly. Used on single-engine deploys only: with a configured server
+  // list the per-engine ServerEntry.cockpitSsoUrl applies instead.
+  ssoUrl: string
+  // Cockpit page the SSO handoff lands on (default 'machines', the form the
+  // ovirt-cockpit-sso project documents)
+  ssoPage: string
 }
 
 // Deploy-time login-screen content, shown pre-auth (before any token exists),
@@ -94,12 +118,35 @@ export interface SupportConfig {
   url: string
 }
 
+// UI plugins (docs/ADR-0001-UI-EXTENSIONS.md, docs/PLUGINS.md). This block is
+// the allow-list: only plugins named here load, and nothing loads unless
+// `enabled` is true. A user cannot add a plugin from the browser, and no
+// engine response can either.
+export interface PluginEntry {
+  // [a-z0-9-], must equal the manifest's `name`
+  name: string
+  // absolute manifest URL, resolved and validated (extensions/urls.ts)
+  manifest: string
+  // Multi-engine: load only for sessions on these configured engines (names
+  // from servers.list). Absent = every engine. A filter never matches on a
+  // single-engine console, where no engine has a configured name.
+  servers?: string[]
+}
+
+export interface PluginsConfig {
+  // the feature flag; false (the default) loads nothing
+  enabled: boolean
+  list: PluginEntry[]
+}
+
 export interface RuntimeConfig {
   monitoring: MonitoringConfig
   servers: ServerEntry[]
   login: LoginConfig
   motd: MotdConfig
   support: SupportConfig
+  cockpit: CockpitConfig
+  plugins: PluginsConfig
 }
 
 const DEFAULT_GRAFANA_BASE_URL = '/ovirt-engine-grafana'
@@ -137,6 +184,21 @@ function safeHttpUrl(url: string | undefined): string | undefined {
   if (!trimmed || !/^https?:\/\//i.test(trimmed)) return undefined
   try {
     return new URL(trimmed).toString()
+  } catch {
+    return undefined
+  }
+}
+
+// Origin-only https guard for the Cockpit SSO service. The session token is
+// handed to this origin (in the URL fragment), so plaintext http and anything
+// that is not a plain origin are refused; a path or query on the configured
+// URL is dropped because the handoff path is fixed.
+function safeHttpsOrigin(url: string | undefined): string | undefined {
+  const trimmed = url?.trim()
+  if (!trimmed || !/^https:\/\//i.test(trimmed)) return undefined
+  try {
+    const parsed = new URL(trimmed)
+    return parsed.username || parsed.password ? undefined : parsed.origin
   } catch {
     return undefined
   }
@@ -211,6 +273,7 @@ const InjectedConfigSchema = z
               fqdn: z.string().optional(),
               profile: z.string().optional(),
               wan: z.boolean().optional(),
+              cockpitSsoUrl: z.string().optional(),
             }),
           )
           .optional(),
@@ -236,8 +299,75 @@ const InjectedConfigSchema = z
         url: z.string().optional(),
       })
       .optional(),
+    // port/ssoPage stay permissive (unknown) for the same all-or-nothing
+    // reason as motd.severity: toCockpit narrows them and defaults a miss.
+    cockpit: z
+      .looseObject({
+        enabled: z.boolean().optional(),
+        port: z.unknown().optional(),
+        ssoUrl: z.string().optional(),
+        ssoPage: z.unknown().optional(),
+      })
+      .optional(),
+    // Narrowed by toPlugins with its own schema, so a malformed plugins
+    // block disables plugins without taking the rest of the config down.
+    plugins: z.unknown().optional(),
   })
   .optional()
+
+const InjectedPluginsSchema = z.looseObject({
+  enabled: z.boolean().optional(),
+  list: z.array(z.unknown()).optional(),
+})
+
+const InjectedPluginEntrySchema = z.looseObject({
+  name: z.string(),
+  manifest: z.string(),
+  servers: z.array(z.string()).optional(),
+})
+
+// The app's base path ('/' in dev, '/ovirt-engine/web-ui-ng/' in production)
+// anchors manifest paths written without a leading slash.
+function appBase(): string {
+  return import.meta.env.BASE_URL ?? '/'
+}
+
+// Narrow the plugin allow-list. Invalid entries are dropped one by one with a
+// warning naming them (a deployer typo should be diagnosable from the browser
+// console); duplicate names keep the first entry.
+function toPlugins(injected: unknown): PluginsConfig {
+  const parsed = InjectedPluginsSchema.safeParse(injected)
+  if (!parsed.success || parsed.data.enabled !== true) {
+    return { enabled: false, list: [] }
+  }
+  const origin =
+    typeof window !== 'undefined' && window.location !== undefined ? window.location.origin : ''
+  const list: PluginEntry[] = []
+  const seen = new Set<string>()
+  for (const raw of parsed.data.list ?? []) {
+    const entry = InjectedPluginEntrySchema.safeParse(raw)
+    const name = entry.success ? entry.data.name.trim() : ''
+    const manifest =
+      entry.success && origin !== ''
+        ? resolveManifestUrl(entry.data.manifest, origin, appBase())
+        : undefined
+    if (!entry.success || !PLUGIN_NAME_PATTERN.test(name) || manifest === undefined) {
+      console.warn('[plugins] ignoring an invalid plugins.list entry', raw)
+      continue
+    }
+    if (seen.has(name)) {
+      console.warn(`[plugins] ignoring a duplicate plugins.list entry for "${name}"`)
+      continue
+    }
+    seen.add(name)
+    const item: PluginEntry = { name, manifest }
+    if (entry.data.servers !== undefined) {
+      item.servers = entry.data.servers.map((server) => server.trim()).filter(Boolean)
+    }
+    list.push(item)
+  }
+  return { enabled: true, list }
+}
 
 // Multi-engine is a BUILD-TIME capability, not just a config switch: only
 // proxy/external builds (the Containerfile sets VITE_MULTI_ENGINE=1; source
@@ -256,7 +386,15 @@ function multiEngineCapable(): boolean {
 // it never composes an empty `user@` suffix.
 function toServers(
   list:
-    { name?: string; url?: string; fqdn?: string; profile?: string; wan?: boolean }[] | undefined,
+    | {
+        name?: string
+        url?: string
+        fqdn?: string
+        profile?: string
+        wan?: boolean
+        cockpitSsoUrl?: string
+      }[]
+    | undefined,
 ): ServerEntry[] {
   if (!multiEngineCapable() || !list) return []
   const out: ServerEntry[] = []
@@ -274,6 +412,8 @@ function toServers(
     const profile = item.profile?.trim()
     if (profile) entry.profile = profile
     if (item.wan === true) entry.wan = true
+    const cockpitSsoUrl = safeHttpsOrigin(item.cockpitSsoUrl)
+    if (cockpitSsoUrl) entry.cockpitSsoUrl = cockpitSsoUrl
     out.push(entry)
   }
   return out
@@ -312,6 +452,28 @@ function toMotd(injected: { severity?: string; title?: string; message?: string 
   }
 }
 
+const DEFAULT_COCKPIT_PORT = 9090
+const DEFAULT_COCKPIT_SSO_PAGE = 'machines'
+
+// Narrow the host console block. A bad port or page falls back to its default
+// instead of disabling the feature: the direct link on 9090 is still the
+// right answer for almost every host.
+function toCockpit(
+  injected: { enabled?: boolean; port?: unknown; ssoUrl?: string; ssoPage?: unknown } | undefined,
+): CockpitConfig {
+  const port = injected?.port
+  const page = typeof injected?.ssoPage === 'string' ? injected.ssoPage.trim() : ''
+  return {
+    enabled: injected?.enabled ?? true,
+    port:
+      typeof port === 'number' && Number.isInteger(port) && port >= 1 && port <= 65535
+        ? port
+        : DEFAULT_COCKPIT_PORT,
+    ssoUrl: safeHttpsOrigin(injected?.ssoUrl) ?? '',
+    ssoPage: /^[A-Za-z0-9][A-Za-z0-9_-]*$/.test(page) ? page : DEFAULT_COCKPIT_SSO_PAGE,
+  }
+}
+
 function resolve(): RuntimeConfig {
   const build = buildDefault()
   const injectedGlobal = typeof window !== 'undefined' ? window.ovirtWebUiConfig : undefined
@@ -347,6 +509,8 @@ function resolve(): RuntimeConfig {
     support: {
       url: safeHttpUrl(parsed.success ? parsed.data?.support?.url : undefined) ?? '',
     },
+    cockpit: toCockpit(parsed.success ? parsed.data?.cockpit : undefined),
+    plugins: toPlugins(parsed.success ? parsed.data?.plugins : undefined),
   }
 }
 

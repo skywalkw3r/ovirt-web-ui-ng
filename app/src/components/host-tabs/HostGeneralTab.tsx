@@ -133,8 +133,8 @@ export function HostGeneralTab({ host }: { host: Host }) {
         </Alert>
       )}
 
-      {/* Cockpit (the host's local web console at :9090) moved to a link tab in
-          the host detail tab bar — see HostDetailPage. */}
+      {/* Cockpit (the host's local web console) opens from the Host console
+          button in the host detail header; see HostConsoleButton. */}
       <Grid hasGutter>
         <GridItem lg={6}>
           <SectionCard title={t('hostGeneral.card.general')}>

@@ -34,11 +34,14 @@ import {
 import { FormattedMessage, useIntl } from 'react-intl'
 import { Link, Outlet, useRouterState } from '@tanstack/react-router'
 import { useBrandedTab } from '../branding/useBrandedTab'
+import { ExtensionMiniRailItem, ExtensionNavGroup } from '../extensions/ExtensionNav'
+import { ExtensionsHost } from '../extensions/ExtensionsHost'
 import { engineWebUiUrl } from '../lib/engineWebUi'
 import { monitoringPortalUrl, showMonitoringPortal } from '../lib/monitoringPortal'
 import { useCapabilities } from '../auth/capabilities'
 import { useNavShortcuts } from '../hooks/useNavShortcuts'
 import { ConfigureLocalStorageProvider } from './host-actions/ConfigureLocalStorageProvider'
+import { GuideMeProvider } from './guide-me/GuideMeProvider'
 import { useProductBrand } from '../hooks/useProductBrand'
 import { NotificationBell } from '../notifications/NotificationDrawerPanel'
 import { getActiveServer } from '../servers/registry'
@@ -128,6 +131,11 @@ const NAV_GROUPS: readonly NavGroup[] = [
       { labelId: 'nav.schedulingPolicies', to: '/scheduling-policies', adminOnly: true },
       { labelId: 'nav.providers', to: '/providers', adminOnly: true },
       { labelId: 'nav.errata', to: '/errata', adminOnly: true },
+      // webadmin's Administration › Configure, last in its menu as there. The
+      // page only links to Roles, System Permissions, Scheduling Policies,
+      // Instance Types and MAC Address Pools; their own entries stay in the
+      // menu so existing muscle memory and one-click access keep working.
+      { labelId: 'nav.configure', to: '/configure', adminOnly: true },
     ],
   },
 ]
@@ -238,6 +246,8 @@ function SidebarNav({
             </NavExpandable>
           )
         })}
+        {/* Pages registered by UI plugins; renders nothing without any. */}
+        <ExtensionNavGroup pathname={pathname} />
         {/* External anchor into the ENGINE's bundled Grafana — not a router
             Link, so PF's cloned child is a plain <a> that leaves the SPA. The
             href resolves against the active engine, never this console's own
@@ -306,6 +316,10 @@ function MiniRail({
           </Tooltip>
         )
       })}
+      <ExtensionMiniRailItem
+        pathname={pathname}
+        onOpen={() => onOpenGroup('nav.group.extensions')}
+      />
       {showMonitoringPortal(isAdmin) && (
         <Tooltip content={intl.formatMessage({ id: 'nav.monitoringPortal' })} position="right">
           <a
@@ -531,6 +545,8 @@ export function AppShell() {
           that render nothing until triggered. */}
       <CommandPalette />
       <ShortcutsHelp />
+      {/* UI plugin loader + bridge (docs/PLUGINS.md); renders nothing. */}
+      <ExtensionsHost />
       {/* Non-blocking connectivity warning pinned above page content; renders
           nothing while the engine is reachable. */}
       <OfflineBanner />
@@ -540,7 +556,11 @@ export function AppShell() {
       {/* Configure Local Storage moves its host out of the list it was
           started from, so its dialog lives here rather than in the row. */}
       <ConfigureLocalStorageProvider>
-        <Outlet />
+        {/* Guide Me opens from right-click menus and from create dialogs that
+            unmount on save, so it is hosted here too. */}
+        <GuideMeProvider>
+          <Outlet />
+        </GuideMeProvider>
       </ConfigureLocalStorageProvider>
     </Page>
   )

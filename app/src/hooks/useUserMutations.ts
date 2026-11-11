@@ -74,7 +74,7 @@ export function useDirectoryGroups(domainId: string, search = '') {
 }
 
 // Display name rides through the mutation variables purely for the toast —
-// the house pattern (useAddPermission carries assigneeName the same way). The
+// the house pattern (useRemovePermission carries assigneeName the same way). The
 // modal resolves it from the selected directory row.
 export interface AddUserVars {
   spec: AddUserSpec

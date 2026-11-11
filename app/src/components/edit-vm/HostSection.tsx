@@ -17,9 +17,13 @@ import {
 } from '@patternfly/react-core'
 import type { UseQueryResult } from '@tanstack/react-query'
 import { MIGRATION_POLICIES } from '../../api/resources/clusters'
+import type { VmNumaNode } from '../../api/resources/vmNuma'
 import type { Host } from '../../api/schemas/host'
+import type { PlacementHostNumaNodes } from '../../hooks/useVmNumaNodes'
 import { useT } from '../../i18n/useT'
 import { FieldHelp } from '../forms/FieldHelp'
+import type { DraftError } from './cpuPinning'
+import { CpuPinningFields, NumaFields } from './PinningFields'
 import {
   type EditVmDraft,
   INHERITABLE_BOOLEAN_OPTIONS,
@@ -33,16 +37,33 @@ import {
 // (cpu.mode = host_passthrough). The hosts arrive as the global inventory
 // query, narrowed here to the draft's cluster (mirroring RunOnceModal), so the
 // specific-host picker can render all four states; the modal owns the draft.
+//
+// CPU pinning and virtual NUMA (PinningFields) sit at the end of the host
+// block: the NUMA reads are owned by the modal (this section only mounts while
+// its tab is active), which also computes the topology error so Save gates on
+// it from any tab.
 export function HostSection({
   draft,
+  baseline,
   set,
   hosts,
   clusterId,
+  numaNodes,
+  hostNuma,
+  vmIsDown,
+  dedicatedSupported,
+  numaError,
 }: {
   draft: EditVmDraft
+  baseline: EditVmDraft
   set: <K extends keyof EditVmDraft>(key: K, value: EditVmDraft[K]) => void
   hosts: UseQueryResult<Host[]>
   clusterId: string
+  numaNodes: UseQueryResult<VmNumaNode[]>
+  hostNuma: PlacementHostNumaNodes
+  vmIsDown: boolean
+  dedicatedSupported: boolean
+  numaError: DraftError | undefined
 }) {
   const t = useT()
   const clusterHosts = (hosts.data ?? []).filter((host) => host.cluster?.id === clusterId)
@@ -160,6 +181,24 @@ export function HostSection({
           onChange={(_event, checked) => set('hostPassthroughCpu', checked)}
         />
       </FormGroup>
+
+      <CpuPinningFields
+        draft={draft}
+        set={set}
+        baseline={baseline}
+        dedicatedSupported={dedicatedSupported}
+        numaEditable={vmIsDown && draft.numaLoaded}
+      />
+
+      <NumaFields
+        draft={draft}
+        baseline={baseline}
+        set={set}
+        numaNodes={numaNodes}
+        hostNuma={hostNuma}
+        vmIsDown={vmIsDown}
+        error={numaError}
+      />
 
       <FormSection title={t('vm.edit.host.migrationTuning')} titleElement="h3">
         {/* Per-VM migration policy — the same engine built-ins the cluster form

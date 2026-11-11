@@ -24,12 +24,15 @@ Docker strategy and `dockerfilePath: packaging/Containerfile`, or by hand:
 ```sh
 podman build -f packaging/Containerfile \
     --build-arg VITE_CSP_CONNECT_EXTRA= \
+    --build-arg VITE_CSP_SCRIPT_EXTRA= \
     -t quay.io/yourorg/ovirt-web-ui-ng:1.0.0 .
 podman push quay.io/yourorg/ovirt-web-ui-ng:1.0.0
 ```
 
-The empty `VITE_CSP_CONNECT_EXTRA` is for the same-origin proxy shape below:
-it bakes a strict `<meta>` CSP with no serve-time placeholder. Drop the
+The empty `VITE_CSP_CONNECT_EXTRA` and `VITE_CSP_SCRIPT_EXTRA` are for the
+same-origin proxy shape below: they bake a strict `<meta>` CSP with no
+serve-time placeholders (UI plugins then load from this console's own origin
+only, see docs/PLUGINS.md). Drop the
 argument to keep the placeholder for the direct-connect alternative.
 
 ## Two runtime shapes, one image

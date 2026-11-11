@@ -186,7 +186,7 @@ export const tr: LocaleCatalog = {
   'inventory.tree.ariaLabel': 'VM ve şablon klasörleri',
   'inventory.sidebar.resize': 'Kenar çubuğunu yeniden boyutlandır',
   'inventory.filter.ariaLabel': "VM'leri ve şablonları ada göre filtrele",
-  'inventory.filter.hint': 'Ada göre filtrele',
+  'inventory.filter.hint': 'Ada, folder:/prod/web veya tag:pci-dss ile filtrele',
   'infra.filter.ariaLabel': 'Altyapıyı ada göre filtrele',
   'infra.filter.hint': 'Ada göre filtrele',
   'inventory.column.type': 'Tür',
@@ -422,7 +422,7 @@ export const tr: LocaleCatalog = {
   'vms.searchEmpty.matches': 'Hiçbir şey {query} ile eşleşmiyor',
   'vms.empty.title': 'Sanal makine yok',
   'vms.empty.body': 'Görme izniniz olan sanal makineler burada görünecektir.',
-  'vms.search.hint': 'name=web* and status=up — veya düz metin',
+  'vms.search.hint': 'name=web* and status=up, folder:/prod/web, tag:pci-dss veya düz metin',
   'vms.search.ariaLabel': 'Sanal makine ara',
   'vms.pagination.ariaLabel': 'Sanal makineler sayfalandırması',
   'vms.table.ariaLabel': 'Sanal makineler',
@@ -1051,6 +1051,41 @@ export const tr: LocaleCatalog = {
   'permissions.add.role.none': 'Bu motorda atanabilir rol yok.',
   'permissions.add.role.userGroup': 'Kullanıcı Rolleri',
   'permissions.add.role.adminGroup': 'İdari roller',
+  // Add Permission picker depth (issue #31): multi-select, My groups,
+  // Everyone, and directory search.
+  'permissions.add.kind.myGroups': 'Gruplarım',
+  'permissions.add.kind.everyone': 'Herkes',
+  'permissions.add.source.label': 'Arama yeri',
+  'permissions.add.source.engine': 'Motor veritabanı',
+  'permissions.add.source.directory': 'Dizin: {domain}',
+  'permissions.add.source.domainsLoading': 'Dizinler yükleniyor',
+  'permissions.add.source.domainsError': 'Dizinler yüklenemedi: {message}',
+  'permissions.add.source.directoryHint':
+    'Bir dizinde bulunan ve henüz motorda olmayan kullanıcı ve gruplar, rol verildiğinde motora eklenir.',
+  'permissions.add.empty.directory.users': 'Bu dizin hiç kullanıcı döndürmedi.',
+  'permissions.add.empty.directory.groups': 'Bu dizin hiç grup döndürmedi.',
+  'permissions.add.myGroups.loading': 'Gruplarınız yükleniyor',
+  'permissions.add.myGroups.error': 'Gruplarınız yüklenemedi: {message}',
+  'permissions.add.myGroups.empty.title': 'Grup yok',
+  'permissions.add.myGroups.empty.body': 'Hesabınız hiçbir dizin grubunun üyesi değil.',
+  'permissions.add.myGroups.table.ariaLabel': 'Gruplarım',
+  'permissions.add.everyone.body':
+    'Rol yerleşik Everyone grubuna verilir; böylece her kullanıcı bu {noun} üzerinde bu role sahip olur.',
+  'permissions.add.selectMany.user': 'Rolün verileceği bir veya daha fazla kullanıcı seçin.',
+  'permissions.add.selectMany.group': 'Rolün verileceği bir veya daha fazla grup seçin.',
+  'permissions.add.selected.count':
+    '{count, plural, one {# kullanıcı/grup seçildi} other {# kullanıcı/grup seçildi}}',
+  'permissions.add.selected.ariaLabel': 'Seçilen kullanıcı ve gruplar',
+  'permissions.add.selected.remove': '{name} öğesini seçimden kaldır',
+  'permissions.add.result.failed.title':
+    '{count, plural, one {Rol # kullanıcıya/gruba verilemedi} other {Rol # kullanıcıya/gruba verilemedi}}',
+  'permissions.add.result.failed.body':
+    'Başarısız olanlar seçili kalır. Nedeni giderip yeniden deneyin veya bunları seçimden kaldırın.',
+  'permissions.add.result.failed.item': '{name}: {message}',
+  'permissions.add.submit.retry': 'Başarısız olanları yeniden dene',
+  'permissions.add.toast.granted': '{role}, {name} için verildi',
+  'permissions.add.toast.grantedMany':
+    '{role}, {count, plural, one {# kullanıcı/grup} other {# kullanıcı/grup}} için verildi',
   'users.notPermitted': 'Kullanıcılar',
   'users.title': 'Kullanıcılar',
   'users.search.hint': 'usrname=jdoe* — veya düz metin',
@@ -1742,6 +1777,11 @@ export const tr: LocaleCatalog = {
   'settings.pref.console.vncDescription': 'noVNC ve çoğu masaüstü görüntüleyiciyle çalışır.',
   'settings.pref.console.spiceDescription': 'virt-viewer aracılığıyla daha zengin uzak deneyim.',
   'settings.pref.language': 'Dil',
+  // Roaming note (components/UserMenu, settings/RoamingSettingsProvider)
+  'settings.pref.roaming.synced':
+    'oVirt kullanıcı profilinize kaydedilir, böylece diğer tarayıcılarda da geçerli olur.',
+  'settings.pref.roaming.local':
+    'Yalnızca bu tarayıcıda kaydedilir; oVirt kullanıcı profiliniz bunları saklamak için kullanılamıyor.',
   'settings.refresh.seconds': '{count, plural, one {# saniye} other {# saniye}}',
   'settings.timeout.minutes': '{count, plural, one {# dakika} other {# dakika}}',
   'settings.timeout.hours': '{count, plural, one {# saat} other {# saat}}',
@@ -1921,7 +1961,9 @@ export const tr: LocaleCatalog = {
   'hostNuma.empty.body': 'Bu ana makine hiçbir NUMA düğümü bildirmiyor.',
   'hostNuma.error.title': 'NUMA topolojisi yüklenemedi',
   'hostNuma.loading': 'NUMA topolojisi yükleniyor',
-  'host.cockpit.open': 'Cockpit',
+  'host.console.open': 'Ana makine konsolu',
+  'host.console.newTab': 'Cockpit’i yeni sekmede açar',
+  'host.console.tooltip': '{name} için Cockpit arayüzünü aç',
   'datacenters.forceRemove.action': 'Zorla kaldır',
   'datacenters.forceRemove.confirm.title': "''{name}'' veri merkezi zorla kaldırılsın mı?",
   'datacenters.forceRemove.confirm.body':
@@ -2223,7 +2265,7 @@ export const tr: LocaleCatalog = {
   'dc.field.macPool': 'MAC adres havuzu',
   'search.autocomplete.hint': 'Arama sözdizimi',
   'templates.title': 'Şablonlar',
-  'templates.search.hint': 'name=web* — veya düz metin',
+  'templates.search.hint': 'name=web*, folder:/prod, tag:legacy veya düz metin',
   'templates.search.ariaLabel': 'Şablon ara',
   'templates.pagination.ariaLabel': 'Şablonlar sayfalandırması',
   'templates.loading': 'Şablonlar yükleniyor',
@@ -2269,27 +2311,27 @@ export const tr: LocaleCatalog = {
   'templateForm.stateless': 'Durumsuz',
   'templateForm.deleteProtection': 'Silme Koruması',
   'templateForm.aria.deleteProtection': 'Silme koruması',
-  'templateForm.section.system': 'Sistem',
-  'templateForm.memory': 'Bellek Boyutu (MB)',
-  'templateForm.guaranteedMemory': 'Garanti Edilen Fiziksel Bellek (MB)',
-  'templateForm.maxMemory': 'Maksimum bellek (MB)',
   'templateForm.sockets': 'Sanal Yuvalar',
   'templateForm.cores': 'Sanal Yuva Başına Çekirdek',
   'templateForm.threads': 'Çekirdek Başına İş Parçacığı',
-  'templateForm.section.ha': 'Yüksek Kullanılabilirlik',
-  'templateForm.ha': 'Yüksek kullanılabilirlikli',
-  'templateForm.ha.priority': 'Öncelik',
-  'templateForm.aria.haPriority': 'Yüksek kullanılabilirlik önceliği',
-  'templateForm.ha.priorityHelp':
-    'Daha yüksek değerler önce yeniden başlatılır (webadmin şu gruplara ayırır: Düşük 1, Orta 50, Yüksek 100).',
-  'templateForm.section.console': 'Konsol',
-  'templateForm.monitors': 'Monitörler',
-  'templateForm.usb': 'USB etkin',
-  'templateForm.smartcard': 'Akıllı kart etkin',
-  'templateForm.soundcard': 'Ses kartı etkin',
   'templateForm.memory.error.positive': 'Bellek Boyutu 0’dan büyük olmalıdır',
   'templateForm.memory.error.guaranteed': 'Garanti Edilen Fiziksel Bellek, Bellek Boyutunu aşamaz',
   'templateForm.memory.error.max': 'Maksimum bellek, Bellek Boyutundan küçük olamaz',
+  // New template (standalone) and the sectioned template dialog (#28)
+  'templateForm.title.new': 'Yeni şablon',
+  'templateForm.newAction': 'Yeni şablon',
+  'templateForm.sections.ariaLabel': 'Şablon bölümleri',
+  'templateForm.sourceVm': 'Kaynak VM',
+  'templateForm.sourceVm.placeholder': 'Kapalı bir VM seçin',
+  'templateForm.sourceVm.help':
+    "Yeni şablon bu VM'nin disklerini ve yapılandırmasını kopyalar. Yalnızca kapalı bir VM kullanılabilir. Bu iletişim kutusunda yaptığınız değişiklikler VM'nin ayarlarının yerine geçer.",
+  'templateForm.sourceVm.empty': 'Kapalı VM yok. Şablon yapmak için bir VM kapatın.',
+  'templateForm.sourceVm.disksNote':
+    "Diskler mevcut depolama alanlarına kopyalanır. Disk tahsisi, alt sürümler veya mühürleme için VM üzerinde Şablon Yap'ı kullanın.",
+  'templateForm.sourceVm.loading': 'VM yapılandırması yükleniyor',
+  'templateForm.sourceVm.error': 'VM yapılandırması yüklenemedi.',
+  'templateForm.sourceVm.hint':
+    'Şablonun sistem, konsol ve diğer ayarlarını belirlemek için bir kaynak VM seçin.',
   'templateExport.title': '{name} OVA olarak dışa aktar',
   'templateExport.host': 'Ana makine',
   'templateExport.host.placeholder': 'Bir ana makine seçin',
@@ -3296,6 +3338,9 @@ export const tr: LocaleCatalog = {
   'hostForm.field.rootPassword': 'Root parolası',
   'hostForm.field.sshPort': 'SSH bağlantı noktası',
   'hostForm.field.sshUser': 'SSH kullanıcısı',
+  'hostForm.firewall.configure': 'Ana makine güvenlik duvarını otomatik yapılandır',
+  'hostForm.firewall.configure.help':
+    "Kurulumun, kümenin güvenlik duvarı türünü kullanarak oVirt'in ihtiyaç duyduğu bağlantı noktalarını ana makinenin güvenlik duvarında açmasını sağlar. Yalnızca ana makine güvenlik duvarını kendiniz yönetiyorsanız kapatın; bu durumda gerekli bağlantı noktalarını elle açmanız gerekir.",
   'hostForm.hostedEngine.deploy': 'Hosted engine dağıt',
   'hostForm.hostedEngine.deploy.help':
     'Kurulum ayrıca kendi kendine barındırılan motor bileşenlerini de dağıtır, böylece bu ana makine motor VM’sini mevcut hosted-engine ana makineleriyle birlikte çalıştırabilir. Normal bir sanallaştırma ana makinesi için kapalı bırakın.',
@@ -3423,11 +3468,7 @@ export const tr: LocaleCatalog = {
   'importStorage.domainId.label': 'Depolama alanı kimliği',
   'instanceTypeForm.aria.description': 'Örnek türü açıklaması',
   'instanceTypeForm.aria.name': 'Örnek türü adı',
-  'instanceTypeForm.memory.error.guaranteed':
-    'Garanti edilen fiziksel bellek, bellek boyutunu aşamaz',
-  'instanceTypeForm.memory.error.max': 'Maksimum bellek, bellek boyutundan küçük olamaz',
-  'instanceTypeForm.memory.error.positive': 'Bellek boyutu 0’dan büyük olmalıdır',
-  'instanceTypeForm.section.cpu': 'Sanal CPU’lar',
+  'instanceTypeForm.sections.ariaLabel': 'Örnek türü bölümleri',
   'instanceTypeForm.title.edit': 'Örnek türünü düzenle — {name}',
   'instanceTypeForm.title.new': 'Yeni örnek türü',
   'instanceTypes.column.guaranteed': 'Garanti edilen bellek',
@@ -3740,6 +3781,10 @@ export const tr: LocaleCatalog = {
   'schedulingPolicy.weights.factorError': 'Her faktör en az 1 olan bir tam sayı olmalıdır.',
   'schedulingPolicy.weights.label': 'Ağırlık modülleri',
   'setupNetworks.aria.configureSriov': '{name} için SR-IOV yapılandır',
+  'setupNetworks.aria.customPropertyAdd': '{name} ağına özel özellik ekle',
+  'setupNetworks.aria.customPropertyKey': '{name} üzerindeki {index}. özel özelliğin anahtarı',
+  'setupNetworks.aria.customPropertyRemove': '{index}. özel özelliği {name} ağından kaldır',
+  'setupNetworks.aria.customPropertyValue': '{name} üzerindeki {index}. özel özelliğin değeri',
   'setupNetworks.aria.labelsOn': '{name} üzerindeki etiketler',
   'setupNetworks.aria.newLabel': '{name} için yeni etiket',
   'setupNetworks.aria.qosField': '{name} için {label}',
@@ -3749,6 +3794,15 @@ export const tr: LocaleCatalog = {
   'setupNetworks.bondMode.mode2': 'Yük dengeleme — balance-xor (mod 2)',
   'setupNetworks.bondMode.mode4': 'Dinamik bağlantı toplama — 802.3ad (mod 4)',
   'setupNetworks.bondMode.mode5': 'Uyarlanabilir iletim yük dengeleme — balance-tlb (mod 5)',
+  'setupNetworks.customProperties.add': 'Özel özellik ekle',
+  'setupNetworks.customProperties.freeForm':
+    'Engine hangi anahtarlara izin verdiğini bildirmedi; bu nedenle anahtarlar yalnızca kaydederken denetlenir.',
+  'setupNetworks.customProperties.help':
+    'Ana makinede bu ağa uygulanan anahtar/değer seçenekleri; örneğin bir VM ağının köprüsünü ayarlamak için bridge_opts. Kullanılabilir anahtarlar engine yapılandırmasından gelir.',
+  'setupNetworks.customProperties.keyPlaceholder': 'Bir anahtar seçin',
+  'setupNetworks.customProperties.label': 'Özel özellikler',
+  'setupNetworks.customProperties.noKeys':
+    'Engine bu ağ için hiçbir özel özellik anahtarına izin vermiyor.',
   'setupNetworks.labels.add': 'Etiket ekle',
   'setupNetworks.labels.help':
     'Bu NIC’e eklenmiş ağ etiketleri. Motor, eşleşen bir etiket taşıyan her ağı otomatik olarak NIC’e bağlar.',
@@ -3800,6 +3854,15 @@ export const tr: LocaleCatalog = {
   'setupNetworks.sriov.networks.removeAria': 'İzin verilen ağ {name} kaldır',
   'setupNetworks.sriov.networks.selectPlaceholder': 'Bir ağ seçin',
   'setupNetworks.sriov.title': 'SR-IOV yapılandırması — {name}',
+  'setupNetworks.validation.customPropertyBridgeOpts': '{key} yalnızca VM ağları için geçerlidir',
+  'setupNetworks.validation.customPropertyDuplicate': '{key} zaten ayarlanmış',
+  'setupNetworks.validation.customPropertyKey':
+    'Bir anahtar yalnızca harf, rakam ve alt çizgi içerebilir',
+  'setupNetworks.validation.customPropertyKeyRequired': 'Bu değer için bir anahtar girin',
+  'setupNetworks.validation.customPropertyUnknown':
+    '{key}, bu engine tarafından izin verilen bir özel özellik değil',
+  'setupNetworks.validation.customPropertyValue': '{key} değeri {format} ile eşleşmelidir',
+  'setupNetworks.validation.customPropertyValueSyntax': 'Bir değer noktalı virgül içeremez',
   'setupNetworks.validation.ipv4': 'Geçerli bir IPv4 adresi girin',
   'setupNetworks.validation.ipv6': 'Geçerli bir IPv6 adresi girin',
   'setupNetworks.validation.managementGuard':
@@ -4542,6 +4605,85 @@ export const tr: LocaleCatalog = {
     'Watchdog değişikliği başarısız olduğu için hiçbir şey kaydedilmedi: {message}. Yeniden denemek için tekrar kaydedin.',
   'vm.edit.save.nextRunRefreshFailed':
     'Watchdog kaydedildi ancak VM’nin bekleyen sonraki çalıştırma yapılandırması yenilenmedi; bu nedenle motor değişikliği bir sonraki kapatmada geri alabilir: {message}. Yeniden denemek için tekrar kaydedin.',
+  'vm.edit.pinning.title': 'CPU sabitleme',
+  'vm.edit.pinning.policy': 'CPU sabitleme ilkesi',
+  'vm.edit.pinning.policy.none': 'Yok',
+  'vm.edit.pinning.policy.manual': 'El ile',
+  'vm.edit.pinning.policy.resizeAndPin': 'Yeniden boyutlandır ve NUMA sabitle',
+  'vm.edit.pinning.policy.dedicated': 'Ayrılmış',
+  'vm.edit.pinning.policy.isolateThreads': 'İş parçacıklarını yalıt',
+  'vm.edit.pinning.topology': 'CPU sabitleme topolojisi',
+  'vm.edit.pinning.hint.manualNeedsHost':
+    'El ile sabitleme, sanal makinenin belirli ana makinelerde çalışmasını gerektirir.',
+  'vm.edit.pinning.hint.dedicatedNeedsVersion':
+    'Ayrılmış ve İş parçacıklarını yalıt, küme uyumluluk sürümü 4.7 veya üstünü gerektirir.',
+  'vm.edit.pinning.hint.dedicatedNumaPinned':
+    'Bir sanal NUMA düğümü sabitliyken Ayrılmış ve İş parçacıklarını yalıt kullanılamaz.',
+  'vm.edit.pinning.hint.resizeAndPin':
+    'Yeniden boyutlandır ve NUMA sabitle, sanal makine başlarken CPU topolojisini ve sanal NUMA düğümlerini ana makineye göre belirler.',
+  'vm.edit.pinning.error.required': 'Bir sabitleme topolojisi girin, örneğin 0#0_1#1-3.',
+  'vm.edit.pinning.error.syntax':
+    'vCPU#ana makine CPU girdilerini _ ile birleştirerek yazın, örneğin 0#0_1#1-3 veya 0#0-3,^2.',
+  'vm.edit.pinning.error.needsHost':
+    'El ile sabitleme, sanal makinenin belirli ana makinelerde çalışmasını gerektirir.',
+  'vm.edit.pinning.error.vcpuMissing':
+    'vCPU {vcpu} yok; bu sanal makinenin vCPU’ları 0 ile {max} arasındadır.',
+  'vm.edit.pinning.error.duplicate': 'vCPU {vcpu} birden fazla kez sabitlenmiş.',
+  'vm.edit.pinning.error.noCpu': 'vCPU {vcpu} hiçbir ana makine CPU’suna sabitlenmemiş.',
+  'fieldHelp.vm.cpuPinningPolicy':
+    'vCPU’ların ana makine CPU’larına nasıl eşlendiği. Yok bunu ana makineye bırakır; El ile aşağıdaki sabitleme topolojisini kullanır; Yeniden boyutlandır ve NUMA sabitle sanal makineyi ana makinesine göre boyutlandırıp sabitler; Ayrılmış ana makine CPU’larını yalnızca bu sanal makineye ayırır; İş parçacıklarını yalıt ayrıca her vCPU’ya kendi fiziksel çekirdeğini verir. Çalışan bir sanal makinede bir sonraki başlatmada uygulanır.',
+  'fieldHelp.vm.cpuPinningTopology':
+    'Her vCPU’yu vCPU#CPU biçiminde ana makine CPU’larına sabitleyin, girdileri _ ile birleştirin. Bir CPU kümesi CPU’ları (0,2), aralıkları (1-3) ve hariç tutmaları (^2) listeler. Örnek: 0#0_1#1-3, vCPU 0’ı ana makine CPU 0’a ve vCPU 1’i ana makine CPU 1 ile 3 arasına sabitler.',
+  'fieldHelp.vm.numaCount':
+    'Konuğun gördüğü sanal NUMA düğümü sayısı. vCPU’lar ve bellek bunlara dağıtılır; belleğini yerel tutmak için bir düğümü bir ana makine NUMA düğümüne sabitleyin. Yalnızca kapalı bir sanal makinede değiştirilir.',
+  'vm.edit.numa.title': 'Sanal NUMA',
+  'vm.edit.numa.count': 'NUMA düğümü sayısı',
+  'vm.edit.numa.loading': 'Sanal NUMA düğümleri yükleniyor',
+  'vm.edit.numa.loadError': 'Sanal NUMA düğümleri yüklenemedi; değiştirilmeden bırakıldılar',
+  'vm.edit.numa.hint.running':
+    'Sanal NUMA düğümleri yalnızca sanal makine kapalıyken değiştirilebilir.',
+  'vm.edit.numa.hint.needsHost':
+    'Bir düğümü bir ana makine NUMA düğümüne sabitlemek, sanal makinenin belirli ana makinelerde çalışmasını gerektirir.',
+  'vm.edit.numa.hint.hostLoading': 'Ana makine NUMA topolojisi yükleniyor',
+  'vm.edit.numa.hint.hostError': 'Ana makine NUMA topolojisi yüklenemedi',
+  'vm.edit.numa.table': 'Sanal NUMA düğümleri',
+  'vm.edit.numa.column.node': 'Düğüm',
+  'vm.edit.numa.column.resources': 'vCPU’lar ve bellek',
+  'vm.edit.numa.column.tune': 'Ayar modu',
+  'vm.edit.numa.column.hostNode': 'Ana makine NUMA düğümü',
+  'vm.edit.numa.resources': 'vCPU {cpus}, {memory} MB',
+  'vm.edit.numa.tuneLabel': 'NUMA düğümü {index} ayar modu',
+  'vm.edit.numa.pinLabel': 'NUMA düğümü {index} için ana makine NUMA düğümü',
+  'vm.edit.numa.pin.none': 'Sabitlenmemiş',
+  'vm.edit.numa.pin.hostNode': 'Ana makine düğümü {index}',
+  'vm.edit.numa.tune.interleave': 'Serpiştirilmiş (Interleave)',
+  'vm.edit.numa.tune.strict': 'Katı (Strict)',
+  'vm.edit.numa.tune.preferred': 'Tercih edilen (Preferred)',
+  'vm.edit.numa.error.preferred':
+    'Tercih edilen yalnızca tek bir ana makine düğümüne sabitlenmiş tek bir sanal NUMA düğümüyle çalışır.',
+  'vm.edit.numa.error.tooManyNodes':
+    'Sanal makinenin {cpus} vCPU’su var, bu yüzden {count} NUMA düğümü olamaz.',
+  'vm.edit.numa.error.pinsNeedHost':
+    'Sabitlenmiş NUMA düğümleri, sanal makinenin belirli ana makinelerde çalışmasını gerektirir.',
+  'vm.edit.numa.error.pinsWithDedicated':
+    'Ayrılmış ve İş parçacıklarını yalıt, sabitlenmiş NUMA düğümleriyle birlikte kullanılamaz.',
+  'vm.edit.numa.error.hostUnsupported':
+    '{host} ana makinesi NUMA topolojisi bildirmiyor, bu yüzden üzerinde çalışan bir sanal makinenin sanal NUMA düğümleri olamaz.',
+  'vm.edit.numa.error.hostNodeMissing': '{host} ana makinesinde {hostNode} NUMA düğümü yok.',
+  'vm.edit.numa.error.memory':
+    'Sanal NUMA düğümü {node}, {host} ana makinesinin {hostNode} düğümünde bulunandan daha fazla bellek gerektiriyor ve Katı buna izin vermez.',
+  'vm.edit.save.numaBeforeVmFailed':
+    'Eski sanal NUMA düğümleri kaldırılamadı, bu yüzden sanal makine kaydedilmedi: {message}. Yeniden denemek için tekrar kaydedin.',
+  'vm.edit.save.vmFailedAfterNuma':
+    'Eski sanal NUMA düğümleri kaldırıldı, ancak sanal makine kaydedilemediği için yeni düğümler eklenmedi: {message}. Yeniden denemek için tekrar kaydedin.',
+  'vm.edit.save.numaAfterVmFailed':
+    'Sanal makine kaydedildi, ancak sanal NUMA değişikliği başarısız oldu: {message}. Yeniden denemek için tekrar kaydedin.',
+  'vm.edit.save.numaFailed':
+    'Sanal NUMA değişikliği başarısız oldu: {message}. Yeniden denemek için tekrar kaydedin.',
+  'vm.edit.save.numaState':
+    'Sanal makinenin artık {count, plural, =0 {sanal NUMA düğümü yok} other {# sanal NUMA düğümü var}}.',
+  'vm.edit.save.numaStateUnknown':
+    'Sanal NUMA düğümleri yeniden okunamadı; geçerli topolojiyi görmek için iletişim kutusunu yeniden açın.',
   'vm.edit.save.cdFailed':
     'VM kaydedildi ancak CD değişikliği başarısız oldu: {message}. Yeniden denemek için tekrar kaydedin.',
   'vm.create.watchdog.templateError':
@@ -4737,6 +4879,124 @@ export const tr: LocaleCatalog = {
   'host.configureLocalStorage.outcome.undoStopped': 'Kısmi kurulumun geri alınması durdu: {error}',
   'host.configureLocalStorage.outcome.rerunHint':
     'Tamamlamak için gerekirse ana makineyi bakıma alın ve "Yerel depolamayı yapılandır" işlemini yeniden çalıştırın; boş yerel veri merkezi yeniden kullanılır.',
+  // Guide Me (data center and cluster next steps)
+  'guideMe.action': 'Rehber',
+  'guideMe.title': 'Rehber: {name}',
+  'guideMe.loading': 'Sonraki adımlar yükleniyor',
+  'guideMe.error.title': 'Sonraki adımlar yüklenemedi',
+  'guideMe.dataCenter.created': 'Veri merkezi oluşturuldu.',
+  'guideMe.dataCenter.configured': 'Veri merkezi tamamen yapılandırıldı ve kullanıma hazır.',
+  'guideMe.cluster.created': 'Küme oluşturuldu.',
+  'guideMe.cluster.configured': 'Küme tamamen yapılandırıldı ve kullanıma hazır.',
+  'guideMe.configured.title': 'Yapılandırma tamamlandı',
+  'guideMe.unconfigured': 'Hâlâ yapılandırılması gereken varlıklar var.',
+  'guideMe.section.required': 'Gerekli adımlar',
+  'guideMe.section.optional': 'İsteğe bağlı adımlar',
+  'guideMe.configureLater': 'Daha sonra yapılandır',
+  'guideMe.step.configureCluster': 'Kümeyi yapılandır',
+  'guideMe.step.addAnotherCluster': 'Başka bir küme ekle',
+  'guideMe.step.configureHost': 'Ana makineyi yapılandır',
+  'guideMe.step.addAnotherHost': 'Başka bir ana makine ekle',
+  'guideMe.step.configureStorage': 'Depolamayı yapılandır',
+  'guideMe.step.addMoreStorage': 'Daha fazla depolama ekle',
+  'guideMe.step.attachStorage': 'Depolama bağla',
+  'guideMe.step.attachMoreStorage': 'Daha fazla depolama bağla',
+  'guideMe.step.configureIsoLibrary': 'ISO kitaplığını yapılandır',
+  'guideMe.step.attachIsoLibrary': 'ISO kitaplığı bağla',
+  'guideMe.step.addLocalStorage': 'Yerel depolama ekle',
+  'guideMe.reason.noUpHost': 'Veri merkezinde en az bir etkin ana makine olmalıdır.',
+  'guideMe.reason.noCluster': 'Önce veri merkezine bir küme ekleyin.',
+  'guideMe.reason.noUnattachedData': 'Bağlanabilecek bağlı olmayan bir veri alanı yok.',
+  'guideMe.reason.noActiveMaster': 'Veri merkezinin önce etkin bir ana veri alanı olmalıdır.',
+  'guideMe.reason.noIsoDomain': 'Bağlanabilecek bir ISO alanı yok.',
+  'guideMe.reason.localDcHasHost':
+    'Yerel bir veri merkezi yalnızca bir ana makine barındırır ve bu veri merkezinde zaten var.',
+  'guideMe.reason.dcInitialized': 'Veri merkezi zaten başlatıldı.',
+  'guideMe.reason.clusterLocalHasHost':
+    'Bu küme, tek ana makinesi zaten olan yerel bir veri merkezine aittir.',
+  'guideMe.note.localStorage':
+    'Veri merkezini tamamen yapılandırmak için en az bir yerel depolama alanı bağlayıp etkinleştirin.',
+  'guideMe.note.clusterNoActions':
+    'Bu küme için kullanılabilir eylem yok: herhangi bir veri merkezine bağlı değil.',
+  // Configure aggregate entry point (pages/ConfigurePage.tsx): the webadmin
+  // Administration › Configure index linking to its five surfaces.
+  'nav.configure': 'Yapılandırma',
+  'configure.title': 'Yapılandırma',
+  'configure.intro':
+    'Tüm veri merkezleri ve kümeler tarafından paylaşılan, motor genelindeki tanımlar. Her biri kendi sayfasında açılır.',
+  'configure.loading': 'Yapılandırma alanları yükleniyor',
+  'configure.notPermitted': 'sistem yapılandırmasını',
+  'configure.list.ariaLabel': 'Yapılandırma alanları',
+  'configure.card.roles':
+    'Rolleri ve her rolün kullanıcılara ve yöneticilere verdiği izinleri tanımlayın.',
+  'configure.card.systemPermissions': 'Tüm sistem genelinde kullanıcılara ve gruplara rol atayın.',
+  'configure.card.schedulingPolicies':
+    'Kümelerin VM yerleştirmek için kullandığı filtre, ağırlık ve dengeleme kurallarını yönetin.',
+  'configure.card.instanceTypes':
+    'Yeni sanal makineler için yeniden kullanılabilir donanım profilleri tanımlayın.',
+  'configure.card.macPools': 'Sanal NIC’lere atanan MAC adres aralıklarını yönetin.',
+  // EDIT VM: Foreman/Satellite section (provider picker)
+  'vm.edit.section.foreman': 'Foreman/Satellite',
+  'vm.edit.foreman.provider': 'Sağlayıcı',
+  'vm.edit.foreman.none': 'Sağlayıcı yok',
+  'vm.edit.foreman.unknown': 'Bilinmeyen sağlayıcı ({id})',
+  'vm.edit.foreman.loading': 'Foreman/Satellite sağlayıcıları yükleniyor',
+  'vm.edit.foreman.empty':
+    'Kayıtlı Foreman/Satellite sağlayıcısı yok. Bu VM’yi bağlamak için Sağlayıcılar sayfasından bir sağlayıcı ekleyin.',
+  'vm.edit.foreman.help':
+    'Motor, bu VM’nin errata bilgilerini seçilen Foreman/Satellite sağlayıcısından okur.',
+  // Template Storage tab + scoped Events tabs (issue #33) ----------------
+  'scopedEvents.loading': 'Olaylar yükleniyor',
+  'scopedEvents.error.title': 'Olaylar yüklenemedi',
+  'scopedEvents.empty.title': 'Olay yok',
+  'templateDetail.tab.storage': 'Depolama',
+  'templateDetail.tab.events': 'Olaylar',
+  'templateEvents.empty.body': 'Bu şablon için motor denetim günlüğü olayları burada görünecektir.',
+  'templateEvents.table.ariaLabel': 'Bu şablon için olaylar',
+  'templateStorage.empty.body': 'Bu şablonun hiçbir diski bir depolama alanında değil.',
+  'templateStorage.table.ariaLabel': 'Bu şablonun disklerini barındıran depolama alanları',
+  'templateStorage.column.used': 'Kullanılan Alan',
+  'templateStorage.column.disks': 'Diskler',
+  'templateStorage.expand.ariaLabel': 'Diskleri göster',
+  'templateStorage.disks.ariaLabel': '{name} üzerindeki şablon diskleri',
+  'clusterDetail.tab.events': 'Olaylar',
+  'clusterEvents.empty.body': 'Bu küme için motor denetim günlüğü olayları burada görünecektir.',
+  'clusterEvents.table.ariaLabel': 'Bu küme için olaylar',
+  'dcDetail.tab.events': 'Olaylar',
+  'dcEvents.empty.body': 'Bu veri merkezi için motor denetim günlüğü olayları burada görünecektir.',
+  'dcEvents.table.ariaLabel': 'Bu veri merkezi için olaylar',
+  'storageDetail.tab.events': 'Olaylar',
+  'storageEvents.empty.body':
+    'Bu depolama alanı için motor denetim günlüğü olayları burada görünecektir.',
+  'storageEvents.table.ariaLabel': 'Bu depolama alanı için olaylar',
+  'quotaDetail.tab.events': 'Olaylar',
+  'quotaEvents.empty.body': 'Bu kontenjan için motor denetim günlüğü olayları burada görünecektir.',
+  'quotaEvents.table.ariaLabel': 'Bu kontenjan için olaylar',
+  // List-grid columns filled by a follow= or one shared read (issue #34)
+  'vms.column.cpu': 'CPU',
+  'vms.column.network': 'Ağ',
+  'vms.column.ips': 'IP Adresleri',
+  'disks.column.attachedTo': 'Bağlı Olduğu',
+  'disks.column.quota': 'Kota',
+  'networks.column.qos': 'QoS Adı',
+  'vnicProfiles.column.qos': 'QoS Adı',
+  'vnicProfiles.column.networkFilter': 'Ağ filtresi',
+  'pools.column.running': 'Çalışan VM’ler',
+  'volumes.column.spaceUsed': 'Kullanılan Alan',
+  // UI extensions (docs/PLUGINS.md): sidebar group, plugin error state,
+  // plugin page states, About dialog plugin list ------------------------
+  'nav.group.extensions': 'Uzantılar',
+  'extensions.error.title': '{plugin} bu içeriği görüntüleyemedi',
+  'extensions.page.loading': 'Uzantı sayfası yükleniyor',
+  'extensions.page.notFound.title': 'Uzantı sayfası kullanılamıyor',
+  'extensions.page.notFound.body':
+    'Bu sayfayı sağlayan yüklü bir uzantı yok. Dağıtım yapılandırmasından kaldırılmış, yüklenememiş veya hesabınız için kullanılamıyor olabilir.',
+  'extensions.page.notFound.back': 'Kontrol Paneline geri dön',
+  'about.extensions': 'Uzantılar',
+  'about.extensions.status.active': 'Yüklendi',
+  'about.extensions.status.loading': 'Yükleniyor',
+  'about.extensions.status.skipped': 'Bu motor için yüklenmedi',
+  'about.extensions.status.failed': 'Başarısız: {reason}',
   // VM TPM device (Edit VM Resource Allocation, New VM wizard, General tab)
   'vm.edit.resources.tpm': 'TPM Aygıtı Etkin',
   'vm.edit.resources.tpm.loading': 'TPM aygıtı yükleniyor',
@@ -4763,11 +5023,13 @@ export const tr: LocaleCatalog = {
   'vm.create.tpm.templateError':
     'Şablonun TPM aygıtı yüklenemedi: {message}. Ayarı burada değiştirmediğiniz sürece yeni VM şablonun TPM aygıtını olduğu gibi alır.',
   'vm.create.tpm.review.inherited': 'Şablondaki gibi',
-  // all_content device reads (Edit VM device toggles, Edit Template sound card)
+  // all_content device reads (Edit VM, Edit/New Template and Edit Instance Type
+  // device toggles)
   'vm.edit.devices.loading': 'Aygıt durumu yükleniyor',
   'vm.edit.devices.error.title': "VM'nin aygıtları okunamadı",
   'vm.edit.devices.error.body':
     'Seri konsol, ses kartı, VirtIO-SCSI, rastgele sayı üreteci ve TPM devre dışı kalır ve kaydetme bunları değiştirmez.',
-  'templateForm.soundcard.loading': 'Ses kartı durumu yükleniyor',
-  'templateForm.soundcard.error': 'Şablonun ses kartı okunamadı; kaydetme onu değiştirmez.',
+  'vmBase.devices.error.title': 'Aygıt durumu okunamadı',
+  'vmBase.devices.error.body':
+    'Seri konsol, ses kartı ve VirtIO-SCSI devre dışı kalır ve kaydetme onları değiştirmez.',
 }

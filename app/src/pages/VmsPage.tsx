@@ -26,10 +26,18 @@ import { Link, useNavigate } from '@tanstack/react-router'
 import { FormattedMessage } from 'react-intl'
 import { formatBytes, formatUptime, statusText, vmUptimeSeconds } from '../lib/format'
 import { isFollowDenied } from '../api/followDegrade'
+import type { VmStat } from '../api/schemas/statistic'
 import type { Vm } from '../api/schemas/vm'
 import { useCapabilities } from '../auth/capabilities'
 import { useT } from '../i18n/useT'
 import { downloadCsv, toCsv } from '../lib/csv'
+import { flattenReportedIps } from '../lib/vmIps'
+import {
+  hasFilterTokens,
+  matchesFilterTokens,
+  resolveFilterTokens,
+  splitFilterTokens,
+} from '../lib/filter-tokens'
 import type { MessageId } from '../i18n/messages/en'
 import { BulkActionsToolbar } from '../components/BulkActionsToolbar'
 import { useContextMenu } from '../components/context-menu/ContextMenu'
@@ -60,7 +68,8 @@ import { useTreeOpen } from '../hooks/useTreeOpen'
 import { useVirtualRows } from '../hooks/useVirtualRows'
 import { dragPropsFor } from '../hooks/useVmDragDrop'
 import { useVmSearch } from '../hooks/useVmSearch'
-import { useVms } from '../hooks/useVms'
+import { useVmReportedIps, useVms } from '../hooks/useVms'
+import { cpuPercent, networkPercent } from '../hooks/useVmStatistics'
 import { PER_PAGE_OPTIONS } from '../hooks/usePagination'
 
 // Above this many visible rows the table body is windowed (VITE_MOCK_SCALE /
@@ -77,6 +86,9 @@ interface VmColumnCtx {
   hostName: (id: string | undefined) => string | undefined
   clusterName: (id: string | undefined) => string | undefined
   dataCenterName: (clusterId: string | undefined) => string | undefined
+  // guest-reported addresses from useVmReportedIps; undefined while the map
+  // is not loaded (column hidden, large install, or a denied follow)
+  ips: (vmId: string) => string[] | undefined
 }
 
 interface VmColumn {
@@ -89,6 +101,21 @@ interface VmColumn {
   // CSV export value for columns deliberately kept out of header sort (status)
   exportValue?: (vm: Vm, ctx: VmColumnCtx) => string | number | undefined
   cell: (vm: Vm, ctx: VmColumnCtx) => ReactNode
+}
+
+// Live CPU / network load off the row's own followed statistics (useVms'
+// follow=statistics — no per-VM statistics read). The gauges ride only while
+// statistics are followed (≤ VM_STATISTICS_FOLLOW_MAX VMs, non-WAN), so a
+// large install renders em dashes here exactly as it does for Uptime. A Down
+// VM reports zeroed gauges; it renders an em dash rather than a fake 0%.
+function liveGauge(vm: Vm, read: (stats: VmStat[]) => number | undefined): number | undefined {
+  if (vm.status === 'down') return undefined
+  const stats = vm.statistics?.statistic
+  return stats === undefined ? undefined : read(stats)
+}
+
+function percentText(value: number | undefined): string {
+  return value === undefined ? '—' : `${Math.round(value)}%`
 }
 
 // vCPUs = sockets × cores × threads, legs defaulting to 1 like the engine
@@ -203,6 +230,33 @@ const COLUMNS: VmColumn[] = [
     cell: (vm) => (vm.status === 'up' ? formatUptime(vmUptimeSeconds(vm)) : '—'),
   },
   {
+    key: 'cpu',
+    labelId: 'vms.column.cpu',
+    sortValue: (vm) => liveGauge(vm, cpuPercent),
+    defaultHidden: true,
+    cell: (vm) => percentText(liveGauge(vm, cpuPercent)),
+  },
+  {
+    key: 'network',
+    labelId: 'vms.column.network',
+    sortValue: (vm) => liveGauge(vm, networkPercent),
+    defaultHidden: true,
+    cell: (vm) => percentText(liveGauge(vm, networkPercent)),
+  },
+  {
+    // a second /vms?follow=reported_devices read, issued only while this
+    // column is visible (see useVmReportedIps for the size gate)
+    key: 'ips',
+    labelId: 'vms.column.ips',
+    sortValue: (vm, ctx) => ctx.ips(vm.id)?.[0],
+    exportValue: (vm, ctx) => ctx.ips(vm.id)?.join(' '),
+    defaultHidden: true,
+    cell: (vm, ctx) => {
+      const ips = ctx.ips(vm.id)
+      return ips !== undefined && ips.length > 0 ? ips.join(', ') : '—'
+    },
+  },
+  {
     key: 'created',
     labelId: 'vms.column.created',
     sortValue: (vm) => vm.creation_time,
@@ -223,9 +277,7 @@ const COLUMNS: VmColumn[] = [
     cell: (vm) => vm.description || '—',
   },
 ]
-// Deferred vs webadmin's grid: IP Addresses (needs guest-agent reported
-// devices, not on the flat list), live CPU/Network percent (needs per-VM
-// statistics — N×poll cost), K8s Namespace (kubevirt-only).
+// Deferred vs webadmin's grid: K8s Namespace (kubevirt-only).
 
 // A row click means "open the quick look" only when it lands on the row
 // itself — links, buttons, and the selection checkbox (an <input> inside a
@@ -269,8 +321,12 @@ function BulkMigrateBar({ selected }: { selected: Vm[] }) {
 export function VmsPage() {
   // The search runs server-side (oVirt search DSL passthrough); the folder
   // filter then composes client-side on whatever the search returned.
+  // folder:/tag: tokens are lifted out of the query first (lib/filter-tokens
+  // explains why they filter client-side): only the remainder reaches the
+  // engine, and the tokens narrow its results below.
   const { query, draft, setDraft, clear } = useVmSearch()
-  const vms = useVms(query)
+  const filterTokens = useMemo(() => splitFilterTokens(query), [query])
+  const vms = useVms(filterTokens.rest)
   const navigate = useNavigate()
   const t = useT()
   // Resolve column labels for the active locale; identity is stable per locale
@@ -280,6 +336,10 @@ export function VmsPage() {
     [t],
   )
   const prefs = useColumnPrefs('vms', columns)
+  const reportedIps = useVmReportedIps(filterTokens.rest, {
+    enabled: prefs.isVisible('ips'),
+    vmCount: vms.data?.length,
+  })
   // Folder/tag management is admin-tier only (the engine would reject the
   // writes anyway); user tier keeps the read-only tree and filtering.
   const { isAdmin } = useCapabilities()
@@ -332,15 +392,20 @@ export function VmsPage() {
   usePruneGhostFolder(selectedFolderId, tags)
   const folderIds =
     selectedFolderId === null ? null : folderSubtreeIds(tags.data ?? [], selectedFolderId)
-  const visible =
-    folderIds === null
-      ? (vms.data ?? [])
-      : (vms.data ?? []).filter((vm) =>
-          (followedTagsOf(vm) ?? []).some((tag) => folderIds.has(tag.id)),
-        )
+  // folder:/tag: tokens resolve against the same tag tree and AND with the
+  // tree selection: one id set per token, each of which a row must hit.
+  const tokenIds = useMemo(
+    () => resolveFilterTokens(filterTokens, tags.data ?? []),
+    [filterTokens, tags.data],
+  )
+  const visible = (vms.data ?? []).filter(
+    (vm) =>
+      (folderIds === null || (followedTagsOf(vm) ?? []).some((tag) => folderIds.has(tag.id))) &&
+      matchesFilterTokens(vm, tokenIds),
+  )
   // the whole list holds back while the tag tree (the subtree set's input)
   // is still loading
-  const isFiltering = selectedFolderId !== null && tags.isPending
+  const isFiltering = (selectedFolderId !== null || hasFilterTokens(filterTokens)) && tags.isPending
 
   // id → name joins for the Host/Cluster/Data Center columns (admin-gated
   // queries; user tier renders an em dash and those columns start hidden)
@@ -353,6 +418,10 @@ export function VmsPage() {
     dataCenterName: (clusterId) => {
       const cluster = clustersInventory.data?.find((c) => c.id === clusterId)
       return dataCentersInventory.data?.find((dc) => dc.id === cluster?.data_center?.id)?.name
+    },
+    ips: (vmId) => {
+      const devices = reportedIps.data?.[vmId]
+      return devices === undefined ? undefined : flattenReportedIps(devices).map((ip) => ip.address)
     },
   }
 

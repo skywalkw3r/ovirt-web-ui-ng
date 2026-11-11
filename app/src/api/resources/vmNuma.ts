@@ -42,6 +42,10 @@ export const VmNumaNodeSchema = z.looseObject({
       numa_node_pin: z.array(NumaNodePinSchema).optional(),
     })
     .optional(),
+  // api-model NumaTuneMode (strict | interleave | preferred), per virtual node.
+  // The VM-level vm.numa_tune_mode is api-model-deprecated "in favor of NUMA
+  // tune per vNUMA node", so the per-node value is the one read and written.
+  numa_tune_mode: z.string().optional(),
 })
 
 // JSON quirk: the "vm_numa_node" key is omitted when the list is empty (mirror
@@ -90,10 +94,107 @@ export function vmNumaNodeCpuIndices(node: VmNumaNode): number[] {
     .sort((a, b) => a - b)
 }
 
-// Editing pins (VmNumaNodeService.Update — PUT /vms/{id}/numanodes/{nodeId} with
-// a vm_numa_node body carrying numa_node_pins[].index) IS cleanly modeled in the
-// api-model. It is deliberately NOT surfaced here: this module backs the host
-// NUMA tab's read-only cross-VM join view, and vNUMA pin authoring belongs in
-// the VM Edit dialog's NUMA-pinning section (webadmin parity — the topology is
-// edited whole, against a powered-off VM), not the host topology tab. Left as a
-// documented divergence so a future VM-edit surface can add the write fn here.
+// The vNUMA write surface, verified against ovirt-engine-api-model
+// services/VmNumaNodesService + VmNumaNodeService:
+//   POST   /vms/{id}/numanodes           Add (index, memory and
+//                                        cpu.cores[].index mandatory;
+//                                        numa_node_pins[].index and
+//                                        numa_tune_mode optional)
+//   PUT    /vms/{id}/numanodes/{nodeId}  Update (every field optional)
+//   DELETE /vms/{id}/numanodes/{nodeId}  Remove ("remove the numa nodes from
+//                                        the highest index first")
+// The engine re-validates the WHOLE resulting topology on every call
+// (AbstractVmNumaNodeCommand.validate, NumaValidator.checkVmNumaNodesIntegrity:
+// contiguous indices from 0, no vCPU in two nodes, total node memory within the
+// VM memory, `preferred` only on a single node pinned to a single host node),
+// so the order of a multi-call edit matters. applyVmNumaSteps runs a
+// caller-ordered plan; the Edit VM dialog builds it (edit-vm/numaDraft.ts).
+// The host NUMA tab stays read-only: the topology is edited from the VM.
+
+// One virtual NUMA node as the write calls send it. memoryMb is MB (NumaNode:
+// "Memory of the NUMA node in MB"), tuneMode an api-model NumaTuneMode value,
+// pins the physical (host) NUMA node indices.
+export interface VmNumaNodeSpec {
+  index: number
+  memoryMb: number
+  cpuIds: number[]
+  tuneMode: string
+  pins: number[]
+}
+
+function numaNodesPath(vmId: string): string {
+  return `/vms/${encodeURIComponent(vmId)}/numanodes`
+}
+
+// numa_node_pins always rides, also when empty: the engine's NumaMapper only
+// rewrites a node's pin list when the element is set, so a present-but-empty
+// list is what unpins a node on Update (mapper source-verified; the empty-list
+// form is UNVERIFIED against a live engine).
+function pinsBody(pins: number[]): Record<string, unknown> {
+  return { numa_node_pin: pins.map((index) => ({ index })) }
+}
+
+// The full vm_numa_node body for Add. An unpinned node leaves numa_node_pins
+// out entirely (a new node starts unpinned), so only a re-pin on Update relies
+// on the empty-list form.
+export function vmNumaNodeBody(spec: VmNumaNodeSpec): Record<string, unknown> {
+  return {
+    index: spec.index,
+    memory: spec.memoryMb,
+    cpu: { cores: { core: spec.cpuIds.map((index) => ({ index })) } },
+    numa_tune_mode: spec.tuneMode,
+    ...(spec.pins.length > 0 ? { numa_node_pins: pinsBody(spec.pins) } : {}),
+  }
+}
+
+// Add a virtual NUMA node. The response echoes the created node (with its id).
+export async function addVmNumaNode(vmId: string, spec: VmNumaNodeSpec): Promise<VmNumaNode> {
+  return VmNumaNodeSchema.parse(
+    await request(numaNodesPath(vmId), { method: 'POST', body: vmNumaNodeBody(spec) }),
+  )
+}
+
+// Re-tune / re-pin a virtual NUMA node in place. Only the tune mode and the
+// pins ride, so the node keeps its index, vCPUs and memory (the mapper applies
+// each element only when it is set).
+export async function updateVmNumaNodePinning(
+  vmId: string,
+  nodeId: string,
+  change: Pick<VmNumaNodeSpec, 'tuneMode' | 'pins'>,
+): Promise<void> {
+  await request(`${numaNodesPath(vmId)}/${encodeURIComponent(nodeId)}`, {
+    method: 'PUT',
+    body: { numa_tune_mode: change.tuneMode, numa_node_pins: pinsBody(change.pins) },
+  })
+}
+
+// Remove a virtual NUMA node. A 404 means it is already gone, which is what a
+// retry after a half-applied edit meets, so it counts as removed.
+export async function removeVmNumaNode(vmId: string, nodeId: string): Promise<void> {
+  try {
+    await request(`${numaNodesPath(vmId)}/${encodeURIComponent(nodeId)}`, { method: 'DELETE' })
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) return
+    throw error
+  }
+}
+
+// One call of a vNUMA edit, in the order the caller wants them sent.
+export type VmNumaStep =
+  | { kind: 'remove'; nodeId: string }
+  | { kind: 'update'; nodeId: string; tuneMode: string; pins: number[] }
+  | { kind: 'add'; node: VmNumaNodeSpec }
+
+// Run the steps strictly one after another (each call is validated against the
+// topology the previous one left) and stop at the first fault.
+export async function applyVmNumaSteps(vmId: string, steps: VmNumaStep[]): Promise<void> {
+  for (const step of steps) {
+    if (step.kind === 'remove') {
+      await removeVmNumaNode(vmId, step.nodeId)
+    } else if (step.kind === 'update') {
+      await updateVmNumaNodePinning(vmId, step.nodeId, step)
+    } else {
+      await addVmNumaNode(vmId, step.node)
+    }
+  }
+}

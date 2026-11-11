@@ -67,18 +67,25 @@ export async function getTemplateTpmEnabled(id: string): Promise<boolean> {
   return template.tpm_enabled ?? false
 }
 
-// Does the template carry a sound card? soundcard_enabled is all_content only
-// too, but the single-template read cannot be trusted for it:
-// BackendTemplateResource.doPopulate sets it from
+// The template's device flags that the engine fills on an all_content read
+// only: serial console, VirtIO-SCSI and sound card (doPopulate; TemplateMapper
+// and VmBaseMapper map none of them). The single-template read cannot be
+// trusted for the sound card: BackendTemplateResource.doPopulate sets it from
 // `getSoundDevicesForEntity(...).isEmpty()`, without the negation that the VM,
 // instance type and template COLLECTION resources have, so GET
 // /templates/{id}?all_content=true reports the opposite of the device (seen in
-// the 4.5.6 and master sources). The collection's doPopulate
-// (BackendTemplatesResource) is right, so read the one template through it,
-// narrowed with the engine's hidden _vmt_id search field
-// (VmTemplateConditionFieldAutoCompleter). The Edit Template modal seeds its
-// Sound Card switch from this.
-export async function getTemplateSoundcardEnabled(id: string): Promise<boolean> {
+// the 4.5.6 and master sources; oVirt/ovirt-engine#1225). The collection's
+// doPopulate (BackendTemplatesResource) is right, so read the one template
+// through it, narrowed with the engine's hidden _vmt_id search field
+// (VmTemplateConditionFieldAutoCompleter). The Edit Template dialog seeds its
+// Console and Resource Allocation device switches from this.
+export interface TemplateAllContentDevices {
+  serialConsoleEnabled: boolean
+  virtioScsiEnabled: boolean
+  soundcardEnabled: boolean
+}
+
+export async function getTemplateAllContentDevices(id: string): Promise<TemplateAllContentDevices> {
   const data = TemplateListSchema.parse(
     await request(`/templates?search=${encodeURIComponent(`_vmt_id=${id}`)}&all_content=true`),
   )
@@ -86,7 +93,11 @@ export async function getTemplateSoundcardEnabled(id: string): Promise<boolean> 
   if (template === undefined) {
     throw new ApiError(404, 'Not Found', `Template ${id} was not found`)
   }
-  return template.soundcard_enabled ?? false
+  return {
+    serialConsoleEnabled: template.console?.enabled ?? false,
+    virtioScsiEnabled: template.virtio_scsi?.enabled ?? false,
+    soundcardEnabled: template.soundcard_enabled ?? false,
+  }
 }
 
 // Webadmin-style "Make Template": POST /templates with { name, description?,

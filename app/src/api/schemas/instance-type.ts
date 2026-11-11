@@ -1,15 +1,18 @@
 import { z } from 'zod'
 
-// InstanceType extends Template (which extends VmBase), so it carries the full
-// VM hardware surface — but the real dialog edits a lean subset. These are the
-// exact field shapes VmSchema uses (memory in bytes; memory_policy, cpu.topology
-// and high_availability the same), because an instance type serializes them the
-// same way a VM does. OS is deliberately omitted: per the oVirt Instance Types
-// design doc it is NOT an instance-type field (it comes from the image instead).
+// InstanceType extends Template (which extends VmBase) in the api-model, but
+// the engine maps only part of VmBase for it: InstanceTypeMapper calls
+// VmBaseMapper.mapCommonModelToEntity, not mapVmBaseModelToEntity, and the
+// resource adds the device-backed flags (console, virtio_scsi, soundcard_enabled,
+// usb on update). These are the fields the Instance Type dialog reads, with the
+// same wire shapes as schemas/vm.ts. OS type is not an instance-type field
+// (per the oVirt Instance Types design it comes from the image).
 //
 // The live engine serializes numeric/boolean scalars as JSON strings
 // ("memory": "2147483648"), so every scalar is coerced — never assume a number
 // arrives as one (see schemas/vm.ts).
+const BooleanishSchema = z.union([z.boolean(), z.stringbool()])
+
 export const InstanceTypeSchema = z.looseObject({
   id: z.string(),
   name: z.string(),
@@ -20,6 +23,7 @@ export const InstanceTypeSchema = z.looseObject({
     .looseObject({
       guaranteed: z.coerce.number().optional(),
       max: z.coerce.number().optional(),
+      ballooning: BooleanishSchema.optional(),
     })
     .optional(),
   cpu: z
@@ -35,13 +39,32 @@ export const InstanceTypeSchema = z.looseObject({
     .optional(),
   high_availability: z
     .looseObject({
-      enabled: z.union([z.boolean(), z.stringbool()]).optional(),
+      enabled: BooleanishSchema.optional(),
       priority: z.coerce.number().optional(),
     })
     .optional(),
-  // TPM device toggle (VmBase.tpm_enabled, api-model 4.4.5+). Only filled on an
-  // all_content read; declared for the shared VmBase shape, no form edits it.
-  tpm_enabled: z.union([z.boolean(), z.stringbool()]).optional(),
+  // Console. display.type comes from the graphics devices
+  // (DisplayHelper.adjustDisplayData). console, virtio_scsi and
+  // soundcard_enabled are device flags the engine fills on an all_content read
+  // only (BackendInstanceType(s)Resource.doPopulate), so the list read the
+  // dialog opens with lacks them: see resources/instanceTypes.ts
+  // getInstanceTypeAllContentDevices.
+  display: z
+    .looseObject({
+      type: z.string().optional(),
+      monitors: z.coerce.number().optional(),
+      smartcard_enabled: BooleanishSchema.optional(),
+    })
+    .optional(),
+  usb: z.looseObject({ enabled: BooleanishSchema.optional() }).optional(),
+  soundcard_enabled: BooleanishSchema.optional(),
+  console: z.looseObject({ enabled: BooleanishSchema.optional() }).optional(),
+  // Resource Allocation
+  io: z.looseObject({ threads: z.coerce.number().optional() }).optional(),
+  virtio_scsi: z.looseObject({ enabled: BooleanishSchema.optional() }).optional(),
+  // System
+  custom_emulated_machine: z.string().optional(),
+  custom_cpu_model: z.string().optional(),
 })
 
 // JSON quirk: GET /instancetypes returns { instance_type: [...] } and omits the

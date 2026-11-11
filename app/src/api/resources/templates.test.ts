@@ -5,7 +5,7 @@ import {
   deleteTemplate,
   exportTemplateToDomain,
   exportTemplateToOva,
-  getTemplateSoundcardEnabled,
+  getTemplateAllContentDevices,
   getTemplateTpmEnabled,
   removeTemplateNic,
   updateTemplate,
@@ -242,30 +242,46 @@ describe('getTemplateTpmEnabled', () => {
   })
 })
 
-describe('getTemplateSoundcardEnabled', () => {
+describe('getTemplateAllContentDevices', () => {
   it('reads the template through the all_content collection, narrowed by _vmt_id', async () => {
     const fetchMock = mockFetch(200, {
-      template: [{ id: 'tpl-1', name: 't', soundcard_enabled: 'true' }],
+      template: [
+        {
+          id: 'tpl-1',
+          name: 't',
+          soundcard_enabled: 'true',
+          console: { enabled: 'false' },
+          virtio_scsi: { enabled: true },
+        },
+      ],
     })
-    await expect(getTemplateSoundcardEnabled('tpl-1')).resolves.toBe(true)
+    await expect(getTemplateAllContentDevices('tpl-1')).resolves.toEqual({
+      soundcardEnabled: true,
+      serialConsoleEnabled: false,
+      virtioScsiEnabled: true,
+    })
     // not the single-template read, which reports the sound card inverted
     expect(fetchMock.mock.calls[0]![0]).toMatch(
       /\/templates\?search=_vmt_id%3Dtpl-1&all_content=true$/,
     )
   })
 
-  it('picks the matching row and reads a missing key as no sound card', async () => {
+  it('picks the matching row and reads missing keys as no device', async () => {
     mockFetch(200, {
       template: [
         { id: 'tpl-2', name: 'other', soundcard_enabled: true },
         { id: 'tpl-1', name: 't' },
       ],
     })
-    await expect(getTemplateSoundcardEnabled('tpl-1')).resolves.toBe(false)
+    await expect(getTemplateAllContentDevices('tpl-1')).resolves.toEqual({
+      soundcardEnabled: false,
+      serialConsoleEnabled: false,
+      virtioScsiEnabled: false,
+    })
   })
 
   it('fails instead of guessing when the search does not return the template', async () => {
     mockFetch(200, {})
-    await expect(getTemplateSoundcardEnabled('tpl-1')).rejects.toMatchObject({ status: 404 })
+    await expect(getTemplateAllContentDevices('tpl-1')).rejects.toMatchObject({ status: 404 })
   })
 })

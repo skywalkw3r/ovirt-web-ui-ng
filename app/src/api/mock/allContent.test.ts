@@ -6,7 +6,8 @@ import { mockRequest, resetMockVms } from './handlers'
 // (BackendVmResource.doPopulate; the mappers never map them), so a client
 // that seeds them from a plain read fails here as it would live. Fixtures:
 // vm-01 carries a sound card, serial console and VirtIO-SCSI; vm-02 an RNG;
-// tpl-01 a sound card.
+// tpl-01 a sound card; tpl-02 a sound card and VirtIO-SCSI; tpl-00 (Blank)
+// none; instance-type-medium a sound card, serial console and VirtIO-SCSI.
 describe('all_content device flags (mock)', () => {
   beforeEach(() => {
     vi.useFakeTimers()
@@ -60,7 +61,7 @@ describe('all_content device flags (mock)', () => {
     expect(await call('/templates/tpl-01?all_content=true')).toMatchObject({
       soundcard_enabled: false,
     })
-    expect(await call('/templates/tpl-02?all_content=true')).toMatchObject({
+    expect(await call('/templates/tpl-00?all_content=true')).toMatchObject({
       soundcard_enabled: true,
     })
   })
@@ -72,8 +73,32 @@ describe('all_content device flags (mock)', () => {
       .template as Record<string, unknown>[]
     expect(rows).toHaveLength(1)
     expect(rows[0]).toMatchObject({ id: 'tpl-01', soundcard_enabled: 'true' })
+    // every device flag rides the collection, from the template's detail
     const other = (await call('/templates?search=_vmt_id%3Dtpl-02&all_content=true'))
       .template as Record<string, unknown>[]
-    expect(other).toEqual([expect.objectContaining({ id: 'tpl-02', soundcard_enabled: false })])
+    expect(other).toEqual([
+      expect.objectContaining({
+        id: 'tpl-02',
+        soundcard_enabled: 'true',
+        console: { enabled: 'false' },
+        virtio_scsi: { enabled: 'true' },
+      }),
+    ])
+    const blank = (await call('/templates?search=_vmt_id%3Dtpl-00&all_content=true'))
+      .template as Record<string, unknown>[]
+    expect(blank).toEqual([expect.objectContaining({ id: 'tpl-00', soundcard_enabled: false })])
+  })
+
+  it('serves instance type devices on all_content reads only, single and collection', async () => {
+    const plain = await call('/instancetypes/instance-type-medium')
+    for (const key of KEYS) expect(plain).not.toHaveProperty(key)
+    const list = (await call('/instancetypes')).instance_type as Record<string, unknown>[]
+    for (const row of list) for (const key of KEYS) expect(row).not.toHaveProperty(key)
+    // BackendInstanceTypeResource.doPopulate reports the sound card right
+    expect(await call('/instancetypes/instance-type-medium?all_content=true')).toMatchObject({
+      soundcard_enabled: true,
+      console: { enabled: true },
+      virtio_scsi: { enabled: true },
+    })
   })
 })

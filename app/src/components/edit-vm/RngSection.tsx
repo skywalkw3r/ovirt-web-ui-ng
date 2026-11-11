@@ -61,7 +61,7 @@ export function RngSection({
         </Alert>
       )}
       <FormGroup fieldId="edit-vm-rng-enabled">
-        <AllContentField loaded={draft.devicesLoaded} failed={devicesFailed}>
+        <AllContentField state={{ loaded: draft.devicesLoaded, failed: devicesFailed }}>
           <Checkbox
             id="edit-vm-rng-enabled"
             label={t('vm.edit.rng.enable')}

@@ -9,7 +9,7 @@ import {
   StackItem,
   type MenuToggleElement,
 } from '@patternfly/react-core'
-import { EllipsisVIcon } from '@patternfly/react-icons'
+import { EllipsisVIcon, ExternalLinkAltIcon } from '@patternfly/react-icons'
 import { FormattedMessage } from 'react-intl'
 import { useNavigate } from '@tanstack/react-router'
 import type { Host } from '../../api/schemas/host'
@@ -40,6 +40,8 @@ import {
   useUpgradeHost,
 } from '../../hooks/useHostActions'
 import { useT } from '../../i18n/useT'
+import { hostConsoleInfo, openHostConsole } from '../../lib/hostConsole'
+import { ExtensionMenuItems } from '../../extensions/ExtensionActions'
 import { ConfirmModal } from '../ConfirmModal'
 import { ContextMenu, type ContextMenuPosition } from '../context-menu/ContextMenu'
 import { ReinstallHostModal } from '../host-form/ReinstallHostModal'
@@ -143,6 +145,11 @@ export function HostActionsMenu({
   // center (the dialog runs the data center / cluster / move / activate /
   // domain chain).
   const showConfigureLocalStorage = canConfigureLocalStorage(host)
+
+  // Host console opens the host's Cockpit web console in a new tab. Shown
+  // whenever a console URL can be formed, in every host state: Cockpit is
+  // most useful exactly when the engine cannot manage the host.
+  const showHostConsole = hostConsoleInfo(host) !== undefined
 
   // Assign tags applies in every host state, so the kebab always offers at
   // least it — no all-hidden "disable the toggle" branch is needed anymore.
@@ -465,6 +472,25 @@ export function HostActionsMenu({
           {t('host.action.confirmRebooted.item')}
         </DropdownItem>
       )}
+
+      {/* Host console: leaves the app for the host's own Cockpit page, so
+          it sits apart from the engine-driven verbs above. */}
+      {showHostConsole && <Divider component="li" />}
+      {showHostConsole && (
+        <DropdownItem
+          icon={<ExternalLinkAltIcon />}
+          description={t('host.console.newTab')}
+          onClick={() => {
+            setIsOpen(false)
+            openHostConsole(host)
+          }}
+        >
+          {t('host.console.open')}
+        </DropdownItem>
+      )}
+
+      {/* Plugin actions (docs/PLUGINS.md): their own section, above Tags. */}
+      <ExtensionMenuItems kind="host" entity={host} onSelect={() => setIsOpen(false)} />
 
       {/* Tags — assign/unassign the engine tag vocabulary. Always available
           (independent of host lifecycle state), so it anchors its own

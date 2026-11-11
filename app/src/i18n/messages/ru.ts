@@ -189,7 +189,7 @@ export const ru: LocaleCatalog = {
   'inventory.tree.ariaLabel': 'Папки виртуальных машин и шаблонов',
   'inventory.sidebar.resize': 'Изменить ширину боковой панели',
   'inventory.filter.ariaLabel': 'Фильтр виртуальных машин и шаблонов по имени',
-  'inventory.filter.hint': 'Фильтр по имени',
+  'inventory.filter.hint': 'Фильтр по имени, folder:/prod/web или tag:pci-dss',
   'infra.filter.ariaLabel': 'Фильтр инфраструктуры по имени',
   'infra.filter.hint': 'Фильтр по имени',
   'inventory.column.type': 'Тип',
@@ -429,7 +429,7 @@ export const ru: LocaleCatalog = {
   'vms.searchEmpty.matches': 'Ничего не соответствует {query}',
   'vms.empty.title': 'Нет виртуальных машин',
   'vms.empty.body': 'Здесь появятся виртуальные машины, на просмотр которых у вас есть разрешение.',
-  'vms.search.hint': 'name=web* и status=up — или обычный текст',
+  'vms.search.hint': 'name=web* and status=up, folder:/prod/web, tag:pci-dss или обычный текст',
   'vms.search.ariaLabel': 'Поиск виртуальных машин',
   'vms.pagination.ariaLabel': 'Пагинация виртуальных машин',
   'vms.table.ariaLabel': 'Виртуальные машины',
@@ -1065,6 +1065,42 @@ export const ru: LocaleCatalog = {
   'permissions.add.role.none': 'На этом движке нет назначаемых ролей.',
   'permissions.add.role.userGroup': 'Роли пользователей',
   'permissions.add.role.adminGroup': 'Административные роли',
+  // Add Permission picker depth (issue #31): multi-select, My groups,
+  // Everyone, and directory search.
+  'permissions.add.kind.myGroups': 'Мои группы',
+  'permissions.add.kind.everyone': 'Все',
+  'permissions.add.source.label': 'Искать в',
+  'permissions.add.source.engine': 'База данных движка',
+  'permissions.add.source.directory': 'Каталог: {domain}',
+  'permissions.add.source.domainsLoading': 'Загрузка каталогов...',
+  'permissions.add.source.domainsError': 'Не удалось загрузить каталоги: {message}',
+  'permissions.add.source.directoryHint':
+    'Субъекты из каталога, которых ещё нет в движке, добавляются в него при предоставлении роли.',
+  'permissions.add.empty.directory.users': 'Каталог не вернул ни одного пользователя.',
+  'permissions.add.empty.directory.groups': 'Каталог не вернул ни одной группы.',
+  'permissions.add.myGroups.loading': 'Загрузка ваших групп...',
+  'permissions.add.myGroups.error': 'Не удалось загрузить ваши группы: {message}',
+  'permissions.add.myGroups.empty.title': 'Нет групп',
+  'permissions.add.myGroups.empty.body': 'Ваша учётная запись не входит ни в одну группу каталога.',
+  'permissions.add.myGroups.table.ariaLabel': 'Мои группы',
+  'permissions.add.everyone.body':
+    'Роль предоставляется встроенной группе Everyone, поэтому её получает каждый пользователь для этого объекта ({noun}).',
+  'permissions.add.selectMany.user':
+    'Выберите одного или нескольких пользователей для предоставления роли.',
+  'permissions.add.selectMany.group': 'Выберите одну или несколько групп для предоставления роли.',
+  'permissions.add.selected.count':
+    '{count, plural, one {Выбран # субъект} few {Выбрано # субъекта} many {Выбрано # субъектов} other {Выбрано # субъекта}}',
+  'permissions.add.selected.ariaLabel': 'Выбранные субъекты',
+  'permissions.add.selected.remove': 'Убрать {name} из выбора',
+  'permissions.add.result.failed.title':
+    '{count, plural, one {Не удалось предоставить роль # субъекту} few {Не удалось предоставить роль # субъектам} many {Не удалось предоставить роль # субъектам} other {Не удалось предоставить роль # субъекта}}',
+  'permissions.add.result.failed.body':
+    'Субъекты с ошибкой остаются выбранными. Устраните причину и повторите попытку или уберите их из выбора.',
+  'permissions.add.result.failed.item': '{name}: {message}',
+  'permissions.add.submit.retry': 'Повторить неудачные',
+  'permissions.add.toast.granted': 'Роль {role} предоставлена: {name}',
+  'permissions.add.toast.grantedMany':
+    'Роль {role} предоставлена {count, plural, one {# субъекту} few {# субъектам} many {# субъектам} other {# субъекта}}',
   'users.notPermitted': 'Пользователи',
   'users.title': 'Пользователи',
   'users.search.hint': 'usrname=jdoe* — или обычный текст',
@@ -1760,6 +1796,11 @@ export const ru: LocaleCatalog = {
   'settings.pref.console.vncDescription': 'Работает с noVNC и большинством настольных клиентов.',
   'settings.pref.console.spiceDescription': 'Более богатый удалённый доступ через virt-viewer.',
   'settings.pref.language': 'Язык',
+  // Roaming note (components/UserMenu, settings/RoamingSettingsProvider)
+  'settings.pref.roaming.synced':
+    'Сохраняются в вашем профиле пользователя oVirt и доступны в других браузерах.',
+  'settings.pref.roaming.local':
+    'Сохраняются только в этом браузере: профиль пользователя oVirt недоступен для их хранения.',
   'settings.refresh.seconds':
     '{count, plural, one {# секунда} few {# секунды} many {# секунд} other {# секунды}}',
   'settings.timeout.minutes':
@@ -1942,7 +1983,9 @@ export const ru: LocaleCatalog = {
   'hostNuma.empty.body': 'Этот хост не сообщает об узлах NUMA.',
   'hostNuma.error.title': 'Не удалось загрузить топологию NUMA',
   'hostNuma.loading': 'Загрузка топологии NUMA',
-  'host.cockpit.open': 'Cockpit',
+  'host.console.open': 'Консоль хоста',
+  'host.console.newTab': 'Открывает Cockpit в новой вкладке',
+  'host.console.tooltip': 'Открыть интерфейс Cockpit для {name}',
   'datacenters.forceRemove.action': 'Принудительно удалить',
   'datacenters.forceRemove.confirm.title': "Принудительно удалить дата-центр ''{name}''?",
   'datacenters.forceRemove.confirm.body':
@@ -2249,7 +2292,7 @@ export const ru: LocaleCatalog = {
   'dc.field.macPool': 'Пул MAC-адресов',
   'search.autocomplete.hint': 'Синтаксис поиска',
   'templates.title': 'Шаблоны',
-  'templates.search.hint': 'name=web* — или обычный текст',
+  'templates.search.hint': 'name=web*, folder:/prod, tag:legacy или обычный текст',
   'templates.search.ariaLabel': 'Поиск шаблонов',
   'templates.pagination.ariaLabel': 'Разбивка шаблонов на страницы',
   'templates.loading': 'Загрузка шаблонов',
@@ -2295,28 +2338,28 @@ export const ru: LocaleCatalog = {
   'templateForm.stateless': 'Без сохранения состояния',
   'templateForm.deleteProtection': 'Защита от удаления',
   'templateForm.aria.deleteProtection': 'Защита от удаления',
-  'templateForm.section.system': 'Система',
-  'templateForm.memory': 'Объём памяти (МБ)',
-  'templateForm.guaranteedMemory': 'Гарантированная физическая память (МБ)',
-  'templateForm.maxMemory': 'Максимальный объём памяти (МБ)',
   'templateForm.sockets': 'Виртуальные сокеты',
   'templateForm.cores': 'Ядер на виртуальный сокет',
   'templateForm.threads': 'Потоков на ядро',
-  'templateForm.section.ha': 'Высокая доступность',
-  'templateForm.ha': 'Высокодоступный',
-  'templateForm.ha.priority': 'Приоритет',
-  'templateForm.aria.haPriority': 'Приоритет высокой доступности',
-  'templateForm.ha.priorityHelp':
-    'Значения повыше перезапускаются первыми (webadmin делит на группы: низкий 1, средний 50, высокий 100).',
-  'templateForm.section.console': 'Консоль',
-  'templateForm.monitors': 'Мониторы',
-  'templateForm.usb': 'USB включён',
-  'templateForm.smartcard': 'Смарт-карта включена',
-  'templateForm.soundcard': 'Звуковая карта включена',
   'templateForm.memory.error.positive': 'Объём памяти должен быть больше 0',
   'templateForm.memory.error.guaranteed':
     'Гарантированная физическая память не может превышать объём памяти',
   'templateForm.memory.error.max': 'Максимальный объём памяти не может быть меньше объёма памяти',
+  // New template (standalone) and the sectioned template dialog (#28)
+  'templateForm.title.new': 'Новый шаблон',
+  'templateForm.newAction': 'Новый шаблон',
+  'templateForm.sections.ariaLabel': 'Разделы шаблона',
+  'templateForm.sourceVm': 'Исходная ВМ',
+  'templateForm.sourceVm.placeholder': 'Выберите выключенную ВМ',
+  'templateForm.sourceVm.help':
+    'Новый шаблон копирует диски и конфигурацию этой ВМ. Можно использовать только выключенную ВМ. Изменения в этом диалоговом окне заменяют настройки ВМ.',
+  'templateForm.sourceVm.empty': 'Нет выключенных ВМ. Выключите ВМ, чтобы создать из неё шаблон.',
+  'templateForm.sourceVm.disksNote':
+    'Диски копируются в их текущие домены хранилища. Для выделения дисков, подверсий или запечатывания используйте «Создать шаблон» на ВМ.',
+  'templateForm.sourceVm.loading': 'Загрузка конфигурации ВМ',
+  'templateForm.sourceVm.error': 'Не удалось загрузить конфигурацию ВМ.',
+  'templateForm.sourceVm.hint':
+    'Выберите исходную ВМ, чтобы задать систему, консоль и другие параметры шаблона.',
   'templateExport.title': 'Экспортировать {name} как OVA',
   'templateExport.host': 'Хост',
   'templateExport.host.placeholder': 'Выберите хост',
@@ -3405,6 +3448,9 @@ export const ru: LocaleCatalog = {
   'hostForm.field.rootPassword': 'Пароль root',
   'hostForm.field.sshPort': 'Порт SSH',
   'hostForm.field.sshUser': 'Пользователь SSH',
+  'hostForm.firewall.configure': 'Автоматически настроить брандмауэр хоста',
+  'hostForm.firewall.configure.help':
+    'Установка откроет в брандмауэре хоста порты, необходимые oVirt, используя тип брандмауэра кластера. Отключайте, только если вы сами управляете брандмауэром хоста; тогда нужные порты придётся открыть вручную.',
   'hostForm.hostedEngine.deploy': 'Развернуть hosted engine',
   'hostForm.hostedEngine.deploy.help':
     'Установка также развёртывает компоненты самоуправляемого движка, чтобы этот хост мог запускать ВМ движка наряду с существующими хостами hosted engine. Оставьте выключенным для обычного хоста виртуализации.',
@@ -3546,11 +3592,7 @@ export const ru: LocaleCatalog = {
   // instanceTypeForm
   'instanceTypeForm.aria.description': 'Описание типа экземпляра',
   'instanceTypeForm.aria.name': 'Имя типа экземпляра',
-  'instanceTypeForm.memory.error.guaranteed':
-    'Гарантированная физическая память не может превышать размер памяти',
-  'instanceTypeForm.memory.error.max': 'Максимальная память не может быть меньше размера памяти',
-  'instanceTypeForm.memory.error.positive': 'Размер памяти должен быть больше 0',
-  'instanceTypeForm.section.cpu': 'Виртуальные ЦП',
+  'instanceTypeForm.sections.ariaLabel': 'Разделы типа экземпляра',
   'instanceTypeForm.title.edit': 'Изменить тип экземпляра — {name}',
   'instanceTypeForm.title.new': 'Новый тип экземпляра',
 
@@ -3919,6 +3961,11 @@ export const ru: LocaleCatalog = {
 
   // setupNetworks
   'setupNetworks.aria.configureSriov': 'Настроить SR-IOV для {name}',
+  'setupNetworks.aria.customPropertyAdd': 'Добавить пользовательское свойство для {name}',
+  'setupNetworks.aria.customPropertyKey': 'Ключ пользовательского свойства {index} для {name}',
+  'setupNetworks.aria.customPropertyRemove': 'Удалить пользовательское свойство {index} из {name}',
+  'setupNetworks.aria.customPropertyValue':
+    'Значение пользовательского свойства {index} для {name}',
   'setupNetworks.aria.labelsOn': 'Метки на {name}',
   'setupNetworks.aria.newLabel': 'Новая метка для {name}',
   'setupNetworks.aria.qosField': '{label} для {name}',
@@ -3929,6 +3976,15 @@ export const ru: LocaleCatalog = {
   'setupNetworks.bondMode.mode4': 'Динамическая агрегация каналов — 802.3ad (режим 4)',
   'setupNetworks.bondMode.mode5':
     'Адаптивная балансировка нагрузки передачи — balance-tlb (режим 5)',
+  'setupNetworks.customProperties.add': 'Добавить пользовательское свойство',
+  'setupNetworks.customProperties.freeForm':
+    'Engine не сообщил, какие ключи он допускает, поэтому ключи проверяются только при сохранении.',
+  'setupNetworks.customProperties.help':
+    'Параметры «ключ/значение», применяемые к этой сети на хосте, например bridge_opts для настройки моста сети ВМ. Доступные ключи берутся из конфигурации engine.',
+  'setupNetworks.customProperties.keyPlaceholder': 'Выберите ключ',
+  'setupNetworks.customProperties.label': 'Пользовательские свойства',
+  'setupNetworks.customProperties.noKeys':
+    'Engine не допускает ни одного ключа пользовательских свойств для этой сети.',
   'setupNetworks.labels.add': 'Добавить метку',
   'setupNetworks.labels.help':
     'Метки сети, прикреплённые к этому NIC. Движок автоматически подключает к NIC каждую сеть с соответствующей меткой.',
@@ -3980,6 +4036,16 @@ export const ru: LocaleCatalog = {
   'setupNetworks.sriov.networks.removeAria': 'Удалить разрешённую сеть {name}',
   'setupNetworks.sriov.networks.selectPlaceholder': 'Выберите сеть',
   'setupNetworks.sriov.title': 'Конфигурация SR-IOV — {name}',
+  'setupNetworks.validation.customPropertyBridgeOpts': '{key} применяется только к сетям ВМ',
+  'setupNetworks.validation.customPropertyDuplicate': '{key} уже задан',
+  'setupNetworks.validation.customPropertyKey':
+    'Ключ может содержать только буквы, цифры и символы подчёркивания',
+  'setupNetworks.validation.customPropertyKeyRequired': 'Введите ключ для этого значения',
+  'setupNetworks.validation.customPropertyUnknown':
+    '{key} не входит в число пользовательских свойств, допускаемых этим engine',
+  'setupNetworks.validation.customPropertyValue': 'Значение {key} должно соответствовать {format}',
+  'setupNetworks.validation.customPropertyValueSyntax':
+    'Значение не может содержать точку с запятой',
   'setupNetworks.validation.ipv4': 'Введите корректный IPv4-адрес',
   'setupNetworks.validation.ipv6': 'Введите корректный IPv6-адрес',
   'setupNetworks.validation.managementGuard':
@@ -4774,6 +4840,85 @@ export const ru: LocaleCatalog = {
     'Изменить watchdog не удалось, поэтому ничего не сохранено: {message}. Сохраните ещё раз, чтобы повторить попытку.',
   'vm.edit.save.nextRunRefreshFailed':
     'Watchdog сохранён, но ожидающая конфигурация ВМ для следующего запуска не обновлена, поэтому движок может отменить изменение при следующем выключении: {message}. Сохраните ещё раз, чтобы повторить попытку.',
+  'vm.edit.pinning.title': 'Закрепление ЦП',
+  'vm.edit.pinning.policy': 'Политика закрепления ЦП',
+  'vm.edit.pinning.policy.none': 'Нет',
+  'vm.edit.pinning.policy.manual': 'Вручную',
+  'vm.edit.pinning.policy.resizeAndPin': 'Изменить размер и закрепить NUMA',
+  'vm.edit.pinning.policy.dedicated': 'Выделенные',
+  'vm.edit.pinning.policy.isolateThreads': 'Изолировать потоки',
+  'vm.edit.pinning.topology': 'Топология закрепления ЦП',
+  'vm.edit.pinning.hint.manualNeedsHost':
+    'Для ручного закрепления ВМ должна работать на определённых хостах.',
+  'vm.edit.pinning.hint.dedicatedNeedsVersion':
+    'Для политик «Выделенные» и «Изолировать потоки» нужна версия совместимости кластера 4.7 или выше.',
+  'vm.edit.pinning.hint.dedicatedNumaPinned':
+    'Политики «Выделенные» и «Изолировать потоки» недоступны, пока закреплён виртуальный узел NUMA.',
+  'vm.edit.pinning.hint.resizeAndPin':
+    'Политика «Изменить размер и закрепить NUMA» задаёт топологию ЦП и виртуальные узлы NUMA по хосту при запуске ВМ.',
+  'vm.edit.pinning.error.required': 'Введите топологию закрепления, например 0#0_1#1-3.',
+  'vm.edit.pinning.error.syntax':
+    'Записывайте элементы vCPU#ЦП хоста через _, например 0#0_1#1-3 или 0#0-3,^2.',
+  'vm.edit.pinning.error.needsHost':
+    'Для ручного закрепления ВМ должна работать на определённых хостах.',
+  'vm.edit.pinning.error.vcpuMissing':
+    'vCPU {vcpu} не существует; у этой ВМ есть vCPU с 0 по {max}.',
+  'vm.edit.pinning.error.duplicate': 'vCPU {vcpu} закреплён более одного раза.',
+  'vm.edit.pinning.error.noCpu': 'vCPU {vcpu} не закреплён ни за одним ЦП хоста.',
+  'fieldHelp.vm.cpuPinningPolicy':
+    'Как vCPU сопоставляются с ЦП хоста. «Нет» оставляет это хосту; «Вручную» использует топологию закрепления ниже; «Изменить размер и закрепить NUMA» подгоняет ВМ под её хост и закрепляет её; «Выделенные» резервирует ЦП хоста только для этой ВМ; «Изолировать потоки» вдобавок даёт каждому vCPU собственное физическое ядро. Для работающей ВМ применяется при следующем запуске.',
+  'fieldHelp.vm.cpuPinningTopology':
+    'Закрепите каждый vCPU за ЦП хоста в виде vCPU#ЦП, элементы через _. Набор ЦП перечисляет ЦП (0,2), диапазоны (1-3) и исключения (^2). Пример: 0#0_1#1-3 закрепляет vCPU 0 за ЦП 0 хоста, а vCPU 1 за ЦП хоста с 1 по 3.',
+  'fieldHelp.vm.numaCount':
+    'Сколько виртуальных узлов NUMA видит гостевая ОС. vCPU и память распределяются между ними; закрепите узел за узлом NUMA хоста, чтобы его память оставалась локальной. Изменяется только у выключенной ВМ.',
+  'vm.edit.numa.title': 'Виртуальный NUMA',
+  'vm.edit.numa.count': 'Число узлов NUMA',
+  'vm.edit.numa.loading': 'Загрузка виртуальных узлов NUMA',
+  'vm.edit.numa.loadError':
+    'Не удалось загрузить виртуальные узлы NUMA; они остаются без изменений',
+  'vm.edit.numa.hint.running': 'Виртуальные узлы NUMA можно изменить, только когда ВМ выключена.',
+  'vm.edit.numa.hint.needsHost':
+    'Для закрепления узла за узлом NUMA хоста ВМ должна работать на определённых хостах.',
+  'vm.edit.numa.hint.hostLoading': 'Загрузка топологии NUMA хоста',
+  'vm.edit.numa.hint.hostError': 'Не удалось загрузить топологию NUMA хоста',
+  'vm.edit.numa.table': 'Виртуальные узлы NUMA',
+  'vm.edit.numa.column.node': 'Узел',
+  'vm.edit.numa.column.resources': 'vCPU и память',
+  'vm.edit.numa.column.tune': 'Режим настройки',
+  'vm.edit.numa.column.hostNode': 'Узел NUMA хоста',
+  'vm.edit.numa.resources': 'vCPU {cpus}, {memory} МБ',
+  'vm.edit.numa.tuneLabel': 'Режим настройки узла NUMA {index}',
+  'vm.edit.numa.pinLabel': 'Узел NUMA хоста для узла NUMA {index}',
+  'vm.edit.numa.pin.none': 'Не закреплён',
+  'vm.edit.numa.pin.hostNode': 'Узел хоста {index}',
+  'vm.edit.numa.tune.interleave': 'Чередование (Interleave)',
+  'vm.edit.numa.tune.strict': 'Строгий (Strict)',
+  'vm.edit.numa.tune.preferred': 'Предпочтительный (Preferred)',
+  'vm.edit.numa.error.preferred':
+    'Режим «Предпочтительный» работает только с одним виртуальным узлом NUMA, закреплённым за одним узлом хоста.',
+  'vm.edit.numa.error.tooManyNodes':
+    'У ВМ {cpus} vCPU, поэтому у неё не может быть {count} узлов NUMA.',
+  'vm.edit.numa.error.pinsNeedHost':
+    'Для закреплённых узлов NUMA ВМ должна работать на определённых хостах.',
+  'vm.edit.numa.error.pinsWithDedicated':
+    'Политики «Выделенные» и «Изолировать потоки» нельзя сочетать с закреплёнными узлами NUMA.',
+  'vm.edit.numa.error.hostUnsupported':
+    'Хост {host} не сообщает топологию NUMA, поэтому у работающей на нём ВМ не может быть виртуальных узлов NUMA.',
+  'vm.edit.numa.error.hostNodeMissing': 'У хоста {host} нет узла NUMA {hostNode}.',
+  'vm.edit.numa.error.memory':
+    'Виртуальному узлу NUMA {node} нужно больше памяти, чем есть у узла {hostNode} хоста {host}, а режим «Строгий» этого не допускает.',
+  'vm.edit.save.numaBeforeVmFailed':
+    'Не удалось удалить старые виртуальные узлы NUMA, поэтому ВМ не сохранена: {message}. Сохраните ещё раз, чтобы повторить.',
+  'vm.edit.save.vmFailedAfterNuma':
+    'Старые виртуальные узлы NUMA удалены, но ВМ сохранить не удалось, поэтому новые узлы не добавлены: {message}. Сохраните ещё раз, чтобы повторить.',
+  'vm.edit.save.numaAfterVmFailed':
+    'ВМ сохранена, но изменить виртуальный NUMA не удалось: {message}. Сохраните ещё раз, чтобы повторить.',
+  'vm.edit.save.numaFailed':
+    'Изменить виртуальный NUMA не удалось: {message}. Сохраните ещё раз, чтобы повторить.',
+  'vm.edit.save.numaState':
+    'Теперь у ВМ {count, plural, =0 {нет виртуальных узлов NUMA} one {# виртуальный узел NUMA} few {# виртуальных узла NUMA} many {# виртуальных узлов NUMA} other {# виртуального узла NUMA}}.',
+  'vm.edit.save.numaStateUnknown':
+    'Не удалось повторно прочитать её виртуальные узлы NUMA; откройте диалог заново, чтобы увидеть текущую топологию.',
   'vm.edit.save.cdFailed':
     'ВМ сохранена, но изменить CD не удалось: {message}. Сохраните ещё раз, чтобы повторить попытку.',
   'vm.create.watchdog.templateError':
@@ -4974,6 +5119,126 @@ export const ru: LocaleCatalog = {
   'host.configureLocalStorage.outcome.undoStopped': 'Отмена частичной настройки прервана: {error}',
   'host.configureLocalStorage.outcome.rerunHint':
     'Чтобы завершить, при необходимости переведите хост в режим обслуживания и снова запустите «Настроить локальное хранилище»; будет повторно использован пустой локальный дата-центр.',
+  // Guide Me (data center and cluster next steps)
+  'guideMe.action': 'Мастер настройки',
+  'guideMe.title': 'Мастер настройки: {name}',
+  'guideMe.loading': 'Загрузка следующих шагов',
+  'guideMe.error.title': 'Не удалось загрузить следующие шаги',
+  'guideMe.dataCenter.created': 'Дата-центр создан.',
+  'guideMe.dataCenter.configured': 'Дата-центр полностью настроен и готов к работе.',
+  'guideMe.cluster.created': 'Кластер создан.',
+  'guideMe.cluster.configured': 'Кластер полностью настроен и готов к работе.',
+  'guideMe.configured.title': 'Настройка завершена',
+  'guideMe.unconfigured': 'Некоторые объекты ещё нужно настроить.',
+  'guideMe.section.required': 'Обязательные шаги',
+  'guideMe.section.optional': 'Необязательные шаги',
+  'guideMe.configureLater': 'Настроить позже',
+  'guideMe.step.configureCluster': 'Настроить кластер',
+  'guideMe.step.addAnotherCluster': 'Добавить ещё один кластер',
+  'guideMe.step.configureHost': 'Настроить хост',
+  'guideMe.step.addAnotherHost': 'Добавить ещё один хост',
+  'guideMe.step.configureStorage': 'Настроить хранилище',
+  'guideMe.step.addMoreStorage': 'Добавить ещё хранилище',
+  'guideMe.step.attachStorage': 'Прикрепить хранилище',
+  'guideMe.step.attachMoreStorage': 'Прикрепить ещё хранилище',
+  'guideMe.step.configureIsoLibrary': 'Настроить библиотеку ISO',
+  'guideMe.step.attachIsoLibrary': 'Прикрепить библиотеку ISO',
+  'guideMe.step.addLocalStorage': 'Добавить локальное хранилище',
+  'guideMe.reason.noUpHost': 'В дата-центре должен быть хотя бы один активный хост.',
+  'guideMe.reason.noCluster': 'Сначала добавьте кластер в дата-центр.',
+  'guideMe.reason.noUnattachedData': 'Нет доступных неприкреплённых доменов данных.',
+  'guideMe.reason.noActiveMaster':
+    'Сначала в дата-центре должен быть активный главный домен данных.',
+  'guideMe.reason.noIsoDomain': 'Нет доступных доменов ISO для прикрепления.',
+  'guideMe.reason.localDcHasHost':
+    'Локальный дата-центр вмещает только один хост, и в этом он уже есть.',
+  'guideMe.reason.dcInitialized': 'Дата-центр уже инициализирован.',
+  'guideMe.reason.clusterLocalHasHost':
+    'Этот кластер принадлежит локальному дата-центру, в котором уже есть его единственный хост.',
+  'guideMe.note.localStorage':
+    'Чтобы полностью настроить дата-центр, прикрепите и активируйте хотя бы один локальный домен хранения.',
+  'guideMe.note.clusterNoActions':
+    'Для этого кластера нет доступных действий: он не прикреплён к дата-центру.',
+  // Configure aggregate entry point (pages/ConfigurePage.tsx): the webadmin
+  // Administration › Configure index linking to its five surfaces.
+  'nav.configure': 'Конфигурация',
+  'configure.title': 'Конфигурация',
+  'configure.intro':
+    'Общие для всего движка определения, используемые всеми центрами данных и кластерами. Каждое открывается на отдельной странице.',
+  'configure.loading': 'Загрузка разделов конфигурации',
+  'configure.notPermitted': 'системной конфигурации',
+  'configure.list.ariaLabel': 'Разделы конфигурации',
+  'configure.card.roles':
+    'Определение ролей и разрешений, которые каждая из них предоставляет пользователям и администраторам.',
+  'configure.card.systemPermissions':
+    'Назначение ролей пользователям и группам на уровне всей системы.',
+  'configure.card.schedulingPolicies':
+    'Управление правилами фильтрации, весов и балансировки, по которым кластеры размещают ВМ.',
+  'configure.card.instanceTypes':
+    'Определение многократно используемых профилей оборудования для новых виртуальных машин.',
+  'configure.card.macPools': 'Управление диапазонами MAC-адресов, назначаемых виртуальным NIC.',
+  // EDIT VM: Foreman/Satellite section (provider picker)
+  'vm.edit.section.foreman': 'Foreman/Satellite',
+  'vm.edit.foreman.provider': 'Провайдер',
+  'vm.edit.foreman.none': 'Без провайдера',
+  'vm.edit.foreman.unknown': 'Неизвестный провайдер ({id})',
+  'vm.edit.foreman.loading': 'Загрузка провайдеров Foreman/Satellite',
+  'vm.edit.foreman.empty':
+    'Провайдеры Foreman/Satellite не зарегистрированы. Добавьте провайдера на странице «Провайдеры», чтобы привязать к нему эту ВМ.',
+  'vm.edit.foreman.help':
+    'Движок получает errata для этой ВМ от выбранного провайдера Foreman/Satellite.',
+  // Template Storage tab + scoped Events tabs (issue #33) ----------------
+  'scopedEvents.loading': 'Загрузка событий',
+  'scopedEvents.error.title': 'Не удалось загрузить события',
+  'scopedEvents.empty.title': 'Нет событий',
+  'templateDetail.tab.storage': 'Хранилище',
+  'templateDetail.tab.events': 'События',
+  'templateEvents.empty.body': 'Здесь появятся события журнала аудита движка для этого шаблона.',
+  'templateEvents.table.ariaLabel': 'События этого шаблона',
+  'templateStorage.empty.body': 'Ни один диск этого шаблона не находится в домене хранилища.',
+  'templateStorage.table.ariaLabel': 'Домены хранилища с дисками этого шаблона',
+  'templateStorage.column.used': 'Использованное пространство',
+  'templateStorage.column.disks': 'Диски',
+  'templateStorage.expand.ariaLabel': 'Показать диски',
+  'templateStorage.disks.ariaLabel': 'Диски шаблона в {name}',
+  'clusterDetail.tab.events': 'События',
+  'clusterEvents.empty.body': 'Здесь появятся события журнала аудита движка для этого кластера.',
+  'clusterEvents.table.ariaLabel': 'События этого кластера',
+  'dcDetail.tab.events': 'События',
+  'dcEvents.empty.body': 'Здесь появятся события журнала аудита движка для этого дата-центра.',
+  'dcEvents.table.ariaLabel': 'События этого дата-центра',
+  'storageDetail.tab.events': 'События',
+  'storageEvents.empty.body':
+    'Здесь появятся события журнала аудита движка для этого домена хранилища.',
+  'storageEvents.table.ariaLabel': 'События этого домена хранилища',
+  'quotaDetail.tab.events': 'События',
+  'quotaEvents.empty.body': 'Здесь появятся события журнала аудита движка для этой квоты.',
+  'quotaEvents.table.ariaLabel': 'События этой квоты',
+  // List-grid columns filled by a follow= or one shared read (issue #34)
+  'vms.column.cpu': 'ЦП',
+  'vms.column.network': 'Сеть',
+  'vms.column.ips': 'IP-адреса',
+  'disks.column.attachedTo': 'Подключён к',
+  'disks.column.quota': 'Квота',
+  'networks.column.qos': 'Имя QoS',
+  'vnicProfiles.column.qos': 'Имя QoS',
+  'vnicProfiles.column.networkFilter': 'Сетевой фильтр',
+  'pools.column.running': 'Запущенные ВМ',
+  'volumes.column.spaceUsed': 'Использовано места',
+  // UI extensions (docs/PLUGINS.md): sidebar group, plugin error state,
+  // plugin page states, About dialog plugin list ------------------------
+  'nav.group.extensions': 'Расширения',
+  'extensions.error.title': '{plugin} не удалось отобразить это содержимое',
+  'extensions.page.loading': 'Загрузка страницы расширения',
+  'extensions.page.notFound.title': 'Страница расширения недоступна',
+  'extensions.page.notFound.body':
+    'Ни одно загруженное расширение не предоставляет эту страницу. Возможно, оно удалено из конфигурации развертывания, не загрузилось или недоступно для вашей учетной записи.',
+  'extensions.page.notFound.back': 'Вернуться к информационной панели',
+  'about.extensions': 'Расширения',
+  'about.extensions.status.active': 'Загружено',
+  'about.extensions.status.loading': 'Загрузка',
+  'about.extensions.status.skipped': 'Не загружается для этого движка',
+  'about.extensions.status.failed': 'Ошибка: {reason}',
   // VM TPM device (Edit VM Resource Allocation, New VM wizard, General tab)
   'vm.edit.resources.tpm': 'Устройство TPM включено',
   'vm.edit.resources.tpm.loading': 'Загрузка устройства TPM',
@@ -5000,12 +5265,13 @@ export const ru: LocaleCatalog = {
   'vm.create.tpm.templateError':
     'Не удалось загрузить устройство TPM шаблона: {message}. Если вы не измените настройку здесь, новая ВМ получит устройство TPM шаблона без изменений.',
   'vm.create.tpm.review.inherited': 'Как в шаблоне',
-  // all_content device reads (Edit VM device toggles, Edit Template sound card)
+  // all_content device reads (Edit VM, Edit/New Template and Edit Instance Type
+  // device toggles)
   'vm.edit.devices.loading': 'Загрузка состояния устройств',
   'vm.edit.devices.error.title': 'Не удалось прочитать устройства ВМ',
   'vm.edit.devices.error.body':
     'Последовательная консоль, звуковая карта, VirtIO-SCSI, генератор случайных чисел и TPM остаются отключёнными, и сохранение их не изменяет.',
-  'templateForm.soundcard.loading': 'Загрузка состояния звуковой карты',
-  'templateForm.soundcard.error':
-    'Не удалось прочитать звуковую карту шаблона; сохранение её не изменяет.',
+  'vmBase.devices.error.title': 'Не удалось прочитать состояние устройств',
+  'vmBase.devices.error.body':
+    'Последовательная консоль, звуковая карта и VirtIO-SCSI остаются отключёнными, и сохранение их не изменяет.',
 }

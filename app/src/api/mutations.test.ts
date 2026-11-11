@@ -225,6 +225,24 @@ describe('mutation request shapes', () => {
     const body = JSON.parse(init.body as string) as Record<string, unknown>
     expect(body.display).toEqual({ address: 'console.lab.local' })
     expect(body.os).toEqual({ custom_kernel_cmdline: 'intel_iommu=on' })
+    expect(body).not.toHaveProperty('override_iptables')
+  })
+
+  it('addHost sends override_iptables as a body field, not a query param', async () => {
+    const fetchMock = mockFetch(201, { id: 'host-new-3', name: 'node-04', status: 'installing' })
+    await addHost({
+      name: 'node-04',
+      address: 'node-04.lab.local',
+      clusterId: 'cluster-01',
+      rootPassword: 'fixture-password',
+      overrideFirewall: false,
+    })
+
+    const [url, init] = lastRequest(fetchMock)
+    // BackendHostsResource.add reads it from the Host body (isSetOverrideIptables)
+    expect(url).toBe('/ovirt-engine/api/hosts')
+    const body = JSON.parse(init.body as string) as Record<string, unknown>
+    expect(body.override_iptables).toBe(false)
   })
 })
 
@@ -473,6 +491,23 @@ describe('mock mutation handlers', () => {
     // the stored fixture never carries the password either
     const detail = await call(`/hosts/${created.id}`)
     expect(JSON.stringify(detail)).not.toContain('fixture-password')
+  })
+
+  it('accepts override_iptables on add without storing or echoing it', async () => {
+    const created = (await call('/hosts', {
+      method: 'POST',
+      body: {
+        name: 'node-08',
+        address: 'node-08.lab.local',
+        cluster: { id: 'cluster-01' },
+        ssh: { port: 22, authentication_method: 'publickey' },
+        override_iptables: false,
+      },
+    })) as { id: string; status: string }
+    expect(created.status).toBe('installing')
+    // install-time knob only: the live engine never maps it onto the read model
+    expect(created).not.toHaveProperty('override_iptables')
+    expect(await call(`/hosts/${created.id}`)).not.toHaveProperty('override_iptables')
   })
 
   it('activate=false and reboot=false park the new host in maintenance after one hop', async () => {

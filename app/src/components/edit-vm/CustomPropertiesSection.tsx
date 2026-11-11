@@ -2,21 +2,29 @@ import { Button, Form, FormGroup, Grid, GridItem, TextInput } from '@patternfly/
 import { MinusCircleIcon, PlusCircleIcon } from '@patternfly/react-icons'
 import { FormattedMessage } from 'react-intl'
 import { useT } from '../../i18n/useT'
-import type { CustomPropertyRow, EditVmDraft } from './editVmDraft'
+import {
+  fieldSetter,
+  type CustomPropertiesFields,
+  type CustomPropertyRow,
+  type SectionChange,
+} from './vmBaseDraft'
 
-// Custom Properties section of the Edit Virtual Machine modal: free-form
-// key/value rows mapping to the VM's custom_properties (VDSM hook parameters
-// like sap_agent/viodiskcache). Presentational — the modal owns the draft;
-// rows with an empty name are dropped at payload time, so a half-typed row
-// never reaches the wire.
+// Custom Properties section, one of the shared VmBase sections (contract in
+// vmBaseDraft.ts): free-form key/value rows mapping to custom_properties (VDSM
+// hook parameters like sap_agent/viodiskcache). Presentational — the form owns
+// the draft; rows with an empty name are dropped at payload time, so a
+// half-typed row never reaches the wire.
 export function CustomPropertiesSection({
   draft,
-  set,
+  onChange,
+  idPrefix = 'edit-vm',
 }: {
-  draft: EditVmDraft
-  set: <K extends keyof EditVmDraft>(key: K, value: EditVmDraft[K]) => void
+  draft: CustomPropertiesFields
+  onChange: SectionChange<CustomPropertiesFields>
+  idPrefix?: string
 }) {
   const t = useT()
+  const set = fieldSetter(onChange)
 
   const updateRow = (index: number, patch: Partial<CustomPropertyRow>) => {
     set(
@@ -46,10 +54,10 @@ export function CustomPropertiesSection({
           <GridItem span={5}>
             <FormGroup
               label={t('vm.edit.customProperties.name')}
-              fieldId={`edit-vm-custom-prop-name-${index}`}
+              fieldId={`${idPrefix}-custom-prop-name-${index}`}
             >
               <TextInput
-                id={`edit-vm-custom-prop-name-${index}`}
+                id={`${idPrefix}-custom-prop-name-${index}`}
                 aria-label={`${t('vm.edit.customProperties.name')} ${index + 1}`}
                 value={row.name}
                 onChange={(_event, value) => updateRow(index, { name: value })}
@@ -59,10 +67,10 @@ export function CustomPropertiesSection({
           <GridItem span={6}>
             <FormGroup
               label={t('vm.edit.customProperties.value')}
-              fieldId={`edit-vm-custom-prop-value-${index}`}
+              fieldId={`${idPrefix}-custom-prop-value-${index}`}
             >
               <TextInput
-                id={`edit-vm-custom-prop-value-${index}`}
+                id={`${idPrefix}-custom-prop-value-${index}`}
                 aria-label={`${t('vm.edit.customProperties.value')} ${index + 1}`}
                 value={row.value}
                 onChange={(_event, value) => updateRow(index, { value })}
@@ -70,9 +78,9 @@ export function CustomPropertiesSection({
             </FormGroup>
           </GridItem>
           <GridItem span={1}>
-            <FormGroup label=" " fieldId={`edit-vm-custom-prop-remove-${index}`}>
+            <FormGroup label=" " fieldId={`${idPrefix}-custom-prop-remove-${index}`}>
               <Button
-                id={`edit-vm-custom-prop-remove-${index}`}
+                id={`${idPrefix}-custom-prop-remove-${index}`}
                 variant="plain"
                 aria-label={`${t('vm.edit.customProperties.remove')} ${index + 1}`}
                 icon={<MinusCircleIcon />}

@@ -5,6 +5,31 @@ import type { Vm } from '../../api/schemas/vm'
 import type { Watchdog } from '../../api/schemas/watchdog'
 import type { MessageId } from '../../i18n/messages/en'
 import { statusKind } from '../../lib/vm-status'
+import { cpuTuneBody, effectiveCpuPinning, formatCpuPinning } from './cpuPinning'
+import { buildExternalHostProvider, vmExternalHostProviderId } from './foremanDraft'
+import type { NumaNodeDraft } from './numaDraft'
+import {
+  allContentDeviceFields,
+  applyVmBaseChanges,
+  changed,
+  normalizedCustomProperties,
+  vmBaseToDraft,
+  type DeviceLoadFields,
+  type TpmFields,
+  type VmBaseDraft,
+  type WatchdogFields,
+} from './vmBaseDraft'
+
+// The VmBase helpers moved to vmBaseDraft.ts (the shared-section contract);
+// re-exported so existing imports keep working.
+export {
+  buildLargeIcon,
+  buildSerialNumber,
+  deriveMemoryOnCommit,
+  guaranteedForMemory,
+  vmMemoryError,
+  type CustomPropertyRow,
+} from './vmBaseDraft'
 
 // Memory is stored in bytes on the wire (see schemas/vm.ts) but edited in MiB
 // in the modal — convert at the draft boundary so every section works in MiB.
@@ -15,22 +40,24 @@ const MiB = 1024 * 1024
 // of the field label wording, so the display divisor is fixed at 1024.
 const MIB_PER_GIB = 1024
 
-// Webadmin seeds Maximum memory at 4x the memory size
-// (VmCommonUtils.getMaxMemorySizeDefault → maxMemoryDefaultRatio = 4). We mirror
-// that so committing a new Memory Size re-derives Max the way the GWT dialog does.
-const MAX_MEMORY_RATIO = 4
-
-// Physical Memory Guaranteed defaults to memory * 100 / cluster-over-commit-%
-// (VmCommonUtils.calcMinMemory). With the usual 100% (no over-commit) this is
-// exactly the memory size; a cluster that over-commits (>100%) yields a lower
-// guaranteed. When the cluster percent is unknown fall back to 100.
-const DEFAULT_OVERCOMMIT_PERCENT = 100
-
 // The shared, flat draft the Edit Virtual Machine modal owns and each section
 // component reads/writes. Every field is always defined (never undefined) so
 // controlled inputs never flip between controlled/uncontrolled — optional wire
-// values collapse to '' / 0 / false / a sensible default here.
-export interface EditVmDraft {
+// values collapse to '' / 0 / false / a sensible default here. The VmBase
+// fields the reusable sections edit (System, Console, High Availability,
+// Resource Allocation, Custom Properties, Icon) come from VmBaseDraft; the
+// watchdog device from WatchdogFields and the TPM device from TpmFields (see
+// vmBaseDraft.ts). Only VM-specific fields are declared here.
+//
+// The all_content device flags: serial console and sound card (Console),
+// VirtIO-SCSI and the TPM device (Resource Allocation), and the RNG device
+// (Random Generator). The polled vm read never carries them (the engine fills
+// them on an all_content read only, see getVmAllContentDevices), so vmToDraft
+// seeds "not loaded" and the modal folds the dedicated read in
+// (allContentDraftFields) into BOTH draft and baseline. devicesLoaded
+// (DeviceLoadFields) keeps those controls disabled and those keys out of the
+// payload until then, so an unread device is never written.
+export interface EditVmDraft extends VmBaseDraft, WatchdogFields, TpmFields, DeviceLoadFields {
   // General
   name: string
   description: string
@@ -44,30 +71,6 @@ export interface EditVmDraft {
   // cluster) and webadmin's Start-in-Pause-Mode toggle.
   biosType: string
   startPaused: boolean
-  // System — memory (MiB) and CPU topology
-  memoryMb: number
-  maxMemoryMb: number
-  guaranteedMemoryMb: number
-  sockets: number
-  coresPerSocket: number
-  threadsPerCore: number
-  // High Availability
-  haEnabled: boolean
-  haPriority: number
-  // VM lease target storage domain id ('' = no lease). lease.storage_domain.id.
-  leaseStorageDomainId: string
-  // Console
-  monitors: number
-  usbEnabled: boolean
-  disconnectAction: string
-  // Console depth — graphics protocol ('spice' | 'vnc' | 'headless'; headless =
-  // removing the graphics device), VNC keyboard layout ('' = engine default),
-  // and the smartcard/soundcard/serial-console device toggles.
-  graphicsProtocol: string
-  vncKeyboardLayout: string
-  smartcardEnabled: boolean
-  soundcardEnabled: boolean
-  serialConsoleEnabled: boolean
   // Boot Options
   firstBootDevice: string
   secondBootDevice: string
@@ -83,21 +86,6 @@ export interface EditVmDraft {
   kernelPath: string
   initrdPath: string
   kernelParams: string
-  // System depth — hardware-clock time zone ('' = engine default;
-  // time_zone.name) and the SMBIOS serial-number policy ('' = cluster default |
-  // 'host' | 'vm' | 'custom') with its custom value.
-  hardwareClockTimezone: string
-  serialNumberPolicy: string
-  customSerialNumber: string
-  // System depth — per-VM overrides of the cluster's emulated machine type and
-  // CPU model ('' = cluster default for both).
-  customEmulatedMachine: string
-  customCpuModel: string
-  // Console depth — guest single sign-on (sso.methods carries guest_agent) and
-  // the two SPICE channel toggles (file transfer / clipboard copy-paste).
-  ssoEnabled: boolean
-  spiceFileTransfer: boolean
-  spiceCopyPaste: boolean
   // Host depth — per-VM migration tuning. Policy '' = cluster default; the
   // InheritableBoolean trio rides as its string enum ('inherit'|'true'|'false');
   // downtime is ms with an enable toggle (disabled = engine default).
@@ -109,33 +97,6 @@ export interface EditVmDraft {
   migrationEncrypted: string
   parallelMigrationsPolicy: string
   customParallelMigrations: number
-  // High Availability depth — resume behavior after a storage I/O error pause.
-  storageErrorResumeBehaviour: string
-  // High Availability depth: the watchdog device. It lives in the
-  // /vms/{id}/watchdogs subcollection, not on the vm read, so vmToDraft seeds
-  // "not loaded" and the modal folds the device in (watchdogDraftFields) into
-  // BOTH draft and baseline once the read lands; watchdogLoaded gates the
-  // selects and the save-time diff so an unread device is never touched.
-  // watchdogId '' = the VM has no watchdog; watchdogModel '' = "No watchdog".
-  watchdogLoaded: boolean
-  watchdogId: string
-  watchdogModel: string
-  watchdogAction: string
-  // The all_content device flags: serial console and sound card (Console),
-  // VirtIO-SCSI and the TPM device (Resource Allocation), and the RNG device
-  // (Random Generator). The polled vm read never carries them (the engine
-  // fills them on an all_content read only, see getVmAllContentDevices), so
-  // vmToDraft seeds "not loaded" and the modal folds the dedicated read in
-  // (allContentDraftFields) into BOTH draft and baseline. devicesLoaded keeps
-  // those controls disabled and those keys out of the payload until then, so
-  // an unread device is never written.
-  devicesLoaded: boolean
-  tpmEnabled: boolean
-  // Resource Allocation depth — vNIC multi-queues + VirtIO-SCSI multi-queue
-  // (0 queues = auto-derive from vCPUs/disks).
-  multiQueuesEnabled: boolean
-  virtioScsiMultiQueuesEnabled: boolean
-  virtioScsiMultiQueues: number
   // Initial Run — cloud-init (Linux) / sysprep (Windows). The initialization
   // block is only PUT when initialRunEnabled and a field actually changed, so an
   // untouched Initial Run never clobbers the engine's write-only secrets.
@@ -160,33 +121,28 @@ export interface EditVmDraft {
   placementHostIds: string[]
   migrationMode: string
   hostPassthroughCpu: boolean
-  // Resource Allocation
-  cpuProfileId: string
-  cpuShares: number
-  memoryBalloonEnabled: boolean
-  ioThreads: number
-  virtioScsiEnabled: boolean
+  // Host depth: CPU pinning. The 4.5 policy (api-model CpuPinningPolicy) and,
+  // for Manual, the pinning string in webadmin's format ("0#0_1#1-3"), which
+  // maps 1:1 to cpu.cpu_tune.vcpu_pins (see cpuPinning.ts). '' under every
+  // other policy.
+  cpuPinningPolicy: string
+  cpuPinning: string
+  // Host depth: virtual NUMA nodes. They live in the /vms/{id}/numanodes
+  // subcollection, not on the vm read, so vmToDraft seeds "not loaded" and the
+  // modal folds the nodes into BOTH draft and baseline once the read lands
+  // (numaDraftFields), exactly like the watchdog. numaLoaded gates the controls
+  // and the save-time plan so an unread topology is never touched.
+  numaLoaded: boolean
+  numaNodes: NumaNodeDraft[]
   // Random Generator — virtio-rng device (enable + entropy source + optional
   // rate limit; 0 on either rate field means "unlimited / not set")
   rngEnabled: boolean
   rngSource: string
   rngBytes: number
   rngPeriod: number
-  // Custom Properties — key/value rows mapping to custom_properties
-  customProperties: CustomPropertyRow[]
-  // Icon — the referenced catalog icon id (seeded from vm.large_icon.id) plus an
-  // optional custom upload (base64 data + media type). A custom upload wins;
-  // picking a catalog icon clears the upload. Both map to large_icon on save.
-  iconId: string
-  iconUploadData: string
-  iconUploadMediaType: string
-}
-
-// One key/value row in the Custom Properties section. Always strings so the
-// row's inputs stay controlled.
-export interface CustomPropertyRow {
-  name: string
-  value: string
+  // Foreman/Satellite — the bound external host provider's id ('' = none).
+  // external_host_provider.id; see foremanDraft.ts.
+  externalHostProviderId: string
 }
 
 // One static NIC row in the Initial Run cloud-init network config. Every field
@@ -209,21 +165,6 @@ function bootDevices(vm: Vm): string[] {
   return Array.isArray(devices) ? devices : []
 }
 
-// Round bytes → MiB; an absent value collapses to 0 rather than NaN so the
-// number inputs stay controlled.
-function bytesToMb(bytes: number | undefined): number {
-  return bytes === undefined ? 0 : Math.round(bytes / MiB)
-}
-
-// Graphics protocol from the loaded display block: 'spice' / 'vnc' when set,
-// otherwise 'headless' (the VM carries no graphics device — display.type is
-// absent, empty, or an unknown value). Mirrors webadmin's IsHeadlessModeEnabled
-// being derived from the absence of a graphics protocol.
-function graphicsProtocolOf(vm: Vm): string {
-  const type = vm.display?.type
-  return type === 'spice' || type === 'vnc' ? type : 'headless'
-}
-
 // Windows OS types (os.type "windows_*") drive the Initial Run tab to sysprep
 // instead of cloud-init — the same prefix convention the osinfo catalog uses.
 export function isWindowsOsType(osType: string | undefined): boolean {
@@ -243,14 +184,6 @@ function initialNics(vm: Vm): InitialRunNic[] {
   }))
 }
 
-// Read the custom-property rows off the VM. The engine omits the wrapper (or
-// the inner array) when none are set.
-function customPropertyRows(vm: Vm): CustomPropertyRow[] {
-  const rows = vm.custom_properties?.custom_property
-  if (!Array.isArray(rows)) return []
-  return rows.map((row) => ({ name: row.name ?? '', value: row.value ?? '' }))
-}
-
 // Loaded placement host ids (the pinned subset). The engine returns bare
 // { id, href } links; names are resolved client-side in the Host section.
 function placementHostIds(vm: Vm): string[] {
@@ -259,14 +192,32 @@ function placementHostIds(vm: Vm): string[] {
   return hosts.map((host) => host.id ?? '').filter(Boolean)
 }
 
+// The loaded manual pinning as webadmin's string (the engine's own stored form).
+function loadedCpuPinning(vm: Vm): string {
+  const pins = vm.cpu?.cpu_tune?.vcpu_pins?.vcpu_pin ?? []
+  return formatCpuPinning(
+    pins.flatMap((pin) =>
+      pin.vcpu !== undefined && pin.cpu_set !== undefined
+        ? [{ vcpu: pin.vcpu, cpuSet: pin.cpu_set }]
+        : [],
+    ),
+  )
+}
+
 // Vm read model → fully-populated draft. Every optional wire field is given a
 // concrete fallback so the returned draft has no undefined members.
 export function vmToDraft(vm: Vm): EditVmDraft {
   const devices = bootDevices(vm)
-  const memoryMb = bytesToMb(vm.memory)
   const init = vm.initialization
   const hostIds = placementHostIds(vm)
+  const cpuPinning = loadedCpuPinning(vm)
+  // An engine that predates cpu_pinning_policy (4.4) derives it the same way:
+  // a pinning string means Manual, none means None.
+  const cpuPinningPolicy = vm.cpu_pinning_policy ?? (cpuPinning !== '' ? 'manual' : 'none')
   return {
+    // The VmBase slice the shared sections edit (vmBaseDraft.ts). The VM's
+    // large-icon reference is a bare { id } link on a plain read.
+    ...vmBaseToDraft(vm, vmLargeIconId(vm) ?? ''),
     name: vm.name ?? '',
     description: vm.description ?? '',
     comment: vm.comment ?? '',
@@ -277,25 +228,6 @@ export function vmToDraft(vm: Vm): EditVmDraft {
     deleteProtected: vm.delete_protected ?? false,
     biosType: vm.bios?.type ?? 'cluster_default',
     startPaused: vm.start_paused ?? false,
-    memoryMb,
-    maxMemoryMb: bytesToMb(vm.memory_policy?.max),
-    // A loaded guaranteed above memory is invalid (the engine requires
-    // guaranteed <= memory) — clamp it down on open, the way webadmin recomputes
-    // guaranteed when the dialog loads. Fixes the 4096-guaranteed-vs-1024-memory
-    // state without a save-block.
-    guaranteedMemoryMb: Math.min(bytesToMb(vm.memory_policy?.guaranteed), memoryMb),
-    sockets: vm.cpu?.topology?.sockets ?? 1,
-    coresPerSocket: vm.cpu?.topology?.cores ?? 1,
-    threadsPerCore: vm.cpu?.topology?.threads ?? 1,
-    haEnabled: vm.high_availability?.enabled ?? false,
-    haPriority: vm.high_availability?.priority ?? 1,
-    leaseStorageDomainId: vm.lease?.storage_domain?.id ?? '',
-    monitors: vm.display?.monitors ?? 1,
-    usbEnabled: vm.usb?.enabled ?? false,
-    disconnectAction: vm.display?.disconnect_action ?? '',
-    graphicsProtocol: graphicsProtocolOf(vm),
-    vncKeyboardLayout: vm.display?.keyboard_layout ?? '',
-    smartcardEnabled: vm.display?.smartcard_enabled ?? false,
     firstBootDevice: devices[0] ?? '',
     secondBootDevice: devices[1] ?? '',
     bootMenuEnabled: vm.bios?.boot_menu?.enabled ?? false,
@@ -307,16 +239,6 @@ export function vmToDraft(vm: Vm): EditVmDraft {
     kernelPath: vm.os?.kernel ?? '',
     initrdPath: vm.os?.initrd ?? '',
     kernelParams: vm.os?.cmdline ?? '',
-    hardwareClockTimezone: vm.time_zone?.name ?? '',
-    serialNumberPolicy: vm.serial_number?.policy ?? '',
-    customSerialNumber: vm.serial_number?.value ?? '',
-    customEmulatedMachine: vm.custom_emulated_machine ?? '',
-    customCpuModel: vm.custom_cpu_model ?? '',
-    // SSO is on when the guest_agent method is present; the SPICE channels
-    // default ON (the engine's own default when the keys are absent).
-    ssoEnabled: (vm.sso?.methods?.method ?? []).some((method) => method.id === 'guest_agent'),
-    spiceFileTransfer: vm.display?.file_transfer_enabled ?? true,
-    spiceCopyPaste: vm.display?.copy_paste_enabled ?? true,
     vmMigrationPolicyId: vm.migration?.policy?.id ?? '',
     // A positive stored downtime is an explicit override; absent/non-positive
     // means the engine default applies.
@@ -327,7 +249,6 @@ export function vmToDraft(vm: Vm): EditVmDraft {
     migrationEncrypted: vm.migration?.encrypted ?? 'inherit',
     parallelMigrationsPolicy: vm.migration?.parallel_migrations_policy ?? 'inherit',
     customParallelMigrations: vm.migration?.custom_parallel_migrations ?? 0,
-    storageErrorResumeBehaviour: vm.storage_error_resume_behaviour ?? 'auto_resume',
     // Seeded from the watchdogs subcollection later (watchdogDraftFields).
     watchdogLoaded: false,
     watchdogId: '',
@@ -337,9 +258,6 @@ export function vmToDraft(vm: Vm): EditVmDraft {
     // (the engine fills them on an all_content read only), so they start as
     // "not loaded" and the modal folds the all_content read in later.
     ...allContentDraftFields(undefined),
-    multiQueuesEnabled: vm.multi_queues_enabled ?? true,
-    virtioScsiMultiQueuesEnabled: vm.virtio_scsi_multi_queues_enabled ?? false,
-    virtioScsiMultiQueues: vm.virtio_scsi_multi_queues ?? 0,
     // Initial Run: treat a VM that already carries an initialization block as
     // "enabled". root_password/authorized_ssh_keys are write-only on the wire,
     // so they seed to '' and are only PUT when the user types a new value.
@@ -363,17 +281,14 @@ export function vmToDraft(vm: Vm): EditVmDraft {
     // Default migration affinity is 'migratable' when the engine omits it.
     migrationMode: vm.placement_policy?.affinity ?? 'migratable',
     hostPassthroughCpu: vm.cpu?.mode === 'host_passthrough',
-    cpuProfileId: vm.cpu_profile?.id ?? '',
-    cpuShares: vm.cpu_shares ?? 0,
-    // Ballooning defaults on (webadmin default) when the engine omits it.
-    memoryBalloonEnabled: vm.memory_policy?.ballooning ?? true,
-    ioThreads: vm.io?.threads ?? 0,
-    customProperties: customPropertyRows(vm),
-    // The VM's current large-icon reference (a bare { id } link on a plain
-    // read). No upload staged until the user picks/uploads in the Icon section.
-    iconId: vmLargeIconId(vm) ?? '',
-    iconUploadData: '',
-    iconUploadMediaType: '',
+    cpuPinningPolicy,
+    // Webadmin only shows the string under Manual
+    // (CpuPinningVmBaseToUnitBuilder).
+    cpuPinning: cpuPinningPolicy === 'manual' ? cpuPinning : '',
+    // Seeded from the numanodes subcollection later (numaDraftFields).
+    numaLoaded: false,
+    numaNodes: [],
+    externalHostProviderId: vmExternalHostProviderId(vm),
   }
 }
 
@@ -417,6 +332,8 @@ export function buildWatchdogChange(
 
 // ── all_content device flags ─────────────────────────────────────────────────
 
+// The VM's all_content draft fields: the shared VmBase device flags (serial
+// console, sound card, VirtIO-SCSI) plus the VM-only TPM and RNG devices.
 export type AllContentDraftFields = Pick<
   EditVmDraft,
   | 'devicesLoaded'
@@ -440,10 +357,7 @@ export function allContentDraftFields(
 ): AllContentDraftFields {
   const rng = devices?.rngDevice
   return {
-    devicesLoaded: devices !== undefined,
-    serialConsoleEnabled: devices?.serialConsoleEnabled ?? false,
-    soundcardEnabled: devices?.soundcardEnabled ?? false,
-    virtioScsiEnabled: devices?.virtioScsiEnabled ?? false,
+    ...allContentDeviceFields(devices),
     tpmEnabled: devices?.tpmEnabled ?? false,
     rngEnabled: rng !== undefined,
     rngSource: rng?.source ?? 'urandom',
@@ -617,16 +531,19 @@ export function tpmCreateValue(
   return decided ? effective : undefined
 }
 
-// Keys vmFieldsChanged ignores: the watchdog and the CD, which each ride their
-// own subcollection (the CD tray id is also seeded into the draft alone on
-// open; a real CD pick is cdTouched + attachedCdId, see buildCdromChange), and
-// the all_content "loaded" marker, which is read state and never part of the body.
+// Keys vmFieldsChanged ignores: the watchdog, the vNUMA nodes and the CD, which
+// each ride their own subcollection (the CD tray id is also seeded into the
+// draft alone on open; a real CD pick is cdTouched + attachedCdId, see
+// buildCdromChange), and the all_content "loaded" marker, which is read state
+// and never part of the body.
 const NON_VM_DRAFT_KEYS: ReadonlySet<keyof EditVmDraft> = new Set([
   'devicesLoaded',
   'watchdogLoaded',
   'watchdogId',
   'watchdogModel',
   'watchdogAction',
+  'numaLoaded',
+  'numaNodes',
   'attachedCdId',
   'cdTouched',
 ])
@@ -650,8 +567,8 @@ export function baselineWithWatchdog(
 }
 
 // The baseline once the vm PUT landed: every vm field the draft carries is
-// saved. The watchdog and CD keep the baseline's own state (each is settled by
-// its own step), and a pending icon upload is spent (the caller clears it from
+// saved. The watchdog, vNUMA nodes and CD keep the baseline's own state (each is
+// settled by its own step), and a pending icon upload is spent (the caller clears it from
 // the draft too) so it is not re-sent.
 export function baselineAfterVmSave(draft: EditVmDraft, baseline: EditVmDraft): EditVmDraft {
   return {
@@ -662,16 +579,11 @@ export function baselineAfterVmSave(draft: EditVmDraft, baseline: EditVmDraft): 
     watchdogId: baseline.watchdogId,
     watchdogModel: baseline.watchdogModel,
     watchdogAction: baseline.watchdogAction,
+    numaLoaded: baseline.numaLoaded,
+    numaNodes: baseline.numaNodes,
     attachedCdId: baseline.attachedCdId,
     cdTouched: baseline.cdTouched,
   }
-}
-
-// Structural inequality via JSON — the draft's new-section values are plain
-// scalars/arrays/records, so a stringify compare is exact and order-stable
-// (both sides are built by the same code path).
-function changed(a: unknown, b: unknown): boolean {
-  return JSON.stringify(a) !== JSON.stringify(b)
 }
 
 // Build the initialization (cloud-init / sysprep) body from the draft. Empty
@@ -729,18 +641,6 @@ export function buildRngDevice(draft: EditVmDraft): Record<string, unknown> | un
   if (draft.rngPeriod > 0) rate.period = draft.rngPeriod
   if (Object.keys(rate).length > 0) device.rate = rate
   return device
-}
-
-// Build the serial_number body from the draft. host/vm carry only the policy;
-// custom pairs it with the user's value; '' (the cluster-default UI choice)
-// maps to policy 'none', which the api-model documents as "remove the policy,
-// moving it to the default (null)".
-export function buildSerialNumber(draft: EditVmDraft): Record<string, unknown> {
-  if (draft.serialNumberPolicy === '') return { policy: 'none' }
-  if (draft.serialNumberPolicy === 'custom') {
-    return { policy: 'custom', value: draft.customSerialNumber }
-  }
-  return { policy: draft.serialNumberPolicy }
 }
 
 // The ISO file id the Boot section's CD picker should insert for the next boot,
@@ -810,17 +710,20 @@ function applyChangedSections(
   // sides: before that the draft holds placeholders, not the VM's devices.
   const devicesRead = draft.devicesLoaded && baseline.devicesLoaded
 
-  // Resource Allocation.
-  if (draft.cpuProfileId && draft.cpuProfileId !== baseline.cpuProfileId) {
-    payload.cpu_profile = { id: draft.cpuProfileId }
-  }
-  if (draft.cpuShares !== baseline.cpuShares) payload.cpu_shares = draft.cpuShares
-  if (draft.memoryBalloonEnabled !== baseline.memoryBalloonEnabled) {
-    ;(payload.memory_policy as Record<string, unknown>).ballooning = draft.memoryBalloonEnabled
-  }
-  if (draft.ioThreads !== baseline.ioThreads) payload.io = { threads: draft.ioThreads }
-  if (devicesRead && draft.virtioScsiEnabled !== baseline.virtioScsiEnabled) {
-    payload.virtio_scsi = { enabled: draft.virtioScsiEnabled }
+  // Host depth: CPU pinning. The policy is its own top-level key; the manual
+  // string rides the cpu block as cpu_tune (see cpuPinning.ts). Leaving Manual
+  // must also CLEAR the stored string: the engine rejects a string under any
+  // other policy, and its REST layer flips a None policy that still has a
+  // string back to Manual (BackendVmsResource.updateCpuPinningFields). So a
+  // policy change to anything but Manual always sends the clearing cpu_tune.
+  const policyMoved = draft.cpuPinningPolicy !== baseline.cpuPinningPolicy
+  if (policyMoved) payload.cpu_pinning_policy = draft.cpuPinningPolicy
+  const pinning = effectiveCpuPinning(draft)
+  if (
+    pinning !== effectiveCpuPinning(baseline) ||
+    (policyMoved && draft.cpuPinningPolicy !== 'manual')
+  ) {
+    ;(payload.cpu as Record<string, unknown>).cpu_tune = cpuTuneBody(pinning)
   }
 
   // Resource Allocation depth: the TPM device. Sent only when the device was
@@ -843,51 +746,6 @@ function applyChangedSections(
     payload.rng_device = rng ?? {}
   }
 
-  // Console depth — graphics protocol / VNC keyboard / smartcard ride the
-  // `display` block the base body already emits (like ballooning rides on
-  // memory_policy); soundcard + serial console are their own top-level keys.
-  // Each is sent only when it moved from baseline. Graphics: spice/vnc set
-  // display.type; headless is "remove the graphics device", which is a
-  // graphics_consoles subcollection DELETE the vm PUT can't express — so
-  // headless is NOT written here (see graphicsConsoleRemovalNeeded)
-  // and the Console section shows a hint.
-  const display = payload.display as Record<string, unknown>
-  if (
-    draft.graphicsProtocol !== baseline.graphicsProtocol &&
-    draft.graphicsProtocol !== 'headless'
-  ) {
-    display.type = draft.graphicsProtocol
-  }
-  if (draft.vncKeyboardLayout !== baseline.vncKeyboardLayout) {
-    // '' clears the stored layout back to the engine default.
-    display.keyboard_layout = draft.vncKeyboardLayout
-  }
-  if (draft.smartcardEnabled !== baseline.smartcardEnabled) {
-    display.smartcard_enabled = draft.smartcardEnabled
-  }
-  if (draft.spiceFileTransfer !== baseline.spiceFileTransfer) {
-    display.file_transfer_enabled = draft.spiceFileTransfer
-  }
-  if (draft.spiceCopyPaste !== baseline.spiceCopyPaste) {
-    display.copy_paste_enabled = draft.spiceCopyPaste
-  }
-  if (devicesRead && draft.soundcardEnabled !== baseline.soundcardEnabled) {
-    payload.soundcard_enabled = draft.soundcardEnabled
-  }
-  if (devicesRead && draft.serialConsoleEnabled !== baseline.serialConsoleEnabled) {
-    payload.console = { enabled: draft.serialConsoleEnabled }
-  }
-
-  // Console depth — guest single sign-on. Enabling sends the guest_agent
-  // method; disabling sends a PRESENT-but-empty method list (the clear-by-empty
-  // convention the model documents for `initialization`; the engine's SsoMapper
-  // maps a set-but-empty list to "no methods").
-  if (draft.ssoEnabled !== baseline.ssoEnabled) {
-    payload.sso = {
-      methods: { method: draft.ssoEnabled ? [{ id: 'guest_agent' }] : [] },
-    }
-  }
-
   // Boot depth — custom direct-kernel boot rides the `os` block the base body
   // already emits. '' clears the stored value back to no custom kernel.
   const os = payload.os as Record<string, unknown>
@@ -902,21 +760,6 @@ function applyChangedSections(
     ;(payload.bios as Record<string, unknown>).type = draft.biosType
   }
   if (draft.startPaused !== baseline.startPaused) payload.start_paused = draft.startPaused
-
-  // System depth — per-VM emulated machine / CPU model overrides. '' clears the
-  // override back to the cluster default (the engine stores the empty value as
-  // "no override" — webadmin sends null, which a JSON body cannot express).
-  if (draft.customEmulatedMachine !== baseline.customEmulatedMachine) {
-    payload.custom_emulated_machine = draft.customEmulatedMachine
-  }
-  if (draft.customCpuModel !== baseline.customCpuModel) {
-    payload.custom_cpu_model = draft.customCpuModel
-  }
-
-  // High Availability depth — resume behavior after a storage I/O error pause.
-  if (draft.storageErrorResumeBehaviour !== baseline.storageErrorResumeBehaviour) {
-    payload.storage_error_resume_behaviour = draft.storageErrorResumeBehaviour
-  }
 
   // Host depth — per-VM migration tuning. Only the touched keys ride inside a
   // single migration object; an untouched section sends nothing. Clearing the
@@ -959,85 +802,17 @@ function applyChangedSections(
     payload.migration_downtime = draft.migrationDowntimeEnabled ? draft.migrationDowntime : -1
   }
 
-  // Resource Allocation depth — queue tuning. The VirtIO-SCSI queue COUNT only
-  // rides while the multi-queue toggle is on and a positive count is set (0 =
-  // auto-derive, the engine default when the key is absent).
-  if (draft.multiQueuesEnabled !== baseline.multiQueuesEnabled) {
-    payload.multi_queues_enabled = draft.multiQueuesEnabled
-  }
-  if (
-    draft.virtioScsiMultiQueuesEnabled !== baseline.virtioScsiMultiQueuesEnabled ||
-    (draft.virtioScsiMultiQueuesEnabled &&
-      draft.virtioScsiMultiQueues !== baseline.virtioScsiMultiQueues)
-  ) {
-    payload.virtio_scsi_multi_queues_enabled = draft.virtioScsiMultiQueuesEnabled
-    if (draft.virtioScsiMultiQueuesEnabled && draft.virtioScsiMultiQueues > 0) {
-      payload.virtio_scsi_multi_queues = draft.virtioScsiMultiQueues
-    }
-  }
+  // The VmBase depth fields the shared sections edit (Resource Allocation,
+  // Console, System and High Availability depth, Custom Properties, Icon):
+  // vmBaseDraft.applyVmBaseChanges, same omit-unchanged rule.
+  applyVmBaseChanges(payload, draft, baseline, { devicesRead })
 
-  // High Availability depth — VM lease storage domain. Selecting a domain sets
-  // the lease target; clearing it sends the empty-object removal convention
-  // (mirrors rng_device removal — the empty-tag clear the model documents for
-  // `initialization`; UNVERIFIED for `lease` against a live engine).
-  if (draft.leaseStorageDomainId !== baseline.leaseStorageDomainId) {
-    payload.lease =
-      draft.leaseStorageDomainId === ''
-        ? {}
-        : { storage_domain: { id: draft.leaseStorageDomainId } }
-  }
-
-  // System depth — hardware-clock time zone. '' clears it to the engine default.
-  if (draft.hardwareClockTimezone !== baseline.hardwareClockTimezone) {
-    payload.time_zone = { name: draft.hardwareClockTimezone }
-  }
-
-  // System depth — SMBIOS serial-number policy. host/vm set the policy; custom
-  // pairs it with the custom value; '' (cluster default) sends policy 'none'
-  // (api-model SerialNumberPolicy.NONE — "remove the policy, default null").
-  // Sent when the policy or, for custom, its value moved.
-  const serialMoved =
-    draft.serialNumberPolicy !== baseline.serialNumberPolicy ||
-    (draft.serialNumberPolicy === 'custom' &&
-      draft.customSerialNumber !== baseline.customSerialNumber)
-  if (serialMoved) payload.serial_number = buildSerialNumber(draft)
-
-  // Custom Properties — CLEAR-TO-NONE: a present-but-empty custom_property list
-  // clears every property (webadmin semantics), an absent key preserves them,
-  // so the block is only sent when the rows actually changed. Unnamed rows
-  // (still being typed) are dropped from the wire.
-  const properties = normalizedCustomProperties(draft)
-  if (changed(properties, normalizedCustomProperties(baseline))) {
-    payload.custom_properties = { custom_property: properties }
-  }
-
-  // Icon — large_icon. A staged custom upload always wins and sends the inline
-  // { media_type, data } (the engine creates a new icon and binds it); picking
-  // a different catalog icon sends { id }. Applied immediately (not a next-run
-  // key) since the icon is pure metadata. Absent when nothing changed.
-  const icon = buildLargeIcon(draft, baseline)
-  if (icon !== undefined) payload.large_icon = icon
-}
-
-// The large_icon body for save, or undefined when the icon is unchanged. A
-// custom upload (base64 data present) takes precedence over a catalog id.
-export function buildLargeIcon(
-  draft: EditVmDraft,
-  baseline: EditVmDraft,
-): Record<string, unknown> | undefined {
-  if (draft.iconUploadData !== '') {
-    return { media_type: draft.iconUploadMediaType, data: draft.iconUploadData }
-  }
-  if (draft.iconId !== '' && draft.iconId !== baseline.iconId) {
-    return { id: draft.iconId }
-  }
-  return undefined
-}
-
-// The wire-shape rows: only named properties count (an unnamed row is UI noise,
-// not a directive to the engine).
-function normalizedCustomProperties(draft: EditVmDraft): CustomPropertyRow[] {
-  return draft.customProperties.filter((row) => row.name.trim() !== '')
+  // Foreman/Satellite — the bound provider, only when the pick moved.
+  const provider = buildExternalHostProvider(
+    draft.externalHostProviderId,
+    baseline.externalHostProviderId,
+  )
+  if (provider !== undefined) payload.external_host_provider = provider
 }
 
 // Draft → PUT body for updateVm. Memory fields go back to bytes; empty-string
@@ -1165,6 +940,10 @@ const NEXT_RUN_KEYS: (keyof EditVmDraft)[] = [
   'virtioScsiMultiQueuesEnabled',
   'virtioScsiMultiQueues',
   'hostPassthroughCpu',
+  // Host depth: the engine marks both CPU pinning fields editable on status
+  // Down only (VmBase @EditableVmField(onStatuses = VMStatus.Down)).
+  'cpuPinningPolicy',
+  'cpuPinning',
   'virtioScsiEnabled',
   'ioThreads',
   'cpuProfileId',
@@ -1300,53 +1079,6 @@ export function gibToMib(value: string): number {
   const gib = Number(value)
   if (!Number.isFinite(gib)) return 0
   return Math.round(gib * MIB_PER_GIB)
-}
-
-// Physical Memory Guaranteed the way webadmin derives it: floor(memory * 100 /
-// over-commit-percent), never above the memory size. (int) truncation in GWT's
-// calcMinMemory is mirrored with Math.floor so parity is exact; the engine
-// invariant guaranteed <= memory is always satisfied because the factor is <= 1
-// for percent >= 100. A 0/undefined percent falls back to 100 (guaranteed ==
-// memory) rather than dividing by zero.
-export function guaranteedForMemory(memoryMb: number, overcommitPercent?: number): number {
-  const percent =
-    overcommitPercent !== undefined && overcommitPercent > 0
-      ? overcommitPercent
-      : DEFAULT_OVERCOMMIT_PERCENT
-  return Math.min(Math.floor((memoryMb * 100) / percent), memoryMb)
-}
-
-// Re-derive the dependent memory fields when Memory Size is committed, mirroring
-// webadmin's memSize_EntityChanged (updateMaxMemory + updateMinAllocatedMemory):
-//  • Maximum memory = memory * 4 (getMaxMemorySizeDefault); the client has no
-//    OS/arch cap locally, so no Math.min ceiling is applied — the engine rejects
-//    an over-cap max. Max is never left below memory.
-//  • Physical Memory Guaranteed = guaranteedForMemory(memory, over-commit),
-//    which is <= memory, so this also CORRECTS a loaded state where guaranteed
-//    exceeded memory (e.g. 4096 guaranteed against 1024 memory).
-// Faithful to webadmin's "recompute from the new memory" rather than a per-field
-// tracking flag. Returns the whole next draft.
-export function deriveMemoryOnCommit(draft: EditVmDraft, overcommitPercent?: number): EditVmDraft {
-  return {
-    ...draft,
-    maxMemoryMb: draft.memoryMb * MAX_MEMORY_RATIO,
-    guaranteedMemoryMb: guaranteedForMemory(draft.memoryMb, overcommitPercent),
-  }
-}
-
-// Memory relationship validation (webadmin parity): the engine requires
-// guaranteed <= memory <= max. Surface it inline so the user sees why a save
-// would bounce rather than eating a raw fault. max is only checked when set
-// (0 means "let the engine default it"). Returns undefined when consistent.
-export function vmMemoryError(draft: EditVmDraft): MessageId | undefined {
-  if (draft.memoryMb <= 0) return 'templateForm.memory.error.positive'
-  if (draft.guaranteedMemoryMb > draft.memoryMb) {
-    return 'templateForm.memory.error.guaranteed'
-  }
-  if (draft.maxMemoryMb > 0 && draft.maxMemoryMb < draft.memoryMb) {
-    return 'templateForm.memory.error.max'
-  }
-  return undefined
 }
 
 // Webadmin's VM-name validation (UnitVmModel/CloneVmModel.validate):

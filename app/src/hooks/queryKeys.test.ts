@@ -326,6 +326,19 @@ describe('query-key builders', () => {
     expect(errataKeys.detail('e1').slice(0, 1)).toEqual([...errataKeys.all])
   })
 
+  it('pins the opt-in list-grid column joins (issue #34)', () => {
+    // under their list prefix so mutations refresh them, but three elements
+    // long so no searched list(search) entry can ever collide with them
+    expect(diskKeys.ownerNames).toEqual(['disks', 'owner-names', ''])
+    expect(diskKeys.ownerNames.slice(0, 1)).toEqual([...diskKeys.all])
+    expect(networkKeys.labelTexts).toEqual(['networks', 'label-texts', ''])
+    expect(networkKeys.labelTexts.slice(0, 1)).toEqual([...networkKeys.all])
+    expect(dataCenterKeys.allQoss).toEqual(['datacenter-qoss-all'])
+    // deliberately OUTSIDE ['vms']: prefix readers there expect Vm[] entries
+    expect(vmKeys.reportedIps('name=web*')).toEqual(['vm-reported-ips', 'name=web*'])
+    expect(vmKeys.reportedIps().slice(0, 1)).not.toEqual([...vmKeys.all])
+  })
+
   it('nests every id-keyed slice under its detail entry (detail invalidation reaches the tabs)', () => {
     // A detail-page mutation invalidates detail(id) and expects the tabs'
     // subcollection reads to refetch by prefix match. The name-keyed feeds
@@ -458,14 +471,18 @@ describe('query-key builders', () => {
 })
 
 describe('allContentKeys', () => {
-  // nested under the detail keys, so a VM or template save (detail
-  // invalidation) refetches the all_content reads by prefix
-  it('nests the all_content slices under the VM and template detail keys', () => {
+  // nested under the detail keys, so a VM, template or instance type save
+  // (detail invalidation) refetches the all_content reads by prefix
+  it('nests the all_content slices under the VM, template and instance type detail keys', () => {
     expect(allContentKeys.vm('v1')).toEqual(['vm', 'v1', 'all-content'])
     expect(allContentKeys.vm('v1').slice(0, 2)).toEqual(vmKeys.detail('v1'))
     expect(allContentKeys.templateTpm('t1')).toEqual(['template', 't1', 'tpm'])
     expect(allContentKeys.templateTpm('t1').slice(0, 2)).toEqual(templateKeys.detail('t1'))
-    expect(allContentKeys.templateSoundcard('t1')).toEqual(['template', 't1', 'soundcard'])
-    expect(allContentKeys.templateSoundcard('t1').slice(0, 2)).toEqual(templateKeys.detail('t1'))
+    expect(allContentKeys.templateDevices('t1')).toEqual(['template', 't1', 'all-content'])
+    expect(allContentKeys.templateDevices('t1').slice(0, 2)).toEqual(templateKeys.detail('t1'))
+    expect(allContentKeys.instanceTypeDevices('i1')).toEqual(['instancetype', 'i1', 'all-content'])
+    expect(allContentKeys.instanceTypeDevices('i1').slice(0, 2)).toEqual(
+      instanceTypeKeys.detail('i1'),
+    )
   })
 })

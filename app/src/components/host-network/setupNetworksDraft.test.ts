@@ -10,6 +10,7 @@ import {
   bondIsModified,
   breakBond,
   createBond,
+  customPropertyErrors,
   draftBlocksSave,
   draftHasChanges,
   draftToSpec,
@@ -38,6 +39,7 @@ import {
   setNameServers,
   syncAll,
   updateRow,
+  validPropertyKeys,
   type SetupNetworksDraft,
 } from './setupNetworksDraft'
 
@@ -260,14 +262,14 @@ describe('validation', () => {
 
   it('blocks save on incomplete static config, only for rows that ride', () => {
     // untouched static row: modified=false, nothing blocks
-    expect(rowBlocksSave(row(seeded(), 'net-01'))).toBe(false)
+    expect(rowBlocksSave(row(seeded(), 'net-01'), seeded())).toBe(false)
     // re-IP with an empty netmask blocks
     const incomplete = updateRow(seeded(), 'net-01', { address: '10.0.0.99', netmask: '' })
-    expect(rowBlocksSave(row(incomplete, 'net-01'))).toBe(true)
+    expect(rowBlocksSave(row(incomplete, 'net-01'), incomplete)).toBe(true)
     expect(draftBlocksSave(incomplete)).toBe(true)
     // complete static config passes; gateway stays optional
     const complete = updateRow(seeded(), 'net-01', { address: '10.0.0.99', gateway: '' })
-    expect(rowBlocksSave(row(complete, 'net-01'))).toBe(false)
+    expect(rowBlocksSave(row(complete, 'net-01'), complete)).toBe(false)
     expect(draftBlocksSave(complete)).toBe(false)
   })
 
@@ -277,13 +279,13 @@ describe('validation', () => {
       ipv6Address: '',
       ipv6Prefix: '64',
     })
-    expect(rowBlocksSave(row(incomplete, 'net-01'))).toBe(true)
+    expect(rowBlocksSave(row(incomplete, 'net-01'), incomplete)).toBe(true)
     const complete = updateRow(seeded(), 'net-01', {
       ipv6BootProtocol: 'static',
       ipv6Address: '2001:db8::11',
       ipv6Prefix: '64',
     })
-    expect(rowBlocksSave(row(complete, 'net-01'))).toBe(false)
+    expect(rowBlocksSave(row(complete, 'net-01'), complete)).toBe(false)
   })
 
   it('guards the management network against ending up detached', () => {
@@ -689,7 +691,7 @@ describe('qos override', () => {
     expect(qosValueError('1.5')).toBeDefined()
     const bad = updateRow(qosSeeded(), 'net-01', { qosUpperlimit: 'abc' })
     expect(rowFieldErrors(row(bad, 'net-01')).qosUpperlimit).toBeDefined()
-    expect(rowBlocksSave(row(bad, 'net-01'))).toBe(true)
+    expect(rowBlocksSave(row(bad, 'net-01'), bad)).toBe(true)
     expect(draftBlocksSave(bad)).toBe(true)
   })
 })
@@ -745,5 +747,271 @@ describe('nic labels', () => {
     draft = addNicLabel(draft, 'nic-eno2', 'eno2', 'red')
     expect(nicLabelsFor(draft, 'nic-eno2')).toEqual(['red'])
     expect(nicLabelsChanged(draft)).toBe(false)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Attachment custom properties
+
+describe('attachment custom properties', () => {
+  // ovirtmgmt (a VM network) carries bridge_opts; storage (not a VM network)
+  // carries none
+  const withProperties: NetworkAttachment[] = [
+    {
+      ...attachments[0],
+      properties: { property: [{ name: 'bridge_opts', value: 'forward_delay=1500' }] },
+    },
+    attachments[1],
+  ]
+
+  // the engine's shipped PreDefinedNetworkCustomProperties regex plus one
+  // admin-defined key
+  const definitions = {
+    bridge_opts: '^[^\\s=]+=[^\\s=]+(\\s+[^\\s=]+=[^\\s=]+)*$',
+    ethtool_opts: '.*',
+  }
+
+  function propertySeeded(defs: Record<string, string> | null = null): SetupNetworksDraft {
+    return seedSetupNetworksDraft(networks, withProperties, nics, [], defs)
+  }
+
+  function errorIds(draft: SetupNetworksDraft, networkId: string) {
+    return customPropertyErrors(row(draft, networkId), draft).map((error) => error?.id)
+  }
+
+  it('seeds the rows from properties.property and flags VM networks', () => {
+    const draft = propertySeeded()
+    const mgmt = row(draft, 'net-01')
+    expect(mgmt.customProperties).toEqual([{ name: 'bridge_opts', value: 'forward_delay=1500' }])
+    expect(mgmt.seed?.customProperties).toEqual(mgmt.customProperties)
+    expect(mgmt.isVmNetwork).toBe(true)
+    expect(row(draft, 'net-03').customProperties).toEqual([])
+    expect(row(draft, 'net-03').isVmNetwork).toBe(false)
+    // the definitions default to null (free-form) and are carried when given
+    expect(draft.propertyDefinitions).toBeNull()
+    expect(propertySeeded(definitions).propertyDefinitions).toEqual(definitions)
+  })
+
+  it('treats an attachment whose network left the cluster as bridged', () => {
+    const orphan: NetworkAttachment = {
+      id: 'att-gone',
+      network: { id: 'net-99', name: 'gone' },
+      host_nic: { id: 'nic-eno2', name: 'eno2' },
+    }
+    const draft = seedSetupNetworksDraft(networks, [...attachments, orphan], nics)
+    expect(row(draft, 'net-99').isVmNetwork).toBe(true)
+  })
+
+  it('leaves untouched properties out of the payload', () => {
+    const draft = propertySeeded()
+    expect(rowIsModified(row(draft, 'net-01'))).toBe(false)
+    expect(draftHasChanges(draft)).toBe(false)
+    // an unrelated edit (a move) does not resend them either
+    const moved = updateRow(draft, 'net-01', { nicName: 'eno2' })
+    expect(draftToSpec(moved).modified?.[0].properties).toBeUndefined()
+  })
+
+  it('sends the complete set on a bare modify when a value changes', () => {
+    const draft = updateRow(propertySeeded(), 'net-01', {
+      customProperties: [
+        { name: 'bridge_opts', value: 'forward_delay=1500 multicast_snooping=1' },
+        { name: 'ethtool_opts', value: '--offload em1 rx on' },
+      ],
+    })
+    expect(rowIsModified(row(draft, 'net-01'))).toBe(true)
+    expect(draftBlocksSave(draft)).toBe(false)
+    expect(draftToSpec(draft).modified).toEqual([
+      {
+        attachmentId: 'att-mgmt',
+        networkId: 'net-01',
+        nicName: 'bond0',
+        bootProtocol: 'static',
+        ipv6BootProtocol: 'none',
+        // the IP config is left alone: a properties-only edit is a bare modify
+        ipChanged: false,
+        ip: { address: '10.0.0.11', netmask: '255.255.255.0', gateway: '10.0.0.1' },
+        properties: [
+          { name: 'bridge_opts', value: 'forward_delay=1500 multicast_snooping=1' },
+          { name: 'ethtool_opts', value: '--offload em1 rx on' },
+        ],
+      },
+    ])
+  })
+
+  it('sends an empty list to clear a seeded set', () => {
+    const draft = updateRow(propertySeeded(), 'net-01', { customProperties: [] })
+    expect(draftHasChanges(draft)).toBe(true)
+    expect(draftToSpec(draft).modified?.[0].properties).toEqual([])
+  })
+
+  it('ignores blank rows, outer padding and row order when diffing', () => {
+    const seededTwo = seedSetupNetworksDraft(
+      networks,
+      [
+        {
+          ...attachments[0],
+          properties: {
+            property: [
+              { name: 'bridge_opts', value: 'forward_delay=1500' },
+              { name: 'ethtool_opts', value: '-K em1 gso off' },
+            ],
+          },
+        },
+      ],
+      nics,
+    )
+    const draft = updateRow(seededTwo, 'net-01', {
+      customProperties: [
+        { name: ' ethtool_opts ', value: ' -K em1 gso off ' },
+        { name: '', value: '' },
+        { name: 'bridge_opts', value: 'forward_delay=1500' },
+      ],
+    })
+    expect(rowIsModified(row(draft, 'net-01'))).toBe(false)
+    expect(draftHasChanges(draft)).toBe(false)
+  })
+
+  it('carries properties on a fresh attach only when there are any', () => {
+    const plain = updateRow(seeded(), 'net-02', { nicName: 'eno2' })
+    expect(draftToSpec(plain).modified?.[0].properties).toBeUndefined()
+    const withProps = updateRow(plain, 'net-02', {
+      customProperties: [
+        { name: 'ethtool_opts', value: '-K em1 gso off' },
+        { name: '', value: '' },
+      ],
+    })
+    expect(draftToSpec(withProps).modified?.[0].properties).toEqual([
+      { name: 'ethtool_opts', value: '-K em1 gso off' },
+    ])
+  })
+
+  it('enforces the engine syntax rules in the free-form fallback', () => {
+    const draft = updateRow(propertySeeded(), 'net-01', {
+      customProperties: [
+        { name: 'bridge_opts', value: 'forward_delay=1500' },
+        { name: 'bridge_opts', value: 'forward_delay=0' },
+        { name: 'bad-key', value: 'x' },
+        { name: '', value: 'orphan value' },
+        { name: 'some_key', value: 'a;b' },
+        { name: 'anything_goes', value: 'not checked without definitions' },
+        { name: '', value: '' },
+      ],
+    })
+    expect(validPropertyKeys(row(draft, 'net-01'), draft)).toBeNull()
+    expect(errorIds(draft, 'net-01')).toEqual([
+      undefined,
+      'setupNetworks.validation.customPropertyDuplicate',
+      'setupNetworks.validation.customPropertyKey',
+      'setupNetworks.validation.customPropertyKeyRequired',
+      'setupNetworks.validation.customPropertyValueSyntax',
+      undefined,
+      undefined,
+    ])
+    expect(draftBlocksSave(draft)).toBe(true)
+  })
+
+  it('rejects bridge_opts on a network that is not a VM network', () => {
+    // storage (net-03) has no 'vm' usage; sync it so the row is editable
+    const draft = updateRow(propertySeeded(), 'net-03', {
+      syncRequested: true,
+      customProperties: [{ name: 'bridge_opts', value: 'forward_delay=1500' }],
+    })
+    expect(customPropertyErrors(row(draft, 'net-03'), draft)).toEqual([
+      { id: 'setupNetworks.validation.customPropertyBridgeOpts', values: { key: 'bridge_opts' } },
+    ])
+    expect(rowBlocksSave(row(draft, 'net-03'), draft)).toBe(true)
+  })
+
+  it('limits keys and checks values against the engine definitions', () => {
+    const draft = propertySeeded(definitions)
+    // the closed key list drops bridge_opts for the non-VM network
+    expect(validPropertyKeys(row(draft, 'net-01'), draft)).toEqual(['bridge_opts', 'ethtool_opts'])
+    expect(validPropertyKeys(row(draft, 'net-03'), draft)).toEqual(['ethtool_opts'])
+
+    const edited = updateRow(draft, 'net-01', {
+      customProperties: [
+        // the engine regex wants whitespace-separated key=value pairs
+        { name: 'bridge_opts', value: 'forward_delay' },
+        { name: 'not_configured', value: 'x' },
+        { name: 'ethtool_opts', value: '' },
+      ],
+    })
+    expect(customPropertyErrors(row(edited, 'net-01'), edited)).toEqual([
+      {
+        id: 'setupNetworks.validation.customPropertyValue',
+        values: { key: 'bridge_opts', format: definitions.bridge_opts },
+      },
+      { id: 'setupNetworks.validation.customPropertyUnknown', values: { key: 'not_configured' } },
+      undefined,
+    ])
+    expect(draftBlocksSave(edited)).toBe(true)
+
+    const valid = updateRow(draft, 'net-01', {
+      customProperties: [{ name: 'bridge_opts', value: 'forward_delay=0 multicast_snooping=1' }],
+    })
+    expect(errorIds(valid, 'net-01')).toEqual([undefined])
+    expect(draftBlocksSave(valid)).toBe(false)
+  })
+
+  it('skips a definition regex JS cannot compile instead of failing the row', () => {
+    // a possessive quantifier is valid Java but not JS
+    const draft = updateRow(propertySeeded({ odd_key: 'a++' }), 'net-01', {
+      customProperties: [{ name: 'odd_key', value: 'whatever' }],
+    })
+    expect(errorIds(draft, 'net-01')).toEqual([undefined])
+    // unbalanced syntax is skipped the same way, never thrown
+    const broken = updateRow(propertySeeded({ odd_key: '([a-z' }), 'net-01', {
+      customProperties: [{ name: 'odd_key', value: 'whatever' }],
+    })
+    expect(errorIds(broken, 'net-01')).toEqual([undefined])
+  })
+
+  it('skips Java-only escapes rather than reading them as literals', () => {
+    // \p{Alnum} is a Java POSIX class; legacy JS would match the literal text
+    // "p{Alnum}" and wrongly fail a value the engine accepts
+    const draft = updateRow(propertySeeded({ java_key: '\\p{Alnum}+' }), 'net-01', {
+      customProperties: [{ name: 'java_key', value: 'abc123' }],
+    })
+    expect(errorIds(draft, 'net-01')).toEqual([undefined])
+  })
+
+  it('matches the whole value like Java String.matches, alternation included', () => {
+    const draft = propertySeeded({ mode: 'on|off' })
+    const check = (value: string) =>
+      errorIds(
+        updateRow(draft, 'net-01', { customProperties: [{ name: 'mode', value }] }),
+        'net-01',
+      )
+    expect(check('on')).toEqual([undefined])
+    expect(check('off')).toEqual([undefined])
+    // an unanchored test would accept these
+    expect(check('only')).toEqual(['setupNetworks.validation.customPropertyValue'])
+    expect(check('xoff')).toEqual(['setupNetworks.validation.customPropertyValue'])
+  })
+
+  it('keeps the properties with the attachment when it moves onto a new bond', () => {
+    // break bond0 (ovirtmgmt parks), bond eno1 + eno2, re-place ovirtmgmt there
+    let draft = breakBond(propertySeeded(), 'bond0')
+    draft = createBond(draft, nics, 'bond1', 1, ['nic-eno1', 'nic-eno2'])
+    draft = updateRow(draft, 'net-01', { nicName: 'bond1' })
+    const mgmt = draftToSpec(draft).modified?.find((entry) => entry.networkId === 'net-01')
+    // the attachment id is reused and the untouched set is omitted, so the
+    // engine keeps it on the moved attachment
+    expect(mgmt?.attachmentId).toBe('att-mgmt')
+    expect(mgmt?.nicName).toBe('bond1')
+    expect(mgmt?.properties).toBeUndefined()
+    expect(row(draft, 'net-01').customProperties).toEqual([
+      { name: 'bridge_opts', value: 'forward_delay=1500' },
+    ])
+  })
+
+  it('does not let an untouched, no-longer-valid seeded key block another edit', () => {
+    // the engine config no longer lists bridge_opts, but the attachment has it
+    const draft = updateRow(propertySeeded({ ethtool_opts: '.*' }), 'net-01', {
+      address: '10.0.0.99',
+    })
+    expect(errorIds(draft, 'net-01')).toEqual(['setupNetworks.validation.customPropertyUnknown'])
+    expect(rowBlocksSave(row(draft, 'net-01'), draft)).toBe(false)
+    expect(draftToSpec(draft).modified?.[0].properties).toBeUndefined()
   })
 })

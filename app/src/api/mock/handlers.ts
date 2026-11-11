@@ -13,6 +13,7 @@ import {
 import type { HostAction } from '../resources/hosts'
 import type { VmAction } from '../resources/vms'
 import { extraRoutes, type MockRoute } from './routes'
+import { mockUserIdFor } from './routes/user-options'
 
 const LATENCY_MS = 300
 // Shorter than the 10s VM poll on purpose: refetches see the transitional
@@ -105,6 +106,9 @@ interface MockVm {
   // The pool this VM belongs to (VmPoolService has no vms subcollection, so the
   // pool VMs tab filters the global /vms feed on vm_pool.id).
   vm_pool?: { id?: string; name?: string }
+  // Edit VM — Foreman/Satellite: the bound external host provider (bare
+  // { id } link; an empty object on PUT clears it, see updateVm)
+  external_host_provider?: { id?: string }
   delete_protected?: boolean | string
   high_availability?: { enabled?: boolean | string; priority?: number | string }
   time_zone?: { name?: string; utc_offset?: string }
@@ -215,6 +219,8 @@ interface MockDiskAttachment {
     lun_storage?: MockLunStorage
     // bare links, id only — ?follow=disk embeds the domain refs without names
     storage_domains?: { storage_domain?: { id?: string }[] }
+    // bare quota link (id only), as the flat /disks list serializes it
+    quota?: { id?: string }
   }
 }
 
@@ -236,6 +242,16 @@ interface MockEvent {
   time?: number | string
   vm?: { id?: string; name?: string }
   host?: { id?: string; name?: string }
+  // the other entity links api-model's Event carries; the scoped Events tabs
+  // search on their names (lib/scopedEvents)
+  template?: { id?: string; name?: string }
+  cluster?: { id?: string; name?: string }
+  data_center?: { id?: string; name?: string }
+  storage_domain?: { id?: string; name?: string }
+  // Mock-only: REST's Event has no quota link (the engine joins audit_log on
+  // quota_id server-side for the quota= search), so the fixture carries the
+  // name the mock search matches against.
+  quota?: { id?: string; name?: string }
 }
 
 interface MockJob {
@@ -362,6 +378,8 @@ interface MockNetwork {
   // provider-supplied (external/OVN) networks only — a bare { id } link, the
   // NetworksPage Provider column joins the name client-side
   external_provider?: { id?: string }
+  // bare QoS link (id only) — the grid's QoS Name column joins the name
+  qos?: { id?: string }
 }
 
 // The enriched body GET /networks/{id} returns — scalars mix string/number
@@ -460,7 +478,11 @@ interface MockTemplateDetail {
   origin?: string
   stateless?: boolean | string
   type?: string
-  memory_policy?: { guaranteed?: number | string; max?: number | string }
+  memory_policy?: {
+    guaranteed?: number | string
+    max?: number | string
+    ballooning?: boolean | string
+  }
   cpu?: {
     architecture?: string
     topology?: { sockets?: number | string; cores?: number | string; threads?: number | string }
@@ -469,18 +491,39 @@ interface MockTemplateDetail {
   display?: {
     type?: string
     monitors?: number | string
+    disconnect_action?: string
+    keyboard_layout?: string
+    smartcard_enabled?: boolean | string
     single_qxl_pci?: boolean | string
     file_transfer_enabled?: boolean | string
     copy_paste_enabled?: boolean | string
   }
   usb?: { enabled?: boolean | string }
-  // Sound card device: served on all_content reads only (see allContentView,
-  // and templateDetailView for the single-template read's inversion).
-  soundcard_enabled?: boolean | string
   delete_protected?: boolean | string
   high_availability?: { enabled?: boolean | string; priority?: number | string }
   time_zone?: { name?: string; utc_offset?: string }
   custom_properties?: { custom_property?: { name?: string; value?: string }[] }
+  // VmBase depth the template dialog edits through the shared Edit VM sections
+  // (Resource Allocation, Console, High Availability, System, Icon).
+  cpu_profile?: { id?: string }
+  cpu_shares?: number | string
+  io?: { threads?: number | string }
+  virtio_scsi?: { enabled?: boolean | string }
+  multi_queues_enabled?: boolean | string
+  virtio_scsi_multi_queues_enabled?: boolean | string
+  virtio_scsi_multi_queues?: number | string
+  // Device flags (with virtio_scsi above): served on all_content reads only
+  // (see allContentView, and templateDetailView for the single-template
+  // read's sound card inversion).
+  soundcard_enabled?: boolean | string
+  console?: { enabled?: boolean | string }
+  sso?: { methods?: { method?: { id?: string }[] } }
+  lease?: { storage_domain?: { id?: string } }
+  storage_error_resume_behaviour?: string
+  serial_number?: { policy?: string; value?: string }
+  custom_emulated_machine?: string
+  custom_cpu_model?: string
+  large_icon?: { id?: string; media_type?: string; data?: string }
 }
 
 interface MockVnicProfile {
@@ -496,20 +539,32 @@ interface MockVnicProfile {
   failover?: { id?: string }
 }
 
-// Instance types share the VM hardware surface but the modal edits a lean subset
-// (memory, memory_policy, cpu.topology, high_availability). Scalars are typed
-// number|string / boolean|string so the fixtures can deliberately mix wire forms
-// and exercise InstanceTypeSchema's coercion (house rule).
+// Instance types carry the part of VmBase the engine maps for them (see
+// INSTANCE_TYPE_REST_KEYS). Scalars are typed number|string / boolean|string so
+// the fixtures can deliberately mix wire forms and exercise InstanceTypeSchema's
+// coercion (house rule).
 interface MockInstanceType {
   id: string
   name: string
   description?: string
   memory?: number | string
-  memory_policy?: { guaranteed?: number | string; max?: number | string }
+  memory_policy?: {
+    guaranteed?: number | string
+    max?: number | string
+    ballooning?: boolean | string
+  }
   cpu?: {
     topology?: { sockets?: number | string; cores?: number | string; threads?: number | string }
   }
   high_availability?: { enabled?: boolean | string; priority?: number | string }
+  display?: { type?: string; monitors?: number | string; smartcard_enabled?: boolean | string }
+  usb?: { enabled?: boolean | string }
+  soundcard_enabled?: boolean | string
+  console?: { enabled?: boolean | string }
+  io?: { threads?: number | string }
+  virtio_scsi?: { enabled?: boolean | string }
+  custom_cpu_model?: string
+  custom_emulated_machine?: string
 }
 
 interface MockNetworkFilter {
@@ -643,6 +698,20 @@ interface MockNetworkAttachment {
     outbound_average_upperlimit?: number | string
     outbound_average_realtime?: number | string
   }
+  // Custom properties (bridge_opts and admin-defined keys). Round-tripped by
+  // setupnetworks; the key is absent when the attachment has none, like the
+  // live NetworkAttachmentMapper.
+  properties?: { property?: Array<{ name?: string; value?: string }> }
+}
+
+// The engine-config values behind network custom properties, as GET
+// /options/{name} serves them: one row per cluster compatibility level and no
+// 'general' row. The predefined value is the engine's shipped default
+// (0000_config.sql: bridge_opts only); the user-defined one models an admin
+// who added the documented ethtool_opts example with engine-config.
+const NETWORK_CUSTOM_PROPERTY_OPTIONS: Record<string, string> = {
+  PreDefinedNetworkCustomProperties: 'bridge_opts=^[^\\s=]+=[^\\s=]+(\\s+[^\\s=]+=[^\\s=]+)*$',
+  UserDefinedNetworkCustomProperties: 'ethtool_opts=.*',
 }
 
 interface MockHostDevice {
@@ -1169,6 +1238,9 @@ const initialVms = (): MockVm[] => [
     statistics: {
       statistic: [
         { id: 'stat-elapsed', name: 'elapsed.time', values: { value: [{ datum: 367_920 }] } },
+        // live load gauges the VMs grid's CPU / Network columns read
+        { id: 'stat-cpu', name: 'cpu.current.total', values: { value: [{ datum: 23.5 }] } },
+        { id: 'stat-net', name: 'network.current.total', values: { value: [{ datum: '4.25' }] } },
       ],
     },
     origin: 'ovirt',
@@ -1217,6 +1289,8 @@ const initialVms = (): MockVm[] => [
     virtio_scsi_multi_queues: '4',
     // Edit VM — HA: VM lease on the data domain (also feeds sd-01 Leases tab)
     lease: { storage_domain: { id: 'sd-01' } },
+    // Edit VM — Foreman/Satellite: bound to the mock Foreman provider
+    external_host_provider: { id: 'ehp-01' },
     high_availability: { enabled: 'true', priority: '50' },
     time_zone: { name: 'Etc/GMT', utc_offset: '+00:00' },
     custom_properties: {
@@ -1257,6 +1331,9 @@ const initialVms = (): MockVm[] => [
     statistics: {
       statistic: [
         { id: 'stat-elapsed', name: 'elapsed.time', values: { value: [{ datum: '15724800' }] } },
+        // live load gauges the VMs grid's CPU / Network columns read
+        { id: 'stat-cpu', name: 'cpu.current.total', values: { value: [{ datum: '61.8' }] } },
+        { id: 'stat-net', name: 'network.current.total', values: { value: [{ datum: 12 }] } },
       ],
     },
   },
@@ -1276,6 +1353,9 @@ const initialVms = (): MockVm[] => [
     statistics: {
       statistic: [
         { id: 'stat-elapsed', name: 'elapsed.time', values: { value: [{ datum: '7380' }] } },
+        // live load gauges the VMs grid's CPU / Network columns read
+        { id: 'stat-cpu', name: 'cpu.current.total', values: { value: [{ datum: 8 }] } },
+        { id: 'stat-net', name: 'network.current.total', values: { value: [{ datum: '0.5' }] } },
       ],
     },
   },
@@ -1529,7 +1609,9 @@ const initialDisks = (): Map<string, MockDiskAttachment[]> =>
           `${500 * GiB}`,
           `${318 * GiB}`,
           { bootable: 'false', active: 'true' },
-          { description: 'PostgreSQL data volume' },
+          // bare quota link, as on the live flat list — the Disks grid's Quota
+          // column resolves the name against the DC quota list
+          { description: 'PostgreSQL data volume', quota: { id: 'quota-01' } },
         ),
       ],
     ],
@@ -1658,7 +1740,7 @@ const minutesAgo = (m: number) => Date.now() - m * 60_000
 // rows past the newest-100 window that the Events page's server-side paging
 // (search `page N` windows) is exercisable in dev:mock and tests out of the
 // box — no env knob needed (contrast VITE_MOCK_SCALE, which gates the VM
-// tail). 137 + the 15 handcrafted = 152 total, so 50-row windows walk
+// tail). 137 + the 18 handcrafted = 155 total, so 50-row windows walk
 // full/full/full/short and the short last page proves the "no more pages"
 // edge. Deterministic on purpose — no Math.random — mirroring scaleVm.
 const BACKLOG_EVENT_COUNT = 137
@@ -1723,6 +1805,8 @@ const initialEvents = (): MockEvent[] => [
     severity: 'warning',
     description: 'Storage domain data has 12% free space remaining.',
     time: minutesAgo(48),
+    storage_domain: { id: 'sd-01', name: 'data' },
+    data_center: { id: 'dc-01', name: 'Default' },
   },
   {
     id: 'ev-05',
@@ -1787,6 +1871,7 @@ const initialEvents = (): MockEvent[] => [
     description: 'Available memory of host node-02 is under the defined threshold (91% used).',
     time: minutesAgo(8),
     host: { id: 'host-02', name: 'node-02' },
+    cluster: { id: 'cluster-01', name: 'Default' },
   },
   {
     id: 'ev-14',
@@ -1794,6 +1879,41 @@ const initialEvents = (): MockEvent[] => [
     severity: 'alert',
     description: 'Data center Default compatibility version upgrade check found 1 issue.',
     time: minutesAgo(5),
+    data_center: { id: 'dc-01', name: 'Default' },
+  },
+  // Template and quota stories for the scoped Events tabs (template, cluster,
+  // data center, storage domain, quota). Kept inside the curated window (newer
+  // than the 61+ minute backlog) so the tabs open on them.
+  {
+    id: 'ev-16',
+    code: 49,
+    severity: 'normal',
+    description: 'Creation of Template centos-stream-9 from VM centos9-golden has been completed.',
+    time: minutesAgo(52),
+    template: { id: 'tpl-01', name: 'centos-stream-9' },
+    cluster: { id: 'cluster-01', name: 'Default' },
+    data_center: { id: 'dc-01', name: 'Default' },
+    storage_domain: { id: 'sd-01', name: 'data' },
+  },
+  {
+    id: 'ev-17',
+    code: '2023',
+    severity: 'normal',
+    description:
+      'Disk centos9_root of template centos-stream-9 was copied to domain hosted_storage.',
+    time: `${minutesAgo(25)}`,
+    template: { id: 'tpl-01', name: 'centos-stream-9' },
+    data_center: { id: 'dc-01', name: 'Default' },
+    storage_domain: { id: 'sd-02', name: 'hosted_storage' },
+  },
+  {
+    id: 'ev-18',
+    code: 10000,
+    severity: 'warning',
+    description: 'Quota dev-quota storage limit exceeded the warning threshold (85% used).',
+    time: minutesAgo(15),
+    data_center: { id: 'dc-01', name: 'Default' },
+    quota: { id: 'quota-02', name: 'dev-quota' },
   },
   {
     id: 'ev-15',
@@ -2450,6 +2570,9 @@ const networks: MockNetwork[] = [
     status: 'operational',
     vlan: { id: 100 },
     data_center: { id: 'dc-01' },
+    // bare QoS link, as the live flat list serializes it (matches the detail
+    // record) — the grid's QoS Name column resolves it against dc-01's /qoss
+    qos: { id: 'qos-hostnet-01' },
   },
   {
     id: 'net-03',
@@ -2498,9 +2621,10 @@ const networkDetails: Record<string, MockNetworkDetail> = {
     profile_required: 'true',
     vdsm_name: 'vm-prod',
     usages: { usage: ['vm'] },
-    // network-level QoS binding — resolved against the DC's /qoss list; net-01/03
-    // carry none, exercising both the set and unset paths
-    qos: { id: 'qos-01' },
+    // network-level QoS binding (a host network QoS) — resolved against the
+    // DC's /qoss list; net-01/03 carry none, exercising both the set and unset
+    // paths
+    qos: { id: 'qos-hostnet-01' },
   },
   'net-03': {
     id: 'net-03',
@@ -2619,27 +2743,46 @@ const initialInstanceTypes = (): MockInstanceType[] => [
     name: 'Small',
     description: '1 vCPU, 1 GiB',
     memory: '1073741824',
-    memory_policy: { guaranteed: '1073741824' },
+    memory_policy: { guaranteed: '1073741824', ballooning: 'true' },
     cpu: { topology: { sockets: 1, cores: 1, threads: 1 } },
     high_availability: { enabled: 'false', priority: 1 },
+    display: { type: 'spice', monitors: '1', smartcard_enabled: 'false' },
+    usb: { enabled: 'false' },
+    soundcard_enabled: 'false',
+    console: { enabled: 'false' },
+    io: { threads: '0' },
+    virtio_scsi: { enabled: 'false' },
   },
   {
     id: 'instance-type-medium',
     name: 'Medium',
     description: '2 vCPU, 2 GiB',
     memory: 2147483648,
-    memory_policy: { guaranteed: 1073741824, max: 4294967296 },
+    memory_policy: { guaranteed: 1073741824, max: 4294967296, ballooning: true },
     cpu: { topology: { sockets: 2, cores: 1, threads: 1 } },
     high_availability: { enabled: false, priority: 1 },
+    display: { type: 'vnc', monitors: 1, smartcard_enabled: false },
+    usb: { enabled: true },
+    soundcard_enabled: true,
+    console: { enabled: true },
+    io: { threads: 1 },
+    virtio_scsi: { enabled: true },
   },
   {
     id: 'instance-type-large',
     name: 'Large',
     description: '4 vCPU, 4 GiB',
     memory: 4294967296,
-    memory_policy: { guaranteed: '2147483648' },
+    memory_policy: { guaranteed: '2147483648', ballooning: false },
     cpu: { topology: { sockets: '2', cores: 2, threads: 1 } },
     high_availability: { enabled: 'true', priority: 50 },
+    display: { type: 'spice', monitors: 2, smartcard_enabled: 'true' },
+    usb: { enabled: false },
+    soundcard_enabled: false,
+    console: { enabled: false },
+    io: { threads: 2 },
+    virtio_scsi: { enabled: 'true' },
+    custom_cpu_model: 'Skylake-Server',
   },
 ]
 
@@ -2921,6 +3064,11 @@ const initialHostNetworkAttachments = (): Map<string, MockNetworkAttachment[]> =
                 },
               },
             ],
+          },
+          // a seeded custom property so the Setup Networks editor opens with a
+          // live row (the api-model's own bridge_opts example value)
+          properties: {
+            property: [{ name: 'bridge_opts', value: 'forward_delay=1500 multicast_snooping=1' }],
           },
         },
         {
@@ -3361,13 +3509,29 @@ const templateDetails: Record<string, MockTemplateDetail> = {
     type: 'desktop',
     cpu: { architecture: 'x86_64', topology: { sockets: 1, cores: '4', threads: 1 } },
     bios: { type: 'q35_secure_boot', boot_menu: { enabled: 'false' } },
+    // VmBase depth for the template dialog's shared sections (Resource
+    // Allocation, Console, High Availability, Custom Properties, Icon); string
+    // and number forms mixed so the schema coercion runs.
+    memory_policy: { guaranteed: `${8 * GiB}`, max: 16 * GiB, ballooning: 'false' },
+    display: { type: 'spice', monitors: '2', smartcard_enabled: 'false' },
+    cpu_profile: { id: 'cpuprofile-01' },
+    cpu_shares: '1024',
+    io: { threads: 1 },
+    virtio_scsi: { enabled: 'true' },
+    multi_queues_enabled: 'true',
+    soundcard_enabled: 'true',
+    console: { enabled: 'false' },
+    storage_error_resume_behaviour: 'leave_paused',
+    custom_properties: { custom_property: [{ name: 'viodiskcache', value: 'writeback' }] },
+    large_icon: { id: 'icon-windows' },
   },
 }
 
 // Template subcollections keyed by template id. NICs share the flat NicSchema,
 // disk attachments the DiskAttachmentSchema (both mix string/number scalars to
-// exercise coercion). Only tpl-00 carries entries; the other templates return
-// empty lists / a 404-tolerant permissions collection to exercise those states.
+// exercise coercion). Only tpl-00 carries entries (plus tpl-01's disks, for the
+// Storage tab); the other templates return empty lists / a 404-tolerant
+// permissions collection to exercise those states.
 // Template NICs (GET/POST/PUT/DELETE /templates/{id}/nics). The NICs tab authors
 // them, so a `let` binding restored by resetMockVms; new NIC ids reuse nicSeq.
 const initialTemplateNics = (): Record<string, MockNic[]> => ({
@@ -3393,6 +3557,43 @@ const templateDiskAttachments: Record<string, MockDiskAttachment[]> = {
         actual_size: 2 * GiB,
         status: 'ok',
         format: 'cow',
+        storage_domains: { storage_domain: [{ id: 'sd-01' }] },
+      },
+    },
+  ],
+  // tpl-01 feeds the template Storage tab: centos9_root is copied to two
+  // domains (it lists under both), centos9_data sits on one.
+  'tpl-01': [
+    {
+      id: 'tpl-01-da-1',
+      bootable: true,
+      interface: 'virtio_scsi',
+      active: 'true',
+      disk: {
+        id: 'tpl-01-disk-1',
+        name: 'centos9_root',
+        provisioned_size: 20 * GiB,
+        actual_size: `${3 * GiB}`,
+        status: 'ok',
+        format: 'cow',
+        storage_type: 'image',
+        storage_domains: { storage_domain: [{ id: 'sd-01' }, { id: 'sd-02' }] },
+      },
+    },
+    {
+      id: 'tpl-01-da-2',
+      bootable: 'false',
+      interface: 'virtio',
+      active: true,
+      disk: {
+        id: 'tpl-01-disk-2',
+        name: 'centos9_data',
+        provisioned_size: `${50 * GiB}`,
+        actual_size: GiB,
+        status: 'ok',
+        format: 'raw',
+        storage_type: 'image',
+        storage_domains: { storage_domain: [{ id: 'sd-01' }] },
       },
     },
   ],
@@ -3863,6 +4064,25 @@ const initialGroups = (): MockGroup[] => [
 // multi-row read. The internal built-ins have no memberships, so their ids are
 // absent and the read serves the engine's omitted-key empty-list quirk.
 const userGroupMemberships: Record<string, MockGroup[]> = {
+  // The built-in admin (the default mock session) gets two memberships so the
+  // Add Permission dialog's "My groups" has rows. These are DIRECTORY-shaped
+  // (encoded directory ids, like the live GetAuthzGroupsByUserId read):
+  // dev-team is already in the engine DB (group-01, matched by name + domain),
+  // platform-team is not, so granting to it materializes it via POST /groups.
+  'user-01': [
+    {
+      id: 'dir-group-dev',
+      name: 'dev-team',
+      namespace: 'dc=ldap,dc=corp',
+      domain: { id: 'ldap.corp-authz', name: 'ldap.corp' },
+    },
+    {
+      id: 'dir-group-platform',
+      name: 'platform-team',
+      namespace: 'dc=ldap,dc=corp',
+      domain: { id: 'ldap.corp-authz', name: 'ldap.corp' },
+    },
+  ],
   'user-04': [
     {
       id: 'group-01',
@@ -5196,33 +5416,122 @@ function requireIcon(id: string): unknown {
   return icon
 }
 
-// ─── VM virtual NUMA topology (read-only in this pass) ────────────────────────
+// ─── VM virtual NUMA topology ───────────────────────────────────────────────
 // vm-01 (up, on host-01 whose NUMA_FIXTURE reports physical nodes 0/1) carries a
 // two-vnode topology pinned to those physical nodes; scalars mix string/number
-// forms. Every other VM answers {} (the empty-topology case).
-const vmNumaNodes: Record<string, unknown> = {
-  'vm-01': {
-    vm_numa_node: [
-      {
-        id: 'vnuma-0',
-        index: '0',
-        memory: '2048',
-        cpu: { cores: { core: [{ index: '0' }, { index: '1' }] } },
-        numa_node_pins: { numa_node_pin: [{ index: '0', pinned: 'true' }] },
-      },
-      {
-        id: 'vnuma-1',
-        index: 1,
-        memory: 2048,
-        cpu: { cores: { core: [{ index: 2 }, { index: 3 }] } },
-        numa_node_pins: { numa_node_pin: [{ index: 1 }] },
-      },
-    ],
-  },
+// forms. Every other VM starts without nodes (the empty-topology case). The
+// Edit VM dialog writes the collection (POST / PUT / DELETE), so it is mutable
+// state reset by resetMockVms. Like the engine, every write is checked against
+// the resulting topology's index rule (contiguous from 0); the rest of the
+// engine's NumaValidator is the dialog's job to mirror, not the mock's.
+interface MockVmNumaNode {
+  id: string
+  index: number | string
+  memory: number | string
+  cpu: { cores: { core: { index: number | string }[] } }
+  numa_node_pins?: { numa_node_pin: { index: number | string; pinned?: string }[] }
+  numa_tune_mode?: string
 }
+const initialVmNumaNodes = (): Map<string, MockVmNumaNode[]> =>
+  new Map([
+    [
+      'vm-01',
+      [
+        {
+          id: 'vnuma-0',
+          index: '0',
+          memory: '2048',
+          cpu: { cores: { core: [{ index: '0' }, { index: '1' }] } },
+          numa_node_pins: { numa_node_pin: [{ index: '0', pinned: 'true' }] },
+          numa_tune_mode: 'strict',
+        },
+        {
+          id: 'vnuma-1',
+          index: 1,
+          memory: 2048,
+          cpu: { cores: { core: [{ index: 2 }, { index: 3 }] } },
+          numa_node_pins: { numa_node_pin: [{ index: 1 }] },
+        },
+      ],
+    ],
+  ])
+let vmNumaNodes = initialVmNumaNodes()
+let vmNumaSeq = 0
+
 function vmNumaNodesHandler(id: string): unknown {
   requireVm(id)
-  return vmNumaNodes[id] ?? {}
+  const nodes = vmNumaNodes.get(id) ?? []
+  return nodes.length > 0 ? { vm_numa_node: nodes } : {}
+}
+
+// The engine rejects a topology whose indices are not 0..n-1
+// (NumaValidator: VM_NUMA_NODE_INDEX_ERROR).
+function checkVmNumaIndices(nodes: MockVmNumaNode[]): void {
+  const indices = nodes.map((node) => Number(node.index)).sort((a, b) => a - b)
+  if (indices.some((index, position) => index !== position)) {
+    throw new ApiError(
+      409,
+      'Operation Failed',
+      'Cannot edit the VM NUMA nodes: NUMA node indices must run from 0 without gaps.',
+    )
+  }
+}
+
+function requireVmNumaNode(vmId: string, nodeId: string): MockVmNumaNode {
+  const node = vmNumaNodes.get(vmId)?.find((candidate) => candidate.id === nodeId)
+  if (!node) throw new ApiError(404, 'Not Found', `no NUMA node ${nodeId} on VM ${vmId}`)
+  return node
+}
+
+// POST /vms/{id}/numanodes: index, memory and cpu.cores are mandatory.
+function addVmNumaNode(vmId: string, body: unknown): unknown {
+  requireVm(vmId)
+  const spec = (body ?? {}) as Partial<MockVmNumaNode>
+  if (spec.index === undefined || spec.memory === undefined || spec.cpu === undefined) {
+    throw new ApiError(
+      400,
+      'Incomplete parameters',
+      'VirtualNumaNode [index, memory, cpu] required',
+    )
+  }
+  vmNumaSeq += 1
+  const node: MockVmNumaNode = {
+    id: `${vmId}-vnuma-new-${vmNumaSeq}`,
+    index: spec.index,
+    memory: spec.memory,
+    cpu: spec.cpu,
+    ...(spec.numa_node_pins !== undefined ? { numa_node_pins: spec.numa_node_pins } : {}),
+    ...(spec.numa_tune_mode !== undefined ? { numa_tune_mode: spec.numa_tune_mode } : {}),
+  }
+  const next = [...(vmNumaNodes.get(vmId) ?? []), node]
+  checkVmNumaIndices(next)
+  vmNumaNodes.set(vmId, next)
+  return node
+}
+
+// PUT /vms/{id}/numanodes/{nodeId}: each element replaces the stored one only
+// when it is set (the NumaMapper isSet guards), so a present-but-empty pin list
+// unpins.
+function updateVmNumaNode(vmId: string, nodeId: string, body: unknown): unknown {
+  requireVm(vmId)
+  const node = requireVmNumaNode(vmId, nodeId)
+  const patch = (body ?? {}) as Partial<MockVmNumaNode>
+  for (const key of ['index', 'memory', 'cpu', 'numa_node_pins', 'numa_tune_mode'] as const) {
+    if (patch[key] !== undefined) Object.assign(node, { [key]: patch[key] })
+  }
+  checkVmNumaIndices(vmNumaNodes.get(vmId) ?? [])
+  return node
+}
+
+// DELETE /vms/{id}/numanodes/{nodeId}: the api-model asks callers to remove
+// from the highest index first; removing another node breaks the index rule.
+function removeVmNumaNode(vmId: string, nodeId: string): unknown {
+  requireVm(vmId)
+  requireVmNumaNode(vmId, nodeId)
+  const next = (vmNumaNodes.get(vmId) ?? []).filter((node) => node.id !== nodeId)
+  checkVmNumaIndices(next)
+  vmNumaNodes.set(vmId, next)
+  return { status: 'complete' }
 }
 
 // ─── VM mediated devices (vGPU mdev specs) ───────────────────────────────────
@@ -6016,6 +6325,15 @@ export function setMockUsername(name: string): void {
   mockUsername = name
 }
 
+// The api root's authenticated_user.id for a mock identity. A principal with an
+// engine DB row gets that row's id (the live engine links the session's DbUser),
+// so per-user reads such as the Add Permission dialog's My groups
+// (GET /users/{id}/groups) resolve. Anyone else gets an id derived from the
+// username, so each identity still has its own /users/{id}/options profile.
+export function mockAuthenticatedUserId(username: string): string {
+  return users.find((u) => u.user_name === username)?.id ?? mockUserIdFor(username)
+}
+
 // Test hook — restores pristine fixtures between test cases.
 // Data centers and clusters are exported const bindings other modules import
 // by reference, so their reset restores the module-load snapshot in place.
@@ -6023,6 +6341,9 @@ const pristineDataCenters = structuredClone(dataCenters)
 const pristineDataCenterDetails = structuredClone(dataCenterDetails)
 const pristineClusters = structuredClone(clusters)
 const pristineClusterDetails = structuredClone(clusterDetails)
+const pristineTemplates = structuredClone(templates)
+const pristineTemplateDetails = structuredClone(templateDetails)
+const pristineIconCatalog = structuredClone(iconCatalog)
 
 function restoreInPlace<T>(target: T[], pristine: T[]): void {
   target.splice(0, target.length, ...structuredClone(pristine))
@@ -6038,6 +6359,10 @@ export function resetMockVms(): void {
   restoreRecordInPlace(dataCenterDetails, pristineDataCenterDetails)
   restoreInPlace(clusters, pristineClusters)
   restoreRecordInPlace(clusterDetails, pristineClusterDetails)
+  restoreInPlace(templates, pristineTemplates)
+  restoreRecordInPlace(templateDetails, pristineTemplateDetails)
+  restoreInPlace(iconCatalog, pristineIconCatalog)
+  uploadedIconSeq = 0
   vms = allInitialVms()
   tpmDevices = initialTpmDevices()
   snapshots = initialSnapshots()
@@ -6093,6 +6418,8 @@ export function resetMockVms(): void {
   affinityGroupSeq = 0
   affinityLabelSeq = 0
   snapshotSeq = 0
+  vmNumaNodes = initialVmNumaNodes()
+  vmNumaSeq = 0
   vmSeq = 0
   tagSeq = 0
   diskSeq = 0
@@ -6219,6 +6546,19 @@ function templateDetailView(
   if (!isAllContentRead(query)) return view
   const hasSound = detail.soundcard_enabled === true || detail.soundcard_enabled === 'true'
   return { ...view, soundcard_enabled: !hasSound }
+}
+
+// A template's device flags, kept on its detail fixture, for the list read
+// (whose flat entries do not carry them).
+function templateDevices(
+  id: string,
+): Pick<MockTemplateDetail, 'console' | 'virtio_scsi' | 'soundcard_enabled'> {
+  const detail = templateDetails[id]
+  return {
+    console: detail?.console,
+    virtio_scsi: detail?.virtio_scsi,
+    soundcard_enabled: detail?.soundcard_enabled,
+  }
 }
 
 // VmDeviceUtils.isTpmDeviceSupported, reduced to what the fixtures model (all
@@ -6412,6 +6752,26 @@ function updateVm(id: string, body: unknown, query?: URLSearchParams): unknown {
   const edited = { ...vm, ...patch }
   if (wantsTpm && !vmSupportsTpm(edited)) throw tpmNotSupported('edit')
   if (!wantsTpm && osRequiresTpm(edited)) throw tpmRequired('edit')
+  // external_host_provider: VmMapper sets providerId from the element's id, so
+  // an element without one ({}) unbinds the VM; UpdateVmCommand rejects an id
+  // that names no provider (ACTION_TYPE_FAILED_PROVIDER_DOESNT_EXIST).
+  if (patch.external_host_provider !== undefined) {
+    const providerId = patch.external_host_provider.id
+    if (providerId === undefined || providerId === '') {
+      delete vm.external_host_provider
+      delete patch.external_host_provider
+    } else if (!externalHostProviders.some((provider) => provider.id === providerId)) {
+      throw new ApiError(409, 'Operation Failed', '[Cannot edit VM. Provider does not exist.]')
+    } else {
+      patch.external_host_provider = { id: providerId }
+    }
+  }
+  // The engine applies each cpu element only when it is set (VmBaseMapper isSet
+  // guards), so a PUT carrying cpu.topology alone keeps the stored cpu_tune and
+  // architecture: merge one level instead of replacing the whole block.
+  if (patch.cpu !== undefined && vm.cpu !== undefined) {
+    patch.cpu = { ...vm.cpu, ...patch.cpu }
+  }
   if (tpmEnabled !== undefined) {
     if (wantsTpm) tpmDevices.add(id)
     else tpmDevices.delete(id)
@@ -7568,6 +7928,9 @@ function addHost(body: unknown, query: URLSearchParams): unknown {
     cluster?: { id?: string; name?: string }
     ssh?: { port?: number | string; authentication_method?: string }
     root_password?: string
+    // Install-time knob: accepted and not stored, as on the live engine, whose
+    // HostMapper never maps it back onto the read model
+    override_iptables?: boolean | string
     power_management?: {
       enabled?: boolean | string
       kdump_detection?: boolean | string
@@ -7640,15 +8003,69 @@ function requireTemplateDetail(id: string): MockTemplateDetail {
   return detail
 }
 
-// PUT /templates/{id} — webadmin-style edit. Shallow-merges the request body
-// onto the matching detail fixture (and mirrors name/description onto the flat
-// list entry so GET /templates reflects the edit) and returns the merged
-// template; an unknown id 404s via requireTemplateDetail. Mirrors
-// updateCluster.
+// Merge a request body into a stored entity the way the engine applies a
+// partial update: nested objects merge key by key (VmBaseMapper's isSet
+// guards), arrays and scalars replace. Returns the target.
+function mergeEntity(target: Record<string, unknown>, patch: Record<string, unknown>) {
+  for (const [key, value] of Object.entries(patch)) {
+    const current = target[key]
+    if (
+      value !== null &&
+      typeof value === 'object' &&
+      !Array.isArray(value) &&
+      current !== null &&
+      typeof current === 'object' &&
+      !Array.isArray(current)
+    ) {
+      mergeEntity(current as Record<string, unknown>, value as Record<string, unknown>)
+    } else {
+      target[key] = value
+    }
+  }
+  return target
+}
+
+// Custom icons uploaded through a template body (large_icon { media_type,
+// data }) join the /icons catalog, as the engine stores them there and binds
+// the new id. A deterministic seq, restored by resetMockVms.
+let uploadedIconSeq = 0
+
+// VmBase body extras the mock applies the engine's way before merging: an
+// empty lease object clears the lease, and an inline icon upload becomes a new
+// catalog icon bound by id.
+function applyVmBaseBody(entity: Record<string, unknown>, body: Record<string, unknown>) {
+  const patch = { ...body }
+  if (patch.lease !== undefined && Object.keys(patch.lease as object).length === 0) {
+    delete entity.lease
+    delete patch.lease
+  }
+  const icon = patch.large_icon as { id?: string; media_type?: string; data?: string } | undefined
+  if (icon?.data !== undefined) {
+    uploadedIconSeq += 1
+    const id = `icon-upload-${uploadedIconSeq}`
+    iconCatalog.push({
+      id,
+      name: `Custom icon ${uploadedIconSeq}`,
+      media_type: icon.media_type ?? 'image/png',
+      data: icon.data,
+    })
+    patch.large_icon = { id }
+  }
+  return mergeEntity(entity, patch)
+}
+
+// PUT /templates/{id} — webadmin-style edit. Merges the request body onto the
+// matching detail fixture the engine's way (mergeEntity: nested blocks key by
+// key, so a body carrying only display.smartcard_enabled keeps the monitors),
+// mirrors name/description onto the flat list entry so GET /templates reflects
+// the edit, and returns the merged template; an unknown id 404s via
+// requireTemplateDetail.
 function updateTemplate(id: string, body: unknown): unknown {
   const detail = requireTemplateDetail(id)
-  const patch = (body ?? {}) as Partial<MockTemplateDetail>
-  Object.assign(detail, patch)
+  applyVmBaseBody(
+    detail as unknown as Record<string, unknown>,
+    (body ?? {}) as Record<string, unknown>,
+  )
   const summary = templates.find((t) => t.id === id)
   if (summary) {
     summary.name = detail.name
@@ -7656,6 +8073,56 @@ function updateTemplate(id: string, body: unknown): unknown {
   }
   return detail
 }
+
+// The VmBase keys a new template inherits from its source VM: the engine
+// builds the template from the VM's static data (BackendTemplatesResource
+// .addFromVm maps the request over it), so a body naming only the VM still
+// yields a fully configured template.
+const TEMPLATE_INHERITED_VM_KEYS = [
+  'os',
+  'cluster',
+  'memory',
+  'memory_policy',
+  'cpu',
+  'type',
+  'stateless',
+  'delete_protected',
+  'bios',
+  'display',
+  'usb',
+  'high_availability',
+  'lease',
+  'storage_error_resume_behaviour',
+  'time_zone',
+  'serial_number',
+  'custom_emulated_machine',
+  'custom_cpu_model',
+  'sso',
+  'soundcard_enabled',
+  'console',
+  'cpu_profile',
+  'cpu_shares',
+  'io',
+  'virtio_scsi',
+  'multi_queues_enabled',
+  'virtio_scsi_multi_queues_enabled',
+  'virtio_scsi_multi_queues',
+  'custom_properties',
+  'large_icon',
+] as const
+
+// Keys of a POST /templates body that are request parameters, not template
+// fields the mock should store.
+// tpm_enabled is one too: it decides whether the source VM's TPM device is
+// copied (addTemplate), never a stored field.
+const TEMPLATE_CREATE_PARAMETER_KEYS = [
+  'vm',
+  'version',
+  'name',
+  'description',
+  'comment',
+  'tpm_enabled',
+]
 
 // DELETE /templates/{id} — webadmin-style remove. The Blank system template
 // (id 00000000-0000-0000-0000-000000000000 on a live engine, tpl-00 in these
@@ -7709,6 +8176,11 @@ function addTemplate(body: unknown): unknown {
   if (!spec.name) {
     throw new ApiError(400, 'Incomplete parameters', 'Template [name] required for add')
   }
+  // addFromVm needs the source VM (api-model TemplatesService.addFromVm:
+  // mandatory vm id or name); there is no VM-less create.
+  if (!spec.vm?.id) {
+    throw new ApiError(400, 'Incomplete parameters', 'Template [vm.id|name] required for add')
+  }
   const baseTemplateId = spec.version?.base_template?.id
   if (spec.version && !baseTemplateId) {
     throw new ApiError(400, 'Incomplete parameters', 'Template [version.baseTemplate] required')
@@ -7734,18 +8206,32 @@ function addTemplate(body: unknown): unknown {
           base_template: { id: baseTemplateId },
         }
       : { version_name: 'base version', version_number: 1 },
-    os: sourceVm?.os,
-    cluster: sourceVm?.cluster,
-    memory: sourceVm?.memory,
-    bios: sourceVm?.bios,
     origin: 'ovirt',
   }
+  // The VmBase configuration comes from the source VM, then the body's
+  // overrides apply on top.
+  if (sourceVm) {
+    const inherited = structuredClone(
+      Object.fromEntries(
+        TEMPLATE_INHERITED_VM_KEYS.flatMap((key) =>
+          sourceVm[key as keyof MockVm] !== undefined ? [[key, sourceVm[key as keyof MockVm]]] : [],
+        ),
+      ),
+    )
+    Object.assign(detail, inherited)
+  }
+  const overrides = Object.fromEntries(
+    Object.entries(body as Record<string, unknown>).filter(
+      ([key]) => !TEMPLATE_CREATE_PARAMETER_KEYS.includes(key),
+    ),
+  )
+  applyVmBaseBody(detail as unknown as Record<string, unknown>, overrides)
   templates.push({
     id,
     name: detail.name,
     description: detail.description,
     os: detail.os,
-    bios: sourceVm?.bios,
+    bios: detail.bios,
   })
   templateDetails[id] = detail
   // AddVmTemplateCommand copies the source VM's devices; an unset
@@ -8386,15 +8872,32 @@ function attachDataCenterStorageDomain(dcId: string, body: unknown): unknown {
   if (spec.id === undefined || !summary) {
     throw new ApiError(404, 'Not Found', `no storage domain with id ${spec.id}`)
   }
+  // The first data domain attached to a pool becomes its master, and the pool
+  // leaves Uninitialized for Up (AttachStorageDomainToPool on an empty pool).
+  const firstData =
+    summary.type === 'data' &&
+    !storageDomains.some(
+      (sd) =>
+        sd.type === 'data' &&
+        String(sd.master) === 'true' &&
+        (sd.data_centers?.data_center ?? []).some((dc) => dc.id === dcId),
+    )
   summary.status = 'active'
   delete summary.external_status
   // mirror the inlined DC onto the flat row too (the list now follows it)
   summary.data_centers = { data_center: [{ id: dataCenter.id, name: dataCenter.name }] }
+  if (firstData) summary.master = true
   const detail = storageDomainDetails[spec.id]
   if (detail) {
     detail.status = 'active'
     delete detail.external_status
     detail.data_centers = { data_center: [{ id: dataCenter.id, name: dataCenter.name }] }
+    if (firstData) detail.master = true
+  }
+  if (firstData && dataCenter.status === 'uninitialized') {
+    dataCenter.status = 'up'
+    const dcDetail = dataCenterDetails[dcId]
+    if (dcDetail) dcDetail.status = 'up'
   }
   return { id: spec.id }
 }
@@ -9131,13 +9634,57 @@ function validateInstanceTypeMemory(entity: MockInstanceType): void {
   }
 }
 
+// The instance-type body keys the engine applies. InstanceTypeMapper maps an
+// instance type through VmBaseMapper.mapCommonModelToEntity only, and the
+// resource adds the device-backed flags; every other VmBase key (time_zone,
+// sso, custom_properties, cpu_profile, ...) is silently ignored. usb is applied
+// on update only: BackendInstanceTypesResource.add never reads it. display is
+// narrowed to the subkeys the engine reads for an instance type.
+const INSTANCE_TYPE_REST_KEYS = [
+  'name',
+  'description',
+  'memory',
+  'memory_policy',
+  'cpu',
+  'high_availability',
+  'display',
+  'usb',
+  'soundcard_enabled',
+  'console',
+  'io',
+  'virtio_scsi',
+  'custom_cpu_model',
+  'custom_emulated_machine',
+]
+const INSTANCE_TYPE_DISPLAY_KEYS = ['type', 'monitors', 'smartcard_enabled']
+
+function instanceTypeBody(body: unknown, mode: 'add' | 'update'): Record<string, unknown> {
+  const spec = (body ?? {}) as Record<string, unknown>
+  const kept: Record<string, unknown> = {}
+  for (const key of INSTANCE_TYPE_REST_KEYS) {
+    if (spec[key] === undefined || (mode === 'add' && key === 'usb')) continue
+    kept[key] = spec[key]
+  }
+  if (kept.display !== undefined) {
+    const display = kept.display as Record<string, unknown>
+    kept.display = Object.fromEntries(
+      INSTANCE_TYPE_DISPLAY_KEYS.filter((key) => display[key] !== undefined).map((key) => [
+        key,
+        display[key],
+      ]),
+    )
+  }
+  return kept
+}
+
 // POST /instancetypes — webadmin-style create. Only `name` is mandatory (the
 // engine defaults memory/CPU); a duplicate name 409s. Assigns a deterministic id
 // from the current count (no Date/Math.random, so tests stay deterministic) and
-// returns the created instance type so GET /instancetypes sees it. Mirrors
-// addCluster.
+// returns the created instance type so GET /instancetypes sees it. The device
+// flags read back false unless the body set them, and USB reads back off: the
+// add path ignores it, as the engine's does. Mirrors addCluster.
 function addInstanceType(body: unknown): unknown {
-  const spec = (body ?? {}) as MockInstanceType
+  const spec = instanceTypeBody(body, 'add') as Partial<MockInstanceType>
   if (!spec.name) {
     throw new ApiError(400, 'Incomplete parameters', 'InstanceType [name] required for add')
   }
@@ -9145,30 +9692,35 @@ function addInstanceType(body: unknown): unknown {
     throw new ApiError(409, 'Operation Failed', `InstanceType name ${spec.name} is already in use`)
   }
   const created: MockInstanceType = {
+    usb: { enabled: false },
+    soundcard_enabled: false,
+    console: { enabled: false },
+    virtio_scsi: { enabled: false },
+    ...spec,
     id: `instance-type-new-${instanceTypes.length}`,
     name: spec.name,
-    description: spec.description,
-    memory: spec.memory,
-    memory_policy: spec.memory_policy,
-    cpu: spec.cpu,
-    high_availability: spec.high_availability,
   }
   validateInstanceTypeMemory(created)
   instanceTypes.push(created)
   return created
 }
 
-// PUT /instancetypes/{id} — webadmin-style edit. Shallow-merges the request body
-// onto the matching fixture and returns the merged instance type. There is no
-// create-only/immutable key to strip (unlike a cluster's data center). Unknown
-// id 404s. Mirrors updateCluster. The merged entity is validated against the
-// engine's max>=memory rule (against a throwaway copy) so a bad edit 400s
-// without corrupting the stored fixture.
+// PUT /instancetypes/{id} — webadmin-style edit. Merges the keys the engine
+// applies onto the matching fixture the engine's way (mergeEntity: nested
+// blocks key by key, so a body carrying only memory_policy.ballooning keeps the
+// max) and returns the merged instance type. There is no create-only/immutable
+// key to strip (unlike a cluster's data center). Unknown id 404s. The merged
+// entity is validated against the engine's max>=memory rule on a throwaway copy
+// so a bad edit 400s without corrupting the stored fixture.
 function updateInstanceTypeMock(id: string, body: unknown): unknown {
   const instanceType = requireInstanceType(id)
-  const patch = (body ?? {}) as Partial<MockInstanceType>
-  validateInstanceTypeMemory({ ...instanceType, ...patch })
-  Object.assign(instanceType, patch)
+  const patch = instanceTypeBody(body, 'update')
+  const merged = mergeEntity(
+    structuredClone(instanceType) as unknown as Record<string, unknown>,
+    patch,
+  )
+  validateInstanceTypeMemory(merged as unknown as MockInstanceType)
+  mergeEntity(instanceType as unknown as Record<string, unknown>, patch)
   return instanceType
 }
 
@@ -9276,6 +9828,19 @@ function runHostReinstall(id: string, body: unknown): unknown {
   return { status: 'complete' }
 }
 
+// key -> value regex from the two engine-config options, the same merge
+// HostSetupNetworksValidator.validateCustomProperties performs.
+function networkCustomPropertyDefinitions(): Map<string, string> {
+  const definitions = new Map<string, string>()
+  for (const value of Object.values(NETWORK_CUSTOM_PROPERTY_OPTIONS)) {
+    for (const pair of value.split(';')) {
+      const index = pair.indexOf('=')
+      if (index > 0) definitions.set(pair.slice(0, index), pair.slice(index + 1))
+    }
+  }
+  return definitions
+}
+
 // The wire shape of the POST /hosts/{id}/setupnetworks action body — the
 // wrapped-list convention setupHostNetworks builds.
 interface SetupNetworksBody {
@@ -9294,6 +9859,8 @@ interface SetupNetworksBody {
         outbound_average_upperlimit?: number | string
         outbound_average_realtime?: number | string
       }
+      // custom properties; a present block replaces the whole set
+      properties?: { property?: Array<{ name?: string; value?: string }> }
     }>
   }
   removed_network_attachments?: { network_attachment?: Array<{ id?: string }> }
@@ -9333,6 +9900,11 @@ interface SetupNetworksBody {
 // must stay attached somewhere — webadmin's mgmtNotAttachedToolTip guard,
 // answered as the 409 fault the engine raises. Static assignments also
 // rewrite the NIC's reported ip so the NICs tab round-trips the change.
+// Custom properties are checked the way HostSetupNetworksValidator
+// .validateCustomProperties does (valid keys from the two engine-config values,
+// bridge_opts dropped for a non-VM network, value matched against the key's
+// regex) and refused with a 409 like the engine's
+// ACTION_TYPE_FAILED_NETWORK_CUSTOM_PROPERTIES_BAD_INPUT (message paraphrased).
 function setupNetworks(hostId: string, rawBody: unknown): unknown {
   requireHost(hostId)
   if (typeof rawBody !== 'object' || rawBody === null) {
@@ -9405,6 +9977,36 @@ function setupNetworks(hostId: string, rawBody: unknown): unknown {
         'Not Found',
         `host ${hostId} has no NIC ${entry.host_nic?.name ?? entry.host_nic?.id}`,
       )
+    }
+    const properties = entry.properties?.property ?? []
+    if (properties.length > 0) {
+      const valid = networkCustomPropertyDefinitions()
+      // the cluster attachment carries the network's usages; 'vm' marks a
+      // bridged network
+      const isVmNetwork = Object.values(clusterNetworkAttachments).some((attached) =>
+        attached.some((n) => n.id === network.id && n.usages?.usage?.includes('vm')),
+      )
+      if (!isVmNetwork) valid.delete('bridge_opts')
+      const seenKeys = new Set<string>()
+      for (const property of properties) {
+        const key = property.name ?? ''
+        const pattern = valid.get(key)
+        let matches = false
+        try {
+          matches =
+            pattern !== undefined && new RegExp(`^(?:${pattern})$`).test(property.value ?? '')
+        } catch {
+          matches = false
+        }
+        if (seenKeys.has(key) || !matches) {
+          throw new ApiError(
+            409,
+            'Operation Failed',
+            `Cannot setup Networks. Bad input for custom properties of network '${network.name}'`,
+          )
+        }
+        seenKeys.add(key)
+      }
     }
   }
   for (const entry of [...removed, ...synced]) {
@@ -9488,6 +10090,13 @@ function setupNetworks(hostId: string, rawBody: unknown): unknown {
     // empty { type: 'hostnetwork' } clears the outbound values)
     if (entry.qos) {
       target.qos = entry.qos
+    }
+    // custom properties: a present block replaces the whole set, and an empty
+    // one clears it (the read then omits the key, as the live mapper does)
+    if (entry.properties) {
+      const properties = entry.properties.property ?? []
+      if (properties.length > 0) target.properties = { property: properties }
+      else delete target.properties
     }
     // reflect a static assignment on the NIC itself so the NICs tab
     // round-trips the new address without a lab engine
@@ -10286,8 +10895,16 @@ function dataCenterStorageDomains(dcId: string): unknown {
     throw new ApiError(404, 'Not Found', `no data center with id ${dcId}`)
   }
   // Only attached domains (those reporting "status", not the unattached iso
-  // domain that reports only external_status) belong to a data center.
-  return { storage_domain: storageDomains.filter((sd) => sd.status !== undefined) }
+  // domain that reports only external_status) belong to a data center — and
+  // only to the one their data_centers link names, so a freshly created data
+  // center starts with no storage (the Guide Me steps key off this).
+  return {
+    storage_domain: storageDomains.filter(
+      (sd) =>
+        sd.status !== undefined &&
+        (sd.data_centers?.data_center ?? []).some((dc) => dc.id === dcId),
+    ),
+  }
 }
 
 // GET /datacenters/{id}/networks — the networks defined in a data center;
@@ -10299,13 +10916,13 @@ function dataCenterNetworks(dcId: string): unknown {
   return { network: networks.filter((net) => net.data_center?.id === dcId) }
 }
 
-// GET /datacenters/{id}/clusters — the clusters that belong to a data center.
-// The mock lab's clusters all live under dc-01, so both are returned there.
+// GET /datacenters/{id}/clusters — the clusters that belong to a data center,
+// by their data_center back-link (the seeded clusters all live under dc-01).
 function dataCenterClusters(dcId: string): unknown {
   if (!dataCenters.some((dc) => dc.id === dcId)) {
     throw new ApiError(404, 'Not Found', `no data center with id ${dcId}`)
   }
-  return { cluster: clusters }
+  return { cluster: clusters.filter((cluster) => cluster.data_center?.id === dcId) }
 }
 
 // GET /datacenters/{id}/qoss — an optional subcollection: a data center without
@@ -10444,7 +11061,38 @@ function dataCenterPermissionsHandler(dcId: string): unknown {
 // GET /clusters/{id}/glustervolumes — a virt-only cluster has no gluster
 // subcollection at all: the engine answers 404, not an empty list
 // (listGlusterVolumes tolerates it).
-function clusterGlusterVolumes(clusterId: string): unknown {
+// follow=statistics inlines VolumeStatisticalQuery's three capacity gauges
+// (the Volumes grid's Space Used column) from glusterVolumeCapacity; a volume
+// with no stored capacity answers an empty wrapper, as the engine does.
+// Byte counts are strings on purpose to exercise z.coerce.number().
+const glusterVolumeCapacity: Record<string, { total: number; used: number }> = {
+  'gvol-01': { total: 300 * GiB, used: 120 * GiB },
+}
+
+function withGlusterVolumeStatistics(volume: MockGlusterVolume): unknown {
+  const capacity = glusterVolumeCapacity[volume.id]
+  if (!capacity) return { ...volume, statistics: {} }
+  const gauge = (name: string, datum: number) => ({
+    id: `${volume.id}-stat-${name}`,
+    name,
+    kind: 'gauge',
+    type: 'integer',
+    unit: 'bytes',
+    values: { value: [{ datum: String(datum) }] },
+  })
+  return {
+    ...volume,
+    statistics: {
+      statistic: [
+        gauge('memory.total.size', capacity.total),
+        gauge('memory.free.size', capacity.total - capacity.used),
+        gauge('memory.used.size', capacity.used),
+      ],
+    },
+  }
+}
+
+function clusterGlusterVolumes(clusterId: string, followStatistics = false): unknown {
   const cluster = clusters.find((c) => c.id === clusterId)
   if (!cluster) throw new ApiError(404, 'Not Found', `no cluster with id ${clusterId}`)
   if (!cluster.gluster_service) {
@@ -10454,7 +11102,8 @@ function clusterGlusterVolumes(clusterId: string): unknown {
       `Gluster service is not enabled on cluster ${cluster.name}`,
     )
   }
-  return { gluster_volume: glusterVolumes.filter((volume) => volume.cluster?.id === clusterId) }
+  const volumes = glusterVolumes.filter((volume) => volume.cluster?.id === clusterId)
+  return { gluster_volume: followStatistics ? volumes.map(withGlusterVolumeStatistics) : volumes }
 }
 
 // Resolve a volume within a cluster, 404ing an unknown one exactly like the live
@@ -11176,8 +11825,10 @@ function searchVms(search: string | null): MockVm[] {
   return vms.filter((vm) => terms.every((term) => vmMatchesTerm(vm, term)))
 }
 
-// GET /events?search=... — the host detail Events tab emits host.name=<name>;
-// the Events page toolbar emits free text and severity=<x>. Free text matches
+// GET /events?search=... — the host detail Events tab emits host.name=<name>,
+// the other scoped Events tabs event_template= / cluster= / event_datacenter=
+// / event_storage= / quota=; the Events page toolbar emits free text and
+// severity=<x>. Free text matches
 // the description (case-insensitive substring — close enough to webadmin's
 // loose matching for the mock); unknown keyed terms broaden the result (same
 // posture as vmMatchesTerm) so the global feed is the fallback.
@@ -11193,6 +11844,18 @@ function eventMatchesTerm(event: MockEvent, term: string): boolean {
   }
   if (key === 'severity') {
     return event.severity?.toLowerCase() === value.toLowerCase()
+  }
+  // the scoped Events tabs' terms (lib/scopedEvents): exact, case-insensitive
+  // name matches on the event's entity links
+  const linked: Record<string, { name?: string } | undefined> = {
+    event_template: event.template,
+    cluster: event.cluster,
+    event_datacenter: event.data_center,
+    event_storage: event.storage_domain,
+    quota: event.quota,
+  }
+  if (key in linked) {
+    return linked[key]?.name?.toLowerCase() === value.toLowerCase()
   }
   return true
 }
@@ -11367,6 +12030,18 @@ function addEntityPermission(collection: string, id: string, rawBody: unknown): 
     // neither or both — the engine's parameter completeness check wants
     // exactly one of user.id / group.id
     throw new ApiError(400, 'Bad Request', 'Permission entity requires user.id or group.id.')
+  }
+  // PERMISSION_ADD_FAILED_PERMISSION_ALREADY_EXISTS — the same role granted
+  // to the same principal on the same object is refused, which also gives the
+  // Add Permission dialog's partial-failure path something to hit.
+  const principalId = hasUser ? body.user?.id : body.group?.id
+  const existing = effectivePermissions(collection, id) ?? []
+  if (
+    existing.some(
+      (p) => p.role?.id === role.id && (hasUser ? p.user?.id : p.group?.id) === principalId,
+    )
+  ) {
+    throw new ApiError(409, 'Operation Failed', 'Cannot add Permission. Permission already exists.')
   }
   const created: MockHostPermission = {
     id: `perm-new-${++permissionSeq}`,
@@ -11839,9 +12514,31 @@ const routes: MockRoute[] = [
     pattern: /^$/,
     // authenticated_user feeds fetchCapabilityProfile's tier heuristic; the
     // live engine serializes it as a bare link, the mock inlines user_name.
+    // The id comes from mockAuthenticatedUserId: the DB row when the principal has one
+    // (Add Permission's My groups), else one derived from the username so each mock
+    // identity still has its own /users/{id}/options profile (routes/user-options.ts).
     handle: () => ({
       ...API_ROOT,
-      authenticated_user: { id: 'mock-user', user_name: mockUsername },
+      authenticated_user: {
+        id: mockAuthenticatedUserId(mockUsername),
+        user_name: mockUsername,
+      },
+    }),
+  },
+  {
+    // The network custom-property key lists (fetchNetworkCustomPropertyDefinitions).
+    // Versioned config values: one row per cluster level, no 'general' row.
+    method: 'GET',
+    pattern: /^\/options\/(PreDefinedNetworkCustomProperties|UserDefinedNetworkCustomProperties)$/,
+    handle: ([name]) => ({
+      name,
+      id: name,
+      values: {
+        system_option_value: ['4.6', '4.7', '4.8'].map((version) => ({
+          value: NETWORK_CUSTOM_PROPERTY_OPTIONS[name],
+          version,
+        })),
+      },
     }),
   },
   {
@@ -11877,6 +12574,18 @@ const routes: MockRoute[] = [
           return attachments && attachments.length > 0
             ? { ...vm, disk_attachments: { disk_attachment: attachments } }
             : vm
+        })
+      }
+      // follow=reported_devices inlines each VM's guest-agent devices (the VMs
+      // grid's IP Addresses column). The wrapper is present on every VM (the
+      // link always exists); its inner key is omitted when nothing is reported.
+      if (follows.includes('reported_devices')) {
+        vms = vms.map((vm) => {
+          const devices = reportedDevices.get(vm.id) ?? []
+          return {
+            ...vm,
+            reported_devices: devices.length > 0 ? { reported_device: devices } : {},
+          }
         })
       }
       return {
@@ -12389,9 +13098,22 @@ const routes: MockRoute[] = [
   {
     method: 'GET',
     pattern: /^\/networks$/,
-    handle: (_params, _body, query) => ({
-      network: networks.filter((n) => searchMatches(n, query.get('search'))),
-    }),
+    handle: (_params, _body, query) => {
+      const list = networks.filter((n) => searchMatches(n, query.get('search')))
+      // follow=network_labels inlines each network's labels (the Networks
+      // grid's Label column). Unlike the bare subcollection read (which 404s
+      // for networks absent from the label record), a followed read always
+      // carries the wrapper, empty when the network has no labels.
+      if (!(query.get('follow') ?? '').split(',').includes('network_labels')) {
+        return { network: list }
+      }
+      return {
+        network: list.map((network) => {
+          const labels = networkLabels[network.id] ?? []
+          return { ...network, network_labels: labels.length > 0 ? { network_label: labels } : {} }
+        }),
+      }
+    },
   },
   { method: 'POST', pattern: /^\/networks$/, handle: (_params, body) => addNetwork(body) },
   {
@@ -12462,22 +13184,26 @@ const routes: MockRoute[] = [
     method: 'GET',
     pattern: /^\/templates$/,
     handle: (_params, _body, query) => {
-      // An all_content list read carries each template's devices
+      const follows = (query.get('follow') ?? '').split(',')
+      // follow=disk_attachments inlines each template's attachment rows (the
+      // Disks grid's Attached To lookup); omitted for disk-less templates. An
+      // all_content list read also carries each template's devices
       // (BackendTemplatesResource.doPopulate, which reports the sound card
       // correctly, unlike the single-template read: see templateDetailView).
       const list = templates
         .filter((t) => searchMatches(t, query.get('search')))
-        .map((t) =>
-          isAllContentRead(query)
-            ? allContentView(
-                { ...t, soundcard_enabled: templateDetails[t.id]?.soundcard_enabled },
-                query,
-              )
-            : t,
-        )
-      const followsTags = (query.get('follow') ?? '').split(',').includes('tags')
+        .map((template) => {
+          const attachments = templateDiskAttachments[template.id] ?? []
+          const withDisks =
+            follows.includes('disk_attachments') && attachments.length > 0
+              ? { ...template, disk_attachments: { disk_attachment: attachments } }
+              : template
+          return isAllContentRead(query)
+            ? allContentView({ ...withDisks, ...templateDevices(template.id) }, query)
+            : withDisks
+        })
       return {
-        template: followsTags
+        template: follows.includes('tags')
           ? list.map((template) => withFollowedTags(template, templateTagAssignments))
           : list,
       }
@@ -12563,7 +13289,8 @@ const routes: MockRoute[] = [
   {
     method: 'GET',
     pattern: /^\/clusters\/([^/]+)\/glustervolumes$/,
-    handle: ([id]) => clusterGlusterVolumes(id),
+    handle: ([id], _body, query) =>
+      clusterGlusterVolumes(id, (query.get('follow') ?? '').split(',').includes('statistics')),
   },
   {
     method: 'POST',
@@ -13545,8 +14272,11 @@ const routes: MockRoute[] = [
   {
     method: 'GET',
     pattern: /^\/instancetypes$/,
+    // the device flags ride all_content reads only (allContentView)
     handle: (_params, _body, query) => ({
-      instance_type: instanceTypes.filter((it) => searchMatches(it, query.get('search'))),
+      instance_type: instanceTypes
+        .filter((it) => searchMatches(it, query.get('search')))
+        .map((it) => allContentView(it, query)),
     }),
   },
   {
@@ -13559,7 +14289,9 @@ const routes: MockRoute[] = [
   {
     method: 'GET',
     pattern: /^\/instancetypes\/([^/]+)$/,
-    handle: ([id]) => requireInstanceType(id),
+    // BackendInstanceTypeResource.doPopulate reports the devices right (unlike
+    // the single-template read)
+    handle: ([id], _body, query) => allContentView(requireInstanceType(id), query),
   },
   {
     method: 'PUT',
@@ -13750,6 +14482,21 @@ const routes: MockRoute[] = [
     method: 'GET',
     pattern: /^\/vms\/([^/]+)\/numanodes$/,
     handle: ([id]) => vmNumaNodesHandler(id),
+  },
+  {
+    method: 'POST',
+    pattern: /^\/vms\/([^/]+)\/numanodes$/,
+    handle: ([id], body) => addVmNumaNode(id, body),
+  },
+  {
+    method: 'PUT',
+    pattern: /^\/vms\/([^/]+)\/numanodes\/([^/]+)$/,
+    handle: ([id, nodeId], body) => updateVmNumaNode(id, nodeId, body),
+  },
+  {
+    method: 'DELETE',
+    pattern: /^\/vms\/([^/]+)\/numanodes\/([^/]+)$/,
+    handle: ([id, nodeId]) => removeVmNumaNode(id, nodeId),
   },
 
   // VM mediated devices (vGPU mdev specs)

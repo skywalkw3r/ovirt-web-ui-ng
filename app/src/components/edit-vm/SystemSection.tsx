@@ -13,14 +13,18 @@ import {
 import { useT } from '../../i18n/useT'
 import { FieldHelp } from '../forms/FieldHelp'
 import {
-  deriveMemoryOnCommit,
   gibToMib,
   HARDWARE_CLOCK_TIMEZONES,
   mibToGib,
   SERIAL_NUMBER_POLICY_OPTIONS,
-  vmMemoryError,
-  type EditVmDraft,
 } from './editVmDraft'
+import {
+  deriveMemoryOnCommit,
+  fieldSetter,
+  vmMemoryError,
+  type SectionChange,
+  type SystemFields,
+} from './vmBaseDraft'
 
 // Engine-default time zone is the empty option; a loaded value outside the
 // curated list is folded in so the select stays controlled.
@@ -31,16 +35,24 @@ function timezoneOptions(current: string): string[] {
 }
 
 interface SystemSectionProps {
-  draft: EditVmDraft
-  set: <K extends keyof EditVmDraft>(key: K, value: EditVmDraft[K]) => void
-  // The VM's cluster memory over-commit % — feeds the guaranteed derivation
+  draft: SystemFields
+  onChange: SectionChange<SystemFields>
+  // The cluster's memory over-commit % — feeds the guaranteed derivation
   // (guaranteed = floor(memory * 100 / percent)). Absent ⇒ 100 (guaranteed = memory).
   overcommitPercent?: number
+  // The engine sizes the CPU topology at start (Edit VM: the Resize and Pin
+  // NUMA pinning policy), so the three counts are read-only.
+  topologyLocked?: boolean
+  // Fields this form does not offer (e.g. an instance type has no time zone or
+  // serial number over REST). Absent ⇒ every field shows.
+  hiddenFields?: readonly (keyof SystemFields)[]
+  idPrefix?: string
 }
 
-// System settings for the Edit Virtual Machine modal: memory sizing plus CPU
-// topology. Purely presentational — every input is controlled from `draft` and
-// writes back through `set`; the owning modal holds the state and save logic.
+// System settings, one of the shared VmBase sections (contract in
+// vmBaseDraft.ts): memory sizing, CPU topology and the advanced parameters.
+// Purely presentational — every input is controlled from `draft` and writes
+// back through `onChange`; the owning form holds the state and save logic.
 //
 // Memory is stored in the draft as integer MiB (the engine granularity) but
 // EDITED here in GiB (webadmin/admin convention). mibToGib/gibToMib do the pure
@@ -49,14 +61,27 @@ interface SystemSectionProps {
 // actually edits, so untouched values save byte-identical.
 //
 // CPU topology stays plain integer counts.
-export function SystemSection({ draft, set, overcommitPercent }: SystemSectionProps) {
+export function SystemSection({
+  draft,
+  onChange,
+  overcommitPercent,
+  topologyLocked = false,
+  hiddenFields,
+  idPrefix = 'edit-vm',
+}: SystemSectionProps) {
   const t = useT()
+  const set = fieldSetter(onChange)
+  const shown = (key: keyof SystemFields) => !hiddenFields?.includes(key)
+  // Resize and Pin NUMA sizes the CPU topology from the host at start, so
+  // webadmin disables the three counts under it (UnitVmModel.updateCpuFields);
+  // same here.
+  const engineTopology = topologyLocked
   // Topology inputs: TextInput hands back a string; the draft field is a number.
   // Empty input collapses to 0 rather than NaN so the controlled value stays a
   // real number.
-  const setNumber = <K extends keyof EditVmDraft>(key: K) => {
+  const setNumber = (key: 'sockets' | 'coresPerSocket' | 'threadsPerCore') => {
     return (_event: unknown, value: string) => {
-      set(key, (value === '' ? 0 : Number(value)) as EditVmDraft[K])
+      set(key, value === '' ? 0 : Number(value))
     }
   }
 
@@ -77,17 +102,19 @@ export function SystemSection({ draft, set, overcommitPercent }: SystemSectionPr
     if (draft.memoryMb === lastCommittedMemory.current) return
     lastCommittedMemory.current = draft.memoryMb
     const derived = deriveMemoryOnCommit(draft, overcommitPercent)
-    set('maxMemoryMb', derived.maxMemoryMb)
-    set('guaranteedMemoryMb', derived.guaranteedMemoryMb)
+    onChange({
+      maxMemoryMb: derived.maxMemoryMb,
+      guaranteedMemoryMb: derived.guaranteedMemoryMb,
+    })
   }
 
   const memoryError = vmMemoryError(draft)
 
   return (
     <Form>
-      <FormGroup label={t('vm.edit.system.memorySize')} fieldId="edit-vm-memory">
+      <FormGroup label={t('vm.edit.system.memorySize')} fieldId={`${idPrefix}-memory`}>
         <TextInput
-          id="edit-vm-memory"
+          id={`${idPrefix}-memory`}
           type="number"
           aria-label={t('vm.edit.system.memorySize')}
           validated={memoryError !== undefined ? 'error' : 'default'}
@@ -99,7 +126,7 @@ export function SystemSection({ draft, set, overcommitPercent }: SystemSectionPr
 
       <FormGroup
         label={t('vm.edit.system.maxMemory')}
-        fieldId="edit-vm-max-memory"
+        fieldId={`${idPrefix}-max-memory`}
         labelHelp={
           <FieldHelp
             field={t('vm.edit.system.maxMemory.short')}
@@ -108,7 +135,7 @@ export function SystemSection({ draft, set, overcommitPercent }: SystemSectionPr
         }
       >
         <TextInput
-          id="edit-vm-max-memory"
+          id={`${idPrefix}-max-memory`}
           type="number"
           aria-label={t('vm.edit.system.maxMemory')}
           validated={memoryError !== undefined ? 'error' : 'default'}
@@ -119,7 +146,7 @@ export function SystemSection({ draft, set, overcommitPercent }: SystemSectionPr
 
       <FormGroup
         label={t('vm.edit.system.guaranteedMemory')}
-        fieldId="edit-vm-guaranteed-memory"
+        fieldId={`${idPrefix}-guaranteed-memory`}
         labelHelp={
           <FieldHelp
             field={t('vmGeneral.term.memoryGuaranteed')}
@@ -128,7 +155,7 @@ export function SystemSection({ draft, set, overcommitPercent }: SystemSectionPr
         }
       >
         <TextInput
-          id="edit-vm-guaranteed-memory"
+          id={`${idPrefix}-guaranteed-memory`}
           type="number"
           aria-label={t('vm.edit.system.guaranteedMemory')}
           validated={memoryError !== undefined ? 'error' : 'default'}
@@ -147,7 +174,7 @@ export function SystemSection({ draft, set, overcommitPercent }: SystemSectionPr
       <FormSection title={t('vm.edit.system.virtualCpus')} titleElement="h3">
         <FormGroup
           label={t('templateForm.sockets')}
-          fieldId="edit-vm-sockets"
+          fieldId={`${idPrefix}-sockets`}
           labelHelp={
             <FieldHelp
               field={t('templateForm.sockets')}
@@ -156,85 +183,102 @@ export function SystemSection({ draft, set, overcommitPercent }: SystemSectionPr
           }
         >
           <TextInput
-            id="edit-vm-sockets"
+            id={`${idPrefix}-sockets`}
             type="number"
             aria-label={t('templateForm.sockets')}
             value={draft.sockets}
             onChange={setNumber('sockets')}
+            isDisabled={engineTopology}
           />
         </FormGroup>
 
-        <FormGroup label={t('templateForm.cores')} fieldId="edit-vm-cores">
+        <FormGroup label={t('templateForm.cores')} fieldId={`${idPrefix}-cores`}>
           <TextInput
-            id="edit-vm-cores"
+            id={`${idPrefix}-cores`}
             type="number"
             aria-label={t('templateForm.cores')}
             value={draft.coresPerSocket}
             onChange={setNumber('coresPerSocket')}
+            isDisabled={engineTopology}
           />
         </FormGroup>
 
-        <FormGroup label={t('templateForm.threads')} fieldId="edit-vm-threads">
+        <FormGroup label={t('templateForm.threads')} fieldId={`${idPrefix}-threads`}>
           <TextInput
-            id="edit-vm-threads"
+            id={`${idPrefix}-threads`}
             type="number"
             aria-label={t('templateForm.threads')}
             value={draft.threadsPerCore}
             onChange={setNumber('threadsPerCore')}
+            isDisabled={engineTopology}
           />
         </FormGroup>
+
+        {engineTopology && (
+          <HelperText>
+            <HelperTextItem>{t('vm.edit.pinning.hint.resizeAndPin')}</HelperTextItem>
+          </HelperText>
+        )}
       </FormSection>
 
       <FormSection title={t('vm.edit.system.advancedParams')} titleElement="h3">
-        <FormGroup
-          label={t('vm.edit.system.timezone')}
-          fieldId="edit-vm-timezone"
-          labelHelp={
-            <FieldHelp
-              field={t('vm.edit.system.timezone')}
-              content={t('fieldHelp.vm.hardwareClock')}
-            />
-          }
-        >
-          <FormSelect
-            id="edit-vm-timezone"
-            aria-label={t('vm.edit.system.timezone')}
-            value={draft.hardwareClockTimezone}
-            onChange={(_event, value) => set('hardwareClockTimezone', value)}
+        {shown('hardwareClockTimezone') && (
+          <FormGroup
+            label={t('vm.edit.system.timezone')}
+            fieldId={`${idPrefix}-timezone`}
+            labelHelp={
+              <FieldHelp
+                field={t('vm.edit.system.timezone')}
+                content={t('fieldHelp.vm.hardwareClock')}
+              />
+            }
           >
-            <FormSelectOption value="" label={t('vm.edit.system.timezone.default')} />
-            {timezoneOptions(draft.hardwareClockTimezone).map((zone) => (
-              <FormSelectOption key={zone} value={zone} label={zone} />
-            ))}
-          </FormSelect>
-        </FormGroup>
+            <FormSelect
+              id={`${idPrefix}-timezone`}
+              aria-label={t('vm.edit.system.timezone')}
+              value={draft.hardwareClockTimezone}
+              onChange={(_event, value) => set('hardwareClockTimezone', value)}
+            >
+              <FormSelectOption value="" label={t('vm.edit.system.timezone.default')} />
+              {timezoneOptions(draft.hardwareClockTimezone).map((zone) => (
+                <FormSelectOption key={zone} value={zone} label={zone} />
+              ))}
+            </FormSelect>
+          </FormGroup>
+        )}
 
-        <FormGroup
-          label={t('vm.edit.system.serialPolicy')}
-          fieldId="edit-vm-serial-policy"
-          labelHelp={
-            <FieldHelp
-              field={t('vm.edit.system.serialPolicy')}
-              content={t('fieldHelp.vm.serialNumberPolicy')}
-            />
-          }
-        >
-          <FormSelect
-            id="edit-vm-serial-policy"
-            aria-label={t('vm.edit.system.serialPolicy')}
-            value={draft.serialNumberPolicy}
-            onChange={(_event, value) => set('serialNumberPolicy', value)}
+        {shown('serialNumberPolicy') && (
+          <FormGroup
+            label={t('vm.edit.system.serialPolicy')}
+            fieldId={`${idPrefix}-serial-policy`}
+            labelHelp={
+              <FieldHelp
+                field={t('vm.edit.system.serialPolicy')}
+                content={t('fieldHelp.vm.serialNumberPolicy')}
+              />
+            }
           >
-            {SERIAL_NUMBER_POLICY_OPTIONS.map((option) => (
-              <FormSelectOption key={option.value} value={option.value} label={t(option.labelId)} />
-            ))}
-          </FormSelect>
-        </FormGroup>
+            <FormSelect
+              id={`${idPrefix}-serial-policy`}
+              aria-label={t('vm.edit.system.serialPolicy')}
+              value={draft.serialNumberPolicy}
+              onChange={(_event, value) => set('serialNumberPolicy', value)}
+            >
+              {SERIAL_NUMBER_POLICY_OPTIONS.map((option) => (
+                <FormSelectOption
+                  key={option.value}
+                  value={option.value}
+                  label={t(option.labelId)}
+                />
+              ))}
+            </FormSelect>
+          </FormGroup>
+        )}
 
-        {draft.serialNumberPolicy === 'custom' && (
-          <FormGroup label={t('vm.edit.system.customSerial')} fieldId="edit-vm-custom-serial">
+        {shown('serialNumberPolicy') && draft.serialNumberPolicy === 'custom' && (
+          <FormGroup label={t('vm.edit.system.customSerial')} fieldId={`${idPrefix}-custom-serial`}>
             <TextInput
-              id="edit-vm-custom-serial"
+              id={`${idPrefix}-custom-serial`}
               aria-label={t('vm.edit.system.customSerial')}
               value={draft.customSerialNumber}
               onChange={(_event, value) => set('customSerialNumber', value)}
@@ -247,7 +291,7 @@ export function SystemSection({ draft, set, overcommitPercent }: SystemSectionPr
             documented divergence). Empty = cluster default. */}
         <FormGroup
           label={t('vm.edit.system.customEmulatedMachine')}
-          fieldId="edit-vm-emulated-machine"
+          fieldId={`${idPrefix}-emulated-machine`}
           labelHelp={
             <FieldHelp
               field={t('vm.edit.system.customEmulatedMachine')}
@@ -256,7 +300,7 @@ export function SystemSection({ draft, set, overcommitPercent }: SystemSectionPr
           }
         >
           <TextInput
-            id="edit-vm-emulated-machine"
+            id={`${idPrefix}-emulated-machine`}
             aria-label={t('vm.edit.system.customEmulatedMachine')}
             placeholder={t('vm.edit.system.clusterDefault.placeholder')}
             value={draft.customEmulatedMachine}
@@ -266,7 +310,7 @@ export function SystemSection({ draft, set, overcommitPercent }: SystemSectionPr
 
         <FormGroup
           label={t('vm.edit.system.customCpuModel')}
-          fieldId="edit-vm-cpu-model"
+          fieldId={`${idPrefix}-cpu-model`}
           labelHelp={
             <FieldHelp
               field={t('vm.edit.system.customCpuModel')}
@@ -275,7 +319,7 @@ export function SystemSection({ draft, set, overcommitPercent }: SystemSectionPr
           }
         >
           <TextInput
-            id="edit-vm-cpu-model"
+            id={`${idPrefix}-cpu-model`}
             aria-label={t('vm.edit.system.customCpuModel')}
             placeholder={t('vm.edit.system.clusterDefault.placeholder')}
             value={draft.customCpuModel}

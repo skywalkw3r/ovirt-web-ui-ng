@@ -16,6 +16,7 @@ import { ClusterFormModal } from '../cluster-form/ClusterFormModal'
 import { ConfirmModal } from '../ConfirmModal'
 import { ContextMenu, type ContextMenuPosition } from '../context-menu/ContextMenu'
 import { DataCenterFormModal } from '../datacenter-form/DataCenterFormModal'
+import { useGuideMeLauncher } from '../guide-me/guideMeContext'
 
 // Right-click menu for a data center node in the Hosts & Clusters tree: Open
 // details / Edit / Remove. Reuses DataCenterFormModal and useDeleteDataCenter,
@@ -50,6 +51,8 @@ export function DataCenterContextMenu({
   // create-under-this-data-center modal
   const [addingCluster, setAddingCluster] = useState(false)
   const deleteMutation = useDeleteDataCenter()
+  // Guide Me lives in the app-level provider, so it outlives this menu
+  const guideMe = useGuideMeLauncher()
 
   const modalActive = editing || removing !== null || addingCluster
   useEffect(() => {
@@ -93,6 +96,16 @@ export function DataCenterContextMenu({
           >
             {t('clusters.new')}
           </DropdownItem>
+          {guideMe && (
+            <DropdownItem
+              onClick={() => {
+                setIsOpen(false)
+                guideMe.open({ kind: 'dataCenter', id: dataCenter.id })
+              }}
+            >
+              {t('guideMe.action')}
+            </DropdownItem>
+          )}
           <Divider component="li" />
           <DropdownItem
             onClick={() => {

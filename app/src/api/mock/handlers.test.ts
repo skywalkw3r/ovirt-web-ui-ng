@@ -55,6 +55,7 @@ import {
   createInstanceType,
   deleteInstanceType,
   getInstanceType,
+  getInstanceTypeAllContentDevices,
   listInstanceTypes,
   updateInstanceType,
 } from '../resources/instanceTypes'
@@ -66,12 +67,13 @@ import {
   listDirectoryUsers,
   listDomains,
   listGroups,
+  listMyGroups,
   listUserEventSubscriptions,
   listUsers,
   removeUser,
   removeUserEventSubscription,
 } from '../resources/users'
-import { listVmPermissions, listVms } from '../resources/vms'
+import { getVm, listVmPermissions, listVms, updateVm } from '../resources/vms'
 import {
   activateStorageDomain,
   deactivateStorageDomain,
@@ -144,7 +146,14 @@ import {
 } from '../resources/bookmarks'
 import { listEvents, removeEvent } from '../resources/events'
 import { getIcon, listIcons } from '../resources/icons'
-import { listVmNumaNodes, pinnedHostNodeIndices, vmNumaNodeCpuIndices } from '../resources/vmNuma'
+import {
+  addVmNumaNode,
+  listVmNumaNodes,
+  pinnedHostNodeIndices,
+  removeVmNumaNode,
+  updateVmNumaNodePinning,
+  vmNumaNodeCpuIndices,
+} from '../resources/vmNuma'
 import {
   addVmMediatedDevice,
   listHostMdevTypes,
@@ -407,6 +416,26 @@ describe('permissions data layer (mock)', () => {
       }),
       { status: 400 },
     )
+  })
+
+  it('refuses the same role granted twice to the same principal', async () => {
+    // the shared VM fixture already grants UserRole to demo (user-02)
+    await settleRejection(
+      addPermission('vm', 'vm-01', { roleId: USER_ROLE_ID, userId: 'user-02' }),
+      { status: 409, message: expect.stringContaining('Permission already exists') },
+    )
+    // a different role for the same principal is fine
+    await settle(addPermission('vm', 'vm-01', { roleId: 'role-poweruser', userId: 'user-02' }))
+  })
+
+  it("serves the signed-in admin's directory groups for My groups", async () => {
+    // two round trips: the api root (session user id), then its groups
+    const pending = listMyGroups()
+    await vi.advanceTimersByTimeAsync(500)
+    const groups = await settle(pending)
+    expect(groups.map((group) => group.name)).toEqual(['dev-team', 'platform-team'])
+    // directory-shaped ids, not the engine-DB group ids
+    expect(groups.map((group) => group.id)).toEqual(['dir-group-dev', 'dir-group-platform'])
   })
 
   it('removes a granted permission (list drops to empty, not 404)', async () => {
@@ -777,6 +806,50 @@ describe('instance type CRUD (mock)', () => {
       updateInstanceType('instance-type-small', { description: 'touched, max untouched' }),
     )
     expect(edited.description).toBe('touched, max untouched')
+  })
+
+  it('reads the console and resource fields with coerced scalars', async () => {
+    const small = await settle(getInstanceType('instance-type-small'))
+    expect(small.display).toMatchObject({ type: 'spice', monitors: 1, smartcard_enabled: false })
+    expect(small.memory_policy?.ballooning).toBe(true)
+    expect(small.io?.threads).toBe(0)
+    const large = await settle(getInstanceType('instance-type-large'))
+    expect(large.custom_cpu_model).toBe('Skylake-Server')
+    // the device flags ride the all_content read only (allContent.test.ts)
+    expect(large.virtio_scsi).toBeUndefined()
+    await expect(
+      settle(getInstanceTypeAllContentDevices('instance-type-large')),
+    ).resolves.toMatchObject({ virtioScsiEnabled: true })
+  })
+
+  it('merges an edit field by field and ignores the keys REST drops for instance types', async () => {
+    // InstanceTypeMapper maps only VmBaseMapper.mapCommonModelToEntity, so
+    // time_zone / custom_properties / display.keyboard_layout are ignored.
+    const edited = await settle(
+      updateInstanceType('instance-type-medium', {
+        memory_policy: { ballooning: false },
+        display: { smartcard_enabled: true, keyboard_layout: 'de' },
+        time_zone: { name: 'Etc/GMT' },
+        custom_properties: { custom_property: [{ name: 'sap_agent', value: 'true' }] },
+      }),
+    )
+    expect(edited.memory_policy).toMatchObject({
+      ballooning: false,
+      max: 4294967296,
+      guaranteed: 1073741824,
+    })
+    expect(edited.display).toEqual({ type: 'vnc', monitors: 1, smartcard_enabled: true })
+    expect(edited).not.toHaveProperty('time_zone')
+    expect(edited).not.toHaveProperty('custom_properties')
+  })
+
+  it('ignores usb on create (the add path never reads it) but applies it on update', async () => {
+    const created = await settle(
+      createInstanceType({ name: 'WithUsb', memory: 1073741824, usb: { enabled: true } }),
+    )
+    expect(created.usb?.enabled).toBe(false)
+    const edited = await settle(updateInstanceType(created.id, { usb: { enabled: true } }))
+    expect(edited.usb?.enabled).toBe(true)
   })
 })
 
@@ -3153,7 +3226,7 @@ describe('networks: labels, cluster attach, and QoS (mock)', () => {
 
   it('reads the QoS binding off a network detail (bare { id } link)', async () => {
     // net-02 seeds a qos link; net-01 carries none
-    expect((await settle(getNetwork('net-02'))).qos?.id).toBe('qos-01')
+    expect((await settle(getNetwork('net-02'))).qos?.id).toBe('qos-hostnet-01')
     expect((await settle(getNetwork('net-01'))).qos).toBeUndefined()
   })
 
@@ -3772,6 +3845,33 @@ describe('wave endpoints (mock)', () => {
 
   it('vm numa: a VM with no vNUMA topology returns an empty list', async () => {
     expect(await settle(listVmNumaNodes('vm-02'))).toEqual([])
+  })
+
+  it('vm numa: add, re-pin and remove round-trip, enforcing contiguous indices', async () => {
+    const spec = { memoryMb: 1024, cpuIds: [0], tuneMode: 'strict', pins: [0] }
+    // index 1 before index 0 leaves a gap
+    await settleRejection(addVmNumaNode('vm-02', { ...spec, index: 1 }), { status: 409 })
+    const added = await settle(addVmNumaNode('vm-02', { ...spec, index: 0 }))
+    await settle(updateVmNumaNodePinning('vm-02', added.id!, { tuneMode: 'interleave', pins: [] }))
+    const [node] = await settle(listVmNumaNodes('vm-02'))
+    expect(node).toMatchObject({ index: 0, memory: 1024, numa_tune_mode: 'interleave' })
+    expect(pinnedHostNodeIndices(node!)).toEqual([])
+    // vm-01's lower node cannot go first
+    await settleRejection(removeVmNumaNode('vm-01', 'vnuma-0'), { status: 409 })
+    await settle(removeVmNumaNode('vm-02', added.id!))
+    expect(await settle(listVmNumaNodes('vm-02'))).toEqual([])
+  })
+
+  it('vm update merges the cpu block, keeping a cpu_tune the PUT does not carry', async () => {
+    await settle(
+      updateVm('vm-02', {
+        cpu: { cpu_tune: { vcpu_pins: { vcpu_pin: [{ vcpu: 0, cpu_set: '1' }] } } },
+      }),
+    )
+    await settle(updateVm('vm-02', { cpu: { topology: { sockets: 2, cores: 1, threads: 1 } } }))
+    const vm = await settle(getVm('vm-02'))
+    expect(vm.cpu?.cpu_tune?.vcpu_pins?.vcpu_pin).toEqual([{ vcpu: 0, cpu_set: '1' }])
+    expect(vm.cpu?.topology?.sockets).toBe(2)
   })
 
   // ─── VM mediated devices (vGPU) ────────────────────────────────────────────

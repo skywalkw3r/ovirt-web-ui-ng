@@ -1,15 +1,18 @@
 import { useQuery } from '@tanstack/react-query'
-import { getTemplateSoundcardEnabled, getTemplateTpmEnabled } from '../api/resources/templates'
+import { getInstanceTypeAllContentDevices } from '../api/resources/instanceTypes'
+import { getTemplateAllContentDevices, getTemplateTpmEnabled } from '../api/resources/templates'
 import { getVmAllContentDevices, type VmAllContentDevices } from '../api/resources/vms'
 
-// The all_content slices nest under the VM / template detail keys
-// (['vm', id, <slice>] and ['template', id, <slice>], the vmKeys /
-// watchdogKeys convention) so a detail invalidation (every VM or template
-// save) reaches them by prefix.
+// The all_content slices nest under the VM / template / instance type detail
+// keys (['vm', id, <slice>], ['template', id, <slice>] and ['instancetype', id,
+// <slice>], the vmKeys / watchdogKeys convention) so a detail invalidation
+// (every VM, template or instance type save) reaches them by prefix.
 export const allContentKeys = {
   vm: (vmId: string) => ['vm', vmId, 'all-content'] as const,
   templateTpm: (templateId: string) => ['template', templateId, 'tpm'] as const,
-  templateSoundcard: (templateId: string) => ['template', templateId, 'soundcard'] as const,
+  templateDevices: (templateId: string) => ['template', templateId, 'all-content'] as const,
+  instanceTypeDevices: (instanceTypeId: string) =>
+    ['instancetype', instanceTypeId, 'all-content'] as const,
 }
 
 // The VM's all_content-only device flags (serial console, VirtIO-SCSI, sound
@@ -48,12 +51,23 @@ export function useTemplateTpm(templateId: string | undefined) {
   })
 }
 
-// Whether the template carries a sound card, which the Edit Template modal
-// seeds its switch from. Not polled, like the VM read.
-export function useTemplateSoundcard(templateId: string, enabled = true) {
+// The template's all_content device flags (serial console, VirtIO-SCSI, sound
+// card), which the Edit Template dialog seeds its switches from. Not polled,
+// like the VM read.
+export function useTemplateAllContentDevices(templateId: string, enabled = true) {
   return useQuery({
-    queryKey: allContentKeys.templateSoundcard(templateId),
-    queryFn: () => getTemplateSoundcardEnabled(templateId),
+    queryKey: allContentKeys.templateDevices(templateId),
+    queryFn: () => getTemplateAllContentDevices(templateId),
     enabled: enabled && templateId !== '',
+  })
+}
+
+// The instance type's all_content device flags, which the Edit Instance Type
+// dialog seeds its switches from. Not polled.
+export function useInstanceTypeAllContentDevices(instanceTypeId: string, enabled = true) {
+  return useQuery({
+    queryKey: allContentKeys.instanceTypeDevices(instanceTypeId),
+    queryFn: () => getInstanceTypeAllContentDevices(instanceTypeId),
+    enabled: enabled && instanceTypeId !== '',
   })
 }

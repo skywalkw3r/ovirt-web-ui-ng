@@ -16,7 +16,7 @@ import {
 import { useStorageDomains } from '../../hooks/useStorageDomains'
 import { useAttachStorageDomain } from '../../hooks/useStorageDomainMutations'
 import { useT } from '../../i18n/useT'
-import { isAttached } from '../storage-domain-form/lifecycle'
+import { isAttached, isAttachedTo, isUnattachedDomain } from '../storage-domain-form/lifecycle'
 
 // The Attach-domain modal, the data-center side of the attach flow (the inverse
 // of storage-domain-form/AttachStorageDomainModal, which picks a data center for
@@ -30,10 +30,15 @@ export function AttachDataCenterStorageDomainModal({
   dataCenterId,
   isOpen,
   onClose,
+  domainType,
 }: {
   dataCenterId: string
   isOpen: boolean
   onClose: () => void
+  // Narrows the picker to one domain function (the Guide Me Attach Storage /
+  // Attach ISO Library steps). An ISO domain can serve several data centers,
+  // so 'iso' lists every ISO domain not yet attached to this one.
+  domainType?: 'data' | 'iso'
 }) {
   const t = useT()
   const [storageDomainId, setStorageDomainId] = useState('')
@@ -43,7 +48,12 @@ export function AttachDataCenterStorageDomainModal({
 
   // Only unattached domains can be attached to a data center — an already-attached
   // domain must be detached first. isAttached keys off the presence of `status`.
-  const candidates = (domains.data ?? []).filter((domain) => !isAttached(domain))
+  const candidates = (domains.data ?? []).filter((domain) => {
+    const type = domain.type?.toLowerCase()
+    if (domainType === 'iso') return type === 'iso' && !isAttachedTo(domain, dataCenterId)
+    if (domainType === 'data') return type === 'data' && isUnattachedDomain(domain)
+    return !isAttached(domain)
+  })
   const noCandidates = domains.isSuccess && candidates.length === 0
 
   const save = () => {

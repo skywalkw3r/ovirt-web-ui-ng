@@ -22,6 +22,32 @@ export async function getInstanceType(id: string): Promise<InstanceType> {
   return InstanceTypeSchema.parse(await request(`/instancetypes/${encodeURIComponent(id)}`))
 }
 
+// The instance type's device flags that the engine fills on an all_content
+// read only: serial console, VirtIO-SCSI and sound card
+// (BackendInstanceTypeResource.doPopulate, from the device table; the
+// InstanceTypeMapper maps none of them, ovirt-engine 4.5). The list read the
+// Instance Type dialog opens with therefore lacks them, so the dialog seeds
+// its device switches from this read. Unlike the single-template read, the
+// single instance-type read reports the sound card correctly.
+export interface InstanceTypeAllContentDevices {
+  serialConsoleEnabled: boolean
+  virtioScsiEnabled: boolean
+  soundcardEnabled: boolean
+}
+
+export async function getInstanceTypeAllContentDevices(
+  id: string,
+): Promise<InstanceTypeAllContentDevices> {
+  const instanceType = InstanceTypeSchema.parse(
+    await request(`/instancetypes/${encodeURIComponent(id)}?all_content=true`),
+  )
+  return {
+    serialConsoleEnabled: instanceType.console?.enabled ?? false,
+    virtioScsiEnabled: instanceType.virtio_scsi?.enabled ?? false,
+    soundcardEnabled: instanceType.soundcard_enabled ?? false,
+  }
+}
+
 // Webadmin-style create: POST the new instance type's fields (only `name` is
 // mandatory; the engine defaults the rest). The engine answers with the full
 // created instance type, which we parse through InstanceTypeSchema so callers

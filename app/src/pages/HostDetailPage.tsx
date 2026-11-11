@@ -19,7 +19,6 @@ import {
   TextInput,
   Tooltip,
 } from '@patternfly/react-core'
-import { ExternalLinkAltIcon } from '@patternfly/react-icons'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { ApiError } from '../api/transport'
 import { useT } from '../i18n/useT'
@@ -29,6 +28,7 @@ import { HostStatusLabel } from '../components/HostStatusLabel'
 import { HostedEngineCrown } from '../components/HostedEngineCrown'
 import { ListPageHeader } from '../components/ListPageHeader'
 import { HostActionsMenu } from '../components/host-actions/HostActionsMenu'
+import { HostConsoleButton } from '../components/host-actions/HostConsoleButton'
 import { NotPermitted } from '../components/NotPermitted'
 import { HostFormModal } from '../components/host-form/HostFormModal'
 import { HostAffinityLabelsTab } from '../components/host-tabs/HostAffinityLabelsTab'
@@ -42,6 +42,8 @@ import { NumaTab } from '../components/host-tabs/NumaTab'
 import { HostPermissionsTab } from '../components/host-tabs/HostPermissionsTab'
 import { HostVmsTab } from '../components/host-tabs/HostVmsTab'
 import { HostMonitoringTab } from '../components/host-tabs/HostMonitoringTab'
+import { ExtensionHeaderActions } from '../extensions/ExtensionActions'
+import { useExtensionTabs } from '../extensions/useExtensionTabs'
 import { useHost } from '../hooks/useHost'
 import { useDeleteHost } from '../hooks/useHostMutations'
 import { hostDetailRoute } from '../routes/router'
@@ -58,6 +60,8 @@ export function HostDetailPage() {
   // (docs/COMPONENTS.md: typed-name confirm for delete)
   const [removing, setRemoving] = useState<{ nameInput: string } | null>(null)
   const deleteMutation = useDeleteHost()
+  // plugin subtabs (docs/PLUGINS.md); a hook, so above the early return
+  const extensionTabs = useExtensionTabs('host', host.data)
 
   const notFound = host.error instanceof ApiError && host.error.status === 404
 
@@ -149,6 +153,7 @@ export function HostDetailPage() {
             }
             actions={
               <>
+                <HostConsoleButton host={host.data} />
                 <Button variant="secondary" onClick={() => setEditing(true)}>
                   {t('common.action.edit')}
                 </Button>
@@ -170,6 +175,7 @@ export function HostDetailPage() {
                     </Button>
                   </Tooltip>
                 )}
+                <ExtensionHeaderActions kind="host" entity={host.data} />
                 <HostActionsMenu host={host.data} />
               </>
             }
@@ -220,12 +226,7 @@ export function HostDetailPage() {
               query observers would otherwise keep their refetchInterval alive */}
           <Tabs
             activeKey={activeKey}
-            // The Cockpit tab is an external link (opens in a new browser tab),
-            // not a content panel — never make it the active key, so the
-            // current tab's content stays put when it is clicked.
-            onSelect={(_event, tabKey) => {
-              if (tabKey !== 'cockpit') setActiveKey(tabKey)
-            }}
+            onSelect={(_event, tabKey) => setActiveKey(tabKey)}
             mountOnEnter
             unmountOnExit
             aria-label={t('hostDetail.tabs.ariaLabel')}
@@ -308,22 +309,7 @@ export function HostDetailPage() {
                 <HostEventsTab hostName={host.data.name ?? ''} />
               </TabContentBody>
             </Tab>
-            {/* Cockpit is the host's local web console (:9090). Rendered as a
-                link tab — no content panel — that opens in a new browser tab;
-                offered only when the host address is known. */}
-            {host.data.address ? (
-              <Tab
-                eventKey="cockpit"
-                href={`https://${host.data.address}:9090`}
-                target="_blank"
-                rel="noopener noreferrer"
-                title={
-                  <TabTitleText>
-                    {t('host.cockpit.open')} <ExternalLinkAltIcon />
-                  </TabTitleText>
-                }
-              />
-            ) : null}
+            {extensionTabs}
           </Tabs>
         </>
       )}

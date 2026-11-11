@@ -1,107 +1,186 @@
 import type { InstanceType } from '../../api/schemas/instance-type'
-import type { MessageId } from '../../i18n/messages/en'
 import { vmNameError } from '../edit-vm/editVmDraft'
+import {
+  allContentDeviceFields,
+  MAX_MEMORY_RATIO,
+  vmBaseChangedPayload,
+  vmBaseToDraft,
+  type ConsoleFields,
+  type DeviceLoadFields,
+  type HighAvailabilityFields,
+  type ResourceAllocationFields,
+  type SystemFields,
+  type VmBaseDraft,
+} from '../edit-vm/vmBaseDraft'
 
-// Memory is stored in bytes on the wire (see schemas/instance-type.ts) but
-// edited in MiB in the modal — convert at the draft boundary so the form works
-// in MiB, reusing the same MiB constant / bytesToMb boundary as editVmDraft.
 const MiB = 1024 * 1024
 
-// Webadmin seeds the maximum memory at 4x the memory size
-// (VmCommonUtils.getMaxMemorySizeDefault → memSize * MAX_MEM_OVER_COMMIT_FACTOR,
-// which is 4). We mirror that ratio so a fresh instance type — and any existing
-// one whose wire form omits memory_policy.max — carries a max that satisfies the
-// engine's `max >= memory` rule instead of defaulting to a rejected 0.
-const MAX_MEMORY_RATIO = 4
-
-// The flat, always-defined draft the Instance Type modal owns. Every field is
-// always defined (never undefined) so controlled inputs never flip between
-// controlled and uncontrolled — optional wire values collapse to '' / 0 / false
-// / a sensible default here.
-export interface InstanceTypeDraft {
+// The draft the Instance Type dialog owns. It reuses the shared Edit VM
+// sections through the VmBase slice (edit-vm/vmBaseDraft.ts) and adds only
+// the General fields. Every field is always defined. Serial console, sound card
+// and VirtIO-SCSI are all_content device flags: an edit seeds them "not loaded"
+// and the dialog folds getInstanceTypeAllContentDevices into draft and
+// baseline; a create's defaults are the dialog's own (devicesLoaded true).
+export interface InstanceTypeDraft extends VmBaseDraft, DeviceLoadFields {
   name: string
   description: string
-  // memory (MiB) — bytes on the wire
-  memoryMb: number
-  guaranteedMemoryMb: number
-  maxMemoryMb: number
-  // CPU topology
-  sockets: number
-  coresPerSocket: number
-  threadsPerCore: number
-  // High Availability
-  haEnabled: boolean
-  haPriority: number
 }
 
-// Round bytes → MiB; an absent value collapses to 0 rather than NaN so the
-// number inputs stay controlled. Mirror editVmDraft.bytesToMb.
-function bytesToMb(bytes: number | undefined): number {
-  return bytes === undefined ? 0 : Math.round(bytes / MiB)
+// ── What REST accepts for an instance type ──────────────────────────────────
+//
+// InstanceType extends Template in the api-model, but ovirt-engine 4.5 maps
+// only a subset of VmBase for it:
+//   • InstanceTypeMapper → VmBaseMapper.mapCommonModelToEntity: name,
+//     description, memory, memory_policy (guaranteed, max, ballooning),
+//     cpu.topology, high_availability, display.monitors,
+//     display.smartcard_enabled, io.threads, custom_cpu_model,
+//     custom_emulated_machine (plus lease, placement, migration and boot
+//     devices, which this dialog does not edit).
+//   • BackendInstanceType(s)Resource: display.type (graphics devices),
+//     console.enabled, virtio_scsi.enabled, soundcard_enabled, and usb on
+//     UPDATE only (the add path never reads usb).
+// Everything mapVmBaseModelToEntity alone handles (time zone, serial number,
+// SSO, VNC keyboard, SPICE channels, disconnect action, resume behaviour, CPU
+// profile and shares, queue settings, custom properties, icon) is dropped
+// silently, so the dialog does not offer it. Webadmin's InstanceTypesPopupWidget
+// hides the same fields, plus the lease row (kept hidden here too).
+const REST_KEYS = new Set([
+  'name',
+  'description',
+  'memory',
+  'memory_policy',
+  'cpu',
+  'high_availability',
+  'display',
+  'usb',
+  'soundcard_enabled',
+  'console',
+  'io',
+  'virtio_scsi',
+  'custom_cpu_model',
+  'custom_emulated_machine',
+])
+const REST_DISPLAY_KEYS = new Set(['type', 'monitors', 'smartcard_enabled'])
+
+// The shared-section fields the dialog leaves out (see above). Passed to each
+// section's hiddenFields.
+export const INSTANCE_TYPE_HIDDEN_FIELDS: {
+  system: readonly (keyof SystemFields)[]
+  console: readonly (keyof ConsoleFields)[]
+  highAvailability: readonly (keyof HighAvailabilityFields)[]
+  resourceAllocation: readonly (keyof ResourceAllocationFields)[]
+} = {
+  system: ['hardwareClockTimezone', 'serialNumberPolicy', 'customSerialNumber'],
+  console: [
+    'vncKeyboardLayout',
+    'ssoEnabled',
+    'spiceFileTransfer',
+    'spiceCopyPaste',
+    'disconnectAction',
+  ],
+  highAvailability: ['leaseStorageDomainId', 'storageErrorResumeBehaviour'],
+  resourceAllocation: [
+    'cpuProfileId',
+    'cpuShares',
+    'virtioScsiMultiQueuesEnabled',
+    'virtioScsiMultiQueues',
+    'multiQueuesEnabled',
+  ],
 }
 
-// InstanceType read model → fully-populated draft. Every optional wire field is
-// given a concrete fallback so the returned draft has no undefined members.
-// memory_policy.max is frequently absent on an instance type (unlike a live VM,
-// which the engine always seeds); when it is, we seed it from 4x the memory size
-// so re-saving an untouched type never PUTs a max of 0 that the engine rejects.
+// Keep only what REST maps for an instance type. The hidden fields never move,
+// so this is a guard rather than the main filter.
+function restSubset(payload: Record<string, unknown>): Record<string, unknown> {
+  const body: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(payload)) {
+    if (!REST_KEYS.has(key)) continue
+    if (key === 'display') {
+      const display = Object.fromEntries(
+        Object.entries(value as Record<string, unknown>).filter(([k]) => REST_DISPLAY_KEYS.has(k)),
+      )
+      if (Object.keys(display).length > 0) body.display = display
+      continue
+    }
+    body[key] = value
+  }
+  return body
+}
+
+// A read whose max is absent or 0 shows webadmin's 4x default, so the System
+// section never presents "max 0". Max is only sent when the user changes it.
+function withMaxDefault(base: VmBaseDraft): VmBaseDraft {
+  return base.maxMemoryMb > 0 ? base : { ...base, maxMemoryMb: base.memoryMb * MAX_MEMORY_RATIO }
+}
+
+// InstanceType read model → draft (edit mode). Seeded once; the seed is the
+// baseline the save diffs against. The device flags are not on the list read
+// the dialog opens with, so they start as placeholders until the all_content
+// read lands.
 export function instanceTypeToDraft(instanceType: InstanceType): InstanceTypeDraft {
-  const memoryMb = bytesToMb(instanceType.memory)
-  const wireMaxMb = bytesToMb(instanceType.memory_policy?.max)
   return {
+    ...withMaxDefault(vmBaseToDraft(instanceType)),
+    ...allContentDeviceFields(undefined),
     name: instanceType.name ?? '',
     description: instanceType.description ?? '',
-    memoryMb,
-    guaranteedMemoryMb: bytesToMb(instanceType.memory_policy?.guaranteed),
-    // An absent/zero max on the wire seeds to the webadmin 4x default so the
-    // re-emitted payload satisfies max >= memory; a real max is kept as-is.
-    maxMemoryMb: wireMaxMb > 0 ? wireMaxMb : memoryMb * MAX_MEMORY_RATIO,
-    sockets: instanceType.cpu?.topology?.sockets ?? 1,
-    coresPerSocket: instanceType.cpu?.topology?.cores ?? 1,
-    threadsPerCore: instanceType.cpu?.topology?.threads ?? 1,
-    haEnabled: instanceType.high_availability?.enabled ?? false,
-    // Webadmin's NewInstanceTypeModelBehavior initializes Priority to 0.
-    haPriority: instanceType.high_availability?.priority ?? 0,
   }
 }
 
-// Blank create-mode defaults: 1 GiB memory guaranteed at the same size, the
-// webadmin 4x maximum (4 GiB), a single-vCPU topology, HA off at priority 0.
-// Matches the webadmin New Instance Type dialog seeds.
+// Create-mode defaults, as webadmin's NewInstanceTypeModelBehavior seeds them:
+// 1 GiB guaranteed at the same size with the 4x maximum, one vCPU, SPICE with
+// one monitor, USB, VirtIO-SCSI and HA off (HA priority Low), ballooning on.
 export function blankInstanceTypeDraft(): InstanceTypeDraft {
-  const memoryMb = 1024
   return {
+    ...vmBaseToDraft({
+      memory: 1024 * MiB,
+      memory_policy: {
+        guaranteed: 1024 * MiB,
+        max: 1024 * MiB * MAX_MEMORY_RATIO,
+        ballooning: true,
+      },
+      display: { type: 'spice', monitors: 1 },
+      high_availability: { enabled: false, priority: 1 },
+    }),
+    devicesLoaded: true,
     name: '',
     description: '',
-    memoryMb,
-    guaranteedMemoryMb: memoryMb,
-    maxMemoryMb: memoryMb * MAX_MEMORY_RATIO,
-    sockets: 1,
-    coresPerSocket: 1,
-    threadsPerCore: 1,
-    haEnabled: false,
-    haPriority: 0,
   }
 }
 
-// Draft → POST/PUT body. Memory fields go back to bytes; the shape mirrors the
-// InstanceType read model the schema coerces on the way back. The same body is
-// used for create and edit — an instance type has no create-only/immutable key
-// to strip (unlike a cluster's data center).
-//
-// memory_policy.max is omitted entirely when it is 0/unset: the engine rejects
-// `max < memory` (VmHandler.validateMaxMemorySize), so sending max: 0 with a
-// non-zero memory 400s every create/edit. Omitting it lets the engine apply its
-// own default instead. guaranteed rides the same guard for symmetry.
-export function draftToPayload(draft: InstanceTypeDraft): Record<string, unknown> {
-  const memoryPolicy: Record<string, unknown> = {}
+// PUT /instancetypes/{id} body: only the fields that moved from the loaded
+// instance type ({} when nothing did), so the engine keeps everything else.
+// The device flags ride only once the all_content read seeded both sides.
+export function instanceTypeEditPayload(
+  draft: InstanceTypeDraft,
+  baseline: InstanceTypeDraft,
+): Record<string, unknown> {
+  const payload = vmBaseChangedPayload(draft, baseline, {
+    devicesRead: draft.devicesLoaded && baseline.devicesLoaded,
+  })
+  if (draft.name !== baseline.name) payload.name = draft.name
+  if (draft.description !== baseline.description) payload.description = draft.description
+  return restSubset(payload)
+}
+
+// POST /instancetypes body: every field the dialog shows, so the new instance
+// type matches the dialog rather than engine defaults. Memory limits ride only
+// when positive (0 = let the engine default them; a sent 0 is rejected), and
+// empty overrides are left out. USB is not here: the engine's add path never
+// reads it, so instanceTypeCreateFollowUp sets it with a PUT afterwards.
+export function newInstanceTypePayload(draft: InstanceTypeDraft): Record<string, unknown> {
+  const memoryPolicy: Record<string, unknown> = { ballooning: draft.memoryBalloonEnabled }
   if (draft.guaranteedMemoryMb > 0) memoryPolicy.guaranteed = draft.guaranteedMemoryMb * MiB
   if (draft.maxMemoryMb > 0) memoryPolicy.max = draft.maxMemoryMb * MiB
 
+  const display: Record<string, unknown> = {
+    monitors: draft.monitors,
+    smartcard_enabled: draft.smartcardEnabled,
+  }
+  if (draft.graphicsProtocol !== 'headless') display.type = draft.graphicsProtocol
+
   const payload: Record<string, unknown> = {
     name: draft.name,
-    description: draft.description,
     memory: draft.memoryMb * MiB,
+    memory_policy: memoryPolicy,
     cpu: {
       topology: {
         sockets: draft.sockets,
@@ -110,55 +189,30 @@ export function draftToPayload(draft: InstanceTypeDraft): Record<string, unknown
       },
     },
     high_availability: { enabled: draft.haEnabled, priority: draft.haPriority },
+    display,
+    soundcard_enabled: draft.soundcardEnabled,
+    console: { enabled: draft.serialConsoleEnabled },
+    virtio_scsi: { enabled: draft.virtioScsiEnabled },
+    io: { threads: draft.ioThreads },
   }
-
-  // Only attach memory_policy when it carries at least one field, so an
-  // all-unset policy never ships an empty object.
-  if (Object.keys(memoryPolicy).length > 0) payload.memory_policy = memoryPolicy
-
+  if (draft.description !== '') payload.description = draft.description
+  if (draft.customEmulatedMachine !== '') {
+    payload.custom_emulated_machine = draft.customEmulatedMachine
+  }
+  if (draft.customCpuModel !== '') payload.custom_cpu_model = draft.customCpuModel
   return payload
 }
 
-// Instance-type name validation. Webadmin's InstanceType extends UnitVmModel and
-// runs NotEmpty + Length(64) + I18NNameValidation, the same rules the Edit VM /
-// Clone VM dialogs use — so reuse vmNameError for identical inline feedback
-// (unicode letters, digits, '-', '_' and '.', no spaces) instead of bouncing a
-// raw engine fault.
-export const instanceTypeNameError = vmNameError
-
-// Memory relationship validation (webadmin parity). The engine requires
-// guaranteed <= memory <= max; surface it inline so the user sees why Save is
-// blocked rather than eating a raw fault. Returns undefined when the sizing is
-// consistent. max is only checked when set (0 means "let the engine default").
-// Returns a message id (not a string): the modal resolves it through t() so the
-// inline error follows the active locale (mirrors TemplateFormModal).
-export function instanceTypeMemoryError(draft: InstanceTypeDraft): MessageId | undefined {
-  if (draft.memoryMb <= 0) return 'instanceTypeForm.memory.error.positive'
-  if (draft.guaranteedMemoryMb > draft.memoryMb) {
-    return 'instanceTypeForm.memory.error.guaranteed'
-  }
-  if (draft.maxMemoryMb > 0 && draft.maxMemoryMb < draft.memoryMb) {
-    return 'instanceTypeForm.memory.error.max'
-  }
-  return undefined
-}
-
-// When the memory size changes, webadmin keeps the guaranteed and maximum
-// tracking it (UnitVmModel.memSize_EntityChanged seeds MinAllocatedMemory ==
-// MemSize; getMaxMemorySizeDefault re-derives max = memSize * 4). Mirror that:
-// given the previous and next memory size, return the fields that were pinned to
-// the old memory (guaranteed == old memory, max == old memory * 4) re-pinned to
-// the new one, so a user who raises Memory Size does not silently ship a stale
-// guaranteed/max. A field the user has moved off the tracked value is left alone.
-export function retrackMemory(
+// The PUT that follows a create when the dialog set something the add path
+// ignores (only USB), or undefined when there is nothing to follow up.
+export function instanceTypeCreateFollowUp(
   draft: InstanceTypeDraft,
-  previousMemoryMb: number,
-  nextMemoryMb: number,
-): InstanceTypeDraft {
-  const next = { ...draft, memoryMb: nextMemoryMb }
-  if (draft.guaranteedMemoryMb === previousMemoryMb) next.guaranteedMemoryMb = nextMemoryMb
-  if (draft.maxMemoryMb === previousMemoryMb * MAX_MEMORY_RATIO) {
-    next.maxMemoryMb = nextMemoryMb * MAX_MEMORY_RATIO
-  }
-  return next
+): Record<string, unknown> | undefined {
+  return draft.usbEnabled ? { usb: { enabled: true } } : undefined
 }
+
+// Instance-type name validation. Webadmin's instance type dialog is a
+// UnitVmModel and runs NotEmpty + Length + I18NNameValidation, the same rules
+// the Edit VM / Clone VM dialogs use, so reuse vmNameError for identical
+// inline feedback instead of bouncing a raw engine fault.
+export const instanceTypeNameError = vmNameError
