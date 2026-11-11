@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { listVmSessions } from './vmSessions'
+import { listOtherConsoleUsers, listVmSessions } from './vmSessions'
 import { ApiError } from '../transport'
 import { clearSessionToken, setSessionToken } from '../session'
 
@@ -58,5 +58,27 @@ describe('listVmSessions', () => {
     const error = await listVmSessions('vm-01').catch((e: unknown) => e)
     expect(error).toBeInstanceOf(ApiError)
     expect(error).toMatchObject({ status: 404, message: 'No such VM' })
+  })
+})
+
+// The console-in-use warning: a VM whose console another user held
+// refused every other user's ticket.
+describe('listOtherConsoleUsers', () => {
+  it('names other console holders, not the signed-in user or guest logins', async () => {
+    const fn = vi.fn((url: string) => {
+      const payload = url.endsWith('/sessions')
+        ? {
+            session: [
+              { console_user: 'true', user: { id: 'u-admin', user_name: 'admin' } },
+              { user: { user_name: 'Unknown' } },
+              { console_user: 'true', user: { id: 'u-me', user_name: 'me' } },
+            ],
+          }
+        : { authenticated_user: { id: 'u-me' } }
+      return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(payload) })
+    })
+    vi.stubGlobal('fetch', fn)
+
+    expect(await listOtherConsoleUsers('vm-1')).toEqual(['admin'])
   })
 })

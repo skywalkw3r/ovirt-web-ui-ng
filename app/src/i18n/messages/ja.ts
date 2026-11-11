@@ -1719,6 +1719,12 @@ export const ja: LocaleCatalog = {
   'console.paste.helper':
     '暗号化されたコンソール経由でキーストロークとして入力されます — ログインプロンプトやTTYで機能します。プレーンなASCIIは確実に動作しますが、US以外のゲストキーボードレイアウトでは特殊文字が誤変換される場合があります。',
   'console.paste.send': '送信',
+  'console.inUse.title': 'コンソールは使用中です',
+  'console.inUse.body': '{users} がこの VM のコンソールに既に接続しています。',
+  'console.inUse.strict':
+    'この VM では厳密なユーザーチェックが有効です。ロールが開いているコンソールセッションを引き継げない限り（SuperUser は可、ClusterAdmin は不可）、VM をコールドリブートするか、管理者が「厳密なユーザーチェックを無効化」を有効にする（OLVM 管理ポータルの VM の編集 > コンソールタブ）まで、エンジンは接続を拒否します。',
+  'console.inUse.shared': '接続すると、そのセッションは切断されます。',
+  'console.inUse.connect': 'それでも接続',
   'console.launch.toggle': 'コンソール',
   'console.launch.loading': 'コンソールを読み込んでいます…',
   'console.launch.error': 'コンソールを読み込めませんでした',

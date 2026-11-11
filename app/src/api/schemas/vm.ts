@@ -277,6 +277,10 @@ export const VmSchema = z.looseObject({
       single_qxl_pci: z.union([z.boolean(), z.stringbool()]).optional(),
       file_transfer_enabled: z.union([z.boolean(), z.stringbool()]).optional(),
       copy_paste_enabled: z.union([z.boolean(), z.stringbool()]).optional(),
+      // false (the engine default) = strict user checking: once one user has
+      // opened the console since boot, the engine refuses every other user's
+      // ticket (409) until a cold reboot. true = "Disable strict user checking".
+      allow_override: z.union([z.boolean(), z.stringbool()]).optional(),
     })
     .optional(),
   usb: z.looseObject({ enabled: z.union([z.boolean(), z.stringbool()]).optional() }).optional(),

@@ -77,6 +77,24 @@ describe('request', () => {
     })
   })
 
+  // Regression: the console ticket action answered
+  // 409 with a bare { reason, detail } and the UI showed only
+  // "oVirt API error (HTTP 409)", hiding "Another user has already accessed
+  // the console of this VM".
+  it('maps a bare action fault (no fault wrapper) to ApiError', async () => {
+    mockFetch(409, { reason: 'Operation Failed', detail: '[Console connection denied.]' })
+
+    const error = await request('/vms/abc/graphicsconsoles/1/ticket', {
+      method: 'POST',
+      body: {},
+    }).catch((e: unknown) => e)
+    expect(error).toMatchObject({
+      status: 409,
+      reason: 'Operation Failed',
+      message: '[Console connection denied.]',
+    })
+  })
+
   it('throws ApiError on non-JSON error bodies without crashing', async () => {
     mockFetch(502)
     const error = await request('/vms').catch((e: unknown) => e)

@@ -2075,6 +2075,12 @@ export const en = {
   'console.paste.send': 'Send',
 
   // Console launcher dropdown (components/ConsoleButton) ----------------------
+  'console.inUse.title': 'Console in use',
+  'console.inUse.body': "{users} is already connected to this VM's console.",
+  'console.inUse.strict':
+    'Strict user checking is on for this VM. Unless your role can override an open console session (SuperUser can; ClusterAdmin cannot), the engine will refuse you until the VM is cold-rebooted or an administrator ticks Disable strict user checking (Edit VM, Console tab, in the OLVM Administration Portal).',
+  'console.inUse.shared': 'Connecting will disconnect them.',
+  'console.inUse.connect': 'Connect anyway',
   'console.launch.toggle': 'Console',
   'console.launch.loading': 'Loading consoles…',
   'console.launch.error': 'Could not load consoles',

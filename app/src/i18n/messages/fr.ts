@@ -1743,6 +1743,12 @@ export const fr: LocaleCatalog = {
   'console.paste.helper':
     "Saisi sous forme de frappes clavier sur la console chiffrée — fonctionne aux invites de connexion et aux TTY. L'ASCII simple est fiable ; les caractères inhabituels peuvent être mal traduits sur les dispositions de clavier invité non-US.",
   'console.paste.send': 'Envoyer',
+  'console.inUse.title': "Console en cours d'utilisation",
+  'console.inUse.body': '{users} est déjà connecté à la console de cette VM.',
+  'console.inUse.strict':
+    "La vérification stricte des utilisateurs est activée pour cette VM. Sauf si votre rôle peut reprendre une session de console ouverte (SuperUser le peut, ClusterAdmin non), le moteur vous refusera jusqu'à un redémarrage à froid de la VM ou jusqu'à ce qu'un administrateur coche Désactiver la vérification stricte des utilisateurs (Modifier la VM, onglet Console, dans le portail d'administration OLVM).",
+  'console.inUse.shared': 'La connexion déconnectera cette session.',
+  'console.inUse.connect': 'Se connecter quand même',
   'console.launch.toggle': 'Console',
   'console.launch.loading': 'Chargement des consoles…',
   'console.launch.error': 'Impossible de charger les consoles',

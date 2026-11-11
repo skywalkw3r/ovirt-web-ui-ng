@@ -1739,6 +1739,12 @@ export const it: LocaleCatalog = {
   'console.paste.helper':
     "Digitato come sequenza di tasti sulla console crittografata — funziona nei prompt di login e nelle TTY. L'ASCII semplice è affidabile; i caratteri insoliti possono essere tradotti in modo errato sui layout di tastiera guest non statunitensi.",
   'console.paste.send': 'Invia',
+  'console.inUse.title': 'Console in uso',
+  'console.inUse.body': '{users} è già connesso alla console di questa VM.',
+  'console.inUse.strict':
+    'Il controllo rigoroso degli utenti è attivo per questa VM. A meno che il tuo ruolo possa subentrare in una sessione di console aperta (SuperUser può, ClusterAdmin no), il motore ti rifiuterà finché la VM non viene riavviata a freddo o un amministratore non seleziona Disabilita controllo rigoroso utenti (Modifica VM, scheda Console, nel portale di amministrazione OLVM).',
+  'console.inUse.shared': 'La connessione disconnetterà quella sessione.',
+  'console.inUse.connect': 'Connetti comunque',
   'console.launch.toggle': 'Console',
   'console.launch.loading': 'Caricamento delle console…',
   'console.launch.error': 'Impossibile caricare le console',
