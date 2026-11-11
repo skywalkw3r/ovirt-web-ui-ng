@@ -7,10 +7,9 @@ import { VmMembershipTable } from '../vm-membership/VmMembershipTable'
 // The VmPool REST service exposes no `vms` subcollection (VmPoolService has only
 // permissions()), so pool membership comes from the global /vms feed: each Vm
 // inlines its `vm_pool` link (Vm.vmPool), and useVmMembership client-filters to
-// this pool. VmSchema is a passthrough looseObject and does not type `vm_pool`,
-// so the membership read is a narrow local cast.
+// this pool.
 function poolIdOf(vm: Vm): string | undefined {
-  return (vm as { vm_pool?: { id?: string } }).vm_pool?.id
+  return vm.vm_pool?.id
 }
 
 const COLUMNS = [VM_NAME_COLUMN, VM_STATUS_COLUMN]

@@ -1070,6 +1070,41 @@ export const es: LocaleCatalog = {
   'permissions.add.role.none': 'No hay roles asignables disponibles en este motor.',
   'permissions.add.role.userGroup': 'Roles de usuario',
   'permissions.add.role.adminGroup': 'Roles administrativos',
+  // Add Permission picker depth (issue #31): multi-select, My groups,
+  // Everyone, and directory search.
+  'permissions.add.kind.myGroups': 'Mis grupos',
+  'permissions.add.kind.everyone': 'Todos',
+  'permissions.add.source.label': 'Buscar en',
+  'permissions.add.source.engine': 'Base de datos del motor',
+  'permissions.add.source.directory': 'Directorio: {domain}',
+  'permissions.add.source.domainsLoading': 'Cargando directorios',
+  'permissions.add.source.domainsError': 'No se pudieron cargar los directorios: {message}',
+  'permissions.add.source.directoryHint':
+    'Los principales encontrados en un directorio que aún no están en el motor se añaden a él al conceder el rol.',
+  'permissions.add.empty.directory.users': 'Este directorio no devolvió ningún usuario.',
+  'permissions.add.empty.directory.groups': 'Este directorio no devolvió ningún grupo.',
+  'permissions.add.myGroups.loading': 'Cargando sus grupos',
+  'permissions.add.myGroups.error': 'No se pudieron cargar sus grupos: {message}',
+  'permissions.add.myGroups.empty.title': 'No hay grupos',
+  'permissions.add.myGroups.empty.body': 'Su cuenta no es miembro de ningún grupo del directorio.',
+  'permissions.add.myGroups.table.ariaLabel': 'Mis grupos',
+  'permissions.add.everyone.body':
+    'El rol se concede al grupo integrado Everyone, por lo que todos los usuarios lo obtienen en este {noun}.',
+  'permissions.add.selectMany.user': 'Seleccione uno o más usuarios a los que conceder el rol.',
+  'permissions.add.selectMany.group': 'Seleccione uno o más grupos a los que conceder el rol.',
+  'permissions.add.selected.count':
+    '{count, plural, one {# principal seleccionado} other {# principales seleccionados}}',
+  'permissions.add.selected.ariaLabel': 'Principales seleccionados',
+  'permissions.add.selected.remove': 'Quitar {name} de la selección',
+  'permissions.add.result.failed.title':
+    '{count, plural, one {No se pudo conceder el rol a # principal} other {No se pudo conceder el rol a # principales}}',
+  'permissions.add.result.failed.body':
+    'Los principales con error siguen seleccionados. Corrija la causa y vuelva a intentarlo, o quítelos de la selección.',
+  'permissions.add.result.failed.item': '{name}: {message}',
+  'permissions.add.submit.retry': 'Reintentar los fallidos',
+  'permissions.add.toast.granted': '{role} concedido a {name}',
+  'permissions.add.toast.grantedMany':
+    '{role} concedido a {count, plural, one {# principal} other {# principales}}',
   'users.notPermitted': 'Usuarios',
   'users.title': 'Usuarios',
   'users.search.hint': 'usrname=jdoe* — o texto sin formato',
@@ -1766,6 +1801,11 @@ export const es: LocaleCatalog = {
     'Funciona con noVNC y la mayoría de los visores de escritorio.',
   'settings.pref.console.spiceDescription': 'Experiencia remota más rica a través de virt-viewer.',
   'settings.pref.language': 'Idioma',
+  // Roaming note (components/UserMenu, settings/RoamingSettingsProvider)
+  'settings.pref.roaming.synced':
+    'Se guardan en su perfil de usuario de oVirt y le acompañan en otros navegadores.',
+  'settings.pref.roaming.local':
+    'Solo se guardan en este navegador; su perfil de usuario de oVirt no está disponible para almacenarlas.',
   'settings.refresh.seconds': '{count, plural, one {# segundo} other {# segundos}}',
   'settings.timeout.minutes': '{count, plural, one {# minuto} other {# minutos}}',
   'settings.timeout.hours': '{count, plural, one {# hora} other {# horas}}',
@@ -3365,6 +3405,9 @@ export const es: LocaleCatalog = {
   'hostForm.field.rootPassword': 'Contraseña de root',
   'hostForm.field.sshPort': 'Puerto SSH',
   'hostForm.field.sshUser': 'Usuario SSH',
+  'hostForm.firewall.configure': 'Configurar automáticamente el firewall del host',
+  'hostForm.firewall.configure.help':
+    'Permite que la instalación abra en el firewall del host los puertos que oVirt necesita, usando el tipo de firewall del clúster. Desactívelo solo si gestiona usted mismo el firewall del host; en ese caso deberá abrir a mano los puertos necesarios.',
   'hostForm.hostedEngine.deploy': 'Implementar hosted engine',
   'hostForm.hostedEngine.deploy.help':
     'La instalación también implementa los componentes del motor autoalojado, de modo que este host puede ejecutar la VM del motor junto a los hosts de hosted-engine existentes. Déjelo desactivado para un host de virtualización normal.',
@@ -4934,4 +4977,116 @@ export const es: LocaleCatalog = {
     'Se detuvo la reversión de la configuración parcial: {error}',
   'host.configureLocalStorage.outcome.rerunHint':
     'Para terminar, ponga el host en mantenimiento si es necesario y vuelva a ejecutar «Configurar almacenamiento local»; reutiliza el centro de datos local vacío.',
+  // Guide Me (data center and cluster next steps)
+  'guideMe.action': 'Guíame',
+  'guideMe.title': 'Guíame: {name}',
+  'guideMe.loading': 'Cargando los siguientes pasos',
+  'guideMe.error.title': 'No se pudieron cargar los siguientes pasos',
+  'guideMe.dataCenter.created': 'Centro de datos creado.',
+  'guideMe.dataCenter.configured':
+    'El centro de datos está totalmente configurado y listo para usarse.',
+  'guideMe.cluster.created': 'Clúster creado.',
+  'guideMe.cluster.configured': 'El clúster está totalmente configurado y listo para usarse.',
+  'guideMe.configured.title': 'Configuración completada',
+  'guideMe.unconfigured': 'Aún quedan entidades por configurar.',
+  'guideMe.section.required': 'Pasos obligatorios',
+  'guideMe.section.optional': 'Pasos opcionales',
+  'guideMe.configureLater': 'Configurar más tarde',
+  'guideMe.step.configureCluster': 'Configurar clúster',
+  'guideMe.step.addAnotherCluster': 'Añadir otro clúster',
+  'guideMe.step.configureHost': 'Configurar host',
+  'guideMe.step.addAnotherHost': 'Añadir otro host',
+  'guideMe.step.configureStorage': 'Configurar almacenamiento',
+  'guideMe.step.addMoreStorage': 'Añadir más almacenamiento',
+  'guideMe.step.attachStorage': 'Adjuntar almacenamiento',
+  'guideMe.step.attachMoreStorage': 'Adjuntar más almacenamiento',
+  'guideMe.step.configureIsoLibrary': 'Configurar biblioteca ISO',
+  'guideMe.step.attachIsoLibrary': 'Adjuntar biblioteca ISO',
+  'guideMe.step.addLocalStorage': 'Añadir almacenamiento local',
+  'guideMe.reason.noUpHost': 'El centro de datos necesita al menos un host activo.',
+  'guideMe.reason.noCluster': 'Primero añada un clúster al centro de datos.',
+  'guideMe.reason.noUnattachedData': 'No hay ningún dominio de datos sin adjuntar disponible.',
+  'guideMe.reason.noActiveMaster':
+    'El centro de datos necesita primero un dominio de datos maestro activo.',
+  'guideMe.reason.noIsoDomain': 'No hay ningún dominio ISO disponible para adjuntar.',
+  'guideMe.reason.localDcHasHost':
+    'Un centro de datos local admite un solo host y este ya lo tiene.',
+  'guideMe.reason.dcInitialized': 'El centro de datos ya está inicializado.',
+  'guideMe.reason.clusterLocalHasHost':
+    'Este clúster pertenece a un centro de datos local que ya tiene su único host.',
+  'guideMe.note.localStorage':
+    'Para configurar totalmente el centro de datos, adjunte y active al menos un dominio de almacenamiento local.',
+  'guideMe.note.clusterNoActions':
+    'No hay acciones disponibles para este clúster: no está adjunto a ningún centro de datos.',
+  // Configure aggregate entry point (pages/ConfigurePage.tsx): the webadmin
+  // Administration › Configure index linking to its five surfaces.
+  'nav.configure': 'Configurar',
+  'configure.title': 'Configurar',
+  'configure.intro':
+    'Definiciones de todo el motor compartidas por todos los centros de datos y clústeres. Cada una se abre en su propia página.',
+  'configure.loading': 'Cargando áreas de configuración',
+  'configure.notPermitted': 'la configuración del sistema',
+  'configure.list.ariaLabel': 'Áreas de configuración',
+  'configure.card.roles':
+    'Defina roles y los permisos que cada uno concede a usuarios y administradores.',
+  'configure.card.systemPermissions': 'Asigne roles a usuarios y grupos en todo el sistema.',
+  'configure.card.schedulingPolicies':
+    'Gestione las reglas de filtro, peso y equilibrio que usan los clústeres para ubicar las VM.',
+  'configure.card.instanceTypes':
+    'Defina perfiles de hardware reutilizables para nuevas máquinas virtuales.',
+  'configure.card.macPools':
+    'Gestione los rangos de direcciones MAC asignados a las NIC virtuales.',
+  // EDIT VM: Foreman/Satellite section (provider picker)
+  'vm.edit.section.foreman': 'Foreman/Satellite',
+  'vm.edit.foreman.provider': 'Proveedor',
+  'vm.edit.foreman.none': 'Sin proveedor',
+  'vm.edit.foreman.unknown': 'Proveedor desconocido ({id})',
+  'vm.edit.foreman.loading': 'Cargando proveedores de Foreman/Satellite',
+  'vm.edit.foreman.empty':
+    'No hay proveedores de Foreman/Satellite registrados. Agregue uno en la página Proveedores para vincularle esta VM.',
+  'vm.edit.foreman.help':
+    'El motor obtiene las erratas de esta VM del proveedor de Foreman/Satellite elegido.',
+  // Template Storage tab + scoped Events tabs (issue #33) ----------------
+  'scopedEvents.loading': 'Cargando eventos',
+  'scopedEvents.error.title': 'No se pudieron cargar los eventos',
+  'scopedEvents.empty.title': 'No hay eventos',
+  'templateDetail.tab.storage': 'Almacenamiento',
+  'templateDetail.tab.events': 'Eventos',
+  'templateEvents.empty.body':
+    'Los eventos del registro de auditoría del motor para esta plantilla aparecerán aquí.',
+  'templateEvents.table.ariaLabel': 'Eventos para esta plantilla',
+  'templateStorage.empty.body':
+    'Ningún disco de esta plantilla está en un dominio de almacenamiento.',
+  'templateStorage.table.ariaLabel': 'Dominios de almacenamiento con los discos de esta plantilla',
+  'templateStorage.column.used': 'Espacio usado',
+  'templateStorage.column.disks': 'Discos',
+  'templateStorage.expand.ariaLabel': 'Mostrar discos',
+  'templateStorage.disks.ariaLabel': 'Discos de la plantilla en {name}',
+  'clusterDetail.tab.events': 'Eventos',
+  'clusterEvents.empty.body':
+    'Los eventos del registro de auditoría del motor para este clúster aparecerán aquí.',
+  'clusterEvents.table.ariaLabel': 'Eventos para este clúster',
+  'dcDetail.tab.events': 'Eventos',
+  'dcEvents.empty.body':
+    'Los eventos del registro de auditoría del motor para este centro de datos aparecerán aquí.',
+  'dcEvents.table.ariaLabel': 'Eventos para este centro de datos',
+  'storageDetail.tab.events': 'Eventos',
+  'storageEvents.empty.body':
+    'Los eventos del registro de auditoría del motor para este dominio de almacenamiento aparecerán aquí.',
+  'storageEvents.table.ariaLabel': 'Eventos para este dominio de almacenamiento',
+  'quotaDetail.tab.events': 'Eventos',
+  'quotaEvents.empty.body':
+    'Los eventos del registro de auditoría del motor para esta cuota aparecerán aquí.',
+  'quotaEvents.table.ariaLabel': 'Eventos para esta cuota',
+  // List-grid columns filled by a follow= or one shared read (issue #34)
+  'vms.column.cpu': 'CPU',
+  'vms.column.network': 'Red',
+  'vms.column.ips': 'Direcciones IP',
+  'disks.column.attachedTo': 'Conectado a',
+  'disks.column.quota': 'Cuota',
+  'networks.column.qos': 'Nombre de QoS',
+  'vnicProfiles.column.qos': 'Nombre de QoS',
+  'vnicProfiles.column.networkFilter': 'Filtro de red',
+  'pools.column.running': 'VMs en ejecución',
+  'volumes.column.spaceUsed': 'Espacio usado',
 }

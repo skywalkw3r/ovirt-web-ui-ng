@@ -13,6 +13,10 @@ import { router } from './routes/router'
 // SettingsProvider owns refresh-interval and console preferences
 // (localStorage 'console-settings'); the poll hooks read the interval from it.
 import { SettingsProvider } from './settings/SettingsProvider'
+// RoamingSettingsProvider roams those preferences (and the theme) through the
+// engine's /users/{id}/options once signed in; it needs the session, so it
+// sits inside AuthProvider.
+import { RoamingSettingsProvider } from './settings/RoamingSettingsProvider'
 // ThemeProvider owns the pf-v6-theme-dark class on <html> (dark by default,
 // per docs/COMPONENTS.md ground rule 2) — nothing here touches it.
 import { ThemeProvider } from './theme/ThemeProvider'
@@ -53,10 +57,12 @@ createRoot(document.getElementById('root')!).render(
         <I18nProvider>
           <QueryClientProvider client={queryClient}>
             <AuthProvider>
-              <NotificationProvider>
-                <GlobalErrorBridge />
-                <RouterProvider router={router} />
-              </NotificationProvider>
+              <RoamingSettingsProvider>
+                <NotificationProvider>
+                  <GlobalErrorBridge />
+                  <RouterProvider router={router} />
+                </NotificationProvider>
+              </RoamingSettingsProvider>
             </AuthProvider>
           </QueryClientProvider>
         </I18nProvider>

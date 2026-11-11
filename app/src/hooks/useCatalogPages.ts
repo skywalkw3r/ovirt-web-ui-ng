@@ -1,9 +1,10 @@
 import { useQuery } from '@tanstack/react-query'
-import { listAllDisks } from '../api/resources/disks'
+import { listAllDisks, listDiskOwnerNames } from '../api/resources/disks'
 import { listInstanceTypes } from '../api/resources/instanceTypes'
 import { listTemplates } from '../api/resources/templates'
 import { listVnicProfiles } from '../api/resources/vnicProfiles'
 import { useSettings } from '../settings/SettingsProvider'
+import { ADMIN_RESOURCE_POLL_INTERVAL_MS } from './useAdminResources'
 import { templateKeys } from './useCatalog'
 
 // Catalog list pages watch slow-moving inventory; 30s matches the cadence of
@@ -38,6 +39,10 @@ export const instanceTypeKeys = {
 export const diskKeys = {
   all: ['disks'] as const,
   list: (search = '') => ['disks', search] as const,
+  // useDiskOwnerNames' disk id → VM/template names map (the Attached To
+  // column). Three elements so it can never collide with a searched list
+  // entry, and under the ['disks'] prefix so disk mutations refresh it.
+  ownerNames: ['disks', 'owner-names', ''] as const,
   detail: (id: string) => ['disk', id] as const,
   vms: (id: string) => ['disk', id, 'vms'] as const,
   permissions: (id: string) => ['disk', id, 'permissions'] as const,
@@ -96,6 +101,20 @@ export function useInstanceTypes(search = '') {
 }
 
 // Search-key rationale as useTemplatesList; no-arg callers share the '' entry.
+// The flat Disks grid's Attached To column: one /vms and one /templates read
+// with follow=disk_attachments (listDiskOwnerNames), issued only while the
+// column is visible. Polls at the admin-collection floor — attachments change
+// on explicit attach/detach, not between ticks.
+export function useDiskOwnerNames(enabled: boolean) {
+  const { refreshIntervalMs } = useSettings()
+  return useQuery({
+    queryKey: diskKeys.ownerNames,
+    queryFn: () => listDiskOwnerNames(),
+    refetchInterval: Math.max(refreshIntervalMs, ADMIN_RESOURCE_POLL_INTERVAL_MS),
+    enabled,
+  })
+}
+
 export function useAllDisks(search = '') {
   const refetchInterval = useCatalogPollInterval()
   return useQuery({

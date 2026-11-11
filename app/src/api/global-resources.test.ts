@@ -28,6 +28,7 @@ import { KatelloErratumListSchema } from './schemas/erratum'
 import { GlusterVolumeListSchema } from './schemas/gluster-volume'
 import { mockRequest, resetMockVms } from './mock/handlers'
 import { clearSessionToken, setSessionToken } from './session'
+import { resetFollowDenials } from './followDegrade'
 
 function mockFetch(status: number, payload?: unknown) {
   const fn = vi.fn().mockResolvedValue({
@@ -665,7 +666,12 @@ describe('listErrata', () => {
 })
 
 describe('listGlusterVolumes', () => {
-  beforeEach(() => setSessionToken('tok-123'))
+  beforeEach(() => {
+    setSessionToken('tok-123')
+    // the per-cluster reads ride follow=statistics; a faulted cluster in one
+    // test must not leave a sticky denial behind for the next
+    resetFollowDenials()
+  })
   afterEach(() => {
     clearSessionToken()
     vi.unstubAllGlobals()
@@ -702,8 +708,8 @@ describe('listGlusterVolumes', () => {
     const volumes = await listGlusterVolumes()
     expect(fetchMock.mock.calls.map((call) => call[0])).toEqual([
       '/ovirt-engine/api/clusters',
-      '/ovirt-engine/api/clusters/c-1/glustervolumes',
-      '/ovirt-engine/api/clusters/c-2/glustervolumes',
+      '/ovirt-engine/api/clusters/c-1/glustervolumes?follow=statistics',
+      '/ovirt-engine/api/clusters/c-2/glustervolumes?follow=statistics',
     ])
     expect(volumes).toHaveLength(1)
     expect(volumes[0]).toMatchObject({

@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { listVms } from '../api/resources/vms'
+import { listVms, listVmsReportedDevices } from '../api/resources/vms'
 import type { Vm } from '../api/schemas/vm'
 import { isActiveEngineWan } from '../servers/registry'
 import { useSettings } from '../settings/SettingsProvider'
@@ -19,6 +19,11 @@ export const vmKeys = {
   // useHostedEngineHostId's bare (no-follow) probe — deliberately NOT a
   // searched list entry, but still under the ['vms'] invalidation prefix
   hostedEngineHost: ['vms', 'hosted-engine-host'] as const,
+  // useVmReportedIps' id → reported-devices map (the IP Addresses column). Deliberately
+  // OUTSIDE the ['vms'] prefix: prefix readers (FolderTreePanel's
+  // getQueriesData over tagKeys.taggedList('vms')) expect Vm[] under it, and
+  // this entry is a map. It refreshes on its own poll, not on VM mutations.
+  reportedIps: (search = '') => ['vm-reported-ips', search] as const,
   detail: (id: string) => ['vm', id] as const,
   disks: (id: string) => ['vm', id, 'disks'] as const,
   nics: (id: string) => ['vm', id, 'nics'] as const,
@@ -111,7 +116,9 @@ export function vmListFollow(vmCount: number | undefined, wan = false): string {
 // payload-aware (vmListFollow above). A 5xx or transport timeout on the
 // followed read degrades to a bare list inside listVms — tags and uptime go
 // absent rather than the list failing.
-export function useVms(search?: string) {
+// `enabled` lets an opt-in consumer (the Pools grid's Running VMs column)
+// share the list entry only while it needs it; every other caller omits it.
+export function useVms(search?: string, { enabled = true }: { enabled?: boolean } = {}) {
   const { refreshIntervalMs } = useSettings()
   const queryClient = useQueryClient()
   // '' and undefined share the ['vms', ''] cache entry (empty search box,
@@ -132,5 +139,33 @@ export function useVms(search?: string) {
       }),
     refetchInterval: (query) =>
       vmPollIntervalMs(refreshIntervalMs, query.state.data?.length, isActiveEngineWan()),
+    enabled,
+  })
+}
+
+// Guest IPs change on DHCP renewals and NIC hot-plugs, not every few seconds,
+// so the IP map polls at the admin-collection floor instead of the VM cadence.
+export const VM_REPORTED_IPS_POLL_INTERVAL_MS = 60_000
+
+// The VMs grid's IP Addresses column (vm id → guest-reported devices; the
+// page flattens them with lib/vmIps).
+// follow=reported_devices costs the engine one guest-interface query per VM on
+// every read, so this second /vms read only runs while the column is visible
+// (`enabled`), and only under the same size/WAN gate as follow=statistics
+// (vmListFollow): past VM_STATISTICS_FOLLOW_MAX VMs, or on a WAN-marked
+// engine, the read is skipped and the column shows em dashes, like Uptime.
+// `vmCount` is the page's current row count (undefined before the first list
+// read lands, which also holds the read back).
+export function useVmReportedIps(
+  search: string | undefined,
+  { enabled, vmCount }: { enabled: boolean; vmCount: number | undefined },
+) {
+  const { refreshIntervalMs } = useSettings()
+  const small = vmCount !== undefined && vmCount <= VM_STATISTICS_FOLLOW_MAX
+  return useQuery({
+    queryKey: vmKeys.reportedIps(search),
+    queryFn: ({ signal }) => listVmsReportedDevices({ search: search || undefined, signal }),
+    refetchInterval: Math.max(refreshIntervalMs, VM_REPORTED_IPS_POLL_INTERVAL_MS),
+    enabled: enabled && small && !isActiveEngineWan(),
   })
 }

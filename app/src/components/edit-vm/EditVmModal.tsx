@@ -40,6 +40,7 @@ import {
   watchdogDraftFields,
   type EditVmDraft,
 } from './editVmDraft'
+import { ForemanSection } from './ForemanSection'
 import { GeneralSection } from './GeneralSection'
 import { HighAvailabilitySection } from './HighAvailabilitySection'
 import { HostSection } from './HostSection'
@@ -509,13 +510,18 @@ export function EditVmModal({
               title: t('vm.edit.section.icon'),
               content: <IconSection draft={draft} onChange={patch} />,
             },
-            // DEFERRED — Foreman/Satellite host provider section. Webadmin's Edit
-            // VM "Foreman/Satellite" tab binds the VM to an external host
-            // provider (types/ExternalHostProvider) so errata + host-group
-            // provisioning flow through it. Deliberately not built this pass:
-            // it needs the externalhostproviders collection wired first, and
-            // the errata surface already covers the read side. Same
-            // documented-deferral pattern as RunOnceModal's cloud-init note.
+            // Foreman/Satellite: the external host provider the VM's errata
+            // come from. Provider reads are admin-only, so the tab is too
+            // (webadmin places it after Icon as well).
+            ...(isAdmin
+              ? [
+                  {
+                    key: 'foreman',
+                    title: t('vm.edit.section.foreman'),
+                    content: <ForemanSection draft={draft} set={set} />,
+                  },
+                ]
+              : []),
             {
               key: 'console',
               title: t('vm.edit.section.console'),
