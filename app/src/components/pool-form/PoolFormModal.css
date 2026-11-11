@@ -1,0 +1,25 @@
+/* Edit pool shows the VM tabs inside a disabled fieldset: the engine ignores
+   the VM configuration on PUT /vmpools/{id}. The fieldset disables every
+   native control; PF form controls only look disabled with .pf-m-disabled, so
+   give them the same look here. Switches already style :disabled. */
+.pool-form__read-only {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-inline-size: 0;
+}
+
+.pool-form__read-only .pf-v6-c-form-control {
+  --pf-v6-c-form-control--BackgroundColor: var(--pf-v6-c-form-control--m-disabled--BackgroundColor);
+  --pf-v6-c-form-control--Color: var(--pf-v6-c-form-control--m-disabled--Color);
+  --pf-v6-c-form-control--m-placeholder--Color: var(--pf-v6-c-form-control--m-disabled--Color);
+  --pf-v6-c-form-control__toggle-icon--Color: var(
+    --pf-v6-c-form-control--m-disabled__toggle-icon--Color
+  );
+  cursor: not-allowed;
+}
+
+.pool-form__read-only .pf-v6-c-form-control::before,
+.pool-form__read-only .pf-v6-c-form-control::after {
+  border-color: transparent;
+}

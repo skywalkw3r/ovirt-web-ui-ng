@@ -2348,6 +2348,19 @@ export const tr: LocaleCatalog = {
   'poolForm.size': 'VM sayısı',
   'poolForm.prestarted': 'Önceden başlatılmış VM’ler',
   'poolForm.maxUser': 'Kullanıcı başına maks. VM',
+  // Pool dialog VM tabs (#29)
+  'poolForm.sections.ariaLabel': 'Havuz bölümleri',
+  'poolForm.template.hint':
+    "Havuz VM'lerinin sistem, konsol ve diğer ayarlarını belirlemek için bir şablon seçin.",
+  'poolForm.template.overrideNote':
+    "Havuzun VM'leri bu şablondan oluşturulur. Diğer sekmelerde değiştirdikleriniz şablonun ayarlarının yerine geçer.",
+  'poolForm.template.loading': 'Şablon yapılandırması yükleniyor',
+  'poolForm.template.error': 'Şablon yapılandırması yüklenemedi.',
+  'poolForm.fromTemplate': 'Şablondan gelir. Havuz bunu değiştiremez.',
+  'poolForm.vmSettings.readOnly':
+    "VM ayarları havuz oluşturulurken sabitlenir. Havuz büyütülünce eklenen VM'ler bu ayarları kopyalar.",
+  'poolForm.vmSettings.loading': 'Havuz VM ayarları yükleniyor',
+  'poolForm.vmSettings.error': 'Havuz VM ayarları yüklenemedi.',
   'clusters.remove.confirm.title': '{name} kaldırılsın mı?',
   'clusters.remove.confirm.body': 'Küme kalıcı olarak kaldırılacak. Bu işlem geri alınamaz.',
   'clusters.remove.confirm.typeLabel': 'Onaylamak için "{name}" yazın',

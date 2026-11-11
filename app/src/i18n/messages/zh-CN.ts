@@ -2263,6 +2263,17 @@ export const zhCN: LocaleCatalog = {
   'poolForm.size': '虚拟机数量',
   'poolForm.prestarted': '预启动的虚拟机',
   'poolForm.maxUser': '每用户最大虚拟机数',
+  // Pool dialog VM tabs (#29)
+  'poolForm.sections.ariaLabel': '池的部分',
+  'poolForm.template.hint': '选择一个模板以设置池虚拟机的系统、控制台和其他设置。',
+  'poolForm.template.overrideNote':
+    '池的虚拟机基于此模板创建。在其他选项卡中所做的更改会覆盖模板的设置。',
+  'poolForm.template.loading': '正在加载模板配置',
+  'poolForm.template.error': '无法加载模板配置。',
+  'poolForm.fromTemplate': '来自模板。池无法更改此项。',
+  'poolForm.vmSettings.readOnly': '虚拟机设置在创建池时确定。扩大池时添加的虚拟机会复制这些设置。',
+  'poolForm.vmSettings.loading': '正在加载池的虚拟机设置',
+  'poolForm.vmSettings.error': '无法加载池的虚拟机设置。',
   'clusters.remove.confirm.title': '移除 {name}？',
   'clusters.remove.confirm.body': '该集群将被永久移除。此操作无法撤消。',
   'clusters.remove.confirm.typeLabel': '输入「{name}」以确认',

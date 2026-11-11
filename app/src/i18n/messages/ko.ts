@@ -2319,6 +2319,18 @@ export const ko: LocaleCatalog = {
   'poolForm.size': 'VM 수',
   'poolForm.prestarted': '미리 시작된 VM',
   'poolForm.maxUser': '사용자당 최대 VM',
+  // Pool dialog VM tabs (#29)
+  'poolForm.sections.ariaLabel': '풀 섹션',
+  'poolForm.template.hint': '템플릿을 선택하여 풀 VM의 시스템, 콘솔 및 기타 설정을 지정합니다.',
+  'poolForm.template.overrideNote':
+    '풀의 VM은 이 템플릿으로 만들어집니다. 다른 탭에서 변경한 내용이 템플릿 설정을 대체합니다.',
+  'poolForm.template.loading': '템플릿 구성을 불러오는 중',
+  'poolForm.template.error': '템플릿 구성을 불러올 수 없습니다.',
+  'poolForm.fromTemplate': '템플릿에서 가져옵니다. 풀에서는 변경할 수 없습니다.',
+  'poolForm.vmSettings.readOnly':
+    'VM 설정은 풀을 만들 때 고정됩니다. 풀을 늘려 추가되는 VM은 이 설정을 복사합니다.',
+  'poolForm.vmSettings.loading': '풀 VM 설정을 불러오는 중',
+  'poolForm.vmSettings.error': '풀 VM 설정을 불러올 수 없습니다.',
   'clusters.remove.confirm.title': '{name}을(를) 제거하시겠습니까?',
   'clusters.remove.confirm.body': '클러스터가 영구적으로 제거됩니다. 실행 취소할 수 없습니다.',
   'clusters.remove.confirm.typeLabel': '확인하려면 "{name}" 입력',

@@ -2388,6 +2388,19 @@ export const it: LocaleCatalog = {
   'poolForm.size': 'Numero di VM',
   'poolForm.prestarted': 'VM preavviate',
   'poolForm.maxUser': 'Numero massimo di VM per utente',
+  // Pool dialog VM tabs (#29)
+  'poolForm.sections.ariaLabel': 'Sezioni del pool',
+  'poolForm.template.hint':
+    'Seleziona un template per impostare sistema, console e altre impostazioni delle VM del pool.',
+  'poolForm.template.overrideNote':
+    'Le VM del pool vengono create da questo template. Ciò che modifichi nelle altre schede sostituisce le sue impostazioni.',
+  'poolForm.template.loading': 'Caricamento della configurazione del template',
+  'poolForm.template.error': 'Impossibile caricare la configurazione del template.',
+  'poolForm.fromTemplate': 'Deriva dal template. Un pool non può modificarlo.',
+  'poolForm.vmSettings.readOnly':
+    'Le impostazioni delle VM sono fissate alla creazione del pool. Le VM aggiunte ampliando il pool le copiano.',
+  'poolForm.vmSettings.loading': 'Caricamento delle impostazioni VM del pool',
+  'poolForm.vmSettings.error': 'Impossibile caricare le impostazioni VM del pool.',
   'clusters.remove.confirm.title': 'Rimuovere {name}?',
   'clusters.remove.confirm.body':
     'Il cluster verrà rimosso definitivamente. Questa operazione non può essere annullata.',

@@ -2355,6 +2355,19 @@ export const ja: LocaleCatalog = {
   'poolForm.size': 'VMの数',
   'poolForm.prestarted': '事前起動VM',
   'poolForm.maxUser': 'ユーザーあたりの最大VM数',
+  // Pool dialog VM tabs (#29)
+  'poolForm.sections.ariaLabel': 'プールのセクション',
+  'poolForm.template.hint':
+    'テンプレートを選択して、プールVMのシステム、コンソール、その他の設定を指定します。',
+  'poolForm.template.overrideNote':
+    'プールのVMはこのテンプレートから作成されます。他のタブで変更した内容がテンプレートの設定を上書きします。',
+  'poolForm.template.loading': 'テンプレートの構成を読み込んでいます',
+  'poolForm.template.error': 'テンプレートの構成を読み込めませんでした。',
+  'poolForm.fromTemplate': 'テンプレートから引き継がれます。プールでは変更できません。',
+  'poolForm.vmSettings.readOnly':
+    'VMの設定はプールの作成時に確定します。プールの拡張で追加されるVMはこの設定をコピーします。',
+  'poolForm.vmSettings.loading': 'プールのVM設定を読み込んでいます',
+  'poolForm.vmSettings.error': 'プールのVM設定を読み込めませんでした。',
   'clusters.remove.confirm.title': '{name}を削除しますか？',
   'clusters.remove.confirm.body': 'クラスターは完全に削除されます。これは元に戻せません。',
   'clusters.remove.confirm.typeLabel': '確認のため「{name}」と入力してください',

@@ -2376,6 +2376,19 @@ export const ru: LocaleCatalog = {
   'poolForm.size': 'Количество ВМ',
   'poolForm.prestarted': 'Предзапущенные ВМ',
   'poolForm.maxUser': 'Макс. ВМ на пользователя',
+  // Pool dialog VM tabs (#29)
+  'poolForm.sections.ariaLabel': 'Разделы пула',
+  'poolForm.template.hint':
+    'Выберите шаблон, чтобы задать систему, консоль и другие параметры ВМ пула.',
+  'poolForm.template.overrideNote':
+    'ВМ пула создаются из этого шаблона. Изменения на других вкладках заменяют его параметры.',
+  'poolForm.template.loading': 'Загрузка конфигурации шаблона',
+  'poolForm.template.error': 'Не удалось загрузить конфигурацию шаблона.',
+  'poolForm.fromTemplate': 'Берётся из шаблона. Пул не может это изменить.',
+  'poolForm.vmSettings.readOnly':
+    'Параметры ВМ задаются при создании пула. ВМ, добавленные при увеличении пула, копируют их.',
+  'poolForm.vmSettings.loading': 'Загрузка параметров ВМ пула',
+  'poolForm.vmSettings.error': 'Не удалось загрузить параметры ВМ пула.',
   'clusters.remove.confirm.title': 'Удалить {name}?',
   'clusters.remove.confirm.body':
     'Кластер будет удалён без возможности восстановления. Это действие нельзя отменить.',

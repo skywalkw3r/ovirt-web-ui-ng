@@ -2397,6 +2397,19 @@ export const de: LocaleCatalog = {
   'poolForm.size': 'Anzahl der VMs',
   'poolForm.prestarted': 'Vorgestartete VMs',
   'poolForm.maxUser': 'Max. VMs pro Benutzer',
+  // Pool dialog VM tabs (#29)
+  'poolForm.sections.ariaLabel': 'Abschnitte des Pools',
+  'poolForm.template.hint':
+    'Wählen Sie eine Vorlage, um System, Konsole und weitere Einstellungen der Pool-VMs festzulegen.',
+  'poolForm.template.overrideNote':
+    'Die VMs des Pools werden aus dieser Vorlage erstellt. Was Sie in den anderen Registerkarten ändern, ersetzt ihre Einstellungen.',
+  'poolForm.template.loading': 'Vorlagenkonfiguration wird geladen',
+  'poolForm.template.error': 'Die Vorlagenkonfiguration konnte nicht geladen werden.',
+  'poolForm.fromTemplate': 'Stammt aus der Vorlage. Ein Pool kann es nicht ändern.',
+  'poolForm.vmSettings.readOnly':
+    'VM-Einstellungen werden beim Erstellen des Pools festgelegt. VMs, die beim Vergrößern des Pools hinzukommen, übernehmen sie.',
+  'poolForm.vmSettings.loading': 'VM-Einstellungen des Pools werden geladen',
+  'poolForm.vmSettings.error': 'Die VM-Einstellungen des Pools konnten nicht geladen werden.',
   'clusters.remove.confirm.title': '{name} entfernen?',
   'clusters.remove.confirm.body':
     'Der Cluster wird dauerhaft entfernt. Dies kann nicht rückgängig gemacht werden.',
