@@ -3262,6 +3262,9 @@ export const ko: LocaleCatalog = {
   'hostForm.field.rootPassword': 'root 비밀번호',
   'hostForm.field.sshPort': 'SSH 포트',
   'hostForm.field.sshUser': 'SSH 사용자',
+  'hostForm.firewall.configure': '호스트 방화벽 자동 구성',
+  'hostForm.firewall.configure.help':
+    '설치 과정에서 클러스터의 방화벽 유형을 사용해 oVirt에 필요한 포트를 호스트 방화벽에서 엽니다. 호스트 방화벽을 직접 관리하는 경우에만 끄십시오. 이 경우 필요한 포트를 수동으로 열어야 합니다.',
   'hostForm.hostedEngine.deploy': 'Hosted engine 배포',
   'hostForm.hostedEngine.deploy.help':
     '설치 시 자체 호스팅 엔진 구성 요소도 배포되므로, 이 호스트는 기존 hosted-engine 호스트와 함께 엔진 VM을 실행할 수 있습니다. 일반 가상화 호스트의 경우 끄십시오.',

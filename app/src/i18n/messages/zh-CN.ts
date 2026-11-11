@@ -3179,6 +3179,9 @@ export const zhCN: LocaleCatalog = {
   'hostForm.field.rootPassword': 'Root 密码',
   'hostForm.field.sshPort': 'SSH 端口',
   'hostForm.field.sshUser': 'SSH 用户',
+  'hostForm.firewall.configure': '自动配置主机防火墙',
+  'hostForm.firewall.configure.help':
+    '由安装过程按照集群的防火墙类型，在主机防火墙中开放 oVirt 所需的端口。仅当您自行管理主机防火墙时才关闭此选项；此时必须手动开放所需端口。',
   'hostForm.hostedEngine.deploy': '部署 Hosted Engine',
   'hostForm.hostedEngine.deploy.help':
     '安装还会部署 Hosted Engine 组件，使此主机可以与现有的 Hosted Engine 主机一起运行引擎虚拟机。常规虚拟化主机请关闭此项。',

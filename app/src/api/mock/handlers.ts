@@ -7520,6 +7520,9 @@ function addHost(body: unknown, query: URLSearchParams): unknown {
     cluster?: { id?: string; name?: string }
     ssh?: { port?: number | string; authentication_method?: string }
     root_password?: string
+    // Install-time knob: accepted and not stored, as on the live engine, whose
+    // HostMapper never maps it back onto the read model
+    override_iptables?: boolean | string
     power_management?: {
       enabled?: boolean | string
       kdump_detection?: boolean | string

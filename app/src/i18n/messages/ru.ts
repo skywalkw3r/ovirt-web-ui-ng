@@ -3411,6 +3411,9 @@ export const ru: LocaleCatalog = {
   'hostForm.field.rootPassword': 'Пароль root',
   'hostForm.field.sshPort': 'Порт SSH',
   'hostForm.field.sshUser': 'Пользователь SSH',
+  'hostForm.firewall.configure': 'Автоматически настроить брандмауэр хоста',
+  'hostForm.firewall.configure.help':
+    'Установка откроет в брандмауэре хоста порты, необходимые oVirt, используя тип брандмауэра кластера. Отключайте, только если вы сами управляете брандмауэром хоста; тогда нужные порты придётся открыть вручную.',
   'hostForm.hostedEngine.deploy': 'Развернуть hosted engine',
   'hostForm.hostedEngine.deploy.help':
     'Установка также развёртывает компоненты самоуправляемого движка, чтобы этот хост мог запускать ВМ движка наряду с существующими хостами hosted engine. Оставьте выключенным для обычного хоста виртуализации.',
