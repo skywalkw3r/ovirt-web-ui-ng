@@ -20,6 +20,7 @@ import { useT } from '../i18n/useT'
 import type { MessageId } from '../i18n/messages/en'
 import { ListPageHeader } from '../components/ListPageHeader'
 import { TemplateStatusLabel } from '../components/TemplateStatusLabel'
+import { useContextMenu } from '../components/context-menu/ContextMenu'
 import { RefreshControl } from '../components/RefreshControl'
 import { BookmarkMenu } from '../components/list-toolbar/BookmarkMenu'
 import { ColumnPicker } from '../components/list-toolbar/ColumnPicker'
@@ -166,6 +167,11 @@ export function TemplatesPage() {
   // client-side header sort; no default — the engine list order stands
   // until a header is clicked (see hooks/useColumnSort)
   const { sort, thSort } = useColumnSort()
+  // Right-clicking a row opens the row kebab's item set at the cursor (same
+  // wiring as VmsPage). ctx is the Template snapshot from the click; the
+  // target lives until that menu (and any modal/mutation it owns) settles.
+  const contextMenu = useContextMenu<Template>()
+  const menuTarget = contextMenu.target
 
   const items = sortRows(templates.data ?? [], sort, (row, key) =>
     columns.find((column) => column.key === key)?.sortValue?.(row, columnCtx),
@@ -298,7 +304,7 @@ export function TemplatesPage() {
             </Thead>
             <Tbody>
               {paged.map((template) => (
-                <Tr key={template.id}>
+                <Tr key={template.id} onContextMenu={(event) => contextMenu.open(event, template)}>
                   {visibleColumns.map((column) => (
                     <Td key={column.key} dataLabel={column.label}>
                       {column.cell(template, columnCtx)}
@@ -322,6 +328,18 @@ export function TemplatesPage() {
             </Tbody>
           </Table>
         </div>
+      )}
+
+      {/* Right-click twin of the row kebab: the same dual-mode menu component
+          rendered once at the cursor with this page's kebab props (plain
+          template, so Create VM stays the row's visible button), keyed by
+          token so re-opening (same or another row) remounts fresh. */}
+      {menuTarget !== null && (
+        <TemplateActionsMenu
+          key={`${menuTarget.ctx.id}-${menuTarget.token}`}
+          template={menuTarget.ctx}
+          contextMenu={{ position: menuTarget.position, onClose: contextMenu.close }}
+        />
       )}
     </PageSection>
   )

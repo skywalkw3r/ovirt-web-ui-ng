@@ -337,8 +337,10 @@ VM/template rows (the row kebab's exact item set in a dual-mode
 `contextMenu` prop, so right-click and kebab share one code path), and
 hosts/clusters/DC tree nodes (Open details + the existing action sets).
 Admin-gated where the underlying ops are; keyboard right-click (Shift+F10)
-anchors to the focused node. Still open: context menus on the flat
-Templates/Hosts list rows.
+anchors to the focused node. The flat Templates and Hosts list rows followed
+on 2026-11-11: each page mounts the same dual-mode menu with its row kebab's
+exact props, and `e2e/context-menu.spec.ts` asserts the right-click item list
+equals the kebab's.
 
 **Exit criteria:** create a VM from a template, boot it, watch status flow
 through the list, edit memory, delete it — all from the new UI, verified by a

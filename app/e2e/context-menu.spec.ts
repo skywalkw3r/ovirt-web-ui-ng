@@ -3,8 +3,9 @@ import { expect, test, type Locator, type Page } from '@playwright/test'
 import { login, revealInfraNode } from './helpers'
 
 // vCenter-style right-click context menus (components/context-menu): folder
-// tree nodes, VM table rows, and Hosts & Clusters tree nodes open their
-// kebab-parity action menus at the cursor. Each test gets a fresh page (and
+// tree nodes, VM table rows, Hosts & Clusters tree nodes, and the flat
+// Templates / Hosts list rows open their kebab-parity action menus at the
+// cursor. Each test gets a fresh page (and
 // therefore pristine in-browser mock fixtures), so legacy-erp always starts
 // powered off and the folder tree holds prod(web, db) + staging.
 
@@ -163,6 +164,80 @@ test('host node context menu opens details and mirrors the kebab', async ({ page
   await menu.getByRole('menuitem', { name: 'Open details' }).click()
   await expect(page).toHaveURL(/\/hosts\/host-01$/)
   await expect(page.getByRole('heading', { name: 'node-01', exact: true })).toBeVisible()
+})
+
+// Row locator for the flat Templates / Hosts tables, anchored on the row's
+// name link like vmRow above.
+function listRow(page: Page, name: string) {
+  return page.locator('tbody tr').filter({ has: page.getByRole('link', { name, exact: true }) })
+}
+
+// The kebab's item labels for a flat-list row, read from the open kebab menu
+// (the only menu on screen at that point) and closed again with Escape.
+async function kebabItems(page: Page, row: Locator, name: string): Promise<string[]> {
+  await row.getByRole('button', { name: `Actions for ${name}` }).click()
+  const items = page.getByRole('menuitem')
+  await expect(items.first()).toBeVisible()
+  const labels = await items.allTextContents()
+  await page.keyboard.press('Escape')
+  await expect(items).toHaveCount(0)
+  return labels
+}
+
+test('flat Templates row context menu mirrors the row kebab', async ({ page }) => {
+  await login(page, { path: '/templates' })
+  const row = listRow(page, 'centos-stream-9')
+  await expect(row).toBeVisible()
+  const fromKebab = await kebabItems(page, row, 'centos-stream-9')
+
+  const menu = await openContextMenu(page, row, 'Actions for centos-stream-9')
+  // Same component, same props: the item set is the kebab's, in order. Create
+  // VM stays the row's visible button and Move to folder stays a tree-view
+  // item, so neither joins the flat row's menu.
+  expect(await menu.getByRole('menuitem').allTextContents()).toEqual(fromKebab)
+  await expect(menu.getByRole('menuitem', { name: 'Move to folder…' })).toHaveCount(0)
+
+  // Items act exactly like the kebab's: Edit opens the template's edit modal.
+  await menu.getByRole('menuitem', { name: 'Edit', exact: true }).click()
+  await expect(page.getByRole('dialog')).toBeVisible()
+})
+
+test('flat Hosts row context menu mirrors the row kebab', async ({ page }) => {
+  await login(page, { path: '/hosts' })
+  const row = listRow(page, 'node-01')
+  await expect(row).toBeVisible()
+  const fromKebab = await kebabItems(page, row, 'node-01')
+
+  const menu = await openContextMenu(page, row, 'Actions for node-01')
+  expect(await menu.getByRole('menuitem').allTextContents()).toEqual(fromKebab)
+  // Open details is the tree node's extra (the flat row already links to the
+  // detail page), so the flat menu is the bare kebab set.
+  await expect(menu.getByRole('menuitem', { name: 'Open details' })).toHaveCount(0)
+
+  await menu.getByRole('menuitem', { name: 'Assign tags' }).click()
+  await expect(page.getByRole('dialog')).toBeVisible()
+})
+
+test('keyboard-invoked context menu anchors to the focused flat-list row', async ({ page }) => {
+  await login(page, { path: '/hosts' })
+  // Shift+F10 on the focused name link fires a coordless contextmenu that
+  // bubbles to the row; dispatchEvent mirrors that (see the folder rename
+  // test) and exercises the rect fallback.
+  const link = page.getByRole('link', { name: 'node-02', exact: true })
+  await expect(link).toBeVisible()
+  const menu = page.getByRole('menu', { name: 'Actions for node-02' })
+  await expect(async () => {
+    await link.dispatchEvent('contextmenu')
+    await expect(menu).toBeVisible({ timeout: 2000 })
+  }).toPass({ timeout: 20_000 })
+
+  // Anchored to the link's rect (left, bottom), not the viewport corner.
+  const linkBox = await link.boundingBox()
+  const menuBox = await menu.boundingBox()
+  expect(linkBox).not.toBeNull()
+  expect(menuBox).not.toBeNull()
+  expect(Math.abs(menuBox!.x - linkBox!.x)).toBeLessThan(40)
+  expect(Math.abs(menuBox!.y - (linkBox!.y + linkBox!.height))).toBeLessThan(40)
 })
 
 // Gate: 'critical' and 'serious' violations fail; 'moderate' and 'minor'
