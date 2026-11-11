@@ -27,19 +27,27 @@ export function ResourceAllocationSection({
   draft,
   onChange,
   cpuProfiles,
+  hiddenFields,
   idPrefix = 'edit-vm',
 }: {
   draft: ResourceAllocationFields
   onChange: SectionChange<ResourceAllocationFields>
-  cpuProfiles: UseQueryResult<ClusterCpuProfile[]>
+  // The cluster's CPU profiles. Omit it for a form with no cluster and no CPU
+  // profile (an instance type): the CPU profile field is then left out.
+  cpuProfiles?: UseQueryResult<ClusterCpuProfile[]>
+  // Fields this form does not offer (e.g. an instance type has no CPU shares
+  // or queue settings over REST). Absent ⇒ every field shows.
+  hiddenFields?: readonly (keyof ResourceAllocationFields)[]
   idPrefix?: string
 }) {
   const t = useT()
   const set = fieldSetter(onChange)
+  const shown = (key: keyof ResourceAllocationFields) => !hiddenFields?.includes(key)
+  const profiles = cpuProfiles !== undefined && shown('cpuProfileId') ? cpuProfiles : undefined
   // A disabled query (no cluster to read profiles from, e.g. the Blank
   // template) stays pending forever: show "no profiles" instead of an endless
   // skeleton.
-  const profilesIdle = cpuProfiles.isPending && cpuProfiles.fetchStatus === 'idle'
+  const profilesIdle = profiles?.isPending === true && profiles.fetchStatus === 'idle'
   // Once the user picks "Custom" the select stays on it even if they then type
   // a preset-valued integer — matching webadmin, where Custom is sticky until
   // another bucket is picked.
@@ -57,87 +65,94 @@ export function ResourceAllocationSection({
 
   return (
     <Form onSubmit={(event) => event.preventDefault()}>
-      <FormGroup
-        label={t('vm.edit.resources.cpuProfile')}
-        fieldId={`${idPrefix}-cpu-profile`}
-        labelHelp={
-          <FieldHelp
-            field={t('vm.edit.resources.cpuProfile')}
-            content={t('fieldHelp.vm.cpuProfile')}
-          />
-        }
-      >
-        {cpuProfiles.isPending && !profilesIdle && (
-          <Skeleton height="2.25rem" screenreaderText={t('vm.edit.resources.cpuProfile.loading')} />
-        )}
-        {cpuProfiles.isError && (
-          <>
-            <HelperText>
-              <HelperTextItem variant="error">
-                {t('vm.edit.resources.cpuProfile.error')}
-                {cpuProfiles.error instanceof Error ? `: ${cpuProfiles.error.message}` : ''}
-              </HelperTextItem>
-            </HelperText>
-            <Button variant="link" isInline onClick={() => void cpuProfiles.refetch()}>
-              {t('vm.edit.resources.cpuProfile.retry')}
-            </Button>
-          </>
-        )}
-        {(profilesIdle || (cpuProfiles.isSuccess && cpuProfiles.data.length === 0)) && (
-          <HelperText>
-            <HelperTextItem>{t('vm.edit.resources.cpuProfile.empty')}</HelperTextItem>
-          </HelperText>
-        )}
-        {cpuProfiles.isSuccess && cpuProfiles.data.length > 0 && (
-          <FormSelect
-            id={`${idPrefix}-cpu-profile`}
-            aria-label={t('vm.edit.resources.cpuProfile')}
-            value={draft.cpuProfileId}
-            onChange={(_event, value) => set('cpuProfileId', value)}
-          >
-            {/* keep an unknown/unset stored profile selectable rather than
-                silently jumping to the first option */}
-            {!cpuProfiles.data.some((profile) => profile.id === draft.cpuProfileId) && (
-              <FormSelectOption value={draft.cpuProfileId} label="—" isPlaceholder />
-            )}
-            {cpuProfiles.data.map((profile) => (
-              <FormSelectOption
-                key={profile.id}
-                value={profile.id}
-                label={profile.name ?? profile.id}
-              />
-            ))}
-          </FormSelect>
-        )}
-      </FormGroup>
-
-      <FormGroup
-        label={t('vm.edit.resources.cpuShares')}
-        fieldId={`${idPrefix}-cpu-shares`}
-        labelHelp={
-          <FieldHelp
-            field={t('vm.edit.resources.cpuShares')}
-            content={t('fieldHelp.vm.cpuShares')}
-          />
-        }
-      >
-        <FormSelect
-          id={`${idPrefix}-cpu-shares`}
-          aria-label={t('vm.edit.resources.cpuShares')}
-          value={customShares ? CPU_SHARES_CUSTOM : draft.cpuShares}
-          onChange={(_event, value) => onSharesSelect(value)}
+      {profiles !== undefined && (
+        <FormGroup
+          label={t('vm.edit.resources.cpuProfile')}
+          fieldId={`${idPrefix}-cpu-profile`}
+          labelHelp={
+            <FieldHelp
+              field={t('vm.edit.resources.cpuProfile')}
+              content={t('fieldHelp.vm.cpuProfile')}
+            />
+          }
         >
-          {CPU_SHARES_PRESETS.map((preset) => (
-            <FormSelectOption key={preset.value} value={preset.value} label={t(preset.labelId)} />
-          ))}
-          <FormSelectOption
-            value={CPU_SHARES_CUSTOM}
-            label={t('vm.edit.resources.cpuShares.custom')}
-          />
-        </FormSelect>
-      </FormGroup>
+          {profiles.isPending && !profilesIdle && (
+            <Skeleton
+              height="2.25rem"
+              screenreaderText={t('vm.edit.resources.cpuProfile.loading')}
+            />
+          )}
+          {profiles.isError && (
+            <>
+              <HelperText>
+                <HelperTextItem variant="error">
+                  {t('vm.edit.resources.cpuProfile.error')}
+                  {profiles.error instanceof Error ? `: ${profiles.error.message}` : ''}
+                </HelperTextItem>
+              </HelperText>
+              <Button variant="link" isInline onClick={() => void profiles.refetch()}>
+                {t('vm.edit.resources.cpuProfile.retry')}
+              </Button>
+            </>
+          )}
+          {(profilesIdle || (profiles.isSuccess && profiles.data.length === 0)) && (
+            <HelperText>
+              <HelperTextItem>{t('vm.edit.resources.cpuProfile.empty')}</HelperTextItem>
+            </HelperText>
+          )}
+          {profiles.isSuccess && profiles.data.length > 0 && (
+            <FormSelect
+              id={`${idPrefix}-cpu-profile`}
+              aria-label={t('vm.edit.resources.cpuProfile')}
+              value={draft.cpuProfileId}
+              onChange={(_event, value) => set('cpuProfileId', value)}
+            >
+              {/* keep an unknown/unset stored profile selectable rather than
+                silently jumping to the first option */}
+              {!profiles.data.some((profile) => profile.id === draft.cpuProfileId) && (
+                <FormSelectOption value={draft.cpuProfileId} label="—" isPlaceholder />
+              )}
+              {profiles.data.map((profile) => (
+                <FormSelectOption
+                  key={profile.id}
+                  value={profile.id}
+                  label={profile.name ?? profile.id}
+                />
+              ))}
+            </FormSelect>
+          )}
+        </FormGroup>
+      )}
 
-      {customShares && (
+      {shown('cpuShares') && (
+        <FormGroup
+          label={t('vm.edit.resources.cpuShares')}
+          fieldId={`${idPrefix}-cpu-shares`}
+          labelHelp={
+            <FieldHelp
+              field={t('vm.edit.resources.cpuShares')}
+              content={t('fieldHelp.vm.cpuShares')}
+            />
+          }
+        >
+          <FormSelect
+            id={`${idPrefix}-cpu-shares`}
+            aria-label={t('vm.edit.resources.cpuShares')}
+            value={customShares ? CPU_SHARES_CUSTOM : draft.cpuShares}
+            onChange={(_event, value) => onSharesSelect(value)}
+          >
+            {CPU_SHARES_PRESETS.map((preset) => (
+              <FormSelectOption key={preset.value} value={preset.value} label={t(preset.labelId)} />
+            ))}
+            <FormSelectOption
+              value={CPU_SHARES_CUSTOM}
+              label={t('vm.edit.resources.cpuShares.custom')}
+            />
+          </FormSelect>
+        </FormGroup>
+      )}
+
+      {shown('cpuShares') && customShares && (
         <FormGroup
           label={t('vm.edit.resources.cpuShares.customValue')}
           fieldId={`${idPrefix}-cpu-shares-custom`}
@@ -210,25 +225,27 @@ export function ResourceAllocationSection({
       {/* VirtIO-SCSI queue tuning only applies while the controller exists. */}
       {draft.virtioScsiEnabled && (
         <>
-          <FormGroup
-            label={t('vm.edit.resources.virtioScsiMq')}
-            fieldId={`${idPrefix}-virtio-scsi-mq`}
-            labelHelp={
-              <FieldHelp
-                field={t('vm.edit.resources.virtioScsiMq')}
-                content={t('fieldHelp.vm.virtioScsiMq')}
+          {shown('virtioScsiMultiQueuesEnabled') && (
+            <FormGroup
+              label={t('vm.edit.resources.virtioScsiMq')}
+              fieldId={`${idPrefix}-virtio-scsi-mq`}
+              labelHelp={
+                <FieldHelp
+                  field={t('vm.edit.resources.virtioScsiMq')}
+                  content={t('fieldHelp.vm.virtioScsiMq')}
+                />
+              }
+            >
+              <Switch
+                id={`${idPrefix}-virtio-scsi-mq`}
+                aria-label={t('vm.edit.resources.virtioScsiMq')}
+                isChecked={draft.virtioScsiMultiQueuesEnabled}
+                onChange={(_event, checked) => set('virtioScsiMultiQueuesEnabled', checked)}
               />
-            }
-          >
-            <Switch
-              id={`${idPrefix}-virtio-scsi-mq`}
-              aria-label={t('vm.edit.resources.virtioScsiMq')}
-              isChecked={draft.virtioScsiMultiQueuesEnabled}
-              onChange={(_event, checked) => set('virtioScsiMultiQueuesEnabled', checked)}
-            />
-          </FormGroup>
+            </FormGroup>
+          )}
 
-          {draft.virtioScsiMultiQueuesEnabled && (
+          {shown('virtioScsiMultiQueuesEnabled') && draft.virtioScsiMultiQueuesEnabled && (
             <FormGroup
               label={t('vm.edit.resources.virtioScsiMq.count')}
               fieldId={`${idPrefix}-virtio-scsi-mq-count`}
@@ -255,23 +272,25 @@ export function ResourceAllocationSection({
         </>
       )}
 
-      <FormGroup
-        label={t('vm.edit.resources.multiQueues')}
-        fieldId={`${idPrefix}-multi-queues`}
-        labelHelp={
-          <FieldHelp
-            field={t('vm.edit.resources.multiQueues')}
-            content={t('fieldHelp.vm.multiQueues')}
+      {shown('multiQueuesEnabled') && (
+        <FormGroup
+          label={t('vm.edit.resources.multiQueues')}
+          fieldId={`${idPrefix}-multi-queues`}
+          labelHelp={
+            <FieldHelp
+              field={t('vm.edit.resources.multiQueues')}
+              content={t('fieldHelp.vm.multiQueues')}
+            />
+          }
+        >
+          <Switch
+            id={`${idPrefix}-multi-queues`}
+            aria-label={t('vm.edit.resources.multiQueues')}
+            isChecked={draft.multiQueuesEnabled}
+            onChange={(_event, checked) => set('multiQueuesEnabled', checked)}
           />
-        }
-      >
-        <Switch
-          id={`${idPrefix}-multi-queues`}
-          aria-label={t('vm.edit.resources.multiQueues')}
-          isChecked={draft.multiQueuesEnabled}
-          onChange={(_event, checked) => set('multiQueuesEnabled', checked)}
-        />
-      </FormGroup>
+        </FormGroup>
+      )}
     </Form>
   )
 }
