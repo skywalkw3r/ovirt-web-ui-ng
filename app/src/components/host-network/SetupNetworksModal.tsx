@@ -388,10 +388,14 @@ function CustomPropertiesEditor({
     patch({ customProperties: properties.filter((_property, i) => i !== index) })
   const add = () => patch({ customProperties: [...properties, { name: '', value: '' }] })
 
+  // role="group" names the rows by the section label without pointing a
+  // <label for> at any one control (a label bound to the Add button would add a
+  // row whenever the label text is clicked)
   return (
     <FormGroup
+      role="group"
       label={t('setupNetworks.customProperties.label')}
-      fieldId={`${idBase}-add`}
+      fieldId={`${idBase}s`}
       labelHelp={
         <FieldHelp
           field={t('setupNetworks.customProperties.label')}
@@ -408,6 +412,9 @@ function CustomPropertiesEditor({
       )}
       {properties.map((property, index) => {
         const error = errors[index]
+        // the row's inline error describes both of its inputs
+        const errorId = `${idBase}-error-${index}`
+        const describedBy = error !== undefined ? { 'aria-describedby': errorId } : {}
         // the select offers the keys not taken by another row, plus this row's
         // own key even when the engine no longer lists it (so it stays visible
         // and removable)
@@ -433,6 +440,7 @@ function CustomPropertiesEditor({
                   placeholder={t('vm.edit.customProperties.name')}
                   list={`${idBase}-keys`}
                   validated={error !== undefined ? 'error' : 'default'}
+                  {...describedBy}
                   value={property.name}
                   isDisabled={locked}
                   onChange={(_event, value) => update(index, { name: value })}
@@ -445,6 +453,7 @@ function CustomPropertiesEditor({
                     name: row.networkName,
                   })}
                   validated={error !== undefined ? 'error' : 'default'}
+                  {...describedBy}
                   value={property.name}
                   isDisabled={locked}
                   onChange={(_event, value) => update(index, { name: value })}
@@ -470,6 +479,7 @@ function CustomPropertiesEditor({
                 })}
                 placeholder={t('vm.edit.customProperties.value')}
                 validated={error !== undefined ? 'error' : 'default'}
+                {...describedBy}
                 value={property.value}
                 isDisabled={locked}
                 onChange={(_event, value) => update(index, { value })}
@@ -489,7 +499,7 @@ function CustomPropertiesEditor({
             </GridItem>
             {error !== undefined && (
               <GridItem span={12}>
-                <HelperText>
+                <HelperText id={errorId}>
                   <HelperTextItem variant="error">{t(error.id, error.values)}</HelperTextItem>
                 </HelperText>
               </GridItem>
@@ -1302,8 +1312,14 @@ export function SetupNetworksModal({
     networks.isSuccess &&
     !nicDetails.isPending &&
     !propertyDefinitions.isPending
+  // The draft is the diff baseline, so it seeds only from a settled read: on
+  // reopen the cached NIC/attachment data is already marked stale (and right
+  // after a Save the invalidation refetch is still in flight), so wait for that
+  // refetch instead of seeding the pre-Save attachments, custom properties
+  // included.
+  const settled = !nics.isFetching && !attachments.isFetching && !nicDetails.isFetching
   useEffect(() => {
-    if (ready && draft === null) {
+    if (ready && settled && draft === null) {
       setDraft(
         seedSetupNetworksDraft(
           networks.data,
@@ -1316,6 +1332,7 @@ export function SetupNetworksModal({
     }
   }, [
     ready,
+    settled,
     draft,
     networks.data,
     attachments.data,
@@ -1326,8 +1343,9 @@ export function SetupNetworksModal({
 
   const isError = nics.isError || attachments.isError || networks.isError
   // the skeleton also covers the optional reads (NIC details, property keys)
-  // still settling after the three required ones landed
-  const isPending = !isError && !ready
+  // still settling after the three required ones landed, and the seeding
+  // refetch above
+  const isPending = !isError && draft === null
   const retryFailed = () => {
     if (nics.isError) void nics.refetch()
     if (attachments.isError) void attachments.refetch()

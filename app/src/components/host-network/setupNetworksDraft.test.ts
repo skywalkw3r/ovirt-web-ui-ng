@@ -959,6 +959,50 @@ describe('attachment custom properties', () => {
       customProperties: [{ name: 'odd_key', value: 'whatever' }],
     })
     expect(errorIds(draft, 'net-01')).toEqual([undefined])
+    // unbalanced syntax is skipped the same way, never thrown
+    const broken = updateRow(propertySeeded({ odd_key: '([a-z' }), 'net-01', {
+      customProperties: [{ name: 'odd_key', value: 'whatever' }],
+    })
+    expect(errorIds(broken, 'net-01')).toEqual([undefined])
+  })
+
+  it('skips Java-only escapes rather than reading them as literals', () => {
+    // \p{Alnum} is a Java POSIX class; legacy JS would match the literal text
+    // "p{Alnum}" and wrongly fail a value the engine accepts
+    const draft = updateRow(propertySeeded({ java_key: '\\p{Alnum}+' }), 'net-01', {
+      customProperties: [{ name: 'java_key', value: 'abc123' }],
+    })
+    expect(errorIds(draft, 'net-01')).toEqual([undefined])
+  })
+
+  it('matches the whole value like Java String.matches, alternation included', () => {
+    const draft = propertySeeded({ mode: 'on|off' })
+    const check = (value: string) =>
+      errorIds(
+        updateRow(draft, 'net-01', { customProperties: [{ name: 'mode', value }] }),
+        'net-01',
+      )
+    expect(check('on')).toEqual([undefined])
+    expect(check('off')).toEqual([undefined])
+    // an unanchored test would accept these
+    expect(check('only')).toEqual(['setupNetworks.validation.customPropertyValue'])
+    expect(check('xoff')).toEqual(['setupNetworks.validation.customPropertyValue'])
+  })
+
+  it('keeps the properties with the attachment when it moves onto a new bond', () => {
+    // break bond0 (ovirtmgmt parks), bond eno1 + eno2, re-place ovirtmgmt there
+    let draft = breakBond(propertySeeded(), 'bond0')
+    draft = createBond(draft, nics, 'bond1', 1, ['nic-eno1', 'nic-eno2'])
+    draft = updateRow(draft, 'net-01', { nicName: 'bond1' })
+    const mgmt = draftToSpec(draft).modified?.find((entry) => entry.networkId === 'net-01')
+    // the attachment id is reused and the untouched set is omitted, so the
+    // engine keeps it on the moved attachment
+    expect(mgmt?.attachmentId).toBe('att-mgmt')
+    expect(mgmt?.nicName).toBe('bond1')
+    expect(mgmt?.properties).toBeUndefined()
+    expect(row(draft, 'net-01').customProperties).toEqual([
+      { name: 'bridge_opts', value: 'forward_delay=1500' },
+    ])
   })
 
   it('does not let an untouched, no-longer-valid seeded key block another edit', () => {

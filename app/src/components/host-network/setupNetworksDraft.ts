@@ -604,8 +604,8 @@ export function nicLabelsChanged(draft: SetupNetworksDraft): boolean {
 // Attachment targets: bond MEMBERS cannot take attachments themselves, VLAN
 // sub-interfaces (base_interface set) are managed with their parent, and a
 // nameless NIC cannot be addressed by the wire contract (host_nic.name). Bond
-// masters ARE offered as plain targets — bond create/edit/remove
-// (modified_bonds) is a deferred follow-up. Membership comes from each
+// masters ARE offered as plain targets (the bond itself is created, edited and
+// removed through draft.bonds, see createBond below). Membership comes from each
 // master's bonding.slaves; base_interface does NOT flag bond members on a live
 // engine (it's a VLAN attribute) — the earlier assumption it did was wrong.
 export function pickableNics(nics: HostNic[]): HostNic[] {
@@ -911,12 +911,15 @@ export function validPropertyKeys(row: NetworkRow, draft: SetupNetworksDraft): s
 }
 
 // The engine matches the whole value against the key's regex (Java
-// String.matches). Java and JS regex syntax overlap for everything the engine
-// ships, but an admin-defined pattern JS cannot compile is skipped rather than
-// failed: the engine still validates on save.
+// String.matches), hence the anchored group. Java and JS regex syntax overlap
+// for everything the engine ships, but an admin-defined pattern JS cannot
+// compile is skipped rather than failed: the engine still validates on save.
+// The 'u' flag makes JS reject Java-only syntax it would otherwise read as
+// literals under the legacy grammar (\p{Alnum}, \h, \Z), so such a pattern is
+// skipped instead of wrongly failing a value the engine would accept.
 function matchesDefinition(value: string, pattern: string): boolean {
   try {
-    return new RegExp(`^(?:${pattern})$`).test(value)
+    return new RegExp(`^(?:${pattern})$`, 'u').test(value)
   } catch {
     return true
   }
