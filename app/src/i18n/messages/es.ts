@@ -1737,6 +1737,12 @@ export const es: LocaleCatalog = {
   'console.paste.helper':
     'Se escribe como pulsaciones de teclas sobre la consola cifrada — funciona en indicadores de inicio de sesión y TTY. El ASCII simple es fiable; los caracteres inusuales pueden traducirse mal en distribuciones de teclado del invitado que no sean de EE. UU.',
   'console.paste.send': 'Enviar',
+  'console.inUse.title': 'Consola en uso',
+  'console.inUse.body': '{users} ya está conectado a la consola de esta VM.',
+  'console.inUse.strict':
+    'La comprobación estricta de usuarios está activada en esta VM. Salvo que su rol pueda tomar una sesión de consola abierta (SuperUser puede; ClusterAdmin no), el motor le rechazará hasta que la VM se reinicie en frío o un administrador marque Desactivar la comprobación estricta de usuarios (Editar VM, pestaña Consola, en el Portal de administración de OLVM).',
+  'console.inUse.shared': 'Al conectarse, se desconectará esa sesión.',
+  'console.inUse.connect': 'Conectar de todos modos',
   'console.launch.toggle': 'Consola',
   'console.launch.loading': 'Cargando consolas…',
   'console.launch.error': 'No se pudieron cargar las consolas',

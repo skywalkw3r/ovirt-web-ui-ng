@@ -10,6 +10,7 @@ import {
 import { CogIcon, DesktopIcon, DownloadIcon } from '@patternfly/react-icons'
 import { FormattedMessage } from 'react-intl'
 import { buildRdpFile, isValidRdpAddress, isWindowsOs } from '../api/resources/consoles'
+import { listOtherConsoleUsers } from '../api/resources/vmSessions'
 import type { GraphicsConsole } from '../api/schemas/console'
 import type { Vm } from '../api/schemas/vm'
 import { useConsoles, useDownloadVvFile } from '../hooks/useConsoles'
@@ -17,6 +18,7 @@ import { useT } from '../i18n/useT'
 import { canConsole } from '../lib/vm-status'
 import { useNotify } from '../notifications/context'
 import { useSettings, type PreferredConsole } from '../settings/SettingsProvider'
+import { ConfirmModal } from './ConfirmModal'
 import { ConsoleOptionsModal } from './console-options/ConsoleOptionsModal'
 
 // Mirrors the transport/auth gate (see transport.ts): the in-repo mock engine
@@ -70,6 +72,10 @@ export function ConsoleButton({ vm }: { vm: Vm }) {
   const [isOpen, setIsOpen] = useState(false)
   const [optionsOpen, setOptionsOpen] = useState(false)
   const { preferredConsole } = useSettings()
+  // Console-in-use warning (the legacy portal's "Console in use, continue?"):
+  // the other holders found just before connecting, and the connect to run if
+  // the user goes ahead.
+  const [inUse, setInUse] = useState<{ users: string[]; connect: () => void } | null>(null)
   // lazy on purpose: the graphicsconsoles request first fires when the
   // dropdown opens, and useConsoles never polls
   const consoles = useConsoles(vm.id, { enabled: isOpen })
@@ -100,6 +106,19 @@ export function ConsoleButton({ vm }: { vm: Vm }) {
     const rdp = buildRdpFile({ address })
     saveBlob(`${vm.name}.rdp`, new Blob([rdp], { type: 'application/rdp' }))
     notify({ title: `${vm.name} RDP file downloaded`, variant: 'success' })
+  }
+
+  // Before any console connect, check whether someone else holds the console.
+  // Under strict user checking (allow_override false, the engine default) the
+  // engine refuses every other user's ticket with a 409 until a cold reboot,
+  // so warn first instead of failing in the console tab. A failed lookup never
+  // blocks the connect; the engine still has the final say.
+  const strictUserChecking = vm.display?.allow_override !== true
+  const guardConsoleInUse = (connect: () => void) => {
+    setIsOpen(false)
+    listOtherConsoleUsers(vm.id)
+      .then((users) => (users.length > 0 ? setInUse({ users, connect }) : connect()))
+      .catch(() => connect())
   }
 
   // Open the console in its own browser tab rather than a modal — a real tab
@@ -168,10 +187,7 @@ export function ConsoleButton({ vm }: { vm: Vm }) {
               <DropdownItem
                 key={graphicsConsole.id}
                 icon={<DownloadIcon />}
-                onClick={() => {
-                  setIsOpen(false)
-                  download.mutate({ vm, graphicsConsole })
-                }}
+                onClick={() => guardConsoleInUse(() => download.mutate({ vm, graphicsConsole }))}
               >
                 {downloadLabel(graphicsConsole, t)}
               </DropdownItem>
@@ -204,7 +220,7 @@ export function ConsoleButton({ vm }: { vm: Vm }) {
               <FormattedMessage id="console.launch.browser" />
             </DropdownItem>
           ) : vncConsole ? (
-            <DropdownItem icon={<DesktopIcon />} onClick={openInBrowser}>
+            <DropdownItem icon={<DesktopIcon />} onClick={() => guardConsoleInUse(openInBrowser)}>
               <FormattedMessage id="console.launch.browser" />
             </DropdownItem>
           ) : (
@@ -235,6 +251,25 @@ export function ConsoleButton({ vm }: { vm: Vm }) {
         </DropdownList>
       </Dropdown>
       {optionsOpen && <ConsoleOptionsModal vm={vm} onClose={() => setOptionsOpen(false)} />}
+      {inUse && (
+        <ConfirmModal
+          isOpen
+          title={t('console.inUse.title')}
+          body={
+            <>
+              <p>{t('console.inUse.body', { users: inUse.users.join(', ') })}</p>
+              <p>{t(strictUserChecking ? 'console.inUse.strict' : 'console.inUse.shared')}</p>
+            </>
+          }
+          confirmLabel={t('console.inUse.connect')}
+          onConfirm={() => {
+            const { connect } = inUse
+            setInUse(null)
+            connect()
+          }}
+          onCancel={() => setInUse(null)}
+        />
+      )}
     </>
   )
 }

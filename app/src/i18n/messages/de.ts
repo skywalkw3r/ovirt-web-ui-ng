@@ -1751,6 +1751,12 @@ export const de: LocaleCatalog = {
   'console.paste.helper':
     'Wird als Tastenanschläge über die verschlüsselte Konsole eingegeben — funktioniert an Anmeldeaufforderungen und TTYs. Reines ASCII ist zuverlässig; ungewöhnliche Zeichen können bei nicht US-amerikanischen Gast-Tastaturlayouts falsch übersetzt werden.',
   'console.paste.send': 'Senden',
+  'console.inUse.title': 'Konsole in Gebrauch',
+  'console.inUse.body': '{users} ist bereits mit der Konsole dieser VM verbunden.',
+  'console.inUse.strict':
+    'Für diese VM ist die strikte Benutzerprüfung aktiv. Sofern Ihre Rolle keine offene Konsolensitzung übernehmen darf (SuperUser darf es, ClusterAdmin nicht), lehnt die Engine Sie ab, bis die VM kalt neu gestartet wird oder ein Administrator „Strikte Benutzerprüfung deaktivieren“ aktiviert (VM bearbeiten, Registerkarte Konsole, im OLVM-Administrationsportal).',
+  'console.inUse.shared': 'Durch das Verbinden wird diese Sitzung getrennt.',
+  'console.inUse.connect': 'Trotzdem verbinden',
   'console.launch.toggle': 'Konsole',
   'console.launch.loading': 'Konsolen werden geladen…',
   'console.launch.error': 'Konsolen konnten nicht geladen werden',

@@ -1657,6 +1657,12 @@ export const zhCN: LocaleCatalog = {
   'console.paste.helper':
     '以按键形式通过加密控制台输入 — 在登录提示符和 TTY 处均有效。纯 ASCII 字符可靠；在非美式来宾键盘布局上，特殊字符可能会输入错误。',
   'console.paste.send': '发送',
+  'console.inUse.title': '控制台正在使用',
+  'console.inUse.body': '{users} 已连接到此虚拟机的控制台。',
+  'console.inUse.strict':
+    '此虚拟机启用了严格用户检查。除非你的角色可以接管已打开的控制台会话（SuperUser 可以，ClusterAdmin 不可以），否则在虚拟机冷重启或管理员勾选“禁用严格用户检查”（在 OLVM 管理门户中编辑虚拟机 > 控制台选项卡）之前，引擎会拒绝你的连接。',
+  'console.inUse.shared': '连接将断开该会话。',
+  'console.inUse.connect': '仍然连接',
   'console.launch.toggle': '控制台',
   'console.launch.loading': '正在加载控制台…',
   'console.launch.error': '无法加载控制台',

@@ -1697,6 +1697,12 @@ export const ko: LocaleCatalog = {
   'console.paste.helper':
     '암호화된 콘솔을 통해 키 입력으로 입력됩니다 — 로그인 프롬프트와 TTY에서 작동합니다. 일반 ASCII는 안정적이며, 특이한 문자는 US가 아닌 게스트 키보드 레이아웃에서 잘못 변환될 수 있습니다.',
   'console.paste.send': '보내기',
+  'console.inUse.title': '콘솔 사용 중',
+  'console.inUse.body': '{users}이(가) 이미 이 VM의 콘솔에 연결되어 있습니다.',
+  'console.inUse.strict':
+    '이 VM은 엄격한 사용자 확인이 켜져 있습니다. 역할에 열린 콘솔 세션을 가져올 권한이 없으면(SuperUser는 가능, ClusterAdmin은 불가) VM을 콜드 재부팅하거나 관리자가 엄격한 사용자 확인 비활성화를 선택할 때까지(OLVM 관리 포털의 VM 편집 > 콘솔 탭) 엔진이 연결을 거부합니다.',
+  'console.inUse.shared': '연결하면 해당 세션의 연결이 끊어집니다.',
+  'console.inUse.connect': '그래도 연결',
   'console.launch.toggle': '콘솔',
   'console.launch.loading': '콘솔 로드 중…',
   'console.launch.error': '콘솔을 로드할 수 없습니다',

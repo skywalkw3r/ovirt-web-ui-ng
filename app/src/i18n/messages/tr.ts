@@ -1716,6 +1716,12 @@ export const tr: LocaleCatalog = {
   'console.paste.helper':
     'Şifreli konsol üzerinden tuş vuruşu olarak yazılır — oturum açma istemlerinde ve TTY’lerde çalışır. Düz ASCII güvenilirdir; olağan dışı karakterler ABD dışı konuk klavye düzenlerinde yanlış çevrilebilir.',
   'console.paste.send': 'Gönder',
+  'console.inUse.title': 'Konsol kullanımda',
+  'console.inUse.body': "{users} bu VM'nin konsoluna zaten bağlı.",
+  'console.inUse.strict':
+    "Bu VM'de katı kullanıcı denetimi açık. Rolünüz açık bir konsol oturumunu devralamıyorsa (SuperUser devralabilir, ClusterAdmin devralamaz), VM soğuk yeniden başlatılana veya bir yönetici Katı kullanıcı denetimini devre dışı bırak seçeneğini işaretleyene kadar (OLVM Yönetim Portalı'nda VM'yi Düzenle, Konsol sekmesi) motor sizi reddedecek.",
+  'console.inUse.shared': 'Bağlanmak o oturumun bağlantısını kesecek.',
+  'console.inUse.connect': 'Yine de bağlan',
   'console.launch.toggle': 'Konsol',
   'console.launch.loading': 'Konsollar yükleniyor…',
   'console.launch.error': 'Konsollar yüklenemedi',

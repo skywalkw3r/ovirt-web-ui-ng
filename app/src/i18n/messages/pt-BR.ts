@@ -1730,6 +1730,12 @@ export const ptBR: LocaleCatalog = {
   'console.paste.helper':
     'Digitado como pressionamentos de tecla pelo console criptografado — funciona em prompts de login e TTYs. ASCII simples é confiável; caracteres incomuns podem ser interpretados incorretamente em layouts de teclado de convidado não-US.',
   'console.paste.send': 'Enviar',
+  'console.inUse.title': 'Console em uso',
+  'console.inUse.body': '{users} já está conectado ao console desta VM.',
+  'console.inUse.strict':
+    'A verificação estrita de usuários está ativada nesta VM. A menos que sua função possa assumir uma sessão de console aberta (SuperUser pode; ClusterAdmin não), o mecanismo recusará você até que a VM seja reiniciada a frio ou um administrador marque Desativar verificação estrita de usuários (Editar VM, guia Console, no Portal de Administração do OLVM).',
+  'console.inUse.shared': 'Conectar desconectará essa sessão.',
+  'console.inUse.connect': 'Conectar mesmo assim',
   'console.launch.toggle': 'Console',
   'console.launch.loading': 'Carregando consoles…',
   'console.launch.error': 'Não foi possível carregar os consoles',
