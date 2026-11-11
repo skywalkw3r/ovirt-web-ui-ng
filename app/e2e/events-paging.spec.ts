@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test'
 import { login } from './helpers'
 
 // Server-side audit-log pagination, end-to-end against the mock engine. The
-// mock ships 152 events (15 handcrafted + 137 generated backlog) so 50-row
+// mock ships 155 events (18 handcrafted + 137 generated backlog) so 50-row
 // windows walk full/full/full/short — the short page is what disables "next"
 // (the engine reports no total; the page derives it indeterminately). Range
 // assertions target the per-page menu toggle: PF also renders the range in a
@@ -24,11 +24,13 @@ test('events page walks server-side windows via the next button', async ({ page 
   await expect(page.getByText('Audit backlog entry').first()).toBeVisible()
   await expect(page.getByText('User admin@internal logged out.')).toHaveCount(0)
 
-  // walk to the short final window (152 rows -> 50/50/50/2): next disables
+  // walk to the short final window (155 rows -> 50/50/50/5): next disables.
+  // Tracks the fixture count: the template/quota events added for the scoped
+  // Events tabs moved the tail from 151 - 152.
   await next.click()
   await expect(page.getByRole('button', { name: '101 - 150' })).toBeVisible()
   await next.click()
-  await expect(page.getByRole('button', { name: '151 - 152' })).toBeVisible()
+  await expect(page.getByRole('button', { name: '151 - 155' })).toBeVisible()
   await expect(next).toBeDisabled()
 
   // previous still works from the tail

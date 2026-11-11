@@ -1069,6 +1069,42 @@ export const it: LocaleCatalog = {
   'permissions.add.role.none': 'Nessun ruolo assegnabile è disponibile su questo motore.',
   'permissions.add.role.userGroup': 'Ruoli utente',
   'permissions.add.role.adminGroup': 'Ruoli amministrativi',
+  // Add Permission picker depth (issue #31): multi-select, My groups,
+  // Everyone, and directory search.
+  'permissions.add.kind.myGroups': 'I miei gruppi',
+  'permissions.add.kind.everyone': 'Tutti',
+  'permissions.add.source.label': 'Cerca in',
+  'permissions.add.source.engine': 'Database del motore',
+  'permissions.add.source.directory': 'Directory: {domain}',
+  'permissions.add.source.domainsLoading': 'Caricamento directory',
+  'permissions.add.source.domainsError': 'Impossibile caricare le directory: {message}',
+  'permissions.add.source.directoryHint':
+    'I principal trovati in una directory che non sono ancora nel motore vengono aggiunti al momento della concessione del ruolo.',
+  'permissions.add.empty.directory.users': 'Questa directory non ha restituito utenti.',
+  'permissions.add.empty.directory.groups': 'Questa directory non ha restituito gruppi.',
+  'permissions.add.myGroups.loading': 'Caricamento dei tuoi gruppi',
+  'permissions.add.myGroups.error': 'Impossibile caricare i tuoi gruppi: {message}',
+  'permissions.add.myGroups.empty.title': 'Nessun gruppo',
+  'permissions.add.myGroups.empty.body':
+    'Il tuo account non è membro di alcun gruppo della directory.',
+  'permissions.add.myGroups.table.ariaLabel': 'I miei gruppi',
+  'permissions.add.everyone.body':
+    'Il ruolo viene concesso al gruppo integrato Everyone, quindi ogni utente lo ottiene su questo {noun}.',
+  'permissions.add.selectMany.user': 'Seleziona uno o più utenti a cui concedere il ruolo.',
+  'permissions.add.selectMany.group': 'Seleziona uno o più gruppi a cui concedere il ruolo.',
+  'permissions.add.selected.count':
+    '{count, plural, one {# principal selezionato} other {# principal selezionati}}',
+  'permissions.add.selected.ariaLabel': 'Principal selezionati',
+  'permissions.add.selected.remove': 'Rimuovi {name} dalla selezione',
+  'permissions.add.result.failed.title':
+    '{count, plural, one {Impossibile concedere il ruolo a # principal} other {Impossibile concedere il ruolo a # principal}}',
+  'permissions.add.result.failed.body':
+    'I principal non riusciti restano selezionati. Correggi la causa e riprova, oppure rimuovili dalla selezione.',
+  'permissions.add.result.failed.item': '{name}: {message}',
+  'permissions.add.submit.retry': 'Riprova i non riusciti',
+  'permissions.add.toast.granted': '{role} concesso a {name}',
+  'permissions.add.toast.grantedMany':
+    '{role} concesso a {count, plural, one {# principal} other {# principal}}',
   'users.notPermitted': 'Utenti',
   'users.title': 'Utenti',
   'users.search.hint': 'usrname=jdoe* — o testo normale',
@@ -1767,6 +1803,11 @@ export const it: LocaleCatalog = {
     'Funziona con noVNC e la maggior parte dei visualizzatori desktop.',
   'settings.pref.console.spiceDescription': 'Esperienza remota più ricca tramite virt-viewer.',
   'settings.pref.language': 'Lingua',
+  // Roaming note (components/UserMenu, settings/RoamingSettingsProvider)
+  'settings.pref.roaming.synced':
+    'Salvate nel tuo profilo utente oVirt, quindi ti seguono negli altri browser.',
+  'settings.pref.roaming.local':
+    'Salvate solo in questo browser; il tuo profilo utente oVirt non è disponibile per memorizzarle.',
   'settings.refresh.seconds': '{count, plural, one {# secondo} other {# secondi}}',
   'settings.timeout.minutes': '{count, plural, one {# minuto} other {# minuti}}',
   'settings.timeout.hours': '{count, plural, one {# ora} other {# ore}}',
@@ -1952,11 +1993,7 @@ export const it: LocaleCatalog = {
   'hostNuma.loading': 'Caricamento della topologia NUMA',
   'host.console.open': 'Console host',
   'host.console.newTab': 'Apre Cockpit in una nuova scheda',
-  'host.console.sso.note':
-    'La console si apre in una nuova scheda ed esegue l’accesso con la sessione corrente.',
-  'host.console.direct.title': 'La console apre {url} in una nuova scheda',
-  'host.console.direct.body':
-    'Accedi con un account dell’host. Cockpit usa il certificato dell’host, quindi il browser potrebbe mostrare un avviso finché quel certificato non viene considerato attendibile.',
+  'host.console.tooltip': 'Apri l’interfaccia Cockpit di {name}',
   'datacenters.forceRemove.action': 'Forza rimozione',
   'datacenters.forceRemove.confirm.title': "Forzare la rimozione del data center ''{name}''?",
   'datacenters.forceRemove.confirm.body':
@@ -3353,6 +3390,9 @@ export const it: LocaleCatalog = {
   'hostForm.field.rootPassword': 'Password root',
   'hostForm.field.sshPort': 'Porta SSH',
   'hostForm.field.sshUser': 'Utente SSH',
+  'hostForm.firewall.configure': "Configura automaticamente il firewall dell'host",
+  'hostForm.firewall.configure.help':
+    "Consente all'installazione di aprire nel firewall dell'host le porte necessarie a oVirt, usando il tipo di firewall del cluster. Disattivalo solo se gestisci tu il firewall dell'host; in tal caso le porte richieste vanno aperte a mano.",
   'hostForm.hostedEngine.deploy': 'Distribuisci hosted engine',
   'hostForm.hostedEngine.deploy.help':
     "L'installazione distribuisce anche i componenti del self-hosted engine, così questo host può eseguire la VM del motore insieme agli host hosted-engine esistenti. Lascia disattivato per un normale host di virtualizzazione.",
@@ -4923,6 +4963,104 @@ export const it: LocaleCatalog = {
     "L'annullamento della configurazione parziale si è interrotto: {error}",
   'host.configureLocalStorage.outcome.rerunHint':
     "Per completare, metti l'host in manutenzione se necessario ed esegui di nuovo “Configura storage locale”; il data center locale vuoto verrà riutilizzato.",
+  // Guide Me (data center and cluster next steps)
+  'guideMe.action': 'Guidami',
+  'guideMe.title': 'Guidami: {name}',
+  'guideMe.loading': 'Caricamento dei passaggi successivi',
+  'guideMe.error.title': 'Impossibile caricare i passaggi successivi',
+  'guideMe.dataCenter.created': 'Data center creato.',
+  'guideMe.dataCenter.configured': "Il data center è completamente configurato e pronto all'uso.",
+  'guideMe.cluster.created': 'Cluster creato.',
+  'guideMe.cluster.configured': "Il cluster è completamente configurato e pronto all'uso.",
+  'guideMe.configured.title': 'Configurazione completata',
+  'guideMe.unconfigured': 'Alcune entità devono ancora essere configurate.',
+  'guideMe.section.required': 'Passaggi obbligatori',
+  'guideMe.section.optional': 'Passaggi facoltativi',
+  'guideMe.configureLater': 'Configura più tardi',
+  'guideMe.step.configureCluster': 'Configura cluster',
+  'guideMe.step.addAnotherCluster': 'Aggiungi un altro cluster',
+  'guideMe.step.configureHost': 'Configura host',
+  'guideMe.step.addAnotherHost': 'Aggiungi un altro host',
+  'guideMe.step.configureStorage': 'Configura archiviazione',
+  'guideMe.step.addMoreStorage': 'Aggiungi altra archiviazione',
+  'guideMe.step.attachStorage': 'Collega archiviazione',
+  'guideMe.step.attachMoreStorage': 'Collega altra archiviazione',
+  'guideMe.step.configureIsoLibrary': 'Configura libreria ISO',
+  'guideMe.step.attachIsoLibrary': 'Collega libreria ISO',
+  'guideMe.step.addLocalStorage': 'Aggiungi archiviazione locale',
+  'guideMe.reason.noUpHost': 'Il data center deve avere almeno un host attivo.',
+  'guideMe.reason.noCluster': 'Aggiungi prima un cluster al data center.',
+  'guideMe.reason.noUnattachedData': 'Nessun dominio dati non collegato è disponibile.',
+  'guideMe.reason.noActiveMaster': 'Il data center deve prima avere un dominio dati master attivo.',
+  'guideMe.reason.noIsoDomain': 'Nessun dominio ISO è disponibile da collegare.',
+  'guideMe.reason.localDcHasHost': 'Un data center locale ospita un solo host, e questo lo ha già.',
+  'guideMe.reason.dcInitialized': 'Il data center è già inizializzato.',
+  'guideMe.reason.clusterLocalHasHost':
+    'Questo cluster appartiene a un data center locale che ha già il suo unico host.',
+  'guideMe.note.localStorage':
+    'Per configurare completamente il data center, collega e attiva almeno un dominio di archiviazione locale.',
+  'guideMe.note.clusterNoActions':
+    'Nessuna azione disponibile per questo cluster: non è collegato a un data center.',
+  // Configure aggregate entry point (pages/ConfigurePage.tsx): the webadmin
+  // Administration › Configure index linking to its five surfaces.
+  'nav.configure': 'Configura',
+  'configure.title': 'Configura',
+  'configure.intro':
+    'Definizioni a livello di motore condivise da tutti i data center e cluster. Ognuna si apre in una pagina dedicata.',
+  'configure.loading': 'Caricamento delle aree di configurazione',
+  'configure.notPermitted': 'la configurazione di sistema',
+  'configure.list.ariaLabel': 'Aree di configurazione',
+  'configure.card.roles':
+    'Definisci i ruoli e le autorizzazioni che ciascuno concede a utenti e amministratori.',
+  'configure.card.systemPermissions': "Assegna ruoli a utenti e gruppi nell'intero sistema.",
+  'configure.card.schedulingPolicies':
+    'Gestisci le regole di filtro, peso e bilanciamento che i cluster usano per collocare le VM.',
+  'configure.card.instanceTypes':
+    'Definisci profili hardware riutilizzabili per le nuove macchine virtuali.',
+  'configure.card.macPools':
+    'Gestisci gli intervalli di indirizzi MAC assegnati alle NIC virtuali.',
+  // EDIT VM: Foreman/Satellite section (provider picker)
+  'vm.edit.section.foreman': 'Foreman/Satellite',
+  'vm.edit.foreman.provider': 'Provider',
+  'vm.edit.foreman.none': 'Nessun provider',
+  'vm.edit.foreman.unknown': 'Provider sconosciuto ({id})',
+  'vm.edit.foreman.loading': 'Caricamento dei provider Foreman/Satellite',
+  'vm.edit.foreman.empty':
+    'Nessun provider Foreman/Satellite registrato. Aggiungine uno nella pagina Provider per associarvi questa VM.',
+  'vm.edit.foreman.help':
+    'Il motore legge le errata di questa VM dal provider Foreman/Satellite scelto.',
+  // Template Storage tab + scoped Events tabs (issue #33) ----------------
+  'scopedEvents.loading': 'Caricamento degli eventi',
+  'scopedEvents.error.title': 'Impossibile caricare gli eventi',
+  'scopedEvents.empty.title': 'Nessun evento',
+  'templateDetail.tab.storage': 'Storage',
+  'templateDetail.tab.events': 'Eventi',
+  'templateEvents.empty.body':
+    'Gli eventi del registro di controllo del motore per questo modello appariranno qui.',
+  'templateEvents.table.ariaLabel': 'Eventi per questo modello',
+  'templateStorage.empty.body':
+    'Nessun disco di questo modello si trova su un dominio di archiviazione.',
+  'templateStorage.table.ariaLabel': 'Domini di archiviazione con i dischi di questo modello',
+  'templateStorage.column.used': 'Spazio utilizzato',
+  'templateStorage.column.disks': 'Dischi',
+  'templateStorage.expand.ariaLabel': 'Mostra dischi',
+  'templateStorage.disks.ariaLabel': 'Dischi del modello su {name}',
+  'clusterDetail.tab.events': 'Eventi',
+  'clusterEvents.empty.body':
+    'Gli eventi del registro di controllo del motore per questo cluster appariranno qui.',
+  'clusterEvents.table.ariaLabel': 'Eventi per questo cluster',
+  'dcDetail.tab.events': 'Eventi',
+  'dcEvents.empty.body':
+    'Gli eventi del registro di controllo del motore per questo data center appariranno qui.',
+  'dcEvents.table.ariaLabel': 'Eventi per questo data center',
+  'storageDetail.tab.events': 'Eventi',
+  'storageEvents.empty.body':
+    'Gli eventi del registro di controllo del motore per questo dominio di archiviazione appariranno qui.',
+  'storageEvents.table.ariaLabel': 'Eventi per questo dominio di archiviazione',
+  'quotaDetail.tab.events': 'Eventi',
+  'quotaEvents.empty.body':
+    'Gli eventi del registro di controllo del motore per questa quota appariranno qui.',
+  'quotaEvents.table.ariaLabel': 'Eventi per questa quota',
   // List-grid columns filled by a follow= or one shared read (issue #34)
   'vms.column.cpu': 'CPU',
   'vms.column.network': 'Rete',

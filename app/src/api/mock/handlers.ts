@@ -13,6 +13,7 @@ import {
 import type { HostAction } from '../resources/hosts'
 import type { VmAction } from '../resources/vms'
 import { extraRoutes, type MockRoute } from './routes'
+import { mockUserIdFor } from './routes/user-options'
 
 const LATENCY_MS = 300
 // Shorter than the 10s VM poll on purpose: refetches see the transitional
@@ -105,6 +106,9 @@ interface MockVm {
   // The pool this VM belongs to (VmPoolService has no vms subcollection, so the
   // pool VMs tab filters the global /vms feed on vm_pool.id).
   vm_pool?: { id?: string; name?: string }
+  // Edit VM — Foreman/Satellite: the bound external host provider (bare
+  // { id } link; an empty object on PUT clears it, see updateVm)
+  external_host_provider?: { id?: string }
   delete_protected?: boolean | string
   high_availability?: { enabled?: boolean | string; priority?: number | string }
   time_zone?: { name?: string; utc_offset?: string }
@@ -238,6 +242,16 @@ interface MockEvent {
   time?: number | string
   vm?: { id?: string; name?: string }
   host?: { id?: string; name?: string }
+  // the other entity links api-model's Event carries; the scoped Events tabs
+  // search on their names (lib/scopedEvents)
+  template?: { id?: string; name?: string }
+  cluster?: { id?: string; name?: string }
+  data_center?: { id?: string; name?: string }
+  storage_domain?: { id?: string; name?: string }
+  // Mock-only: REST's Event has no quota link (the engine joins audit_log on
+  // quota_id server-side for the quota= search), so the fixture carries the
+  // name the mock search matches against.
+  quota?: { id?: string; name?: string }
 }
 
 interface MockJob {
@@ -1230,6 +1244,8 @@ const initialVms = (): MockVm[] => [
     virtio_scsi_multi_queues: '4',
     // Edit VM — HA: VM lease on the data domain (also feeds sd-01 Leases tab)
     lease: { storage_domain: { id: 'sd-01' } },
+    // Edit VM — Foreman/Satellite: bound to the mock Foreman provider
+    external_host_provider: { id: 'ehp-01' },
     high_availability: { enabled: 'true', priority: '50' },
     time_zone: { name: 'Etc/GMT', utc_offset: '+00:00' },
     custom_properties: {
@@ -1676,7 +1692,7 @@ const minutesAgo = (m: number) => Date.now() - m * 60_000
 // rows past the newest-100 window that the Events page's server-side paging
 // (search `page N` windows) is exercisable in dev:mock and tests out of the
 // box — no env knob needed (contrast VITE_MOCK_SCALE, which gates the VM
-// tail). 137 + the 15 handcrafted = 152 total, so 50-row windows walk
+// tail). 137 + the 18 handcrafted = 155 total, so 50-row windows walk
 // full/full/full/short and the short last page proves the "no more pages"
 // edge. Deterministic on purpose — no Math.random — mirroring scaleVm.
 const BACKLOG_EVENT_COUNT = 137
@@ -1741,6 +1757,8 @@ const initialEvents = (): MockEvent[] => [
     severity: 'warning',
     description: 'Storage domain data has 12% free space remaining.',
     time: minutesAgo(48),
+    storage_domain: { id: 'sd-01', name: 'data' },
+    data_center: { id: 'dc-01', name: 'Default' },
   },
   {
     id: 'ev-05',
@@ -1805,6 +1823,7 @@ const initialEvents = (): MockEvent[] => [
     description: 'Available memory of host node-02 is under the defined threshold (91% used).',
     time: minutesAgo(8),
     host: { id: 'host-02', name: 'node-02' },
+    cluster: { id: 'cluster-01', name: 'Default' },
   },
   {
     id: 'ev-14',
@@ -1812,6 +1831,41 @@ const initialEvents = (): MockEvent[] => [
     severity: 'alert',
     description: 'Data center Default compatibility version upgrade check found 1 issue.',
     time: minutesAgo(5),
+    data_center: { id: 'dc-01', name: 'Default' },
+  },
+  // Template and quota stories for the scoped Events tabs (template, cluster,
+  // data center, storage domain, quota). Kept inside the curated window (newer
+  // than the 61+ minute backlog) so the tabs open on them.
+  {
+    id: 'ev-16',
+    code: 49,
+    severity: 'normal',
+    description: 'Creation of Template centos-stream-9 from VM centos9-golden has been completed.',
+    time: minutesAgo(52),
+    template: { id: 'tpl-01', name: 'centos-stream-9' },
+    cluster: { id: 'cluster-01', name: 'Default' },
+    data_center: { id: 'dc-01', name: 'Default' },
+    storage_domain: { id: 'sd-01', name: 'data' },
+  },
+  {
+    id: 'ev-17',
+    code: '2023',
+    severity: 'normal',
+    description:
+      'Disk centos9_root of template centos-stream-9 was copied to domain hosted_storage.',
+    time: `${minutesAgo(25)}`,
+    template: { id: 'tpl-01', name: 'centos-stream-9' },
+    data_center: { id: 'dc-01', name: 'Default' },
+    storage_domain: { id: 'sd-02', name: 'hosted_storage' },
+  },
+  {
+    id: 'ev-18',
+    code: 10000,
+    severity: 'warning',
+    description: 'Quota dev-quota storage limit exceeded the warning threshold (85% used).',
+    time: minutesAgo(15),
+    data_center: { id: 'dc-01', name: 'Default' },
+    quota: { id: 'quota-02', name: 'dev-quota' },
   },
   {
     id: 'ev-15',
@@ -3382,8 +3436,9 @@ const templateDetails: Record<string, MockTemplateDetail> = {
 
 // Template subcollections keyed by template id. NICs share the flat NicSchema,
 // disk attachments the DiskAttachmentSchema (both mix string/number scalars to
-// exercise coercion). Only tpl-00 carries entries; the other templates return
-// empty lists / a 404-tolerant permissions collection to exercise those states.
+// exercise coercion). Only tpl-00 carries entries (plus tpl-01's disks, for the
+// Storage tab); the other templates return empty lists / a 404-tolerant
+// permissions collection to exercise those states.
 // Template NICs (GET/POST/PUT/DELETE /templates/{id}/nics). The NICs tab authors
 // them, so a `let` binding restored by resetMockVms; new NIC ids reuse nicSeq.
 const initialTemplateNics = (): Record<string, MockNic[]> => ({
@@ -3409,6 +3464,43 @@ const templateDiskAttachments: Record<string, MockDiskAttachment[]> = {
         actual_size: 2 * GiB,
         status: 'ok',
         format: 'cow',
+        storage_domains: { storage_domain: [{ id: 'sd-01' }] },
+      },
+    },
+  ],
+  // tpl-01 feeds the template Storage tab: centos9_root is copied to two
+  // domains (it lists under both), centos9_data sits on one.
+  'tpl-01': [
+    {
+      id: 'tpl-01-da-1',
+      bootable: true,
+      interface: 'virtio_scsi',
+      active: 'true',
+      disk: {
+        id: 'tpl-01-disk-1',
+        name: 'centos9_root',
+        provisioned_size: 20 * GiB,
+        actual_size: `${3 * GiB}`,
+        status: 'ok',
+        format: 'cow',
+        storage_type: 'image',
+        storage_domains: { storage_domain: [{ id: 'sd-01' }, { id: 'sd-02' }] },
+      },
+    },
+    {
+      id: 'tpl-01-da-2',
+      bootable: 'false',
+      interface: 'virtio',
+      active: true,
+      disk: {
+        id: 'tpl-01-disk-2',
+        name: 'centos9_data',
+        provisioned_size: `${50 * GiB}`,
+        actual_size: GiB,
+        status: 'ok',
+        format: 'raw',
+        storage_type: 'image',
+        storage_domains: { storage_domain: [{ id: 'sd-01' }] },
       },
     },
   ],
@@ -3876,6 +3968,25 @@ const initialGroups = (): MockGroup[] => [
 // multi-row read. The internal built-ins have no memberships, so their ids are
 // absent and the read serves the engine's omitted-key empty-list quirk.
 const userGroupMemberships: Record<string, MockGroup[]> = {
+  // The built-in admin (the default mock session) gets two memberships so the
+  // Add Permission dialog's "My groups" has rows. These are DIRECTORY-shaped
+  // (encoded directory ids, like the live GetAuthzGroupsByUserId read):
+  // dev-team is already in the engine DB (group-01, matched by name + domain),
+  // platform-team is not, so granting to it materializes it via POST /groups.
+  'user-01': [
+    {
+      id: 'dir-group-dev',
+      name: 'dev-team',
+      namespace: 'dc=ldap,dc=corp',
+      domain: { id: 'ldap.corp-authz', name: 'ldap.corp' },
+    },
+    {
+      id: 'dir-group-platform',
+      name: 'platform-team',
+      namespace: 'dc=ldap,dc=corp',
+      domain: { id: 'ldap.corp-authz', name: 'ldap.corp' },
+    },
+  ],
   'user-04': [
     {
       id: 'group-01',
@@ -6118,6 +6229,15 @@ export function setMockUsername(name: string): void {
   mockUsername = name
 }
 
+// The api root's authenticated_user.id for a mock identity. A principal with an
+// engine DB row gets that row's id (the live engine links the session's DbUser),
+// so per-user reads such as the Add Permission dialog's My groups
+// (GET /users/{id}/groups) resolve. Anyone else gets an id derived from the
+// username, so each identity still has its own /users/{id}/options profile.
+export function mockAuthenticatedUserId(username: string): string {
+  return users.find((u) => u.user_name === username)?.id ?? mockUserIdFor(username)
+}
+
 // Test hook — restores pristine fixtures between test cases.
 // Data centers and clusters are exported const bindings other modules import
 // by reference, so their reset restores the module-load snapshot in place.
@@ -6380,6 +6500,20 @@ function updateVm(id: string, body: unknown, query?: URLSearchParams): unknown {
   if (patch.rng_device !== undefined && Object.keys(patch.rng_device).length === 0) {
     delete vm.rng_device
     delete patch.rng_device
+  }
+  // external_host_provider: VmMapper sets providerId from the element's id, so
+  // an element without one ({}) unbinds the VM; UpdateVmCommand rejects an id
+  // that names no provider (ACTION_TYPE_FAILED_PROVIDER_DOESNT_EXIST).
+  if (patch.external_host_provider !== undefined) {
+    const providerId = patch.external_host_provider.id
+    if (providerId === undefined || providerId === '') {
+      delete vm.external_host_provider
+      delete patch.external_host_provider
+    } else if (!externalHostProviders.some((provider) => provider.id === providerId)) {
+      throw new ApiError(409, 'Operation Failed', '[Cannot edit VM. Provider does not exist.]')
+    } else {
+      patch.external_host_provider = { id: providerId }
+    }
   }
   // The engine applies each cpu element only when it is set (VmBaseMapper isSet
   // guards), so a PUT carrying cpu.topology alone keeps the stored cpu_tune and
@@ -7539,6 +7673,9 @@ function addHost(body: unknown, query: URLSearchParams): unknown {
     cluster?: { id?: string; name?: string }
     ssh?: { port?: number | string; authentication_method?: string }
     root_password?: string
+    // Install-time knob: accepted and not stored, as on the live engine, whose
+    // HostMapper never maps it back onto the read model
+    override_iptables?: boolean | string
     power_management?: {
       enabled?: boolean | string
       kdump_detection?: boolean | string
@@ -8342,15 +8479,32 @@ function attachDataCenterStorageDomain(dcId: string, body: unknown): unknown {
   if (spec.id === undefined || !summary) {
     throw new ApiError(404, 'Not Found', `no storage domain with id ${spec.id}`)
   }
+  // The first data domain attached to a pool becomes its master, and the pool
+  // leaves Uninitialized for Up (AttachStorageDomainToPool on an empty pool).
+  const firstData =
+    summary.type === 'data' &&
+    !storageDomains.some(
+      (sd) =>
+        sd.type === 'data' &&
+        String(sd.master) === 'true' &&
+        (sd.data_centers?.data_center ?? []).some((dc) => dc.id === dcId),
+    )
   summary.status = 'active'
   delete summary.external_status
   // mirror the inlined DC onto the flat row too (the list now follows it)
   summary.data_centers = { data_center: [{ id: dataCenter.id, name: dataCenter.name }] }
+  if (firstData) summary.master = true
   const detail = storageDomainDetails[spec.id]
   if (detail) {
     detail.status = 'active'
     delete detail.external_status
     detail.data_centers = { data_center: [{ id: dataCenter.id, name: dataCenter.name }] }
+    if (firstData) detail.master = true
+  }
+  if (firstData && dataCenter.status === 'uninitialized') {
+    dataCenter.status = 'up'
+    const dcDetail = dataCenterDetails[dcId]
+    if (dcDetail) dcDetail.status = 'up'
   }
   return { id: spec.id }
 }
@@ -10299,8 +10453,16 @@ function dataCenterStorageDomains(dcId: string): unknown {
     throw new ApiError(404, 'Not Found', `no data center with id ${dcId}`)
   }
   // Only attached domains (those reporting "status", not the unattached iso
-  // domain that reports only external_status) belong to a data center.
-  return { storage_domain: storageDomains.filter((sd) => sd.status !== undefined) }
+  // domain that reports only external_status) belong to a data center — and
+  // only to the one their data_centers link names, so a freshly created data
+  // center starts with no storage (the Guide Me steps key off this).
+  return {
+    storage_domain: storageDomains.filter(
+      (sd) =>
+        sd.status !== undefined &&
+        (sd.data_centers?.data_center ?? []).some((dc) => dc.id === dcId),
+    ),
+  }
 }
 
 // GET /datacenters/{id}/networks — the networks defined in a data center;
@@ -10312,13 +10474,13 @@ function dataCenterNetworks(dcId: string): unknown {
   return { network: networks.filter((net) => net.data_center?.id === dcId) }
 }
 
-// GET /datacenters/{id}/clusters — the clusters that belong to a data center.
-// The mock lab's clusters all live under dc-01, so both are returned there.
+// GET /datacenters/{id}/clusters — the clusters that belong to a data center,
+// by their data_center back-link (the seeded clusters all live under dc-01).
 function dataCenterClusters(dcId: string): unknown {
   if (!dataCenters.some((dc) => dc.id === dcId)) {
     throw new ApiError(404, 'Not Found', `no data center with id ${dcId}`)
   }
-  return { cluster: clusters }
+  return { cluster: clusters.filter((cluster) => cluster.data_center?.id === dcId) }
 }
 
 // GET /datacenters/{id}/qoss — an optional subcollection: a data center without
@@ -11221,8 +11383,10 @@ function searchVms(search: string | null): MockVm[] {
   return vms.filter((vm) => terms.every((term) => vmMatchesTerm(vm, term)))
 }
 
-// GET /events?search=... — the host detail Events tab emits host.name=<name>;
-// the Events page toolbar emits free text and severity=<x>. Free text matches
+// GET /events?search=... — the host detail Events tab emits host.name=<name>,
+// the other scoped Events tabs event_template= / cluster= / event_datacenter=
+// / event_storage= / quota=; the Events page toolbar emits free text and
+// severity=<x>. Free text matches
 // the description (case-insensitive substring — close enough to webadmin's
 // loose matching for the mock); unknown keyed terms broaden the result (same
 // posture as vmMatchesTerm) so the global feed is the fallback.
@@ -11238,6 +11402,18 @@ function eventMatchesTerm(event: MockEvent, term: string): boolean {
   }
   if (key === 'severity') {
     return event.severity?.toLowerCase() === value.toLowerCase()
+  }
+  // the scoped Events tabs' terms (lib/scopedEvents): exact, case-insensitive
+  // name matches on the event's entity links
+  const linked: Record<string, { name?: string } | undefined> = {
+    event_template: event.template,
+    cluster: event.cluster,
+    event_datacenter: event.data_center,
+    event_storage: event.storage_domain,
+    quota: event.quota,
+  }
+  if (key in linked) {
+    return linked[key]?.name?.toLowerCase() === value.toLowerCase()
   }
   return true
 }
@@ -11408,6 +11584,18 @@ function addEntityPermission(collection: string, id: string, rawBody: unknown): 
     // neither or both — the engine's parameter completeness check wants
     // exactly one of user.id / group.id
     throw new ApiError(400, 'Bad Request', 'Permission entity requires user.id or group.id.')
+  }
+  // PERMISSION_ADD_FAILED_PERMISSION_ALREADY_EXISTS — the same role granted
+  // to the same principal on the same object is refused, which also gives the
+  // Add Permission dialog's partial-failure path something to hit.
+  const principalId = hasUser ? body.user?.id : body.group?.id
+  const existing = effectivePermissions(collection, id) ?? []
+  if (
+    existing.some(
+      (p) => p.role?.id === role.id && (hasUser ? p.user?.id : p.group?.id) === principalId,
+    )
+  ) {
+    throw new ApiError(409, 'Operation Failed', 'Cannot add Permission. Permission already exists.')
   }
   const created: MockHostPermission = {
     id: `perm-new-${++permissionSeq}`,
@@ -11880,9 +12068,15 @@ const routes: MockRoute[] = [
     pattern: /^$/,
     // authenticated_user feeds fetchCapabilityProfile's tier heuristic; the
     // live engine serializes it as a bare link, the mock inlines user_name.
+    // The id comes from mockAuthenticatedUserId: the DB row when the principal has one
+    // (Add Permission's My groups), else one derived from the username so each mock
+    // identity still has its own /users/{id}/options profile (routes/user-options.ts).
     handle: () => ({
       ...API_ROOT,
-      authenticated_user: { id: 'mock-user', user_name: mockUsername },
+      authenticated_user: {
+        id: mockAuthenticatedUserId(mockUsername),
+        user_name: mockUsername,
+      },
     }),
   },
   {

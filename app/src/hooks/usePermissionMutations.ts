@@ -1,12 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { removePermission, type PermissionEntityKind } from '../api/resources/permissions'
 import {
-  addPermission,
-  removePermission,
-  type PermissionEntityKind,
-  type PermissionSpec,
-} from '../api/resources/permissions'
+  grantPermissions,
+  type GrantBatchResult,
+  type GrantTarget,
+} from '../api/resources/permissionGrants'
 import { listRoles } from '../api/resources/roles'
-import { listGroups, listUsers } from '../api/resources/users'
+import { listGroups, listMyGroups, listUsers } from '../api/resources/users'
 import { useNotify } from '../notifications/context'
 import { groupKeys, userKeys } from './useAdminResources'
 import { roleKeys } from './useRoles'
@@ -75,37 +75,66 @@ export function useGroups(search = '') {
   })
 }
 
-// Display names ride through the mutation variables purely for the toasts —
-// the house pattern (useDeleteCluster carries `name` the same way). The
-// caller resolves them from the selected role/principal rows.
-export interface AddPermissionVars {
-  spec: PermissionSpec
-  roleName: string
-  assigneeName: string
+// GET /users/{me}/groups — the "My Groups" source (listMyGroups). Only read
+// while that radio is picked; memberships change rarely, so it shares the
+// principal-cache window. Its own key (not under ['groups', search], where a
+// search term could collide with it).
+export const MY_GROUPS_KEY = ['my-groups'] as const
+
+export function useMyGroups(enabled: boolean) {
+  return useQuery({
+    queryKey: MY_GROUPS_KEY,
+    queryFn: () => listMyGroups(),
+    staleTime: PRINCIPALS_STALE_MS,
+    enabled,
+  })
 }
 
-// POST /{collection}/{id}/permissions. Engine-side validation (invalid role,
-// principal missing from the DB, non-SuperUser granting an admin role, pool
-// VM UserRole) surfaces via error.message verbatim.
-export function useAddPermission(entityKind: PermissionEntityKind, entityId: string) {
-  const queryClient = useQueryClient()
-  const { notify } = useNotify()
+export interface GrantPermissionsVars {
+  roleId: string
+  targets: GrantTarget[]
+}
 
-  return useMutation({
-    mutationFn: ({ spec }: AddPermissionVars) => addPermission(entityKind, entityId, spec),
-    onSuccess: (_created, { roleName, assigneeName }) => {
-      notify({ title: `${roleName} granted to ${assigneeName}`, variant: 'success' })
-    },
-    onError: (error) => {
-      // ApiError.message carries the engine fault detail verbatim
-      notify({ title: error.message, variant: 'danger' })
-    },
-    onSettled: () => {
+// The Add Permission dialog's batch grant (permissionGrants.grantPermissions):
+// one POST per principal, directory principals materialized first. Resolves
+// with the per-target outcome — partial failure is a result, not a thrown
+// error, so the dialog can keep the failed picks for a retry. The full DB
+// inventories a directory row is matched against come from the query cache
+// (the PermissionsPanel name join already reads them), and the invalidations
+// refresh the entity's grants plus, when something was materialized, the
+// user/group inventories.
+export function useGrantPermissions(entityKind: PermissionEntityKind, entityId: string) {
+  const queryClient = useQueryClient()
+
+  return useMutation<GrantBatchResult, Error, GrantPermissionsVars>({
+    mutationFn: ({ roleId, targets }) =>
+      grantPermissions(entityKind, entityId, roleId, targets, {
+        users: () =>
+          queryClient.fetchQuery({
+            queryKey: userKeys.list(''),
+            queryFn: () => listUsers(),
+            staleTime: PRINCIPALS_STALE_MS,
+          }),
+        groups: () =>
+          queryClient.fetchQuery({
+            queryKey: groupKeys.list(''),
+            queryFn: () => listGroups(),
+            staleTime: PRINCIPALS_STALE_MS,
+          }),
+      }),
+    onSettled: (result) => {
       void queryClient.invalidateQueries({ queryKey: permissionKeys.entity(entityKind, entityId) })
+      if (result !== undefined && result.materialized > 0) {
+        void queryClient.invalidateQueries({ queryKey: userKeys.all })
+        void queryClient.invalidateQueries({ queryKey: groupKeys.all })
+      }
     },
   })
 }
 
+// Display names ride through the mutation variables purely for the toasts —
+// the house pattern (useDeleteCluster carries `name` the same way). The
+// caller resolves them from the selected permission row.
 export interface RemovePermissionVars {
   permissionId: string
   roleName: string

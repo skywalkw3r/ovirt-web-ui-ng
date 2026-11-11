@@ -3,6 +3,7 @@ import { getErratum, listErrata } from '../api/resources/errata'
 import {
   createProvider,
   deleteProvider,
+  listExternalHostProviders,
   listProviders,
   testProviderConnectivity,
   updateProvider,
@@ -27,6 +28,9 @@ import { useAdminResourcePollInterval } from './useAdminResources'
 // detail read nests under the list prefix so an errata invalidation covers it.
 export const providerKeys = {
   all: ['providers'] as const,
+  // /externalhostproviders alone (Edit VM's Foreman/Satellite picker); under
+  // the ['providers'] prefix so a provider write refreshes it too
+  hostProviders: ['providers', 'host'] as const,
   // the external networks a provider exposes (ProviderNetworksTab + the two
   // import modals); NOT under the ['providers'] prefix — a provider-list
   // invalidation deliberately leaves the fetched network catalog alone
@@ -87,6 +91,18 @@ export function useProviders() {
     queryFn: () => listProviders(),
     refetchInterval,
     enabled: isAdmin,
+  })
+}
+
+// The Foreman/Satellite providers for Edit VM's provider picker. Read once per
+// open (no poll: the list is near-static and the modal is short-lived), and
+// admin-only like every provider collection.
+export function useExternalHostProviders(enabled = true) {
+  const { isAdmin } = useCapabilities()
+  return useQuery({
+    queryKey: providerKeys.hostProviders,
+    queryFn: () => listExternalHostProviders(),
+    enabled: enabled && isAdmin,
   })
 }
 

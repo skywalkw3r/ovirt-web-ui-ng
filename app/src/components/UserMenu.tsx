@@ -33,6 +33,7 @@ import { useRuntimeConfig } from '../config/runtime'
 import { LOCALE_LABELS } from '../i18n/locales'
 import { useT } from '../i18n/useT'
 import { isLocale, SUPPORTED_LOCALES } from '../settings/context'
+import { useRoaming } from '../settings/RoamingSettingsProvider'
 import { useSettings } from '../settings/SettingsProvider'
 import {
   isSessionTimeout,
@@ -146,10 +147,16 @@ const REFRESH_INTERVAL_OPTIONS_MS = [5_000, 10_000, 30_000, 60_000] as const
 // sign-out lives in the menu) and a Preferences section (theme, refresh
 // cadence, preferred console, language). Preferences write through to
 // SettingsProvider / ThemeProvider (localStorage), so there is nothing to
-// save or cancel. Left-rail sections per the house modal rule. The Phase-later
-// roaming path is the engine's user-options API.
-function SettingsModal({ onClose }: { onClose: () => void }) {
+// save or cancel; RoamingSettingsProvider then roams them through the
+// engine's /users/{id}/options, and a note at the top of Preferences says
+// whether that is happening. Left-rail sections per the house modal rule.
+function SettingsModal({ onClose: close }: { onClose: () => void }) {
   const t = useT()
+  const { status: roaming, flush: flushRoaming } = useRoaming()
+  const onClose = () => {
+    flushRoaming()
+    close()
+  }
   const { username } = useAuth()
   const { tier, isAdmin, loaded } = useCapabilities()
   const { theme, toggle: toggleTheme } = useTheme()
@@ -206,6 +213,22 @@ function SettingsModal({ onClose }: { onClose: () => void }) {
 
   const preferences = (
     <Form onSubmit={(event) => event.preventDefault()}>
+      {/* Where the preferences live: nothing while the first engine read is
+          in flight, so the note never flips from "this browser only" to
+          "roaming" a moment after opening. */}
+      {roaming !== 'pending' && (
+        <HelperText id="preferences-roaming">
+          <HelperTextItem>
+            <FormattedMessage
+              id={
+                roaming === 'roaming'
+                  ? 'settings.pref.roaming.synced'
+                  : 'settings.pref.roaming.local'
+              }
+            />
+          </HelperTextItem>
+        </HelperText>
+      )}
       <FormGroup
         label={t('settings.pref.theme')}
         role="radiogroup"

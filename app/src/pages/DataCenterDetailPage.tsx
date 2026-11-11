@@ -33,6 +33,7 @@ import { ListPageHeader } from '../components/ListPageHeader'
 import { StatusBadge } from '../components/StatusBadge'
 import { NotPermitted } from '../components/NotPermitted'
 import { DataCenterFormModal } from '../components/datacenter-form/DataCenterFormModal'
+import { useGuideMeLauncher } from '../components/guide-me/guideMeContext'
 import {
   useCleanFinishedTasks,
   useDeleteDataCenter,
@@ -47,6 +48,8 @@ import { DataCenterQuotasTab } from '../components/datacenter-tabs/DataCenterQuo
 import { DataCenterStorageActionsTab } from '../components/datacenter-form/DataCenterStorageActionsTab'
 import { ReinitializeDataCenterModal } from '../components/datacenter-form/ReinitializeDataCenterModal'
 import { IscsiMultipathTab } from '../components/datacenter-tabs/IscsiMultipathTab'
+import { ScopedEventsTab } from '../components/events/ScopedEventsTab'
+import { scopedEventsSearch } from '../lib/scopedEvents'
 import { useDataCenter } from '../hooks/useDataCenterDetail'
 import { statusText } from '../lib/format'
 import { dataCenterDetailRoute } from '../routes/router'
@@ -98,6 +101,7 @@ export function DataCenterDetailPage() {
   // Clean Finished Tasks is non-destructive (it only removes finished task
   // records), so it fires straight from the kebab with no confirm.
   const cleanTasksMutation = useCleanFinishedTasks()
+  const guideMe = useGuideMeLauncher()
 
   const notFound = dataCenter.error instanceof ApiError && dataCenter.error.status === 404
 
@@ -214,6 +218,16 @@ export function DataCenterDetailPage() {
                   )}
                 >
                   <DropdownList>
+                    {guideMe && (
+                      <DropdownItem
+                        onClick={() => {
+                          setKebabOpen(false)
+                          guideMe.open({ kind: 'dataCenter', id: dataCenterId })
+                        }}
+                      >
+                        {t('guideMe.action')}
+                      </DropdownItem>
+                    )}
                     {canReinitialize(dataCenter.data.status) && (
                       <DropdownItem
                         onClick={() => {
@@ -397,6 +411,15 @@ export function DataCenterDetailPage() {
             >
               <TabContentBody hasPadding>
                 <DataCenterPermissionsTab dataCenterId={dataCenterId} />
+              </TabContentBody>
+            </Tab>
+            <Tab eventKey="events" title={<TabTitleText>{t('dcDetail.tab.events')}</TabTitleText>}>
+              <TabContentBody hasPadding>
+                <ScopedEventsTab
+                  search={scopedEventsSearch.dataCenter(dataCenter.data.name)}
+                  ariaLabel={t('dcEvents.table.ariaLabel')}
+                  emptyBody={t('dcEvents.empty.body')}
+                />
               </TabContentBody>
             </Tab>
           </Tabs>

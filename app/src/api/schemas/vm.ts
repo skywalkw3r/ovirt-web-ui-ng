@@ -185,6 +185,10 @@ export const VmSchema = z.looseObject({
   // The CPU profile bound to the VM (Resource Allocation). Bare { id } link;
   // the name is resolved client-side against the cluster's cpuprofiles list.
   cpu_profile: z.looseObject({ id: z.string().optional() }).optional(),
+  // The Foreman/Satellite provider the VM is bound to (Edit VM's
+  // Foreman/Satellite section). A bare { id } link on a plain read, absent when
+  // none: VmMapper maps VmStatic.providerId both ways.
+  external_host_provider: z.looseObject({ id: z.string().optional() }).optional(),
   // IO threads count (Resource Allocation). JSON-string on the live engine.
   io: z.looseObject({ threads: z.coerce.number().optional() }).optional(),
   // VirtIO-SCSI controller toggle (Resource Allocation).

@@ -496,7 +496,7 @@ export const de: LocaleCatalog = {
   'datacenters.search.hint': 'name=Default — oder Klartext',
   'datacenters.search.ariaLabel': 'Rechenzentren durchsuchen',
   'datacenters.pagination.ariaLabel': 'Seitennummerierung von Rechenzentren',
-  'datacenters.new': 'Rechenzentrum',
+  'datacenters.new': 'Neues Rechenzentrum',
   'datacenters.loading': 'Rechenzentren werden geladen',
   'datacenters.error.title': 'Rechenzentren konnten nicht geladen werden',
   'datacenters.empty.title': 'Keine Rechenzentren',
@@ -1076,6 +1076,43 @@ export const de: LocaleCatalog = {
   'permissions.add.role.none': 'Auf dieser Engine sind keine zuweisbaren Rollen verfügbar.',
   'permissions.add.role.userGroup': 'Benutzerrollen',
   'permissions.add.role.adminGroup': 'Administrative Rollen',
+  // Add Permission picker depth (issue #31): multi-select, My groups,
+  // Everyone, and directory search.
+  'permissions.add.kind.myGroups': 'Meine Gruppen',
+  'permissions.add.kind.everyone': 'Alle',
+  'permissions.add.source.label': 'Suchen in',
+  'permissions.add.source.engine': 'Engine-Datenbank',
+  'permissions.add.source.directory': 'Verzeichnis: {domain}',
+  'permissions.add.source.domainsLoading': 'Verzeichnisse werden geladen',
+  'permissions.add.source.domainsError': 'Verzeichnisse konnten nicht geladen werden: {message}',
+  'permissions.add.source.directoryHint':
+    'In einem Verzeichnis gefundene Principals, die der Engine noch nicht bekannt sind, werden beim Zuweisen der Rolle zur Engine hinzugefügt.',
+  'permissions.add.empty.directory.users': 'Dieses Verzeichnis hat keine Benutzer zurückgegeben.',
+  'permissions.add.empty.directory.groups': 'Dieses Verzeichnis hat keine Gruppen zurückgegeben.',
+  'permissions.add.myGroups.loading': 'Ihre Gruppen werden geladen',
+  'permissions.add.myGroups.error': 'Ihre Gruppen konnten nicht geladen werden: {message}',
+  'permissions.add.myGroups.empty.title': 'Keine Gruppen',
+  'permissions.add.myGroups.empty.body': 'Ihr Konto ist in keiner Verzeichnisgruppe Mitglied.',
+  'permissions.add.myGroups.table.ariaLabel': 'Meine Gruppen',
+  'permissions.add.everyone.body':
+    'Die Rolle wird der integrierten Gruppe „Everyone“ zugewiesen, sodass jeder Benutzer sie für diese(s) {noun} erhält.',
+  'permissions.add.selectMany.user':
+    'Wählen Sie einen oder mehrere Benutzer aus, denen die Rolle zugewiesen werden soll.',
+  'permissions.add.selectMany.group':
+    'Wählen Sie eine oder mehrere Gruppen aus, denen die Rolle zugewiesen werden soll.',
+  'permissions.add.selected.count':
+    '{count, plural, one {# Principal ausgewählt} other {# Principals ausgewählt}}',
+  'permissions.add.selected.ariaLabel': 'Ausgewählte Principals',
+  'permissions.add.selected.remove': '{name} aus der Auswahl entfernen',
+  'permissions.add.result.failed.title':
+    '{count, plural, one {Die Rolle konnte # Principal nicht zugewiesen werden} other {Die Rolle konnte # Principals nicht zugewiesen werden}}',
+  'permissions.add.result.failed.body':
+    'Die fehlgeschlagenen Principals bleiben ausgewählt. Beheben Sie die Ursache und versuchen Sie es erneut, oder entfernen Sie sie aus der Auswahl.',
+  'permissions.add.result.failed.item': '{name}: {message}',
+  'permissions.add.submit.retry': 'Fehlgeschlagene wiederholen',
+  'permissions.add.toast.granted': '{role} an {name} vergeben',
+  'permissions.add.toast.grantedMany':
+    '{role} an {count, plural, one {# Principal} other {# Principals}} vergeben',
   'users.notPermitted': 'Benutzer',
   'users.title': 'Benutzer',
   'users.search.hint': 'usrname=jdoe* — oder Klartext',
@@ -1777,6 +1814,11 @@ export const de: LocaleCatalog = {
   'settings.pref.console.vncDescription': 'Funktioniert mit noVNC und den meisten Desktop-Viewern.',
   'settings.pref.console.spiceDescription': 'Reichhaltigeres Remote-Erlebnis über virt-viewer.',
   'settings.pref.language': 'Sprache',
+  // Roaming note (components/UserMenu, settings/RoamingSettingsProvider)
+  'settings.pref.roaming.synced':
+    'In Ihrem oVirt-Benutzerprofil gespeichert, sodass sie Ihnen in andere Browser folgen.',
+  'settings.pref.roaming.local':
+    'Nur in diesem Browser gespeichert; Ihr oVirt-Benutzerprofil steht zum Speichern nicht zur Verfügung.',
   'settings.refresh.seconds': '{count, plural, one {# Sekunde} other {# Sekunden}}',
   'settings.timeout.minutes': '{count, plural, one {# Minute} other {# Minuten}}',
   'settings.timeout.hours': '{count, plural, one {# Stunde} other {# Stunden}}',
@@ -1961,11 +2003,7 @@ export const de: LocaleCatalog = {
   'hostNuma.loading': 'NUMA-Topologie wird geladen',
   'host.console.open': 'Host-Konsole',
   'host.console.newTab': 'Öffnet Cockpit in einem neuen Tab',
-  'host.console.sso.note':
-    'Die Konsole wird in einem neuen Tab geöffnet und meldet Sie mit Ihrer aktuellen Sitzung an.',
-  'host.console.direct.title': 'Die Konsole öffnet {url} in einem neuen Tab',
-  'host.console.direct.body':
-    'Melden Sie sich mit einem Konto auf dem Host an. Cockpit verwendet das Zertifikat des Hosts, daher zeigt Ihr Browser möglicherweise eine Warnung an, bis diesem Zertifikat vertraut wird.',
+  'host.console.tooltip': 'Cockpit-Oberfläche für {name} öffnen',
   'datacenters.forceRemove.action': 'Entfernen erzwingen',
   'datacenters.forceRemove.confirm.title': "Entfernen von Rechenzentrum ''{name}'' erzwingen?",
   'datacenters.forceRemove.confirm.body':
@@ -3366,6 +3404,9 @@ export const de: LocaleCatalog = {
   'hostForm.field.rootPassword': 'Root-Passwort',
   'hostForm.field.sshPort': 'SSH-Port',
   'hostForm.field.sshUser': 'SSH-Benutzer',
+  'hostForm.firewall.configure': 'Host-Firewall automatisch konfigurieren',
+  'hostForm.firewall.configure.help':
+    'Die Installation öffnet die von oVirt benötigten Ports in der Firewall des Hosts und verwendet dabei den Firewall-Typ des Clusters. Nur deaktivieren, wenn Sie die Host-Firewall selbst verwalten; die benötigten Ports müssen dann manuell geöffnet werden.',
   'hostForm.hostedEngine.deploy': 'Hosted Engine bereitstellen',
   'hostForm.hostedEngine.deploy.help':
     'Die Installation stellt auch die Self-Hosted-Engine-Komponenten bereit, sodass dieser Host die Engine-VM neben den vorhandenen Hosted-Engine-Hosts ausführen kann. Für einen regulären Virtualisierungshost deaktiviert lassen.',
@@ -4954,6 +4995,107 @@ export const de: LocaleCatalog = {
     'Das Rückgängigmachen der teilweisen Einrichtung wurde abgebrochen: {error}',
   'host.configureLocalStorage.outcome.rerunHint':
     'Versetzen Sie zum Abschließen den Host bei Bedarf in die Wartung und führen Sie „Lokalen Speicher konfigurieren“ erneut aus; dabei wird das leere lokale Rechenzentrum wiederverwendet.',
+  // Guide Me (data center and cluster next steps)
+  'guideMe.action': 'Anleitung',
+  'guideMe.title': 'Anleitung: {name}',
+  'guideMe.loading': 'Nächste Schritte werden geladen',
+  'guideMe.error.title': 'Die nächsten Schritte konnten nicht geladen werden',
+  'guideMe.dataCenter.created': 'Rechenzentrum erstellt.',
+  'guideMe.dataCenter.configured':
+    'Das Rechenzentrum ist vollständig konfiguriert und einsatzbereit.',
+  'guideMe.cluster.created': 'Cluster erstellt.',
+  'guideMe.cluster.configured': 'Der Cluster ist vollständig konfiguriert und einsatzbereit.',
+  'guideMe.configured.title': 'Konfiguration abgeschlossen',
+  'guideMe.unconfigured': 'Einige Entitäten müssen noch konfiguriert werden.',
+  'guideMe.section.required': 'Erforderliche Schritte',
+  'guideMe.section.optional': 'Optionale Schritte',
+  'guideMe.configureLater': 'Später konfigurieren',
+  'guideMe.step.configureCluster': 'Cluster konfigurieren',
+  'guideMe.step.addAnotherCluster': 'Weiteren Cluster hinzufügen',
+  'guideMe.step.configureHost': 'Host konfigurieren',
+  'guideMe.step.addAnotherHost': 'Weiteren Host hinzufügen',
+  'guideMe.step.configureStorage': 'Speicher konfigurieren',
+  'guideMe.step.addMoreStorage': 'Weiteren Speicher hinzufügen',
+  'guideMe.step.attachStorage': 'Speicher anhängen',
+  'guideMe.step.attachMoreStorage': 'Weiteren Speicher anhängen',
+  'guideMe.step.configureIsoLibrary': 'ISO-Bibliothek konfigurieren',
+  'guideMe.step.attachIsoLibrary': 'ISO-Bibliothek anhängen',
+  'guideMe.step.addLocalStorage': 'Lokalen Speicher hinzufügen',
+  'guideMe.reason.noUpHost': 'Das Rechenzentrum benötigt mindestens einen aktiven Host.',
+  'guideMe.reason.noCluster': 'Fügen Sie dem Rechenzentrum zuerst einen Cluster hinzu.',
+  'guideMe.reason.noUnattachedData': 'Es ist keine nicht angehängte Datendomäne verfügbar.',
+  'guideMe.reason.noActiveMaster':
+    'Das Rechenzentrum benötigt zuerst eine aktive Master-Datendomäne.',
+  'guideMe.reason.noIsoDomain': 'Es ist keine ISO-Domäne zum Anhängen verfügbar.',
+  'guideMe.reason.localDcHasHost':
+    'Ein lokales Rechenzentrum enthält nur einen Host, und dieses hat ihn bereits.',
+  'guideMe.reason.dcInitialized': 'Das Rechenzentrum ist bereits initialisiert.',
+  'guideMe.reason.clusterLocalHasHost':
+    'Dieser Cluster gehört zu einem lokalen Rechenzentrum, das seinen einzigen Host bereits hat.',
+  'guideMe.note.localStorage':
+    'Um das Rechenzentrum vollständig zu konfigurieren, hängen Sie mindestens eine lokale Speicherdomäne an und aktivieren Sie sie.',
+  'guideMe.note.clusterNoActions':
+    'Für diesen Cluster sind keine Aktionen verfügbar: Er ist keinem Rechenzentrum zugeordnet.',
+  // Configure aggregate entry point (pages/ConfigurePage.tsx): the webadmin
+  // Administration › Configure index linking to its five surfaces.
+  'nav.configure': 'Konfigurieren',
+  'configure.title': 'Konfigurieren',
+  'configure.intro':
+    'Engine-weite Definitionen, die alle Rechenzentren und Cluster gemeinsam nutzen. Jede öffnet sich auf einer eigenen Seite.',
+  'configure.loading': 'Konfigurationsbereiche werden geladen',
+  'configure.notPermitted': 'die Systemkonfiguration',
+  'configure.list.ariaLabel': 'Konfigurationsbereiche',
+  'configure.card.roles':
+    'Rollen und die Berechtigungen festlegen, die sie Benutzern und Administratoren gewähren.',
+  'configure.card.systemPermissions': 'Benutzern und Gruppen systemweit Rollen zuweisen.',
+  'configure.card.schedulingPolicies':
+    'Die Filter-, Gewichtungs- und Lastausgleichsregeln verwalten, mit denen Cluster VMs platzieren.',
+  'configure.card.instanceTypes':
+    'Wiederverwendbare Hardwareprofile für neue virtuelle Maschinen festlegen.',
+  'configure.card.macPools':
+    'Die MAC-Adressbereiche verwalten, die virtuellen NICs zugewiesen werden.',
+  // EDIT VM: Foreman/Satellite section (provider picker)
+  'vm.edit.section.foreman': 'Foreman/Satellite',
+  'vm.edit.foreman.provider': 'Anbieter',
+  'vm.edit.foreman.none': 'Kein Anbieter',
+  'vm.edit.foreman.unknown': 'Unbekannter Anbieter ({id})',
+  'vm.edit.foreman.loading': 'Foreman/Satellite-Anbieter werden geladen',
+  'vm.edit.foreman.empty':
+    'Es sind keine Foreman/Satellite-Anbieter registriert. Fügen Sie auf der Seite „Anbieter“ einen hinzu, um diese VM daran zu binden.',
+  'vm.edit.foreman.help':
+    'Die Engine bezieht die Errata dieser VM vom ausgewählten Foreman/Satellite-Anbieter.',
+  // Template Storage tab + scoped Events tabs (issue #33) ----------------
+  'scopedEvents.loading': 'Ereignisse werden geladen',
+  'scopedEvents.error.title': 'Ereignisse konnten nicht geladen werden',
+  'scopedEvents.empty.title': 'Keine Ereignisse',
+  'templateDetail.tab.storage': 'Speicher',
+  'templateDetail.tab.events': 'Ereignisse',
+  'templateEvents.empty.body':
+    'Engine-Audit-Log-Ereignisse für diese Vorlage werden hier angezeigt.',
+  'templateEvents.table.ariaLabel': 'Ereignisse für diese Vorlage',
+  'templateStorage.empty.body':
+    'Keiner der Datenträger dieser Vorlage liegt auf einer Speicherdomäne.',
+  'templateStorage.table.ariaLabel': 'Speicherdomänen mit den Datenträgern dieser Vorlage',
+  'templateStorage.column.used': 'Belegter Platz',
+  'templateStorage.column.disks': 'Datenträger',
+  'templateStorage.expand.ariaLabel': 'Datenträger anzeigen',
+  'templateStorage.disks.ariaLabel': 'Vorlagen-Datenträger auf {name}',
+  'clusterDetail.tab.events': 'Ereignisse',
+  'clusterEvents.empty.body':
+    'Engine-Audit-Log-Ereignisse für diesen Cluster werden hier angezeigt.',
+  'clusterEvents.table.ariaLabel': 'Ereignisse für diesen Cluster',
+  'dcDetail.tab.events': 'Ereignisse',
+  'dcEvents.empty.body':
+    'Engine-Audit-Log-Ereignisse für dieses Rechenzentrum werden hier angezeigt.',
+  'dcEvents.table.ariaLabel': 'Ereignisse für dieses Rechenzentrum',
+  'storageDetail.tab.events': 'Ereignisse',
+  'storageEvents.empty.body':
+    'Engine-Audit-Log-Ereignisse für diese Speicherdomäne werden hier angezeigt.',
+  'storageEvents.table.ariaLabel': 'Ereignisse für diese Speicherdomäne',
+  'quotaDetail.tab.events': 'Ereignisse',
+  'quotaEvents.empty.body':
+    'Engine-Audit-Log-Ereignisse für diese Kontingentregelung werden hier angezeigt.',
+  'quotaEvents.table.ariaLabel': 'Ereignisse für diese Kontingentregelung',
   // List-grid columns filled by a follow= or one shared read (issue #34)
   'vms.column.cpu': 'CPU',
   'vms.column.network': 'Netzwerk',

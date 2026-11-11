@@ -194,6 +194,12 @@ export interface AddHostSpec {
   // they are sent only when false
   activateAfterInstall?: boolean
   rebootAfterInstall?: boolean
+  // override_iptables — a Host body field (not a query param) that
+  // BackendHostsResource.add copies into AddVdsActionParameters.overrideFirewall;
+  // host-deploy then configures the cluster's firewall type. Engine default
+  // true, so callers send it only to turn the configuration off. Write-only:
+  // the engine does not return it on GET
+  overrideFirewall?: boolean
   powerManagement?: { enabled?: boolean; kdumpDetection?: boolean; automaticPm?: boolean }
   spmPriority?: number
   // display.address override — HostMapper maps it into VdsStatic on POST just
@@ -226,6 +232,7 @@ export async function addHost(spec: AddHostSpec): Promise<Host> {
   // root_password is the canonical password path (takes priority over
   // ssh.user.password in HostMapper); publickey installs send no secret at all
   if (authMethod === 'password') body.root_password = spec.rootPassword
+  if (spec.overrideFirewall !== undefined) body.override_iptables = spec.overrideFirewall
   if (spec.powerManagement) {
     body.power_management = {
       enabled: spec.powerManagement.enabled,
