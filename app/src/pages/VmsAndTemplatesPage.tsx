@@ -59,6 +59,12 @@ import { useHosts } from '../hooks/useHosts'
 import { useVms } from '../hooks/useVms'
 import { useT } from '../i18n/useT'
 import { downloadCsv, toCsv } from '../lib/csv'
+import {
+  hasFilterTokens,
+  matchesFilterTokens,
+  resolveFilterTokens,
+  splitFilterTokens,
+} from '../lib/filter-tokens'
 
 // session-scoped view memory for the folder selection (see the restore
 // effect). The full key carries the active engine base (computed in the
@@ -235,19 +241,26 @@ export function VmsAndTemplatesPage() {
   // filter; both are synchronous derivations over the followed tags. This is
   // the scope the facet menus describe — their option lists and counts come
   // from these rows, so a folder with no Windows VMs offers no Windows.
-  const needle = filter.trim().toLowerCase()
+  // folder:/tag: tokens are lifted out of the box first (lib/filter-tokens);
+  // what remains is the name needle. hasFilterText keys the "nothing
+  // matches" empty state on the box as typed, tokens included.
+  const filterTokens = useMemo(() => splitFilterTokens(filter), [filter])
+  const hasFilterText = filter.trim() !== ''
+  const needle = filterTokens.rest.trim().toLowerCase()
   const scoped = useMemo(() => {
     const folderIds =
       selectedFolderId === null ? null : folderSubtreeIds(tags.data ?? [], selectedFolderId)
+    const tokenIds = resolveFilterTokens(filterTokens, tags.data ?? [])
     return rows.filter((row) => {
       const entity = rowEntity(row)
       if (folderIds !== null) {
         const entityTags = followedTagsOf(entity) ?? []
         if (!entityTags.some((tag) => folderIds.has(tag.id))) return false
       }
+      if (!matchesFilterTokens(entity, tokenIds)) return false
       return needle === '' || entity.name.toLowerCase().includes(needle)
     })
-  }, [rows, tags.data, selectedFolderId, needle])
+  }, [rows, tags.data, selectedFolderId, filterTokens, needle])
   const visible = useMemo(
     () => scoped.filter((row) => matchesFacets(row, facetCtx, VM_LIST_FACETS, facets.selection)),
     [scoped, facetCtx, facets.selection],
@@ -273,7 +286,7 @@ export function VmsAndTemplatesPage() {
   const isPending = vms.isPending
   const isError = vms.isError
   const error = vms.error
-  const isFiltering = selectedFolderId !== null && tags.isPending
+  const isFiltering = (selectedFolderId !== null || hasFilterTokens(filterTokens)) && tags.isPending
 
   const sorted = useMemo(() => {
     const byKey = new Map(columns.map((column) => [column.key, column]))
@@ -425,7 +438,7 @@ export function VmsAndTemplatesPage() {
         </EmptyState>
       )}
 
-      {!isPending && !isError && !isFiltering && visible.length === 0 && needle !== '' && (
+      {!isPending && !isError && !isFiltering && visible.length === 0 && hasFilterText && (
         <EmptyState titleText={t('inventory.searchEmpty.title')}>
           <EmptyStateBody>
             <code>{filter}</code>
@@ -453,7 +466,7 @@ export function VmsAndTemplatesPage() {
         !isError &&
         !isFiltering &&
         visible.length === 0 &&
-        needle === '' &&
+        !hasFilterText &&
         hasFacets && (
           <EmptyState titleText={t('inventory.filterEmpty.title')}>
             <EmptyStateBody>
@@ -473,7 +486,7 @@ export function VmsAndTemplatesPage() {
         !isError &&
         !isFiltering &&
         visible.length === 0 &&
-        needle === '' &&
+        !hasFilterText &&
         !hasFacets && (
           <EmptyState
             titleText={

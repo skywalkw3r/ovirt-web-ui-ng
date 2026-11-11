@@ -59,7 +59,7 @@ PF6 token docs. Companion to `PLAN.md`.
 | Folder deep links | loose `folder` search param + `Breadcrumb` of the ancestor chain |
 | VMs & Templates view | shared `FolderTreePanel` + typed mixed `Table` (`VirtualMachineIcon`/`BlueprintIcon`) |
 | Hosts & Clusters view | structural `TreeView` (kind icons, VM-count badges) + scoped VM `Table` |
-| Filter by tag | `Toolbar` filter group + `LabelGroup` of active filters *(filter-bar `tag:` tokens still future work)* |
+| Filter by tag | `Toolbar` filter group + `LabelGroup` of active filters; filter-bar `folder:` and `tag:` tokens via `lib/filter-tokens.ts` |
 | Right-click context menus | cursor-anchored `Dropdown` (`components/context-menu/ContextMenu.tsx`: invisible fixed 1×1 toggle span; PF Popper only positions on a false→true open transition, so the primitive mount-gates `isOpen`) — folder tree, VM/template rows and infra tree nodes; row menus are the *same* `VmActionsMenu`/`TemplateActionsMenu`/`HostActionsMenu` components in `contextMenu` prop mode, so right-click and kebab can't drift |
 
 ### Hard 20% (Phase 3)

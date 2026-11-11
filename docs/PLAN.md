@@ -326,9 +326,15 @@ management affordances hidden, filtering intact); the whole surface i18n'd
 the VM/template list reads — the per-VM N+1 is gone. Templates join the same
 tree via `/templates/{id}/tags`, and vCenter's dual navigation shipped as
 **VMs & Templates** (combined typed rows) plus the structural **Hosts &
-Clusters** view. Still open: `folder:`/`tag:` filter-bar tokens, folder
-capture in saved bookmarks, and whether the VMs-page folder pane retires in
-favor of the combined view.
+Clusters** view. `folder:`/`tag:` filter-bar tokens shipped 2026-11-11
+(`lib/filter-tokens.ts`): the VMs, Templates and VMs & Templates bars lift
+them out of the input, filter client-side over the followed tags (a folder
+token covers its subtree; tokens AND together) and pass only the remainder to
+the engine search. No autocomplete, since the list bars have none; the
+command palette and the Hosts list do not take the tokens. Still open: folder
+capture in saved bookmarks (a typed `folder:` token is saved with the query,
+the tree selection in `?folder=` is not), and whether the VMs-page folder pane
+retires in favor of the combined view.
 
 **2026-07-11 right-click pass (shipped):** vCenter-style context menus via a
 cursor-anchored `ContextMenu` primitive — folder nodes (new/rename/move/

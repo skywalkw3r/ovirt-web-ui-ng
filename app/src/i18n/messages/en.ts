@@ -223,7 +223,7 @@ export const en = {
   'inventory.tree.ariaLabel': 'VM and template folders',
   'inventory.sidebar.resize': 'Resize sidebar',
   'inventory.filter.ariaLabel': 'Filter VMs and templates by name',
-  'inventory.filter.hint': 'Filter by name',
+  'inventory.filter.hint': 'Filter by name, folder:/prod/web or tag:pci-dss',
   'inventory.column.type': 'Type',
   'inventory.column.name': 'Name',
   'inventory.column.status': 'Status',
@@ -553,7 +553,7 @@ export const en = {
   'vms.searchEmpty.matches': 'Nothing matches {query}',
   'vms.empty.title': 'No virtual machines',
   'vms.empty.body': 'VMs you have permission to see will appear here.',
-  'vms.search.hint': 'name=web* and status=up — or plain text',
+  'vms.search.hint': 'name=web* and status=up, folder:/prod/web, tag:pci-dss, or plain text',
   'vms.search.ariaLabel': 'Search virtual machines',
   'vms.pagination.ariaLabel': 'Virtual machines pagination',
   'vms.table.ariaLabel': 'Virtual machines',
@@ -2663,7 +2663,7 @@ export const en = {
 
   // Templates list (pages/TemplatesPage)
   'templates.title': 'Templates',
-  'templates.search.hint': 'name=web* — or plain text',
+  'templates.search.hint': 'name=web*, folder:/prod, tag:legacy, or plain text',
   'templates.search.ariaLabel': 'Search templates',
   'templates.pagination.ariaLabel': 'Templates pagination',
   'templates.loading': 'Loading templates',

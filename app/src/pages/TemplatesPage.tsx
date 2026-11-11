@@ -33,6 +33,13 @@ import { useClustersInventory, useDataCenters } from '../hooks/useAdminResources
 import { useColumnPrefs } from '../hooks/useColumnPrefs'
 import { sortRows, useColumnSort } from '../hooks/useColumnSort'
 import { useListSearch } from '../hooks/useListSearch'
+import { useTags } from '../hooks/useTags'
+import {
+  hasFilterTokens,
+  matchesFilterTokens,
+  resolveFilterTokens,
+  splitFilterTokens,
+} from '../lib/filter-tokens'
 import { usePagination } from '../hooks/usePagination'
 
 // Cluster/DC names via client-side joins (flat /templates carries id links)
@@ -147,7 +154,19 @@ const COLUMNS: TemplateColumn[] = [
 export function TemplatesPage() {
   const t = useT()
   const { query, draft, setDraft, commit, apply } = useListSearch()
-  const templates = useTemplatesList(query)
+  // folder:/tag: tokens are lifted out of the query (lib/filter-tokens
+  // explains why they filter client-side): only the remainder reaches the
+  // engine, and the tokens narrow its results over the followed tags.
+  const filterTokens = useMemo(() => splitFilterTokens(query), [query])
+  const templates = useTemplatesList(filterTokens.rest)
+  const tags = useTags()
+  const tokenIds = useMemo(
+    () => resolveFilterTokens(filterTokens, tags.data ?? []),
+    [filterTokens, tags.data],
+  )
+  // a token-filtered list holds back while the tag tree it resolves against
+  // is still loading, so it never flashes "no matches" first
+  const isFiltering = hasFilterTokens(filterTokens) && tags.isPending
   const clustersInventory = useClustersInventory()
   const dataCentersInventory = useDataCenters()
   const columnCtx: TemplateColumnCtx = {
@@ -173,8 +192,10 @@ export function TemplatesPage() {
   const contextMenu = useContextMenu<Template>()
   const menuTarget = contextMenu.target
 
-  const items = sortRows(templates.data ?? [], sort, (row, key) =>
-    columns.find((column) => column.key === key)?.sortValue?.(row, columnCtx),
+  const items = sortRows(
+    (templates.data ?? []).filter((template) => matchesFilterTokens(template, tokenIds)),
+    sort,
+    (row, key) => columns.find((column) => column.key === key)?.sortValue?.(row, columnCtx),
   )
 
   // clamp rather than effect-reset: polling refetches can shrink the list
@@ -230,7 +251,7 @@ export function TemplatesPage() {
         </ToolbarContent>
       </Toolbar>
 
-      {templates.isPending && (
+      {(templates.isPending || (templates.isSuccess && isFiltering)) && (
         <>
           <Skeleton height="2.5rem" style={{ marginBottom: '0.5rem' }} />
           <Skeleton height="2.5rem" style={{ marginBottom: '0.5rem' }} />
@@ -253,7 +274,7 @@ export function TemplatesPage() {
         </EmptyState>
       )}
 
-      {templates.isSuccess && items.length === 0 && (
+      {templates.isSuccess && !isFiltering && items.length === 0 && (
         <EmptyState
           titleText={query !== '' ? t('templates.emptyFiltered.title') : t('templates.empty.title')}
         >
@@ -272,7 +293,7 @@ export function TemplatesPage() {
         </EmptyState>
       )}
 
-      {templates.isSuccess && items.length > 0 && (
+      {templates.isSuccess && !isFiltering && items.length > 0 && (
         <div className="app-table-viewport">
           <Table
             aria-label={t('templates.table.ariaLabel')}
