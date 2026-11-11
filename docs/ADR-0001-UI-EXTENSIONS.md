@@ -1,10 +1,12 @@
 # ADR-0001: UI extensions and the Cockpit host console
 
-- **Status:** Proposed
+- **Status:** Accepted. Extension API v1 is implemented (`app/src/extensions/`);
+  the author and deployment guide is [PLUGINS.md](PLUGINS.md).
 - **Issue:** skywalkw3r/ovirt-web-ui-ng#13
-- **Scope of the pull request that adds this ADR:** this document plus the
-  in-tree Cockpit host console (section 7). The extension API itself
-  (sections 1 to 6) is design only and ships in follow-up pull requests.
+- **History:** the first pull request shipped this document and the in-tree
+  Cockpit host console (section 7). The second shipped sections 1 to 6. Where
+  the implementation settled a detail differently from the original design,
+  the text below says so in a **Changed in implementation** note.
 
 ## Context
 
@@ -32,7 +34,7 @@ security model drives most of the decisions below.
 | Shared libraries | React and PatternFly come from the host app, not from the plugin bundle.                             |
 | API              | A typed, versioned `ExtensionApi` object passed to the plugin's `activate()` function.               |
 | Engine access    | Through the app's transport only (same token, same `Filter` RBAC). No plugin credentials.            |
-| CSP              | Same-origin plugins need no change. Other origins are added to `script-src` one by one.              |
+| CSP              | Same-origin plugins need no change. Other origins are added to `script-src` (and `connect-src`, for the manifest) one by one. |
 | Failure          | Load, activation and render errors are contained per plugin and per contribution.                    |
 | Multi-engine     | Plugins belong to the console deployment, not to an engine. They always talk to the session's engine. |
 | Feature flag     | Off unless `plugins.enabled` is true in `config.js`.                                                 |
@@ -46,7 +48,7 @@ flowchart LR
     loader["Plugin loader"] --> reg["Extension registry"]
     reg --> nav["Nav pages"]
     reg --> tabs["Entity subtabs"]
-    reg --> acts["Kebab and toolbar actions"]
+    reg --> acts["Kebab and header actions"]
     reg --> cards["Dashboard cards"]
     api["ExtensionApi v1\n(engine, i18n, notify, navigate)"]
   end
@@ -96,9 +98,14 @@ Rules:
   rejects the plugin.
 - `manifest` is a same-origin path or an absolute `https` URL. Validation
   follows `config/runtime.ts` (no `javascript:`, no protocol-relative URLs, no
-  plaintext `http` to another origin).
+  plaintext `http` to another origin). **Changed in implementation:** a path
+  without a leading slash (`plugins/x/manifest.json`) resolves under the app's
+  base path (`/ovirt-engine/web-ui-ng/` in production), so the same config.js
+  works in dev and production; credentials in the URL are refused, and the
+  manifest fetch refuses redirects.
 - `entry` resolves relative to the manifest URL and must stay on the
-  manifest's origin.
+  manifest's origin (and scheme, which rules out `blob:` URLs that report
+  the manifest's origin).
 - `apiVersion` is the major version of the extension API the plugin was built
   for (section 3).
 - The manifest is parsed with a zod schema, like every other trust boundary in
@@ -125,20 +132,30 @@ import for the mock engine and lazy locale catalogs.
 **Shared libraries.** Two copies of React on one page break hooks and
 context, and two copies of PatternFly break theming. Plugins therefore do not
 bundle them. The host exposes its own instances through a frozen shared-module
-table that is filled before any plugin loads. The plugin SDK ships a Vite
-preset that rewrites `react`, `react-dom`, `react/jsx-runtime`,
-`@patternfly/react-core`, `@patternfly/react-table` and
-`@patternfly/react-icons` imports to that table. A plugin author writes
-ordinary React and PatternFly 6 code and gets the app's theme (light and
-dark) for free.
+table (`window.ovirtWebUiNgShared`, not writable or configurable) that is
+filled before any plugin loads. The plugin SDK ships a Vite preset
+(`app/extension-sdk/vite-preset.mjs`) that rewrites `react`, `react-dom`,
+`react/jsx-runtime`, `@patternfly/react-core` and `@patternfly/react-table`
+imports to that table. A plugin author writes ordinary React and PatternFly 6
+code and gets the app's theme (light and dark) for free.
+
+**Changed in implementation:** `@patternfly/react-icons` is not in the table.
+Icons are stateless components, so a plugin bundling the few it uses is safe,
+while sharing the package would mean shipping the whole icon set to every
+console that enables plugins. The table's packages are loaded with dynamic
+`import()` only when a plugin is about to load, so a console without plugins
+downloads nothing extra.
 
 **Order of operations at boot** (after sign-in, so nothing loads for an
 anonymous visitor):
 
 1. Read `plugins` from the runtime config. If disabled or empty, stop.
-2. Fetch each manifest (in parallel, with a timeout) and validate it.
-3. `import()` each entry module (in parallel, with a timeout).
-4. Call `activate(api)` for each plugin inside a `try`/`catch`.
+2. Fetch each manifest (in parallel, 10 s timeout) and validate it.
+3. Fill the shared-module table, then `import()` each entry module (in
+   parallel, 15 s timeout).
+4. Call `activate(api)` for each plugin inside a `try`/`catch` (10 s
+   timeout). Registrations made during `activate()` are buffered and committed
+   only when it returns, which is how a failed activation is rolled back.
 5. Contributions appear as their registrations arrive. The shell never waits
    for plugins to render its own pages.
 
@@ -160,14 +177,14 @@ export function activate(api: ExtensionApi): void {
     entity: 'host',
     id: 'backup',
     title: api.i18n.message('acme.backup.tab'),
-    component: BackupTab, // receives { entity: Host }
-    isVisible: ({ capabilities }) => capabilities.isAdmin,
+    component: BackupTab, // receives { entity: { kind, id, name, status?, data } }
+    isVisible: ({ session }) => session.isAdmin,
   })
   api.registerAction({
     entity: 'vm',
     id: 'backup-now',
     label: api.i18n.message('acme.backup.now'),
-    placement: ['kebab', 'toolbar'], // or 'header' on the detail page
+    placement: ['kebab', 'header'], // the actions menu and/or the detail header
     isVisible: ({ entity }) => entity.status === 'up',
     run: ({ entity }) => api.engine.request(`/vms/${entity.id}/...`, { method: 'POST' }),
   })
@@ -180,17 +197,30 @@ Version 1 extension points:
 | ----------------------- | ------------------------------------------------------------ |
 | `registerNavPage`       | A page in the main navigation, with its own route.           |
 | `registerEntityTab`     | A subtab on a detail page (VM, host, cluster, storage domain, network, data center, template, disk). |
-| `registerAction`        | An item in an entity's kebab menu, list toolbar and/or detail page header. |
+| `registerAction`        | An item in an entity's kebab menu and/or detail page header. |
 | `registerDashboardCard` | A card on the dashboard.                                     |
+
+**Changed in implementation:**
+
+- `registerAction` covers the VM and host menus in v1 (the shared menus
+  behind list kebabs, right-click menus, inventory trees and detail pages).
+  Other entities can be added within v1, because the change is additive.
+- There is no `'toolbar'` placement in v1. A list toolbar action acts on a
+  multi-selection, which needs its own contract (selection shape, bulk
+  results); it can be added later as an additive placement.
+- Plugins see an entity as `{ kind, id, name, status?, data }`. `id`, `name`
+  and `status` are the contract; `data` is the engine object as the console
+  read it, passed through but not versioned, so the console's own zod types
+  never become part of the API.
 
 Version 1 services:
 
 | Service         | Purpose                                                                               |
 | --------------- | ------------------------------------------------------------------------------------- |
 | `api.engine`    | `request(path, options)` through `api/transport.ts`. The plugin never sees the token. |
-| `api.i18n`      | Current locale, and registration of the plugin's own message catalogs.                |
-| `api.notify`    | Toasts and the notification drawer.                                                   |
-| `api.navigate`  | Typed navigation to app routes.                                                       |
+| `api.i18n`      | Current locale, registration of the plugin's own catalogs, `message()` references resolved at render, `format()`, and a `useFormat()` hook. `{name}` placeholders; no ICU plurals in v1. |
+| `api.notify`    | Toasts (`success`, `info`, `warning`, `danger`). The notification drawer holds engine events and is not plugin-writable. |
+| `api.navigate`  | Navigation to an in-app path (validated: no other origin or scheme); `api.navPagePath(id)` builds a plugin page path. |
 | `api.session`   | Read-only: user name, capability tier, active engine name.                            |
 | `api.version`   | `{ api: 1, app: '<console version>' }`.                                               |
 
@@ -225,18 +255,21 @@ cannot widen the attack surface by accident.
 | Control            | Mechanism                                                                                                   |
 | ------------------ | ----------------------------------------------------------------------------------------------------------- |
 | Allow-list         | Only `config.js` entries load. No UI to add plugins, no URL parameters, no engine-supplied plugin lists.     |
-| CSP                | `script-src 'self'` already covers plugins served from the console origin (the recommended layout, under `/plugins/`). Each other origin is enumerated in `script-src`, never a bare `https:`. `connect-src` does not change, because plugins call the engine through the app. |
+| CSP                | `script-src 'self'` already covers plugins served from the console origin (the recommended layout, under `/plugins/`). Each other origin is enumerated in `script-src`, never a bare `https:`. **Changed in implementation:** a cross-origin plugin's origin also goes in `connect-src`, because the manifest is fetched; `connect-src` still gains nothing for the engine, because plugins call it through the app. |
 | Credentials        | `api.engine.request` adds the bearer token and the `Filter` header itself. Plugins store no credentials and callers cannot override either header. |
 | RBAC               | The engine enforces permissions server-side, exactly as for built-in pages. `isVisible` is a convenience, not a control. |
 | No inline or eval  | `script-src` keeps no `'unsafe-inline'` and no `'unsafe-eval'`. A plugin that needs them does not load.      |
 | Rendering          | Plugin components are React elements. `dangerouslySetInnerHTML` stays banned by convention and review.      |
 | Transparency       | The About dialog lists loaded plugins with name, version and origin, and any that failed.                   |
+| Engine paths       | `api.engine.request` refuses paths that could leave `/ovirt-engine/api` (dot segments, including percent-encoded ones, `//`, `\`, `#`) and forwards only method, body and abort signal. |
 
 **CSP wiring** follows the multi-engine pattern in
 [SECURITY-HEADERS.md](SECURITY-HEADERS.md): a `CSP_SCRIPT_EXTRA` variable for
 container and OpenShift deployments, substituted into both the response
 header and the `<meta>` policy so they cannot drift. Empty by default, which
-keeps today's policy byte for byte.
+keeps today's policy byte for byte. Cross-origin manifests reuse the
+existing `CSP_CONNECT_EXTRA`. Details in
+[SECURITY-HEADERS.md](SECURITY-HEADERS.md#ui-plugins).
 
 **Alternative considered: iframe sandbox per plugin.** It gives real
 isolation, but plugins could not render PatternFly components inside the
@@ -270,16 +303,26 @@ engines, one per session.
   the engine the token belongs to and cannot target another one.
 - **Per-engine plugins.** An allow-list entry may carry an optional
   `servers: ['HE 1']` filter (names from `servers.list`). Without it the
-  plugin loads for every engine.
+  plugin loads for every engine. The filter is checked when loading and again
+  when rendering, so signing in to another engine without a reload hides the
+  plugin's contributions; a skipped plugin loads at the first sign-in to an
+  engine it names. A filter never matches on a single-engine console, where
+  engines have no configured names (fail closed).
 - **Integrated RPM build.** Single engine; plugins are served from
   `/ovirt-engine/web-ui-ng/plugins/` on the engine host and need no CSP
   change.
 
 ## 7. Cockpit host console (shipped with this ADR)
 
-The host console is the first consumer. It is built in-tree now and moves
-onto `registerAction` once that exists, which proves
-the API against a real feature.
+The host console is the first consumer of the design. It was built in-tree.
+
+**Changed in implementation:** the host console stays in-tree rather than
+moving onto `registerAction`. As a plugin it would only work with
+`plugins.enabled` on, which would take a default-on feature away from every
+deployment that does not opt into plugins, and its SSO mode reads the session
+token, which the extension API deliberately never exposes. The API is proven
+instead by the sample plugin (`examples/sample-plugin/`), which exercises all
+four extension points in the e2e suite.
 
 What ships:
 
@@ -313,10 +356,10 @@ of mixing a second authenticated origin into the page.
 
 | Step | Content                                                                                     | Status            |
 | ---- | ------------------------------------------------------------------------------------------- | ----------------- |
-| 1    | This ADR                                                                                    | This pull request |
-| 2    | Cockpit host console, in-tree                                                               | This pull request |
-| 3    | Extension registry, loader and the four extension points behind `plugins.enabled`; sample plugin; unit and e2e tests | Follow-up |
-| 4    | Move the host console onto the API; plugin author and deployment guide                      | Follow-up         |
+| 1    | This ADR                                                                                    | Done              |
+| 2    | Cockpit host console, in-tree                                                               | Done              |
+| 3    | Extension registry, loader and the four extension points behind `plugins.enabled`; sample plugin; unit and e2e tests | Done |
+| 4    | Plugin author and deployment guide ([PLUGINS.md](PLUGINS.md)); the host console stays in-tree (section 7) | Done |
 
 ## Consequences
 
@@ -330,9 +373,15 @@ of mixing a second authenticated origin into the page.
 
 ## Open questions
 
-1. Integrity pinning for entry modules (section 2).
-2. Should `registerNavPage` allow nesting under existing nav groups, or only a
-   dedicated "Extensions" group?
-3. Do plugins need a per-plugin settings store, or is `config.js` enough?
+1. Integrity pinning for entry modules (section 2). Still open: v1 relies on
+   TLS and the serving origin.
+2. ~~Should `registerNavPage` allow nesting under existing nav groups, or only
+   a dedicated "Extensions" group?~~ Decided: a dedicated **Extensions** group,
+   so plugins cannot rearrange the built-in navigation and an admin can see
+   what came from a plugin.
+3. ~~Do plugins need a per-plugin settings store, or is `config.js` enough?~~
+   Decided for v1: no settings store. A plugin that needs deployment settings
+   can read them from its own server; a store can be added additively later.
 4. Publishing: is the types package released to npm, or consumed from a
-   release artifact?
+   release artifact? Still open: for now authors copy the self-contained
+   `app/src/extensions/api.ts` pinned to a console release.

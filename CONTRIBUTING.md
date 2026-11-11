@@ -17,7 +17,10 @@ rules) — link to them, don't duplicate them.
   Proxmox (nested-virt node + self-hosted engine). See `lab/ansible/README.md`.
 - `docs/` — `PLAN.md`, `COMPONENTS.md`, `DEPLOY.md`, `LAB-SETUP.md` (the manual
   lab build the Ansible pipeline automates), `ADR-0001-UI-EXTENSIONS.md`
-  (plugin model design) and `HOST-CONSOLE.md` (Cockpit host console).
+  (plugin model design), `PLUGINS.md` (writing and deploying UI plugins) and
+  `HOST-CONSOLE.md` (Cockpit host console).
+- `examples/sample-plugin/` — the sample UI plugin the e2e suite loads
+  (`app/e2e/extensions.spec.ts`).
 
 ## App architecture (`app/src/`)
 
@@ -67,6 +70,11 @@ isAdmin, loaded }`. Admin-only nav entries and pages are hidden per tier;
   roaming is the Phase-later path, patterned on the original ovirt-web-ui's
   `optionsManager` — see upstream).
 - Toasts and the notification drawer live in `notifications/`.
+- `extensions/` — UI plugins (docs/PLUGINS.md): `api.ts` is the public,
+  versioned contract; `loader.ts` loads allow-listed plugins after sign-in;
+  `registry.ts` holds their contributions. Detail pages add plugin subtabs
+  with `useExtensionTabs`, the VM/host menus render `ExtensionMenuItems`, so
+  a new entity detail page should do the same.
 
 ## i18n
 
