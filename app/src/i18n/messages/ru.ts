@@ -5218,4 +5218,15 @@ export const ru: LocaleCatalog = {
   'quotaDetail.tab.events': 'События',
   'quotaEvents.empty.body': 'Здесь появятся события журнала аудита движка для этой квоты.',
   'quotaEvents.table.ariaLabel': 'События этой квоты',
+  // List-grid columns filled by a follow= or one shared read (issue #34)
+  'vms.column.cpu': 'ЦП',
+  'vms.column.network': 'Сеть',
+  'vms.column.ips': 'IP-адреса',
+  'disks.column.attachedTo': 'Подключён к',
+  'disks.column.quota': 'Квота',
+  'networks.column.qos': 'Имя QoS',
+  'vnicProfiles.column.qos': 'Имя QoS',
+  'vnicProfiles.column.networkFilter': 'Сетевой фильтр',
+  'pools.column.running': 'Запущенные ВМ',
+  'volumes.column.spaceUsed': 'Использовано места',
 }

@@ -5031,4 +5031,15 @@ export const ptBR: LocaleCatalog = {
   'quotaEvents.empty.body':
     'Os eventos do log de auditoria do engine para esta cota aparecerão aqui.',
   'quotaEvents.table.ariaLabel': 'Eventos desta cota',
+  // List-grid columns filled by a follow= or one shared read (issue #34)
+  'vms.column.cpu': 'CPU',
+  'vms.column.network': 'Rede',
+  'vms.column.ips': 'Endereços IP',
+  'disks.column.attachedTo': 'Anexado a',
+  'disks.column.quota': 'Cota',
+  'networks.column.qos': 'Nome da QoS',
+  'vnicProfiles.column.qos': 'Nome da QoS',
+  'vnicProfiles.column.networkFilter': 'Filtro de rede',
+  'pools.column.running': 'VMs em execução',
+  'volumes.column.spaceUsed': 'Espaço usado',
 }

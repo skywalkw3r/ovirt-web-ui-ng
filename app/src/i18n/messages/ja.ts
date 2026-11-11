@@ -4987,4 +4987,15 @@ export const ja: LocaleCatalog = {
   'quotaDetail.tab.events': 'イベント',
   'quotaEvents.empty.body': 'このクォータのエンジン監査ログイベントがここに表示されます。',
   'quotaEvents.table.ariaLabel': 'このクォータのイベント',
+  // List-grid columns filled by a follow= or one shared read (issue #34)
+  'vms.column.cpu': 'CPU',
+  'vms.column.network': 'ネットワーク',
+  'vms.column.ips': 'IPアドレス',
+  'disks.column.attachedTo': 'アタッチ先',
+  'disks.column.quota': 'クォータ',
+  'networks.column.qos': 'QoS名',
+  'vnicProfiles.column.qos': 'QoS名',
+  'vnicProfiles.column.networkFilter': 'ネットワークフィルター',
+  'pools.column.running': '実行中のVM',
+  'volumes.column.spaceUsed': '使用容量',
 }

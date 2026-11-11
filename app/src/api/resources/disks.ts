@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { ApiError, request } from '../transport'
-import { isDegradableFollowError } from '../followDegrade'
+import { fetchWithFollowFallback, isDegradableFollowError } from '../followDegrade'
 import {
   DiskAttachmentListSchema,
   DiskListSchema,
@@ -12,7 +12,7 @@ import {
   type DiskProfile,
   type ImageTransfer,
 } from '../schemas/disk'
-import { VmListSchema, type Vm } from '../schemas/vm'
+import { VmListSchema, VmSchema, type Vm } from '../schemas/vm'
 
 export async function listVmDisks(vmId: string): Promise<DiskAttachment[]> {
   // follow=disk embeds the full disk entity (name, sizes, format) in each
@@ -92,6 +92,52 @@ export async function listDiskVms(id: string): Promise<Vm[]> {
     if (error instanceof ApiError && (error.status === 404 || error.status >= 500)) return []
     throw error
   }
+}
+
+// The flat Disks grid's Attached To column: disk id → the names of the VMs and
+// templates holding it. Same reverse lookup as listDiskVms' modeled rung, but
+// for every disk at once — the REST Disk has no vms link and DiskMapper maps
+// none of DiskImage's vm names, so the owners come from ONE
+// /vms?follow=disk_attachments read plus ONE /templates?follow=disk_attachments
+// read (Template links diskAttachments too), never a per-disk fan-out. Both are
+// subcollection follows, present on every entity, so a disk-less VM is not the
+// absent-link 500. Each leg degrades on its own through the sticky follow
+// denial; a denied leg contributes nothing (a bare list has no attachments).
+const DiskOwnerListSchema = z.looseObject({
+  vm: VmListSchema.shape.vm,
+  template: z
+    .array(
+      z.looseObject({
+        id: z.string(),
+        name: z.string().optional(),
+        disk_attachments: VmSchema.shape.disk_attachments,
+      }),
+    )
+    .optional(),
+})
+
+export async function listDiskOwnerNames(): Promise<Record<string, string[]>> {
+  const ownersOf = async (collection: 'vms' | 'templates') =>
+    fetchWithFollowFallback(
+      `${collection}.list:disk_attachments`,
+      async () => {
+        const data = DiskOwnerListSchema.parse(
+          await request(`/${collection}?follow=disk_attachments`),
+        )
+        return [...(data.vm ?? []), ...(data.template ?? [])]
+      },
+      async () => [],
+    )
+  const [vms, templates] = await Promise.all([ownersOf('vms'), ownersOf('templates')])
+  const byDisk: Record<string, string[]> = {}
+  for (const owner of [...vms, ...templates]) {
+    for (const attachment of owner.disk_attachments?.disk_attachment ?? []) {
+      const diskId = attachment.disk?.id
+      if (diskId === undefined || owner.name === undefined) continue
+      byDisk[diskId] = [...(byDisk[diskId] ?? []), owner.name]
+    }
+  }
+  return byDisk
 }
 
 // The permission slice the disk Permissions tab renders: the role name and

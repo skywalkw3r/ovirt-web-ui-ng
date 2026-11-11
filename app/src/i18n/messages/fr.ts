@@ -5071,4 +5071,15 @@ export const fr: LocaleCatalog = {
   'quotaEvents.empty.body':
     "Les événements du journal d'audit du moteur pour ce quota apparaîtront ici.",
   'quotaEvents.table.ariaLabel': 'Événements pour ce quota',
+  // List-grid columns filled by a follow= or one shared read (issue #34)
+  'vms.column.cpu': 'CPU',
+  'vms.column.network': 'Réseau',
+  'vms.column.ips': 'Adresses IP',
+  'disks.column.attachedTo': 'Attaché à',
+  'disks.column.quota': 'Quota',
+  'networks.column.qos': 'Nom de la QoS',
+  'vnicProfiles.column.qos': 'Nom de la QoS',
+  'vnicProfiles.column.networkFilter': 'Filtre réseau',
+  'pools.column.running': 'VM en cours d’exécution',
+  'volumes.column.spaceUsed': 'Espace utilisé',
 }

@@ -5541,6 +5541,17 @@ export const en = {
   'quotaDetail.tab.events': 'Events',
   'quotaEvents.empty.body': 'Engine audit log events for this quota will appear here.',
   'quotaEvents.table.ariaLabel': 'Events for this quota',
+  // List-grid columns filled by a follow= or one shared read (issue #34)
+  'vms.column.cpu': 'CPU',
+  'vms.column.network': 'Network',
+  'vms.column.ips': 'IP Addresses',
+  'disks.column.attachedTo': 'Attached To',
+  'disks.column.quota': 'Quota',
+  'networks.column.qos': 'QoS Name',
+  'vnicProfiles.column.qos': 'QoS Name',
+  'vnicProfiles.column.networkFilter': 'Network Filter',
+  'pools.column.running': 'Running VMs',
+  'volumes.column.spaceUsed': 'Space Used',
 } as const
 
 // The id union — source of truth for every typed i18n surface (useT, the

@@ -66,15 +66,16 @@ export const glusterVolumeKeys = {
 }
 
 // listQuotas fans out GET /datacenters/{id}/quotas per data center and
-// flattens the results.
-export function useQuotas() {
+// flattens the results. `enabled` lets an opt-in join (the Disks grid's Quota
+// column) share the entry only while it is shown.
+export function useQuotas({ enabled = true }: { enabled?: boolean } = {}) {
   const { isAdmin } = useCapabilities()
   const refetchInterval = useAdminResourcePollInterval()
   return useQuery({
     queryKey: quotaKeys.all,
     queryFn: () => listQuotas(),
     refetchInterval,
-    enabled: isAdmin,
+    enabled: isAdmin && enabled,
   })
 }
 

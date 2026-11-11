@@ -5096,4 +5096,15 @@ export const de: LocaleCatalog = {
   'quotaEvents.empty.body':
     'Engine-Audit-Log-Ereignisse für diese Kontingentregelung werden hier angezeigt.',
   'quotaEvents.table.ariaLabel': 'Ereignisse für diese Kontingentregelung',
+  // List-grid columns filled by a follow= or one shared read (issue #34)
+  'vms.column.cpu': 'CPU',
+  'vms.column.network': 'Netzwerk',
+  'vms.column.ips': 'IP-Adressen',
+  'disks.column.attachedTo': 'Angehängt an',
+  'disks.column.quota': 'Kontingent',
+  'networks.column.qos': 'QoS-Name',
+  'vnicProfiles.column.qos': 'QoS-Name',
+  'vnicProfiles.column.networkFilter': 'Netzwerkfilter',
+  'pools.column.running': 'Laufende VMs',
+  'volumes.column.spaceUsed': 'Belegter Speicher',
 }

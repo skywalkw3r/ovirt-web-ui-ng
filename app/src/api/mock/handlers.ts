@@ -219,6 +219,8 @@ interface MockDiskAttachment {
     lun_storage?: MockLunStorage
     // bare links, id only — ?follow=disk embeds the domain refs without names
     storage_domains?: { storage_domain?: { id?: string }[] }
+    // bare quota link (id only), as the flat /disks list serializes it
+    quota?: { id?: string }
   }
 }
 
@@ -376,6 +378,8 @@ interface MockNetwork {
   // provider-supplied (external/OVN) networks only — a bare { id } link, the
   // NetworksPage Provider column joins the name client-side
   external_provider?: { id?: string }
+  // bare QoS link (id only) — the grid's QoS Name column joins the name
+  qos?: { id?: string }
 }
 
 // The enriched body GET /networks/{id} returns — scalars mix string/number
@@ -1189,6 +1193,9 @@ const initialVms = (): MockVm[] => [
     statistics: {
       statistic: [
         { id: 'stat-elapsed', name: 'elapsed.time', values: { value: [{ datum: 367_920 }] } },
+        // live load gauges the VMs grid's CPU / Network columns read
+        { id: 'stat-cpu', name: 'cpu.current.total', values: { value: [{ datum: 23.5 }] } },
+        { id: 'stat-net', name: 'network.current.total', values: { value: [{ datum: '4.25' }] } },
       ],
     },
     origin: 'ovirt',
@@ -1279,6 +1286,9 @@ const initialVms = (): MockVm[] => [
     statistics: {
       statistic: [
         { id: 'stat-elapsed', name: 'elapsed.time', values: { value: [{ datum: '15724800' }] } },
+        // live load gauges the VMs grid's CPU / Network columns read
+        { id: 'stat-cpu', name: 'cpu.current.total', values: { value: [{ datum: '61.8' }] } },
+        { id: 'stat-net', name: 'network.current.total', values: { value: [{ datum: 12 }] } },
       ],
     },
   },
@@ -1298,6 +1308,9 @@ const initialVms = (): MockVm[] => [
     statistics: {
       statistic: [
         { id: 'stat-elapsed', name: 'elapsed.time', values: { value: [{ datum: '7380' }] } },
+        // live load gauges the VMs grid's CPU / Network columns read
+        { id: 'stat-cpu', name: 'cpu.current.total', values: { value: [{ datum: 8 }] } },
+        { id: 'stat-net', name: 'network.current.total', values: { value: [{ datum: '0.5' }] } },
       ],
     },
   },
@@ -1548,7 +1561,9 @@ const initialDisks = (): Map<string, MockDiskAttachment[]> =>
           `${500 * GiB}`,
           `${318 * GiB}`,
           { bootable: 'false', active: 'true' },
-          { description: 'PostgreSQL data volume' },
+          // bare quota link, as on the live flat list — the Disks grid's Quota
+          // column resolves the name against the DC quota list
+          { description: 'PostgreSQL data volume', quota: { id: 'quota-01' } },
         ),
       ],
     ],
@@ -2507,6 +2522,9 @@ const networks: MockNetwork[] = [
     status: 'operational',
     vlan: { id: 100 },
     data_center: { id: 'dc-01' },
+    // bare QoS link, as the live flat list serializes it (matches the detail
+    // record) — the grid's QoS Name column resolves it against dc-01's /qoss
+    qos: { id: 'qos-hostnet-01' },
   },
   {
     id: 'net-03',
@@ -2555,9 +2573,10 @@ const networkDetails: Record<string, MockNetworkDetail> = {
     profile_required: 'true',
     vdsm_name: 'vm-prod',
     usages: { usage: ['vm'] },
-    // network-level QoS binding — resolved against the DC's /qoss list; net-01/03
-    // carry none, exercising both the set and unset paths
-    qos: { id: 'qos-01' },
+    // network-level QoS binding (a host network QoS) — resolved against the
+    // DC's /qoss list; net-01/03 carry none, exercising both the set and unset
+    // paths
+    qos: { id: 'qos-hostnet-01' },
   },
   'net-03': {
     id: 'net-03',
@@ -10600,7 +10619,38 @@ function dataCenterPermissionsHandler(dcId: string): unknown {
 // GET /clusters/{id}/glustervolumes — a virt-only cluster has no gluster
 // subcollection at all: the engine answers 404, not an empty list
 // (listGlusterVolumes tolerates it).
-function clusterGlusterVolumes(clusterId: string): unknown {
+// follow=statistics inlines VolumeStatisticalQuery's three capacity gauges
+// (the Volumes grid's Space Used column) from glusterVolumeCapacity; a volume
+// with no stored capacity answers an empty wrapper, as the engine does.
+// Byte counts are strings on purpose to exercise z.coerce.number().
+const glusterVolumeCapacity: Record<string, { total: number; used: number }> = {
+  'gvol-01': { total: 300 * GiB, used: 120 * GiB },
+}
+
+function withGlusterVolumeStatistics(volume: MockGlusterVolume): unknown {
+  const capacity = glusterVolumeCapacity[volume.id]
+  if (!capacity) return { ...volume, statistics: {} }
+  const gauge = (name: string, datum: number) => ({
+    id: `${volume.id}-stat-${name}`,
+    name,
+    kind: 'gauge',
+    type: 'integer',
+    unit: 'bytes',
+    values: { value: [{ datum: String(datum) }] },
+  })
+  return {
+    ...volume,
+    statistics: {
+      statistic: [
+        gauge('memory.total.size', capacity.total),
+        gauge('memory.free.size', capacity.total - capacity.used),
+        gauge('memory.used.size', capacity.used),
+      ],
+    },
+  }
+}
+
+function clusterGlusterVolumes(clusterId: string, followStatistics = false): unknown {
   const cluster = clusters.find((c) => c.id === clusterId)
   if (!cluster) throw new ApiError(404, 'Not Found', `no cluster with id ${clusterId}`)
   if (!cluster.gluster_service) {
@@ -10610,7 +10660,8 @@ function clusterGlusterVolumes(clusterId: string): unknown {
       `Gluster service is not enabled on cluster ${cluster.name}`,
     )
   }
-  return { gluster_volume: glusterVolumes.filter((volume) => volume.cluster?.id === clusterId) }
+  const volumes = glusterVolumes.filter((volume) => volume.cluster?.id === clusterId)
+  return { gluster_volume: followStatistics ? volumes.map(withGlusterVolumeStatistics) : volumes }
 }
 
 // Resolve a volume within a cluster, 404ing an unknown one exactly like the live
@@ -12078,6 +12129,18 @@ const routes: MockRoute[] = [
             : vm
         })
       }
+      // follow=reported_devices inlines each VM's guest-agent devices (the VMs
+      // grid's IP Addresses column). The wrapper is present on every VM (the
+      // link always exists); its inner key is omitted when nothing is reported.
+      if (follows.includes('reported_devices')) {
+        vms = vms.map((vm) => {
+          const devices = reportedDevices.get(vm.id) ?? []
+          return {
+            ...vm,
+            reported_devices: devices.length > 0 ? { reported_device: devices } : {},
+          }
+        })
+      }
       return {
         vm: follows.includes('tags') ? vms.map((vm) => withFollowedTags(vm, tagAssignments)) : vms,
       }
@@ -12584,9 +12647,22 @@ const routes: MockRoute[] = [
   {
     method: 'GET',
     pattern: /^\/networks$/,
-    handle: (_params, _body, query) => ({
-      network: networks.filter((n) => searchMatches(n, query.get('search'))),
-    }),
+    handle: (_params, _body, query) => {
+      const list = networks.filter((n) => searchMatches(n, query.get('search')))
+      // follow=network_labels inlines each network's labels (the Networks
+      // grid's Label column). Unlike the bare subcollection read (which 404s
+      // for networks absent from the label record), a followed read always
+      // carries the wrapper, empty when the network has no labels.
+      if (!(query.get('follow') ?? '').split(',').includes('network_labels')) {
+        return { network: list }
+      }
+      return {
+        network: list.map((network) => {
+          const labels = networkLabels[network.id] ?? []
+          return { ...network, network_labels: labels.length > 0 ? { network_label: labels } : {} }
+        }),
+      }
+    },
   },
   { method: 'POST', pattern: /^\/networks$/, handle: (_params, body) => addNetwork(body) },
   {
@@ -12657,10 +12733,19 @@ const routes: MockRoute[] = [
     method: 'GET',
     pattern: /^\/templates$/,
     handle: (_params, _body, query) => {
-      const list = templates.filter((t) => searchMatches(t, query.get('search')))
-      const followsTags = (query.get('follow') ?? '').split(',').includes('tags')
+      const follows = (query.get('follow') ?? '').split(',')
+      // follow=disk_attachments inlines each template's attachment rows (the
+      // Disks grid's Attached To lookup); omitted for disk-less templates
+      const list = templates
+        .filter((t) => searchMatches(t, query.get('search')))
+        .map((template) => {
+          const attachments = templateDiskAttachments[template.id] ?? []
+          return follows.includes('disk_attachments') && attachments.length > 0
+            ? { ...template, disk_attachments: { disk_attachment: attachments } }
+            : template
+        })
       return {
-        template: followsTags
+        template: follows.includes('tags')
           ? list.map((template) => withFollowedTags(template, templateTagAssignments))
           : list,
       }
@@ -12746,7 +12831,8 @@ const routes: MockRoute[] = [
   {
     method: 'GET',
     pattern: /^\/clusters\/([^/]+)\/glustervolumes$/,
-    handle: ([id]) => clusterGlusterVolumes(id),
+    handle: ([id], _body, query) =>
+      clusterGlusterVolumes(id, (query.get('follow') ?? '').split(',').includes('statistics')),
   },
   {
     method: 'POST',

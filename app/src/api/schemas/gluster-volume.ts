@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { VmStatSchema } from './statistic'
 
 export const GlusterVolumeSchema = z.looseObject({
   id: z.string(),
@@ -21,7 +22,26 @@ export const GlusterVolumeSchema = z.looseObject({
   disperse_count: z.coerce.number().optional(),
   redundancy_count: z.coerce.number().optional(),
   stripe_count: z.coerce.number().optional(),
+  // Present when the read used ?follow=statistics (listGlusterVolumes does):
+  // VolumeStatisticalQuery's memory.total.size / memory.used.size /
+  // memory.free.size byte gauges from the engine's stored capacity details.
+  // An empty wrapper when the engine has no capacity info for the volume yet.
+  // Same wire shape as the VM/host statistics inline.
+  statistics: z.looseObject({ statistic: z.array(VmStatSchema).optional() }).optional(),
 })
+
+// Space used / total bytes off the followed statistics; undefined when the
+// statistics were not followed (denied) or carry no capacity yet.
+export function glusterVolumeCapacity(
+  volume: GlusterVolume,
+): { used: number; total: number } | undefined {
+  const stats = volume.statistics?.statistic ?? []
+  const gauge = (name: string) =>
+    stats.find((stat) => stat.name === name)?.values?.value?.[0]?.datum
+  const used = gauge('memory.used.size')
+  const total = gauge('memory.total.size')
+  return used === undefined || total === undefined || total <= 0 ? undefined : { used, total }
+}
 
 // JSON quirk: the "gluster_volume" key is omitted when the list is empty.
 export const GlusterVolumeListSchema = z.looseObject({

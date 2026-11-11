@@ -3181,7 +3181,7 @@ describe('networks: labels, cluster attach, and QoS (mock)', () => {
 
   it('reads the QoS binding off a network detail (bare { id } link)', async () => {
     // net-02 seeds a qos link; net-01 carries none
-    expect((await settle(getNetwork('net-02'))).qos?.id).toBe('qos-01')
+    expect((await settle(getNetwork('net-02'))).qos?.id).toBe('qos-hostnet-01')
     expect((await settle(getNetwork('net-01'))).qos).toBeUndefined()
   })
 

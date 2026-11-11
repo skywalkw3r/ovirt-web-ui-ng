@@ -4733,4 +4733,15 @@ export const zhCN: LocaleCatalog = {
   'quotaDetail.tab.events': '事件',
   'quotaEvents.empty.body': '此配额的引擎审核日志事件将显示在此处。',
   'quotaEvents.table.ariaLabel': '此配额的事件',
+  // List-grid columns filled by a follow= or one shared read (issue #34)
+  'vms.column.cpu': 'CPU',
+  'vms.column.network': '网络',
+  'vms.column.ips': 'IP 地址',
+  'disks.column.attachedTo': '附加到',
+  'disks.column.quota': '配额',
+  'networks.column.qos': 'QoS 名称',
+  'vnicProfiles.column.qos': 'QoS 名称',
+  'vnicProfiles.column.networkFilter': '网络过滤器',
+  'pools.column.running': '运行中的虚拟机',
+  'volumes.column.spaceUsed': '已用空间',
 }

@@ -159,6 +159,25 @@ export async function listDataCenterQoss(id: string): Promise<DataCenterQos[]> {
   }
 }
 
+// Every data center's QoS entries, flattened: the Networks and vNIC Profiles
+// grids' QoS Name columns join their bare qos { id } links against this. QoS
+// only exists as a per-DC subcollection, so it costs one /datacenters read
+// plus one /qoss read per data center — never one per network or profile.
+// Per-DC tolerance mirrors listQuotas: one failing branch is dropped, an auth
+// verdict (401/403) propagates.
+export async function listAllDataCenterQoss(): Promise<DataCenterQos[]> {
+  const dataCenters = await listDataCenters()
+  const settled = await Promise.allSettled(dataCenters.map((dc) => listDataCenterQoss(dc.id)))
+  const authFailure = settled.find(
+    (result) =>
+      result.status === 'rejected' &&
+      result.reason instanceof ApiError &&
+      (result.reason.status === 401 || result.reason.status === 403),
+  )
+  if (authFailure?.status === 'rejected') throw authFailure.reason
+  return settled.flatMap((result) => (result.status === 'fulfilled' ? result.value : []))
+}
+
 // Webadmin-style create: POST the new QoS (name, type, and the per-type
 // scalars) to the data center's /qoss subcollection. The engine echoes the
 // created QoS back, which we parse through DataCenterQosSchema so callers get

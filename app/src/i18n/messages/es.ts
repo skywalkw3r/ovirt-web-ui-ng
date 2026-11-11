@@ -5062,4 +5062,15 @@ export const es: LocaleCatalog = {
   'quotaEvents.empty.body':
     'Los eventos del registro de auditoría del motor para esta cuota aparecerán aquí.',
   'quotaEvents.table.ariaLabel': 'Eventos para esta cuota',
+  // List-grid columns filled by a follow= or one shared read (issue #34)
+  'vms.column.cpu': 'CPU',
+  'vms.column.network': 'Red',
+  'vms.column.ips': 'Direcciones IP',
+  'disks.column.attachedTo': 'Conectado a',
+  'disks.column.quota': 'Cuota',
+  'networks.column.qos': 'Nombre de QoS',
+  'vnicProfiles.column.qos': 'Nombre de QoS',
+  'vnicProfiles.column.networkFilter': 'Filtro de red',
+  'pools.column.running': 'VMs en ejecución',
+  'volumes.column.spaceUsed': 'Espacio usado',
 }

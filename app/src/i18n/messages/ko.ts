@@ -4917,4 +4917,15 @@ export const ko: LocaleCatalog = {
   'quotaDetail.tab.events': '이벤트',
   'quotaEvents.empty.body': '이 할당량의 엔진 감사 로그 이벤트가 여기에 표시됩니다.',
   'quotaEvents.table.ariaLabel': '이 할당량의 이벤트',
+  // List-grid columns filled by a follow= or one shared read (issue #34)
+  'vms.column.cpu': 'CPU',
+  'vms.column.network': '네트워크',
+  'vms.column.ips': 'IP 주소',
+  'disks.column.attachedTo': '연결 대상',
+  'disks.column.quota': '할당량',
+  'networks.column.qos': 'QoS 이름',
+  'vnicProfiles.column.qos': 'QoS 이름',
+  'vnicProfiles.column.networkFilter': '네트워크 필터',
+  'pools.column.running': '실행 중인 VM',
+  'volumes.column.spaceUsed': '사용된 공간',
 }
