@@ -36,6 +36,7 @@ export function ConsoleSection({
   draft,
   onChange,
   allowHeadless = true,
+  usbLockedReason,
   idPrefix = 'edit-vm',
 }: {
   draft: ConsoleFields
@@ -45,6 +46,10 @@ export function ConsoleSection({
   // headless only while the entity already is headless, so the select still
   // shows the loaded value.
   allowHeadless?: boolean
+  // When set, USB support is shown read-only with this reason underneath: a
+  // form whose API ignores the USB policy (POST /vmpools takes it from the
+  // template) must not offer a toggle that has no effect.
+  usbLockedReason?: string
   idPrefix?: string
 }) {
   const t = useT()
@@ -132,8 +137,16 @@ export function ConsoleSection({
           label={t('vm.edit.console.usb')}
           aria-label={t('vm.edit.console.usb')}
           isChecked={draft.usbEnabled}
+          isDisabled={usbLockedReason !== undefined}
           onChange={(_event, checked) => set('usbEnabled', checked)}
         />
+        {usbLockedReason !== undefined && (
+          <FormHelperText>
+            <HelperText>
+              <HelperTextItem>{usbLockedReason}</HelperTextItem>
+            </HelperText>
+          </FormHelperText>
+        )}
       </FormGroup>
 
       <FormGroup
