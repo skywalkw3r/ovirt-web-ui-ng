@@ -785,6 +785,46 @@ describe('instance type CRUD (mock)', () => {
     )
     expect(edited.description).toBe('touched, max untouched')
   })
+
+  it('reads the console and resource fields with coerced scalars', async () => {
+    const small = await settle(getInstanceType('instance-type-small'))
+    expect(small.display).toMatchObject({ type: 'spice', monitors: 1, smartcard_enabled: false })
+    expect(small.memory_policy?.ballooning).toBe(true)
+    expect(small.io?.threads).toBe(0)
+    const large = await settle(getInstanceType('instance-type-large'))
+    expect(large.virtio_scsi?.enabled).toBe(true)
+    expect(large.custom_cpu_model).toBe('Skylake-Server')
+  })
+
+  it('merges an edit field by field and ignores the keys REST drops for instance types', async () => {
+    // InstanceTypeMapper maps only VmBaseMapper.mapCommonModelToEntity, so
+    // time_zone / custom_properties / display.keyboard_layout are ignored.
+    const edited = await settle(
+      updateInstanceType('instance-type-medium', {
+        memory_policy: { ballooning: false },
+        display: { smartcard_enabled: true, keyboard_layout: 'de' },
+        time_zone: { name: 'Etc/GMT' },
+        custom_properties: { custom_property: [{ name: 'sap_agent', value: 'true' }] },
+      }),
+    )
+    expect(edited.memory_policy).toMatchObject({
+      ballooning: false,
+      max: 4294967296,
+      guaranteed: 1073741824,
+    })
+    expect(edited.display).toEqual({ type: 'vnc', monitors: 1, smartcard_enabled: true })
+    expect(edited).not.toHaveProperty('time_zone')
+    expect(edited).not.toHaveProperty('custom_properties')
+  })
+
+  it('ignores usb on create (the add path never reads it) but applies it on update', async () => {
+    const created = await settle(
+      createInstanceType({ name: 'WithUsb', memory: 1073741824, usb: { enabled: true } }),
+    )
+    expect(created.usb?.enabled).toBe(false)
+    const edited = await settle(updateInstanceType(created.id, { usb: { enabled: true } }))
+    expect(edited.usb?.enabled).toBe(true)
+  })
 })
 
 // Storage-domain lifecycle end to end through the mock: the DC-scoped

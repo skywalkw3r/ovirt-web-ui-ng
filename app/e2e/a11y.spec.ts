@@ -193,6 +193,28 @@ test('New template dialog has no serious accessibility violations', async ({ pag
   await expectNoSeriousViolations(page)
 })
 
+// The instance type dialog (#30) in create mode: the shared Edit VM sections
+// with the fields REST does not accept for an instance type left out. Scanned
+// on General, System and Console.
+test('New instance type dialog has no serious accessibility violations', async ({ page }) => {
+  await login(page, { path: '/instance-types' })
+  await page.getByRole('button', { name: 'New instance type' }).click()
+  const dialog = page.getByRole('dialog', { name: 'New instance type' })
+  await expect(dialog.getByRole('textbox', { name: 'Instance type name' })).toBeVisible()
+
+  await expectNoSeriousViolations(page)
+
+  await dialog.getByRole('tab', { name: 'System' }).click()
+  await expect(dialog.getByRole('spinbutton', { name: 'Memory Size (GB)' })).toBeVisible()
+
+  await expectNoSeriousViolations(page)
+
+  await dialog.getByRole('tab', { name: 'Console' }).click()
+  await expect(dialog.getByRole('combobox', { name: 'Graphics protocol' })).toBeVisible()
+
+  await expectNoSeriousViolations(page)
+})
+
 test('Hosts & Clusters view has no serious accessibility violations', async ({ page }) => {
   await login(page, { path: '/hosts-clusters' })
   // role=tree, not getByLabel: the pane's Tabs carry the same aria-label, so
