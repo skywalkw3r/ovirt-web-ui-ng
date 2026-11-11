@@ -193,6 +193,31 @@ test('New template dialog has no serious accessibility violations', async ({ pag
   await expectNoSeriousViolations(page)
 })
 
+// The pool dialog (#29): create mode with a template picked, so the shared
+// Edit VM sections render seeded (Console carries the locked USB toggle), and
+// edit mode, where the VM tabs sit read-only inside a disabled fieldset.
+test('New pool dialog has no serious accessibility violations', async ({ page }) => {
+  await login(page, { path: '/pools' })
+  await page.getByRole('button', { name: 'New pool' }).first().click()
+  const dialog = page.getByRole('dialog', { name: 'New pool' })
+  await dialog.getByRole('combobox', { name: 'Template' }).selectOption({ label: 'win2022-base' })
+  await dialog.getByRole('tab', { name: 'Console' }).click()
+  await expect(dialog.getByRole('switch', { name: 'USB enabled' })).toBeDisabled()
+
+  await expectNoSeriousViolations(page)
+})
+
+test('Edit pool dialog has no serious accessibility violations', async ({ page }) => {
+  await login(page, { path: '/pools' })
+  await page.getByRole('button', { name: 'Actions for dev-pool' }).click()
+  await page.getByRole('menuitem', { name: 'Edit' }).click()
+  const dialog = page.getByRole('dialog', { name: 'Edit pool — dev-pool' })
+  await dialog.getByRole('tab', { name: 'System' }).click()
+  await expect(dialog.getByRole('spinbutton', { name: 'Memory Size (GB)' })).toBeDisabled()
+
+  await expectNoSeriousViolations(page)
+})
+
 test('Hosts & Clusters view has no serious accessibility violations', async ({ page }) => {
   await login(page, { path: '/hosts-clusters' })
   // role=tree, not getByLabel: the pane's Tabs carry the same aria-label, so
