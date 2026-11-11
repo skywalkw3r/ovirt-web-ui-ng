@@ -4917,4 +4917,21 @@ export const tr: LocaleCatalog = {
     'Veri merkezini tamamen yapılandırmak için en az bir yerel depolama alanı bağlayıp etkinleştirin.',
   'guideMe.note.clusterNoActions':
     'Bu küme için kullanılabilir eylem yok: herhangi bir veri merkezine bağlı değil.',
+  // Configure aggregate entry point (pages/ConfigurePage.tsx): the webadmin
+  // Administration › Configure index linking to its five surfaces.
+  'nav.configure': 'Yapılandırma',
+  'configure.title': 'Yapılandırma',
+  'configure.intro':
+    'Tüm veri merkezleri ve kümeler tarafından paylaşılan, motor genelindeki tanımlar. Her biri kendi sayfasında açılır.',
+  'configure.loading': 'Yapılandırma alanları yükleniyor',
+  'configure.notPermitted': 'sistem yapılandırmasını',
+  'configure.list.ariaLabel': 'Yapılandırma alanları',
+  'configure.card.roles':
+    'Rolleri ve her rolün kullanıcılara ve yöneticilere verdiği izinleri tanımlayın.',
+  'configure.card.systemPermissions': 'Tüm sistem genelinde kullanıcılara ve gruplara rol atayın.',
+  'configure.card.schedulingPolicies':
+    'Kümelerin VM yerleştirmek için kullandığı filtre, ağırlık ve dengeleme kurallarını yönetin.',
+  'configure.card.instanceTypes':
+    'Yeni sanal makineler için yeniden kullanılabilir donanım profilleri tanımlayın.',
+  'configure.card.macPools': 'Sanal NIC’lere atanan MAC adres aralıklarını yönetin.',
 }

@@ -4862,4 +4862,19 @@ export const ko: LocaleCatalog = {
     '데이터 센터를 완전히 구성하려면 로컬 스토리지 도메인을 하나 이상 연결하고 활성화하세요.',
   'guideMe.note.clusterNoActions':
     '이 클러스터에 사용할 수 있는 작업이 없습니다: 데이터 센터에 연결되어 있지 않습니다.',
+  // Configure aggregate entry point (pages/ConfigurePage.tsx): the webadmin
+  // Administration › Configure index linking to its five surfaces.
+  'nav.configure': '구성',
+  'configure.title': '구성',
+  'configure.intro':
+    '모든 데이터 센터와 클러스터가 공유하는 엔진 전체 정의입니다. 각 항목은 자체 페이지에서 열립니다.',
+  'configure.loading': '구성 영역 로드 중',
+  'configure.notPermitted': '시스템 구성',
+  'configure.list.ariaLabel': '구성 영역',
+  'configure.card.roles': '역할과 각 역할이 사용자 및 관리자에게 부여하는 권한을 정의합니다.',
+  'configure.card.systemPermissions': '시스템 전체에서 사용자와 그룹에 역할을 할당합니다.',
+  'configure.card.schedulingPolicies':
+    '클러스터가 VM을 배치할 때 사용하는 필터, 가중치, 밸런싱 규칙을 관리합니다.',
+  'configure.card.instanceTypes': '새 가상 머신에 재사용할 하드웨어 프로필을 정의합니다.',
+  'configure.card.macPools': '가상 NIC에 할당되는 MAC 주소 범위를 관리합니다.',
 }

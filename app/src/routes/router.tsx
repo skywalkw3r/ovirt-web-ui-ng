@@ -310,6 +310,14 @@ const schedulingPoliciesRoute = createRoute({
   ),
 })
 
+// webadmin's Administration › Configure entry point: an index page linking to
+// the five surfaces that dialog gathers (each keeps its own route above).
+const configureRoute = createRoute({
+  getParentRoute: () => protectedRoute,
+  path: '/configure',
+  component: lazyRouteComponent(() => import('../pages/ConfigurePage'), 'ConfigurePage'),
+})
+
 const providersRoute = createRoute({
   getParentRoute: () => protectedRoute,
   path: '/providers',
@@ -384,6 +392,7 @@ const routeTree = rootRoute.addChildren([
     macPoolsRoute,
     rolesRoute,
     schedulingPoliciesRoute,
+    configureRoute,
     providersRoute,
     providerDetailRoute,
     errataRoute,

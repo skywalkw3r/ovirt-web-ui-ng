@@ -4682,4 +4682,17 @@ export const zhCN: LocaleCatalog = {
   'guideMe.reason.clusterLocalHasHost': '此集群属于一个已有唯一主机的本地数据中心。',
   'guideMe.note.localStorage': '要完全配置数据中心，请至少附加并激活一个本地存储域。',
   'guideMe.note.clusterNoActions': '此集群没有可用操作：它未附加到任何数据中心。',
+  // Configure aggregate entry point (pages/ConfigurePage.tsx): the webadmin
+  // Administration › Configure index linking to its five surfaces.
+  'nav.configure': '配置',
+  'configure.title': '配置',
+  'configure.intro': '所有数据中心和集群共享的引擎级定义。每一项都在各自的页面中打开。',
+  'configure.loading': '正在加载配置区域',
+  'configure.notPermitted': '系统配置',
+  'configure.list.ariaLabel': '配置区域',
+  'configure.card.roles': '定义角色以及每个角色授予用户和管理员的权限。',
+  'configure.card.systemPermissions': '在整个系统范围内为用户和组分配角色。',
+  'configure.card.schedulingPolicies': '管理集群放置 VM 时使用的过滤、权重和均衡规则。',
+  'configure.card.instanceTypes': '为新虚拟机定义可重用的硬件配置文件。',
+  'configure.card.macPools': '管理分配给虚拟 NIC 的 MAC 地址范围。',
 }

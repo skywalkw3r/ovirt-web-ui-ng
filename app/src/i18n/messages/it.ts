@@ -4996,4 +4996,22 @@ export const it: LocaleCatalog = {
     'Per configurare completamente il data center, collega e attiva almeno un dominio di archiviazione locale.',
   'guideMe.note.clusterNoActions':
     'Nessuna azione disponibile per questo cluster: non è collegato a un data center.',
+  // Configure aggregate entry point (pages/ConfigurePage.tsx): the webadmin
+  // Administration › Configure index linking to its five surfaces.
+  'nav.configure': 'Configura',
+  'configure.title': 'Configura',
+  'configure.intro':
+    'Definizioni a livello di motore condivise da tutti i data center e cluster. Ognuna si apre in una pagina dedicata.',
+  'configure.loading': 'Caricamento delle aree di configurazione',
+  'configure.notPermitted': 'la configurazione di sistema',
+  'configure.list.ariaLabel': 'Aree di configurazione',
+  'configure.card.roles':
+    'Definisci i ruoli e le autorizzazioni che ciascuno concede a utenti e amministratori.',
+  'configure.card.systemPermissions': "Assegna ruoli a utenti e gruppi nell'intero sistema.",
+  'configure.card.schedulingPolicies':
+    'Gestisci le regole di filtro, peso e bilanciamento che i cluster usano per collocare le VM.',
+  'configure.card.instanceTypes':
+    'Definisci profili hardware riutilizzabili per le nuove macchine virtuali.',
+  'configure.card.macPools':
+    'Gestisci gli intervalli di indirizzi MAC assegnati alle NIC virtuali.',
 }

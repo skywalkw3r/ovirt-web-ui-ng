@@ -5484,6 +5484,22 @@ export const en = {
     'To fully configure the data center, attach and activate at least one local storage domain.',
   'guideMe.note.clusterNoActions':
     'No actions are available for this cluster: it is not attached to a data center.',
+  // Configure aggregate entry point (pages/ConfigurePage.tsx): the webadmin
+  // Administration › Configure index linking to its five surfaces.
+  'nav.configure': 'Configure',
+  'configure.title': 'Configure',
+  'configure.intro':
+    'Engine-wide definitions shared by every data center and cluster. Each one opens on its own page.',
+  'configure.loading': 'Loading configuration areas',
+  'configure.notPermitted': 'system configuration',
+  'configure.list.ariaLabel': 'Configuration areas',
+  'configure.card.roles':
+    'Define roles and the permissions each one grants to users and administrators.',
+  'configure.card.systemPermissions': 'Grant roles to users and groups across the whole system.',
+  'configure.card.schedulingPolicies':
+    'Manage the filter, weight and balancing rules clusters use to place VMs.',
+  'configure.card.instanceTypes': 'Define reusable hardware profiles for new virtual machines.',
+  'configure.card.macPools': 'Manage the MAC address ranges assigned to virtual NICs.',
 } as const
 
 // The id union — source of truth for every typed i18n surface (useT, the

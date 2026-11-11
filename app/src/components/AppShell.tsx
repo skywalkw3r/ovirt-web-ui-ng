@@ -129,6 +129,11 @@ const NAV_GROUPS: readonly NavGroup[] = [
       { labelId: 'nav.schedulingPolicies', to: '/scheduling-policies', adminOnly: true },
       { labelId: 'nav.providers', to: '/providers', adminOnly: true },
       { labelId: 'nav.errata', to: '/errata', adminOnly: true },
+      // webadmin's Administration › Configure, last in its menu as there. The
+      // page only links to Roles, System Permissions, Scheduling Policies,
+      // Instance Types and MAC Address Pools; their own entries stay in the
+      // menu so existing muscle memory and one-click access keep working.
+      { labelId: 'nav.configure', to: '/configure', adminOnly: true },
     ],
   },
 ]

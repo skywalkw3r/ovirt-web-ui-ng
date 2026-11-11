@@ -36,6 +36,7 @@ interface Destination {
     | '/providers'
     | '/errata'
     | '/volumes'
+    | '/configure'
   // Mirrors AppShell's sidebar gating: the palette never offers a route the
   // engine would answer with a permission fault.
   adminOnly?: boolean
@@ -60,6 +61,7 @@ const DESTINATIONS: readonly Destination[] = [
   { labelId: 'nav.providers', to: '/providers', adminOnly: true },
   { labelId: 'nav.errata', to: '/errata', adminOnly: true },
   { labelId: 'nav.volumes', to: '/volumes', adminOnly: true },
+  { labelId: 'nav.configure', to: '/configure', adminOnly: true },
 ]
 
 export function PaletteDialog({ onClose }: { onClose: () => void }) {
