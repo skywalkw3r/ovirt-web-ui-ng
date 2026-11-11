@@ -68,7 +68,7 @@ export interface ServerEntry {
   cockpitSsoUrl?: string
 }
 
-// Host console: the "Host console" action and host detail tab that open a
+// Host console: the "Host console" action and host detail button that open a
 // host's Cockpit web console in a new browser tab (lib/hostConsole.ts,
 // docs/HOST-CONSOLE.md).
 export interface CockpitConfig {

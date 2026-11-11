@@ -1949,9 +1949,6 @@ export const es: LocaleCatalog = {
   'hostNuma.loading': 'Cargando topología NUMA',
   'host.console.open': 'Consola del host',
   'host.console.newTab': 'Abre Cockpit en una pestaña nueva',
-  'host.console.body':
-    'Cockpit es la consola web que se ejecuta en el propio host. Úsela para revisar registros, almacenamiento, redes y servicios en {name}, o para abrir un terminal allí.',
-  'host.console.openButton': 'Abrir consola del host',
   'host.console.sso.note':
     'La consola se abre en una pestaña nueva e inicia sesión con su sesión actual.',
   'host.console.direct.title': 'La consola abre {url} en una pestaña nueva',

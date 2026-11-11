@@ -1954,9 +1954,6 @@ export const fr: LocaleCatalog = {
   'hostNuma.loading': 'Chargement de la topologie NUMA',
   'host.console.open': 'Console de l’hôte',
   'host.console.newTab': 'Ouvre Cockpit dans un nouvel onglet',
-  'host.console.body':
-    'Cockpit est la console web qui s’exécute sur l’hôte lui-même. Utilisez-la pour consulter les journaux, le stockage, le réseau et les services de {name}, ou pour y ouvrir un terminal.',
-  'host.console.openButton': 'Ouvrir la console de l’hôte',
   'host.console.sso.note':
     'La console s’ouvre dans un nouvel onglet et vous connecte avec votre session actuelle.',
   'host.console.direct.title': 'La console ouvre {url} dans un nouvel onglet',

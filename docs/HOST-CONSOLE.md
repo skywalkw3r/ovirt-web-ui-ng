@@ -6,7 +6,8 @@ console links to it from three places, all sharing one item:
 
 - the host list kebab and the right-click menu (`Host console`),
 - the infrastructure tree and cluster host tables (same menu),
-- the `Host console` tab on the host detail page.
+- the `Host console` icon button in the host detail page header, beside
+  Edit and Remove.
 
 The Cockpit console always opens in a **new browser tab**. Nothing is framed
 inside this app, so the Content-Security-Policy in
@@ -40,8 +41,8 @@ because it already knows who you are.
 In direct mode the browser talks to the host, not to the engine. Cockpit
 serves the certificate found in `/etc/cockpit/ws-certs.d/` on the host, which
 is self-signed unless someone replaced it. Until the browser trusts that
-certificate it shows a warning page before Cockpit loads. The host console
-tab says so before the administrator clicks.
+certificate it shows a warning page before Cockpit loads. The tooltip on the
+host console button says so before the administrator clicks.
 
 To remove the warning, pick one:
 
@@ -113,7 +114,7 @@ servers: {
 | Situation                                        | Result                              |
 | ------------------------------------------------ | ----------------------------------- |
 | No `cockpit` block                               | Direct mode on port 9090            |
-| `enabled: false`                                 | No kebab item, no host detail tab   |
+| `enabled: false`                                 | No kebab item, no host detail button |
 | Host has no address and no SSO is configured     | Entry points hidden for that host   |
 | `ssoUrl` set, single engine                      | SSO mode                            |
 | Server list configured, engine has `cockpitSsoUrl` | SSO mode for that engine          |
@@ -122,6 +123,7 @@ servers: {
 
 ## Not included yet
 
-Embedding Cockpit inside a host detail tab is deliberately left out. It would
+Embedding Cockpit inside a host detail tab is deliberately left out (the
+host detail page already has many tabs, so the console is a header button). It would
 need a `frame-src` entry in the CSP, host-side changes so Cockpit allows being
 framed by the console origin, and a security review. See ADR-0001, section 7.

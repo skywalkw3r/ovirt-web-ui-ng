@@ -28,9 +28,9 @@ import { HostStatusLabel } from '../components/HostStatusLabel'
 import { HostedEngineCrown } from '../components/HostedEngineCrown'
 import { ListPageHeader } from '../components/ListPageHeader'
 import { HostActionsMenu } from '../components/host-actions/HostActionsMenu'
+import { HostConsoleButton } from '../components/host-actions/HostConsoleButton'
 import { NotPermitted } from '../components/NotPermitted'
 import { HostFormModal } from '../components/host-form/HostFormModal'
-import { HostConsoleTab } from '../components/host-tabs/HostConsoleTab'
 import { HostAffinityLabelsTab } from '../components/host-tabs/HostAffinityLabelsTab'
 import { HostDevicesTab } from '../components/host-tabs/HostDevicesTab'
 import { HostErrataTab } from '../components/host-tabs/HostErrataTab'
@@ -44,7 +44,6 @@ import { HostVmsTab } from '../components/host-tabs/HostVmsTab'
 import { HostMonitoringTab } from '../components/host-tabs/HostMonitoringTab'
 import { useHost } from '../hooks/useHost'
 import { useDeleteHost } from '../hooks/useHostMutations'
-import { hostConsoleInfo } from '../lib/hostConsole'
 import { hostDetailRoute } from '../routes/router'
 
 export function HostDetailPage() {
@@ -150,6 +149,7 @@ export function HostDetailPage() {
             }
             actions={
               <>
+                <HostConsoleButton host={host.data} />
                 <Button variant="secondary" onClick={() => setEditing(true)}>
                   {t('common.action.edit')}
                 </Button>
@@ -304,16 +304,6 @@ export function HostDetailPage() {
                 <HostEventsTab hostName={host.data.name ?? ''} />
               </TabContentBody>
             </Tab>
-            {/* Host console: launches the host's Cockpit web console in a new
-                browser tab. Offered only when a console URL can be formed
-                (see lib/hostConsole.ts). */}
-            {hostConsoleInfo(host.data) ? (
-              <Tab eventKey="console" title={<TabTitleText>{t('host.console.open')}</TabTitleText>}>
-                <TabContentBody hasPadding>
-                  <HostConsoleTab host={host.data} />
-                </TabContentBody>
-              </Tab>
-            ) : null}
           </Tabs>
         </>
       )}

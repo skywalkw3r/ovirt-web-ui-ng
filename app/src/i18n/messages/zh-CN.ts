@@ -1854,9 +1854,6 @@ export const zhCN: LocaleCatalog = {
   'hostNuma.loading': '正在加载 NUMA 拓扑',
   'host.console.open': '主机控制台',
   'host.console.newTab': '在新标签页中打开 Cockpit',
-  'host.console.body':
-    'Cockpit 是在主机本身运行的 Web 控制台。可用它查看 {name} 上的日志、存储、网络和服务，或在其上打开终端。',
-  'host.console.openButton': '打开主机控制台',
   'host.console.sso.note': '控制台将在新标签页中打开，并使用当前会话登录。',
   'host.console.direct.title': '控制台将在新标签页中打开 {url}',
   'host.console.direct.body':

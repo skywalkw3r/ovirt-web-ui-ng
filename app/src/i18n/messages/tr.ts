@@ -1923,9 +1923,6 @@ export const tr: LocaleCatalog = {
   'hostNuma.loading': 'NUMA topolojisi yükleniyor',
   'host.console.open': 'Ana makine konsolu',
   'host.console.newTab': 'Cockpit’i yeni sekmede açar',
-  'host.console.body':
-    'Cockpit, ana makinenin kendisinde çalışan web konsoludur. {name} üzerindeki günlükleri, depolamayı, ağı ve hizmetleri denetlemek veya orada bir terminal açmak için kullanın.',
-  'host.console.openButton': 'Ana makine konsolunu aç',
   'host.console.sso.note': 'Konsol yeni sekmede açılır ve geçerli oturumunuzla oturum açar.',
   'host.console.direct.title': 'Konsol {url} adresini yeni sekmede açar',
   'host.console.direct.body':

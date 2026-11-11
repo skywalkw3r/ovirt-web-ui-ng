@@ -167,7 +167,7 @@ export function activate(api: ExtensionApi): void {
     entity: 'vm',
     id: 'backup-now',
     label: api.i18n.message('acme.backup.now'),
-    placement: ['kebab', 'toolbar'],
+    placement: ['kebab', 'toolbar'], // or 'header' on the detail page
     isVisible: ({ entity }) => entity.status === 'up',
     run: ({ entity }) => api.engine.request(`/vms/${entity.id}/...`, { method: 'POST' }),
   })
@@ -180,7 +180,7 @@ Version 1 extension points:
 | ----------------------- | ------------------------------------------------------------ |
 | `registerNavPage`       | A page in the main navigation, with its own route.           |
 | `registerEntityTab`     | A subtab on a detail page (VM, host, cluster, storage domain, network, data center, template, disk). |
-| `registerAction`        | An item in an entity's kebab menu and/or list toolbar.       |
+| `registerAction`        | An item in an entity's kebab menu, list toolbar and/or detail page header. |
 | `registerDashboardCard` | A card on the dashboard.                                     |
 
 Version 1 services:
@@ -278,15 +278,16 @@ engines, one per session.
 ## 7. Cockpit host console (shipped with this ADR)
 
 The host console is the first consumer. It is built in-tree now and moves
-onto `registerEntityTab` and `registerAction` once those exist, which proves
+onto `registerAction` once that exists, which proves
 the API against a real feature.
 
 What ships:
 
 - A `Host console` item in the shared host menu (list kebab, right-click
   menu, infrastructure tree, cluster host tables).
-- A `Host console` tab on the host detail page that explains what will happen
-  and opens the console.
+- A `Host console` icon button in the host detail header, beside Edit and
+  Remove, whose tooltip explains what will happen. It is a button, not a tab,
+  because the host detail page already has many tabs.
 - Always a new browser tab, opened with `noopener,noreferrer`.
 - **Direct mode** (default): `https://<host address>:9090`, with a note that
   Cockpit asks for a host account and may raise a certificate warning.
@@ -305,8 +306,7 @@ would be worse than a clear direct link.
 **Embedding is deferred.** Showing Cockpit inside a host detail tab would
 need `frame-src` in the CSP (today the app frames nothing), host-side changes
 so Cockpit accepts being framed by the console origin, and a security review
-of mixing a second authenticated origin into the page. The tab added here is
-where an embed would go if that review passes.
+of mixing a second authenticated origin into the page.
 
 ## Rollout
 

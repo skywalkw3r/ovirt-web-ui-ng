@@ -86,7 +86,7 @@ window.ovirtWebUiConfig = {
   // },
 
   // Host console: the "Host console" action on every host (list kebab,
-  // right-click menu, host detail tab) opens the host's Cockpit web console
+  // right-click menu, host detail header button) opens the host's Cockpit web console
   // in a new browser tab. By default that is https://<host address>:9090 and
   // the administrator signs in to Cockpit with an account on the host. See
   // docs/HOST-CONSOLE.md.

@@ -1944,9 +1944,6 @@ export const ru: LocaleCatalog = {
   'hostNuma.loading': 'Загрузка топологии NUMA',
   'host.console.open': 'Консоль хоста',
   'host.console.newTab': 'Открывает Cockpit в новой вкладке',
-  'host.console.body':
-    'Cockpit является веб-консолью, работающей на самом хосте. С её помощью можно проверить журналы, хранилище, сеть и службы на {name} или открыть там терминал.',
-  'host.console.openButton': 'Открыть консоль хоста',
   'host.console.sso.note':
     'Консоль откроется в новой вкладке и выполнит вход с вашим текущим сеансом.',
   'host.console.direct.title': 'Консоль откроет {url} в новой вкладке',

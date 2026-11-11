@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test'
 import { login } from './helpers'
 
 // Host console (Cockpit): reachable from the host list kebab and the host
-// detail tab, always in a new browser tab. Nothing listens on the Cockpit
+// detail header button, always in a new browser tab. Nothing listens on the Cockpit
 // address in the mock lab (a real popup would race to a browser error page),
 // so the tests record the window.open call instead of following it.
 type OpenCall = [url: string, target: string, features: string]
@@ -44,19 +44,27 @@ test('host list kebab opens the host Cockpit console in a new tab', async ({ pag
   ])
 })
 
-test('host detail tab explains the direct sign-in and opens the console', async ({ page }) => {
+test('host detail header button explains the direct sign-in and opens the console', async ({
+  page,
+}) => {
   const openCalls = await recordWindowOpen(page)
   await login(page, { path: '/hosts/host-01' })
-  await page.getByRole('tab', { name: 'Host console' }).click()
+  const button = page.getByRole('button', { name: 'Host console' })
 
   // the documented fallback: where it goes, and the certificate note
-  await expect(
-    page.getByText('The console opens https://node-01.lab.local:9090 in a new tab'),
-  ).toBeVisible()
-  await expect(page.getByText(/Sign in with an account on the host/)).toBeVisible()
+  await button.hover()
+  const tooltip = page.getByRole('tooltip')
+  await expect(tooltip).toContainText(
+    'The console opens https://node-01.lab.local:9090 in a new tab',
+  )
+  await expect(tooltip).toContainText('Sign in with an account on the host')
 
-  await page.getByRole('button', { name: 'Open host console' }).click()
-  expect((await openCalls()).map((call) => call[0])).toEqual(['https://node-01.lab.local:9090'])
+  await button.click()
+  expect(await openCalls()).toEqual([
+    ['https://node-01.lab.local:9090', '_blank', 'noopener,noreferrer'],
+  ])
+  // a header button, not one more tab
+  await expect(page.getByRole('tab', { name: 'Host console' })).toHaveCount(0)
 })
 
 test('with SSO configured the console opens the SSO service with the session token', async ({
@@ -65,12 +73,14 @@ test('with SSO configured the console opens the SSO service with the session tok
   const openCalls = await recordWindowOpen(page)
   await withConfig(page, { cockpit: { ssoUrl: 'https://engine.lab.local:9986' } })
   await login(page, { path: '/hosts/host-01' })
-  await page.getByRole('tab', { name: 'Host console' }).click()
+  const button = page.getByRole('button', { name: 'Host console' })
 
-  await expect(page.getByText(/signs you in with your current session/)).toBeVisible()
-  await expect(page.getByText(/Sign in with an account on the host/)).toHaveCount(0)
+  await button.hover()
+  const tooltip = page.getByRole('tooltip')
+  await expect(tooltip).toContainText('signs you in with your current session')
+  await expect(tooltip).not.toContainText('Sign in with an account on the host')
 
-  await page.getByRole('button', { name: 'Open host console' }).click()
+  await button.click()
   const [[url, target, features]] = await openCalls()
   expect(url).toMatch(/^https:\/\/engine\.lab\.local:9986\/=host-01\/machines#access_token=.+/)
   expect([target, features]).toEqual(['_blank', 'noopener,noreferrer'])
@@ -81,8 +91,8 @@ test('with SSO configured the console opens the SSO service with the session tok
 test('cockpit.enabled false removes every host console entry point', async ({ page }) => {
   await withConfig(page, { cockpit: { enabled: false } })
   await login(page, { path: '/hosts/host-01' })
-  await expect(page.getByRole('tab', { name: 'General' })).toBeVisible()
-  await expect(page.getByRole('tab', { name: 'Host console' })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Edit' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Host console' })).toHaveCount(0)
 
   await page.getByRole('button', { name: 'Actions for node-01' }).click()
   await expect(page.getByRole('menuitem', { name: 'Assign tags' })).toBeVisible()

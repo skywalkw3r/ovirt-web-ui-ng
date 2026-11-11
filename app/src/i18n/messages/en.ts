@@ -2337,12 +2337,9 @@ export const en = {
   'hostNuma.empty.body': 'This host reports no NUMA nodes.',
   'hostNuma.error.title': 'Could not load NUMA topology',
   'hostNuma.loading': 'Loading NUMA topology',
-  // Host console (Cockpit): kebab item, host detail tab (lib/hostConsole.ts)
+  // Host console (Cockpit): kebab item, host detail header button (lib/hostConsole.ts)
   'host.console.open': 'Host console',
   'host.console.newTab': 'Opens Cockpit in a new tab',
-  'host.console.body':
-    'Cockpit is the web console that runs on the host itself. Use it to check logs, storage, networking and services on {name}, or to open a terminal there.',
-  'host.console.openButton': 'Open host console',
   'host.console.sso.note':
     'The console opens in a new tab and signs you in with your current session.',
   'host.console.direct.title': 'The console opens {url} in a new tab',

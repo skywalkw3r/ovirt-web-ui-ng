@@ -1901,9 +1901,6 @@ export const ko: LocaleCatalog = {
   'hostNuma.loading': 'NUMA 토폴로지 로드 중',
   'host.console.open': '호스트 콘솔',
   'host.console.newTab': '새 탭에서 Cockpit을 엽니다',
-  'host.console.body':
-    'Cockpit은 호스트 자체에서 실행되는 웹 콘솔입니다. {name}의 로그, 스토리지, 네트워크, 서비스를 확인하거나 터미널을 열 때 사용합니다.',
-  'host.console.openButton': '호스트 콘솔 열기',
   'host.console.sso.note': '콘솔이 새 탭에서 열리고 현재 세션으로 로그인됩니다.',
   'host.console.direct.title': '콘솔이 새 탭에서 {url}을(를) 엽니다',
   'host.console.direct.body':
