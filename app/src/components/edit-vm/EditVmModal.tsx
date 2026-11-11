@@ -1,5 +1,13 @@
 import { useCallback, useState } from 'react'
-import { Alert, Button, Modal, ModalBody, ModalFooter, ModalHeader } from '@patternfly/react-core'
+import {
+  Alert,
+  AlertActionLink,
+  Button,
+  Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+} from '@patternfly/react-core'
 import { useQueryClient } from '@tanstack/react-query'
 import {
   applyVmNumaSteps,
@@ -13,7 +21,7 @@ import { useCapabilities } from '../../auth/capabilities'
 import { useClusters, useOperatingSystems } from '../../hooks/useCatalog'
 import { useHosts } from '../../hooks/useHosts'
 import { useUpdateVm } from '../../hooks/useUpdateVm'
-import { useVmTpm } from '../../hooks/useVmTpm'
+import { useVmAllContentDevices } from '../../hooks/useAllContent'
 import { usePlacementHostNumaNodes, useVmNumaNodes, vmNumaKeys } from '../../hooks/useVmNumaNodes'
 import { useApplyVmWatchdog, useVmWatchdogs } from '../../hooks/useVmWatchdogs'
 import { vmKeys } from '../../hooks/useVms'
@@ -28,6 +36,7 @@ import { ConsoleSection } from './ConsoleSection'
 import { cpuPinningDraftError, draftHasSpecificHost } from './cpuPinning'
 import { CustomPropertiesSection } from './CustomPropertiesSection'
 import {
+  allContentDraftFields,
   buildCdromChange,
   baselineAfterVmSave,
   baselineWithWatchdog,
@@ -38,7 +47,6 @@ import {
   effectiveTpmEnabled,
   gatedTpmDraft,
   tpmAvailability,
-  tpmDraftFields,
   tpmLevelWarning,
   tpmRemovalPending,
   vmIsRunning,
@@ -150,21 +158,23 @@ export function EditVmModal({
     setDraft((current) => ({ ...current, ...fields }))
   }
 
-  // The TPM device is not on the polled vm read either (the engine fills
-  // tpm_enabled on an all_content read only): fold the dedicated read into
-  // BOTH baseline and draft once it lands, the watchdog idiom above. A failed
-  // read leaves tpmLoaded false, which keeps the toggle disabled and
-  // tpm_enabled out of the save. The seed waits out a fetch in flight: after
-  // a save the cached value is invalidated (it nests under the vm detail key)
-  // but still isSuccess, and seeding from it would show the old device.
-  const tpm = useVmTpm(vm.id)
-  const [tpmSeededId, setTpmSeededId] = useState<string | null>(null)
-  if (tpm.isSuccess && !tpm.isFetching && tpmSeededId !== vm.id) {
-    setTpmSeededId(vm.id)
-    const fields = tpmDraftFields(tpm.data)
+  // Serial console, sound card, VirtIO-SCSI, RNG and TPM are not on the polled
+  // vm read either (the engine fills them on an all_content read only): fold
+  // the dedicated read into BOTH baseline and draft once it lands, the
+  // watchdog idiom above. A failed read leaves devicesLoaded false, which
+  // keeps those controls disabled and their keys out of the save. The seed
+  // waits out a fetch in flight: after a save the cached value is invalidated
+  // (it nests under the vm detail key) but still isSuccess, and seeding from
+  // it would show the old devices.
+  const devices = useVmAllContentDevices(vm.id)
+  const [devicesSeededId, setDevicesSeededId] = useState<string | null>(null)
+  if (devices.isSuccess && !devices.isFetching && devicesSeededId !== vm.id) {
+    setDevicesSeededId(vm.id)
+    const fields = allContentDraftFields(devices.data)
     setBaseline((current) => ({ ...current, ...fields }))
     setDraft((current) => ({ ...current, ...fields }))
   }
+  const devicesFailed = devices.isError && !draft.devicesLoaded
 
   // The virtual NUMA nodes live in their own subcollection too: same seeding
   // idiom as the watchdog. Only the admin-only Host section edits them, so the
@@ -277,7 +287,7 @@ export function EditVmModal({
     tpmLevelWarning(draftCluster?.version) &&
     tpmGate.state !== 'unavailable' &&
     effectiveTpmEnabled(draft.tpmEnabled, tpmGate) &&
-    !(baseline.tpmLoaded && baseline.tpmEnabled)
+    !(baseline.devicesLoaded && baseline.tpmEnabled)
   const saveDraft = gatedTpmDraft(draft, tpmGate)
   const tpmRemoval = tpmRemovalPending(draft, baseline, tpmGate)
   const [confirmingTpmRemoval, setConfirmingTpmRemoval] = useState(false)
@@ -529,6 +539,23 @@ export function EditVmModal({
               t('vm.edit.save.numaState', { count: saveError.numaNodeCount })}
           </Alert>
         )}
+        {devicesFailed && (
+          <Alert
+            variant="warning"
+            isInline
+            title={t('vm.edit.devices.error.title')}
+            data-testid="edit-vm-devices-error"
+            style={{ marginBottom: 'var(--pf-t--global--spacer--md)' }}
+            actionLinks={
+              <AlertActionLink onClick={() => void devices.refetch()}>
+                {t('common.action.retry')}
+              </AlertActionLink>
+            }
+          >
+            {t('vm.edit.devices.error.body')}
+            {devices.error instanceof Error ? ` (${devices.error.message})` : ''}
+          </Alert>
+        )}
         <ModalVerticalTabs
           idPrefix="edit-vm"
           ariaLabel={t('vm.edit.sections.ariaLabel')}
@@ -594,7 +621,13 @@ export function EditVmModal({
             {
               key: 'console',
               title: t('vm.edit.section.console'),
-              content: <ConsoleSection draft={draft} onChange={patch} />,
+              content: (
+                <ConsoleSection
+                  draft={draft}
+                  onChange={patch}
+                  allContent={{ loaded: draft.devicesLoaded, failed: devicesFailed }}
+                />
+              ),
             },
             // Host placement is engine-admin-only (GET /hosts requires an
             // admin session), mirroring webadmin where the Host tab is an
@@ -648,11 +681,11 @@ export function EditVmModal({
                   tpm={{
                     draft,
                     onChange: patch,
-                    query: tpm,
                     availability: tpmGate,
                     removalPending: tpmRemoval,
                     levelWarning: tpmLevelNotice,
                   }}
+                  allContent={{ loaded: draft.devicesLoaded, failed: devicesFailed }}
                 />
               ),
             },
@@ -664,7 +697,14 @@ export function EditVmModal({
             {
               key: 'rng',
               title: t('vm.edit.section.rng'),
-              content: <RngSection draft={draft} set={set} baselineEnabled={baseline.rngEnabled} />,
+              content: (
+                <RngSection
+                  draft={draft}
+                  set={set}
+                  baselineEnabled={baseline.rngEnabled}
+                  devicesFailed={devicesFailed}
+                />
+              ),
             },
             {
               key: 'custom-properties',
@@ -707,7 +747,7 @@ export function EditVmModal({
           vmName={vm.name}
           isSaving={saving}
           watchdogChanged={buildWatchdogChange(draft, baseline) !== undefined}
-          tpmChanged={saveDraft.tpmLoaded && saveDraft.tpmEnabled !== baseline.tpmEnabled}
+          tpmChanged={saveDraft.devicesLoaded && saveDraft.tpmEnabled !== baseline.tpmEnabled}
           onApplyLater={() => void mutate(true)}
           onApplyNow={() => void mutate(false)}
           onCancel={() => setConfirmingNextRun(false)}

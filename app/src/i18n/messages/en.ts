@@ -5565,7 +5565,6 @@ export const en = {
   // VM TPM device (Edit VM Resource Allocation, New VM wizard, General tab)
   'vm.edit.resources.tpm': 'TPM Device Enabled',
   'vm.edit.resources.tpm.loading': 'Loading TPM device',
-  'vm.edit.resources.tpm.error': 'Could not load the TPM device; it is left unchanged.',
   'vm.edit.resources.tpm.reason.version':
     'Available in cluster compatibility version 4.5 or higher',
   'vm.edit.resources.tpm.reason.os': 'Guest OS version is not supported',
@@ -5590,6 +5589,15 @@ export const en = {
   'vm.create.tpm.templateError':
     "Could not load the template's TPM device: {message}. Unless you change the setting here, the new VM gets the template's TPM device as it is.",
   'vm.create.tpm.review.inherited': 'As in the template',
+  // all_content device reads (Edit VM, Edit/New Template and Edit Instance Type
+  // device toggles)
+  'vm.edit.devices.loading': 'Loading device state',
+  'vm.edit.devices.error.title': "Could not read the VM's devices",
+  'vm.edit.devices.error.body':
+    'Serial console, sound card, VirtIO-SCSI, random generator and TPM stay disabled, and saving leaves them unchanged.',
+  'vmBase.devices.error.title': 'Could not read the device state',
+  'vmBase.devices.error.body':
+    'Serial console, sound card and VirtIO-SCSI stay disabled, and saving leaves them unchanged.',
 } as const
 
 // The id union — source of truth for every typed i18n surface (useT, the

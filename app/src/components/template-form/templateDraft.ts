@@ -2,9 +2,11 @@ import { vmLargeIconId } from '../../api/resources/icons'
 import type { Template } from '../../api/schemas/template'
 import type { Vm } from '../../api/schemas/vm'
 import {
+  allContentDeviceFields,
   MAX_MEMORY_RATIO,
   vmBaseChangedPayload,
   vmBaseToDraft,
+  type DeviceLoadFields,
   type VmBaseDraft,
 } from '../edit-vm/vmBaseDraft'
 
@@ -13,8 +15,11 @@ import {
 // the shared VmBase slice (vmBaseDraft.ts) and only adds its General fields.
 // Every field is persisted by PUT /templates/{id} (TemplateMapper →
 // VmBaseMapper) and accepted by POST /templates over the source VM's values.
-// The OS type rides as a string; '' means no OS recorded.
-export interface TemplateDraft extends VmBaseDraft {
+// The OS type rides as a string; '' means no OS recorded. Serial console,
+// sound card and VirtIO-SCSI are all_content device flags: every seed starts
+// them "not loaded" (devicesLoaded false) and the dialog folds an all_content
+// read of the template (edit) or source VM (create) into draft and baseline.
+export interface TemplateDraft extends VmBaseDraft, DeviceLoadFields {
   name: string
   description: string
   comment: string
@@ -31,15 +36,13 @@ function withMaxDefault(base: VmBaseDraft): VmBaseDraft {
 }
 
 // Template read model → draft (edit mode). Seeded once; the seed is the
-// baseline the save diffs against.
-//
-// Note: ovirt-engine's template read fills soundcard_enabled from the device
-// list with the check inverted (BackendTemplateResource.doPopulate sets it to
-// "no sound device"), so the loaded toggle may be wrong on a live engine.
-// Because only changed fields are sent, an untouched toggle is never written.
+// baseline the save diffs against. The device flags are not on this read (the
+// engine fills them on an all_content read only), so they start as
+// placeholders until getTemplateAllContentDevices lands.
 export function templateToDraft(template: Template): TemplateDraft {
   return {
     ...withMaxDefault(vmBaseToDraft(template, template.large_icon?.id ?? '')),
+    ...allContentDeviceFields(undefined),
     name: template.name,
     description: template.description ?? '',
     comment: template.comment ?? '',
@@ -55,6 +58,7 @@ export function templateToDraft(template: Template): TemplateDraft {
 export function emptyTemplateDraft(): TemplateDraft {
   return {
     ...withMaxDefault(vmBaseToDraft({})),
+    ...allContentDeviceFields(undefined),
     name: '',
     description: '',
     comment: '',
@@ -74,10 +78,12 @@ export function defaultTemplateName(vm: Vm): string {
 // template from the VM's own configuration (BackendTemplatesResource.addFromVm
 // maps the request over the VM's static data), so the VM's values are the
 // baseline and the POST carries only what the user changed. Description and
-// comment start empty, as in Make Template.
+// comment start empty, as in Make Template. The VM's device flags come from
+// its all_content read, folded in later like the edit-mode template's.
 export function vmToTemplateDraft(vm: Vm): TemplateDraft {
   return {
     ...withMaxDefault(vmBaseToDraft(vm, vmLargeIconId(vm) ?? '')),
+    ...allContentDeviceFields(undefined),
     name: defaultTemplateName(vm),
     description: '',
     comment: '',
@@ -89,9 +95,14 @@ export function vmToTemplateDraft(vm: Vm): TemplateDraft {
 }
 
 // The changed General fields plus every changed VmBase field. os is only sent
-// once a type is chosen, so an untouched save never rewrites it.
+// once a type is chosen, so an untouched save never rewrites it. The device
+// flags ride only once the all_content read seeded both sides: the engine adds
+// or removes the device whenever its key is set, so a placeholder sent as a
+// change would remove a real device.
 function changedFields(draft: TemplateDraft, baseline: TemplateDraft): Record<string, unknown> {
-  const payload = vmBaseChangedPayload(draft, baseline)
+  const payload = vmBaseChangedPayload(draft, baseline, {
+    devicesRead: draft.devicesLoaded && baseline.devicesLoaded,
+  })
   if (draft.osType && draft.osType !== baseline.osType) payload.os = { type: draft.osType }
   if (draft.optimizedFor !== baseline.optimizedFor) payload.type = draft.optimizedFor
   if (draft.stateless !== baseline.stateless) payload.stateless = draft.stateless

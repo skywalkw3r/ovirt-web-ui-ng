@@ -5095,7 +5095,6 @@ export const fr: LocaleCatalog = {
   // VM TPM device (Edit VM Resource Allocation, New VM wizard, General tab)
   'vm.edit.resources.tpm': 'Périphérique TPM activé',
   'vm.edit.resources.tpm.loading': 'Chargement du périphérique TPM',
-  'vm.edit.resources.tpm.error': 'Impossible de charger le périphérique TPM ; il reste inchangé.',
   'vm.edit.resources.tpm.reason.version':
     'Disponible à partir de la version de compatibilité 4.5 du cluster',
   'vm.edit.resources.tpm.reason.os':
@@ -5122,4 +5121,13 @@ export const fr: LocaleCatalog = {
   'vm.create.tpm.templateError':
     'Impossible de charger le périphérique TPM du modèle : {message}. Tant que vous ne modifiez pas le réglage ici, la nouvelle VM reçoit le périphérique TPM du modèle tel quel.',
   'vm.create.tpm.review.inherited': 'Comme dans le modèle',
+  // all_content device reads (Edit VM, Edit/New Template and Edit Instance Type
+  // device toggles)
+  'vm.edit.devices.loading': "Chargement de l'état des périphériques",
+  'vm.edit.devices.error.title': 'Impossible de lire les périphériques de la VM',
+  'vm.edit.devices.error.body':
+    "La console série, la carte son, VirtIO-SCSI, le générateur aléatoire et le TPM restent désactivés, et l'enregistrement les laisse inchangés.",
+  'vmBase.devices.error.title': "Impossible de lire l'état des périphériques",
+  'vmBase.devices.error.body':
+    "La console série, la carte son et VirtIO-SCSI restent désactivés, et l'enregistrement les laisse inchangés.",
 }

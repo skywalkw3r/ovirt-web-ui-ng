@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
+import type { VmAllContentDevices } from '../../api/resources/vms'
 import type { Vm } from '../../api/schemas/vm'
 import {
+  allContentDraftFields,
   buildCdromChange,
   buildInitialization,
   buildLargeIcon,
@@ -24,7 +26,6 @@ import {
   mibToGib,
   tpmAvailability,
   tpmCreateValue,
-  tpmDraftFields,
   tpmLevelWarning,
   tpmRemovalPending,
   vmIsRunning,
@@ -256,9 +257,125 @@ const richVm: Vm = {
   },
 }
 
+// What the all_content read reports for a VM (getVmAllContentDevices): the
+// fixtures above carry the device keys the way an all_content read does.
+function devicesOf(vm: Vm): VmAllContentDevices {
+  return {
+    serialConsoleEnabled: vm.console?.enabled ?? false,
+    virtioScsiEnabled: vm.virtio_scsi?.enabled ?? false,
+    soundcardEnabled: vm.soundcard_enabled ?? false,
+    rngDevice: vm.rng_device,
+    tpmEnabled: vm.tpm_enabled ?? false,
+  }
+}
+
+// The draft the modal edits once the plain read and the all_content read
+// both landed.
+function loadedDraft(vm: Vm): EditVmDraft {
+  return { ...vmToDraft(vm), ...allContentDraftFields(devicesOf(vm)) }
+}
+
+describe('all_content device flags (serial console, sound card, VirtIO-SCSI, RNG, TPM)', () => {
+  it('vmToDraft ignores them, even when the read happens to carry them', () => {
+    // the engine never maps them on a plain read; seeding from one would
+    // show a VM's devices as absent, so vmToDraft does not read them at all
+    expect(vmToDraft(richVm)).toMatchObject({
+      devicesLoaded: false,
+      serialConsoleEnabled: false,
+      soundcardEnabled: false,
+      virtioScsiEnabled: false,
+      tpmEnabled: false,
+      rngEnabled: false,
+      rngSource: 'urandom',
+      rngBytes: 0,
+      rngPeriod: 0,
+    })
+  })
+
+  it('allContentDraftFields seeds them from the all_content read', () => {
+    expect(allContentDraftFields(devicesOf({ ...richVm, tpm_enabled: true }))).toEqual({
+      devicesLoaded: true,
+      serialConsoleEnabled: true,
+      soundcardEnabled: true,
+      virtioScsiEnabled: true,
+      tpmEnabled: true,
+      rngEnabled: true,
+      rngSource: 'hwrng',
+      rngBytes: 32,
+      rngPeriod: 1000,
+    })
+    expect(
+      allContentDraftFields({
+        serialConsoleEnabled: false,
+        virtioScsiEnabled: false,
+        soundcardEnabled: false,
+        tpmEnabled: false,
+      }),
+    ).toMatchObject({ devicesLoaded: true, rngEnabled: false, rngSource: 'urandom' })
+  })
+
+  it('an untouched save sends none of them', () => {
+    const baseline = loadedDraft(richVm)
+    const payload = draftToPayload(baseline, baseline)
+    for (const key of [
+      'console',
+      'virtio_scsi',
+      'soundcard_enabled',
+      'rng_device',
+      'tpm_enabled',
+    ]) {
+      expect(payload).not.toHaveProperty(key)
+    }
+  })
+
+  it('sends none of them before the all_content read seeded both sides', () => {
+    const baseline = vmToDraft(richVm)
+    const edited = {
+      ...baseline,
+      serialConsoleEnabled: true,
+      soundcardEnabled: true,
+      virtioScsiEnabled: true,
+      tpmEnabled: true,
+      rngEnabled: true,
+    }
+    const payload = draftToPayload(edited, baseline)
+    for (const key of [
+      'console',
+      'virtio_scsi',
+      'soundcard_enabled',
+      'rng_device',
+      'tpm_enabled',
+    ]) {
+      expect(payload).not.toHaveProperty(key)
+    }
+    // a loaded draft against an unloaded baseline is no better
+    expect(draftToPayload(loadedDraft(richVm), baseline)).not.toHaveProperty('console')
+  })
+
+  it('sends each one that moved once loaded', () => {
+    const baseline = loadedDraft(richVm)
+    const payload = draftToPayload(
+      {
+        ...baseline,
+        serialConsoleEnabled: false,
+        soundcardEnabled: false,
+        virtioScsiEnabled: false,
+        rngEnabled: false,
+      },
+      baseline,
+    )
+    expect(payload).toMatchObject({
+      console: { enabled: false },
+      soundcard_enabled: false,
+      virtio_scsi: { enabled: false },
+      rng_device: {},
+    })
+  })
+})
+
 describe('vmToDraft — Initial Run / Host / Resource Allocation parsing', () => {
   it('reads the initialization block into the cloud-init fields', () => {
-    const d = vmToDraft(richVm)
+    const d = loadedDraft(richVm)
     expect(d.initialRunEnabled).toBe(true)
     expect(d.cloudInitHostname).toBe('rich-01.lab.local')
     expect(d.cloudInitUserName).toBe('admin')
@@ -274,7 +391,7 @@ describe('vmToDraft — Initial Run / Host / Resource Allocation parsing', () =>
   })
 
   it('reads placement policy into the Host fields', () => {
-    const d = vmToDraft(richVm)
+    const d = loadedDraft(richVm)
     expect(d.startRunningOn).toBe('specific')
     expect(d.placementHostIds).toEqual(['host-01', 'host-02'])
     expect(d.migrationMode).toBe('user_migratable')
@@ -282,7 +399,7 @@ describe('vmToDraft — Initial Run / Host / Resource Allocation parsing', () =>
   })
 
   it('reads the resource-allocation scalars', () => {
-    const d = vmToDraft(richVm)
+    const d = loadedDraft(richVm)
     expect(d.cpuProfileId).toBe('cpuprofile-01')
     expect(d.cpuShares).toBe(512)
     expect(d.memoryBalloonEnabled).toBe(true)
@@ -291,7 +408,7 @@ describe('vmToDraft — Initial Run / Host / Resource Allocation parsing', () =>
   })
 
   it('reads the custom-property rows', () => {
-    expect(vmToDraft(richVm).customProperties).toEqual([{ name: 'sap_agent', value: 'true' }])
+    expect(loadedDraft(richVm).customProperties).toEqual([{ name: 'sap_agent', value: 'true' }])
   })
 
   it('defaults the new fields on a sparse VM (no init, no placement)', () => {
@@ -312,7 +429,7 @@ describe('vmToDraft — Initial Run / Host / Resource Allocation parsing', () =>
 
 describe('draftToPayload with a baseline — omit-unchanged discipline', () => {
   it('emits none of the new sub-objects when nothing changed', () => {
-    const baseline = vmToDraft(richVm)
+    const baseline = loadedDraft(richVm)
     const payload = draftToPayload(baseline, baseline)
     expect(payload.initialization).toBeUndefined()
     expect(payload.placement_policy).toBeUndefined()
@@ -327,7 +444,7 @@ describe('draftToPayload with a baseline — omit-unchanged discipline', () => {
   })
 
   it('emits custom_properties on change, dropping unnamed rows, and clears to none', () => {
-    const baseline = vmToDraft(richVm)
+    const baseline = loadedDraft(richVm)
     const edited = draftToPayload(
       {
         ...baseline,
@@ -390,7 +507,7 @@ describe('draftToPayload with a baseline — omit-unchanged discipline', () => {
   })
 
   it('emits only the changed sub-object (IO threads)', () => {
-    const baseline = vmToDraft(richVm)
+    const baseline = loadedDraft(richVm)
     const payload = draftToPayload({ ...baseline, ioThreads: 4 }, baseline)
     expect(payload.io).toEqual({ threads: 4 })
     expect(payload.initialization).toBeUndefined()
@@ -400,7 +517,7 @@ describe('draftToPayload with a baseline — omit-unchanged discipline', () => {
   })
 
   it('emits the whole initialization block when a cloud-init field changed', () => {
-    const baseline = vmToDraft(richVm)
+    const baseline = loadedDraft(richVm)
     const payload = draftToPayload({ ...baseline, cloudInitHostname: 'renamed' }, baseline)
     const init = payload.initialization as Record<string, unknown>
     expect(init.host_name).toBe('renamed')
@@ -410,7 +527,7 @@ describe('draftToPayload with a baseline — omit-unchanged discipline', () => {
   })
 
   it('pins to specific hosts with the id list and clears with an empty list', () => {
-    const baseline = vmToDraft(richVm)
+    const baseline = loadedDraft(richVm)
     const pinned = draftToPayload({ ...baseline, placementHostIds: ['host-03'] }, baseline)
     expect(pinned.placement_policy).toEqual({ hosts: { host: [{ id: 'host-03' }] } })
 
@@ -419,13 +536,13 @@ describe('draftToPayload with a baseline — omit-unchanged discipline', () => {
   })
 
   it('sends affinity when the migration mode moves, without touching hosts', () => {
-    const baseline = vmToDraft(richVm)
+    const baseline = loadedDraft(richVm)
     const payload = draftToPayload({ ...baseline, migrationMode: 'pinned' }, baseline)
     expect(payload.placement_policy).toEqual({ affinity: 'pinned' })
   })
 
   it('rides cpu.mode on the existing cpu block when pass-through toggles', () => {
-    const baseline = vmToDraft(richVm)
+    const baseline = loadedDraft(richVm)
     const payload = draftToPayload({ ...baseline, hostPassthroughCpu: false }, baseline)
     const cpu = payload.cpu as Record<string, unknown>
     expect(cpu.mode).toBe('custom')
@@ -433,7 +550,7 @@ describe('draftToPayload with a baseline — omit-unchanged discipline', () => {
   })
 
   it('rides ballooning on the existing memory_policy block when toggled', () => {
-    const baseline = vmToDraft(richVm)
+    const baseline = loadedDraft(richVm)
     const payload = draftToPayload({ ...baseline, memoryBalloonEnabled: false }, baseline)
     const memoryPolicy = payload.memory_policy as Record<string, unknown>
     expect(memoryPolicy.ballooning).toBe(false)
@@ -441,7 +558,7 @@ describe('draftToPayload with a baseline — omit-unchanged discipline', () => {
   })
 
   it('emits cpu_profile and virtio_scsi only when they changed', () => {
-    const baseline = vmToDraft(richVm)
+    const baseline = loadedDraft(richVm)
     const payload = draftToPayload(
       { ...baseline, cpuProfileId: 'cpuprofile-02', virtioScsiEnabled: false },
       baseline,
@@ -451,7 +568,7 @@ describe('draftToPayload with a baseline — omit-unchanged discipline', () => {
   })
 
   it('never emits the new sections without a baseline (legacy single-arg path)', () => {
-    const d = vmToDraft(richVm)
+    const d = loadedDraft(richVm)
     const payload = draftToPayload({ ...d, ioThreads: 8, cloudInitHostname: 'zzz' })
     expect(payload.io).toBeUndefined()
     expect(payload.initialization).toBeUndefined()
@@ -525,7 +642,7 @@ describe('buildInitialization — cloud-init vs sysprep by OS type', () => {
 })
 
 describe('editRequiresRestart — the next-run change matrix', () => {
-  const baseline = vmToDraft(richVm)
+  const baseline = loadedDraft(richVm)
 
   it('is false when nothing changed', () => {
     expect(editRequiresRestart(baseline, baseline)).toBe(false)
@@ -594,7 +711,7 @@ describe('vmIsRunning / isWindowsOsType / isCpuSharesPreset', () => {
 
 describe('Random Generator — parsing, payload, and the unverified removal path', () => {
   it('reads the rng_device into the draft', () => {
-    const d = vmToDraft(richVm)
+    const d = loadedDraft(richVm)
     expect(d.rngEnabled).toBe(true)
     expect(d.rngSource).toBe('hwrng')
     expect(d.rngBytes).toBe(32)
@@ -620,14 +737,14 @@ describe('Random Generator — parsing, payload, and the unverified removal path
   })
 
   it('emits the device when re-tuning, nothing when untouched', () => {
-    const baseline = vmToDraft(richVm)
+    const baseline = loadedDraft(richVm)
     expect(draftToPayload(baseline, baseline).rng_device).toBeUndefined()
     const retuned = draftToPayload({ ...baseline, rngBytes: 64 }, baseline)
     expect(retuned.rng_device).toEqual({ source: 'hwrng', rate: { bytes: 64, period: 1000 } })
   })
 
   it('emits the device when enabling on a VM that had none', () => {
-    const baseline = vmToDraft({ id: 'vm-x', name: 'x', memory: 1 * GiB })
+    const baseline = loadedDraft({ id: 'vm-x', name: 'x', memory: 1 * GiB })
     const enabled = draftToPayload(
       { ...baseline, rngEnabled: true, rngSource: 'urandom' },
       baseline,
@@ -636,13 +753,13 @@ describe('Random Generator — parsing, payload, and the unverified removal path
   })
 
   it('DISABLING sends the EMPTY object — the clear-by-empty convention, unverified for rng_device', () => {
-    const baseline = vmToDraft(richVm)
+    const baseline = loadedDraft(richVm)
     const disabled = draftToPayload({ ...baseline, rngEnabled: false }, baseline)
     expect(disabled.rng_device).toEqual({})
   })
 
   it('rng changes are reboot-required (next-run matrix)', () => {
-    const baseline = vmToDraft(richVm)
+    const baseline = loadedDraft(richVm)
     expect(editRequiresRestart({ ...baseline, rngEnabled: false }, baseline)).toBe(true)
     expect(editRequiresRestart({ ...baseline, rngPeriod: 2000 }, baseline)).toBe(true)
     expect(editRequiresRestart({ ...baseline, rngSource: 'urandom' }, baseline)).toBe(true)
@@ -651,7 +768,7 @@ describe('Random Generator — parsing, payload, and the unverified removal path
 
 describe('Console / Boot / HA-lease / System — vmToDraft parsing', () => {
   it('reads the console depth fields', () => {
-    const d = vmToDraft(richVm)
+    const d = loadedDraft(richVm)
     expect(d.graphicsProtocol).toBe('vnc')
     expect(d.vncKeyboardLayout).toBe('en-us')
     expect(d.smartcardEnabled).toBe(true)
@@ -660,7 +777,7 @@ describe('Console / Boot / HA-lease / System — vmToDraft parsing', () => {
   })
 
   it('reads the boot depth fields (custom kernel + the vm id for the CD picker)', () => {
-    const d = vmToDraft(richVm)
+    const d = loadedDraft(richVm)
     expect(d.id).toBe('vm-rich')
     expect(d.kernelPath).toBe('/boot/vmlinuz')
     expect(d.initrdPath).toBe('/boot/initrd')
@@ -671,7 +788,7 @@ describe('Console / Boot / HA-lease / System — vmToDraft parsing', () => {
   })
 
   it('reads the HA lease + System depth fields', () => {
-    const d = vmToDraft(richVm)
+    const d = loadedDraft(richVm)
     expect(d.leaseStorageDomainId).toBe('sd-01')
     expect(d.hardwareClockTimezone).toBe('Etc/GMT')
     expect(d.serialNumberPolicy).toBe('custom')
@@ -704,7 +821,7 @@ describe('Console / Boot / HA-lease / System — vmToDraft parsing', () => {
 
 describe('Console / Boot / HA-lease / System — draftToPayload omit-unchanged', () => {
   it('emits none of the depth blocks when nothing changed', () => {
-    const baseline = vmToDraft(richVm)
+    const baseline = loadedDraft(richVm)
     const payload = draftToPayload(baseline, baseline)
     const display = payload.display as Record<string, unknown>
     expect(display.type).toBeUndefined()
@@ -719,7 +836,7 @@ describe('Console / Boot / HA-lease / System — draftToPayload omit-unchanged',
   })
 
   it('rides graphics protocol, keyboard and smartcard on the display block', () => {
-    const baseline = vmToDraft(richVm)
+    const baseline = loadedDraft(richVm)
     const payload = draftToPayload(
       { ...baseline, graphicsProtocol: 'spice', vncKeyboardLayout: '', smartcardEnabled: false },
       baseline,
@@ -732,7 +849,7 @@ describe('Console / Boot / HA-lease / System — draftToPayload omit-unchanged',
   })
 
   it('never writes display.type for a switch to headless (subcollection removal)', () => {
-    const baseline = vmToDraft(richVm)
+    const baseline = loadedDraft(richVm)
     const payload = draftToPayload({ ...baseline, graphicsProtocol: 'headless' }, baseline)
     expect((payload.display as Record<string, unknown>).type).toBeUndefined()
     expect(
@@ -748,7 +865,7 @@ describe('Console / Boot / HA-lease / System — draftToPayload omit-unchanged',
   })
 
   it('emits soundcard and serial-console as their own top-level keys', () => {
-    const baseline = vmToDraft(richVm)
+    const baseline = loadedDraft(richVm)
     const payload = draftToPayload(
       { ...baseline, soundcardEnabled: false, serialConsoleEnabled: false },
       baseline,
@@ -758,7 +875,7 @@ describe('Console / Boot / HA-lease / System — draftToPayload omit-unchanged',
   })
 
   it('rides custom kernel / initrd / cmdline on the os block, clearing with ""', () => {
-    const baseline = vmToDraft(richVm)
+    const baseline = loadedDraft(richVm)
     const changed = draftToPayload(
       { ...baseline, kernelPath: '/boot/other', kernelParams: 'ro' },
       baseline,
@@ -772,7 +889,7 @@ describe('Console / Boot / HA-lease / System — draftToPayload omit-unchanged',
   })
 
   it('sets the VM lease storage domain and clears it with an empty object', () => {
-    const baseline = vmToDraft(richVm)
+    const baseline = loadedDraft(richVm)
     const set = draftToPayload({ ...baseline, leaseStorageDomainId: 'sd-02' }, baseline)
     expect(set.lease).toEqual({ storage_domain: { id: 'sd-02' } })
     const cleared = draftToPayload({ ...baseline, leaseStorageDomainId: '' }, baseline)
@@ -780,7 +897,7 @@ describe('Console / Boot / HA-lease / System — draftToPayload omit-unchanged',
   })
 
   it('emits the time zone, clearing to engine default with an empty name', () => {
-    const baseline = vmToDraft(richVm)
+    const baseline = loadedDraft(richVm)
     const set = draftToPayload({ ...baseline, hardwareClockTimezone: 'Europe/London' }, baseline)
     expect(set.time_zone).toEqual({ name: 'Europe/London' })
     const cleared = draftToPayload({ ...baseline, hardwareClockTimezone: '' }, baseline)
@@ -788,7 +905,7 @@ describe('Console / Boot / HA-lease / System — draftToPayload omit-unchanged',
   })
 
   it('emits the serial-number policy, custom value, and the none clear', () => {
-    const baseline = vmToDraft(richVm) // policy custom / SN-123
+    const baseline = loadedDraft(richVm) // policy custom / SN-123
     expect(
       draftToPayload({ ...baseline, serialNumberPolicy: 'host' }, baseline).serial_number,
     ).toEqual({ policy: 'host' })
@@ -812,7 +929,7 @@ describe('Console / Boot / HA-lease / System — draftToPayload omit-unchanged',
   })
 
   it('never emits the depth blocks without a baseline (single-arg path)', () => {
-    const d = vmToDraft(richVm)
+    const d = loadedDraft(richVm)
     const payload = draftToPayload({
       ...d,
       graphicsProtocol: 'spice',
@@ -826,14 +943,14 @@ describe('Console / Boot / HA-lease / System — draftToPayload omit-unchanged',
 
 describe('buildCdromChange — the separate cdroms-subcollection save', () => {
   it('returns undefined while the picker is untouched (never ejects on save)', () => {
-    const baseline = vmToDraft(richVm)
+    const baseline = loadedDraft(richVm)
     expect(buildCdromChange(baseline)).toBeUndefined()
     // even with a seeded tray value, an untouched picker sends nothing
     expect(buildCdromChange({ ...baseline, attachedCdId: 'rhel.iso' })).toBeUndefined()
   })
 
   it('returns the selected file id once the user touched the picker', () => {
-    const baseline = vmToDraft(richVm)
+    const baseline = loadedDraft(richVm)
     expect(buildCdromChange({ ...baseline, cdTouched: true, attachedCdId: 'rhel.iso' })).toBe(
       'rhel.iso',
     )
@@ -843,7 +960,7 @@ describe('buildCdromChange — the separate cdroms-subcollection save', () => {
 })
 
 describe('Console / Boot / HA-lease / System — next-run matrix', () => {
-  const baseline = vmToDraft(richVm)
+  const baseline = loadedDraft(richVm)
 
   it('marks every depth field reboot-required', () => {
     expect(editRequiresRestart({ ...baseline, graphicsProtocol: 'spice' }, baseline)).toBe(true)
@@ -1244,11 +1361,14 @@ describe('TPM device: gate, payload and next-run', () => {
       ...overrides,
     })
   const loaded = (enabled: boolean, overrides: Partial<EditVmDraft> = {}) =>
-    draft({ ...tpmDraftFields(enabled), ...overrides })
+    draft({
+      ...allContentDraftFields({ ...devicesOf({ id: 'v', name: 'v' }), tpmEnabled: enabled }),
+      ...overrides,
+    })
 
-  it('vmToDraft seeds the device as not loaded; tpmDraftFields marks it loaded', () => {
-    expect(draft()).toMatchObject({ tpmLoaded: false, tpmEnabled: false })
-    expect(tpmDraftFields(true)).toEqual({ tpmLoaded: true, tpmEnabled: true })
+  it('vmToDraft seeds the device as not loaded; allContentDraftFields marks it loaded', () => {
+    expect(draft()).toMatchObject({ devicesLoaded: false, tpmEnabled: false })
+    expect(loaded(true)).toMatchObject({ devicesLoaded: true, tpmEnabled: true })
   })
 
   it('is editable on UEFI x86 at level 4.5 and up, with secure boot too', () => {
@@ -1361,13 +1481,13 @@ describe('TPM device: gate, payload and next-run', () => {
     const baseline = loaded(false)
     expect(editRequiresRestart(loaded(true), baseline)).toBe(true)
     expect(vmFieldsChanged(loaded(true), baseline)).toBe(true)
-    expect(vmFieldsChanged({ ...baseline, tpmLoaded: false }, baseline)).toBe(false)
-    expect(editRequiresRestart({ ...baseline, tpmLoaded: false }, baseline)).toBe(false)
+    expect(vmFieldsChanged({ ...baseline, devicesLoaded: false }, baseline)).toBe(false)
+    expect(editRequiresRestart({ ...baseline, devicesLoaded: false }, baseline)).toBe(false)
   })
 
   it('baselineAfterVmSave takes the saved TPM state', () => {
     expect(baselineAfterVmSave(loaded(true), loaded(false))).toMatchObject({
-      tpmLoaded: true,
+      devicesLoaded: true,
       tpmEnabled: true,
     })
   })

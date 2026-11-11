@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { InstanceType } from '../../api/schemas/instance-type'
+import { allContentDeviceFields } from '../edit-vm/vmBaseDraft'
 import {
   blankInstanceTypeDraft,
   instanceTypeCreateFollowUp,
@@ -45,13 +46,21 @@ describe('instanceTypeToDraft', () => {
       graphicsProtocol: 'vnc',
       monitors: 2,
       usbEnabled: true,
-      soundcardEnabled: true,
-      serialConsoleEnabled: false,
       ioThreads: 1,
-      virtioScsiEnabled: true,
       memoryBalloonEnabled: true,
       customCpuModel: 'Skylake-Server',
       customEmulatedMachine: '',
+    })
+  })
+
+  it('seeds the all_content device flags as not loaded, whatever the read says', () => {
+    // console, soundcard_enabled and virtio_scsi are filled on an all_content
+    // read only, so the list read the dialog opens with cannot be trusted
+    expect(instanceTypeToDraft(MEDIUM)).toMatchObject({
+      devicesLoaded: false,
+      soundcardEnabled: false,
+      serialConsoleEnabled: false,
+      virtioScsiEnabled: false,
     })
   })
 
@@ -85,12 +94,22 @@ describe('blankInstanceTypeDraft', () => {
       haPriority: 1,
       memoryBalloonEnabled: true,
       virtioScsiEnabled: false,
+      // a create's device defaults are the dialog's own
+      devicesLoaded: true,
     })
   })
 })
 
 describe('instanceTypeEditPayload', () => {
-  const baseline = instanceTypeToDraft(MEDIUM)
+  // the dialog folds the all_content read into the baseline
+  const baseline = {
+    ...instanceTypeToDraft(MEDIUM),
+    ...allContentDeviceFields({
+      soundcardEnabled: true,
+      serialConsoleEnabled: false,
+      virtioScsiEnabled: true,
+    }),
+  }
   const edit = (changes: Partial<InstanceTypeDraft>) =>
     instanceTypeEditPayload({ ...baseline, ...changes }, baseline)
 
@@ -117,6 +136,16 @@ describe('instanceTypeEditPayload', () => {
       usb: { enabled: false },
       io: { threads: 4 },
     })
+  })
+
+  it('never sends a device flag before the all_content read seeded both sides', () => {
+    const unread = instanceTypeToDraft(MEDIUM)
+    expect(
+      instanceTypeEditPayload(
+        { ...unread, soundcardEnabled: true, serialConsoleEnabled: true, virtioScsiEnabled: true },
+        unread,
+      ),
+    ).toEqual({})
   })
 
   it('sends the whole topology when one count moved', () => {

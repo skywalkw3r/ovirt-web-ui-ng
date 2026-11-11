@@ -5120,8 +5120,6 @@ export const de: LocaleCatalog = {
   // VM TPM device (Edit VM Resource Allocation, New VM wizard, General tab)
   'vm.edit.resources.tpm': 'TPM-Gerät aktiviert',
   'vm.edit.resources.tpm.loading': 'TPM-Gerät wird geladen',
-  'vm.edit.resources.tpm.error':
-    'Das TPM-Gerät konnte nicht geladen werden; es bleibt unverändert.',
   'vm.edit.resources.tpm.reason.version': 'Verfügbar ab Cluster-Kompatibilitätsversion 4.5',
   'vm.edit.resources.tpm.reason.os': 'Die Version des Gast-Betriebssystems wird nicht unterstützt',
   'vm.edit.resources.tpm.reason.architecture': 'Auf dieser CPU-Architektur nicht unterstützt',
@@ -5145,4 +5143,13 @@ export const de: LocaleCatalog = {
   'vm.create.tpm.templateError':
     'Das TPM-Gerät der Vorlage konnte nicht geladen werden: {message}. Solange Sie die Einstellung hier nicht ändern, erhält die neue VM das TPM-Gerät der Vorlage unverändert.',
   'vm.create.tpm.review.inherited': 'Wie in der Vorlage',
+  // all_content device reads (Edit VM, Edit/New Template and Edit Instance Type
+  // device toggles)
+  'vm.edit.devices.loading': 'Gerätestatus wird geladen',
+  'vm.edit.devices.error.title': 'Die Geräte der VM konnten nicht gelesen werden',
+  'vm.edit.devices.error.body':
+    'Serielle Konsole, Soundkarte, VirtIO-SCSI, Zufallsgenerator und TPM bleiben deaktiviert, und beim Speichern bleiben sie unverändert.',
+  'vmBase.devices.error.title': 'Der Gerätestatus konnte nicht gelesen werden',
+  'vmBase.devices.error.body':
+    'Serielle Konsole, Soundkarte und VirtIO-SCSI bleiben deaktiviert, und beim Speichern bleiben sie unverändert.',
 }

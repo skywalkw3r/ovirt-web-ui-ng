@@ -1,10 +1,12 @@
 import type { InstanceType } from '../../api/schemas/instance-type'
 import { vmNameError } from '../edit-vm/editVmDraft'
 import {
+  allContentDeviceFields,
   MAX_MEMORY_RATIO,
   vmBaseChangedPayload,
   vmBaseToDraft,
   type ConsoleFields,
+  type DeviceLoadFields,
   type HighAvailabilityFields,
   type ResourceAllocationFields,
   type SystemFields,
@@ -15,8 +17,11 @@ const MiB = 1024 * 1024
 
 // The draft the Instance Type dialog owns. It reuses the shared Edit VM
 // sections through the VmBase slice (edit-vm/vmBaseDraft.ts) and adds only
-// the General fields. Every field is always defined.
-export interface InstanceTypeDraft extends VmBaseDraft {
+// the General fields. Every field is always defined. Serial console, sound card
+// and VirtIO-SCSI are all_content device flags: an edit seeds them "not loaded"
+// and the dialog folds getInstanceTypeAllContentDevices into draft and
+// baseline; a create's defaults are the dialog's own (devicesLoaded true).
+export interface InstanceTypeDraft extends VmBaseDraft, DeviceLoadFields {
   name: string
   description: string
 }
@@ -108,10 +113,13 @@ function withMaxDefault(base: VmBaseDraft): VmBaseDraft {
 }
 
 // InstanceType read model → draft (edit mode). Seeded once; the seed is the
-// baseline the save diffs against.
+// baseline the save diffs against. The device flags are not on the list read
+// the dialog opens with, so they start as placeholders until the all_content
+// read lands.
 export function instanceTypeToDraft(instanceType: InstanceType): InstanceTypeDraft {
   return {
     ...withMaxDefault(vmBaseToDraft(instanceType)),
+    ...allContentDeviceFields(undefined),
     name: instanceType.name ?? '',
     description: instanceType.description ?? '',
   }
@@ -132,6 +140,7 @@ export function blankInstanceTypeDraft(): InstanceTypeDraft {
       display: { type: 'spice', monitors: 1 },
       high_availability: { enabled: false, priority: 1 },
     }),
+    devicesLoaded: true,
     name: '',
     description: '',
   }
@@ -139,11 +148,14 @@ export function blankInstanceTypeDraft(): InstanceTypeDraft {
 
 // PUT /instancetypes/{id} body: only the fields that moved from the loaded
 // instance type ({} when nothing did), so the engine keeps everything else.
+// The device flags ride only once the all_content read seeded both sides.
 export function instanceTypeEditPayload(
   draft: InstanceTypeDraft,
   baseline: InstanceTypeDraft,
 ): Record<string, unknown> {
-  const payload = vmBaseChangedPayload(draft, baseline)
+  const payload = vmBaseChangedPayload(draft, baseline, {
+    devicesRead: draft.devicesLoaded && baseline.devicesLoaded,
+  })
   if (draft.name !== baseline.name) payload.name = draft.name
   if (draft.description !== baseline.description) payload.description = draft.description
   return restSubset(payload)

@@ -124,8 +124,11 @@ export const TemplateSchema = z.looseObject({
   multi_queues_enabled: BooleanishSchema.optional(),
   virtio_scsi_multi_queues_enabled: BooleanishSchema.optional(),
   virtio_scsi_multi_queues: z.coerce.number().optional(),
-  // Console. The engine fills soundcard_enabled / console / virtio_scsi from
-  // the template's devices on every read (BackendTemplateResource.doPopulate).
+  // Console. soundcard_enabled, console and virtio_scsi (above) are device
+  // flags the engine fills on an all_content read only (doPopulate), and the
+  // single-template read reports the sound card inverted: see
+  // resources/templates.ts getTemplateAllContentDevices, which the dialog
+  // seeds them from.
   soundcard_enabled: BooleanishSchema.optional(),
   console: z.looseObject({ enabled: BooleanishSchema.optional() }).optional(),
   sso: z

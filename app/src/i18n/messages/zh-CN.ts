@@ -4758,7 +4758,6 @@ export const zhCN: LocaleCatalog = {
   // VM TPM device (Edit VM Resource Allocation, New VM wizard, General tab)
   'vm.edit.resources.tpm': '启用 TPM 设备',
   'vm.edit.resources.tpm.loading': '正在加载 TPM 设备',
-  'vm.edit.resources.tpm.error': '无法加载 TPM 设备；该设备保持不变。',
   'vm.edit.resources.tpm.reason.version': '需要集群兼容版本 4.5 或更高',
   'vm.edit.resources.tpm.reason.os': '不支持此客户机操作系统版本',
   'vm.edit.resources.tpm.reason.architecture': '此 CPU 架构不支持',
@@ -4780,4 +4779,12 @@ export const zhCN: LocaleCatalog = {
   'vm.create.tpm.templateError':
     '无法加载模板的 TPM 设备：{message}。除非在此处更改设置，否则新虚拟机将原样获得模板的 TPM 设备。',
   'vm.create.tpm.review.inherited': '与模板相同',
+  // all_content device reads (Edit VM, Edit/New Template and Edit Instance Type
+  // device toggles)
+  'vm.edit.devices.loading': '正在加载设备状态',
+  'vm.edit.devices.error.title': '无法读取虚拟机的设备',
+  'vm.edit.devices.error.body':
+    '串行控制台、声卡、VirtIO-SCSI、随机数生成器和 TPM 保持禁用，保存时不会更改它们。',
+  'vmBase.devices.error.title': '无法读取设备状态',
+  'vmBase.devices.error.body': '串行控制台、声卡和 VirtIO-SCSI 保持禁用，保存时不会更改它们。',
 }

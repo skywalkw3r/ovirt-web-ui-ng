@@ -8,10 +8,11 @@ import type { MessageId } from '../../i18n/messages/en'
 // pure VmBase fields are shared:
 //
 //   SystemSection             SystemFields            (+ overcommitPercent, topologyLocked)
-//   ConsoleSection            ConsoleFields           (+ allowHeadless)
+//   ConsoleSection            ConsoleFields           (+ allowHeadless, allContent)
 //   HighAvailabilitySection   HighAvailabilityFields  (+ watchdog: VM-only, opt-in)
 //   ResourceAllocationSection ResourceAllocationFields (+ cpuProfiles query,
-//                                                       + tpm: VM-only, opt-in)
+//                                                       allContent,
+//                                                       tpm: VM-only, opt-in)
 //   CustomPropertiesSection   CustomPropertiesFields
 //   IconSection               IconFields
 //
@@ -33,6 +34,8 @@ import type { MessageId } from '../../i18n/messages/en'
 //      only what moved, so the engine's per-field isSet guards keep the rest.
 //      (Edit VM keeps its always-sent core body and adds applyVmBaseChanges.)
 //   4. Gate Save on vmMemoryError(draft).
+// A form that edits an existing entity also seeds the device flags from an
+// all_content read (see "All-content device flags" below).
 // The cpu-profile list is useCpuProfileOptions(clusterId) (vmBaseQueries.ts).
 // TemplateFormModal is the reference consumer outside Edit VM.
 
@@ -124,14 +127,73 @@ export interface WatchdogFields {
   watchdogAction: string
 }
 
-// VM only: the TPM device (tpm_enabled) is filled on an all_content VM read
-// only, never on the polled one. The draft seeds it "not loaded" and the modal
-// folds the dedicated read into both draft and baseline once it lands;
-// tpmLoaded gates the toggle and the payload so an unread device is never
-// written. Templates and instance types do not edit it.
+// VM only: the TPM device (tpm_enabled). Like the device flags below it is
+// filled on an all_content read only, so Edit VM seeds it with them (its
+// devicesLoaded gates the toggle and the payload). Templates and instance types
+// do not edit it.
 export interface TpmFields {
-  tpmLoaded: boolean
   tpmEnabled: boolean
+}
+
+// ── All-content device flags ─────────────────────────────────────────────────
+//
+// Serial console, sound card and VirtIO-SCSI are devices, not entity fields:
+// the engine sets console, soundcard_enabled and virtio_scsi only in the
+// resources' doPopulate, which runs for an all_content read alone, and no
+// mapper maps them from the entity (BackendVm/Template(s)/InstanceType(s)
+// Resource, ovirt-engine 4.5). A plain read therefore reports them as absent,
+// and a form seeded from it would show a device the entity has as off. A form
+// that edits an existing entity:
+//   1. extends DeviceLoadFields and seeds allContentDeviceFields(undefined)
+//      (placeholders, devicesLoaded false) over vmBaseToDraft's values;
+//   2. folds allContentDeviceFields(read) into BOTH draft and baseline once its
+//      all_content read lands;
+//   3. passes allContent={{ loaded: draft.devicesLoaded, failed }} to
+//      ConsoleSection and ResourceAllocationSection: a skeleton while loading,
+//      the switches disabled until loaded (the form says why when it failed);
+//   4. builds the body with { devicesRead: draft.devicesLoaded &&
+//      baseline.devicesLoaded }, so an unread device is never written.
+// Sections given no allContent show those switches as plain controls (a create
+// form whose defaults are its own).
+
+// The device flags an all_content read carries for any VmBase entity.
+export interface VmBaseAllContentDevices {
+  serialConsoleEnabled: boolean
+  soundcardEnabled: boolean
+  virtioScsiEnabled: boolean
+}
+
+// Whether the form's draft holds the all_content read's device flags yet.
+export interface DeviceLoadFields {
+  devicesLoaded: boolean
+}
+
+// The section prop for those flags: the read landed (and was folded into the
+// draft), or it failed.
+export interface AllContentState {
+  loaded: boolean
+  failed: boolean
+}
+
+// The draft fields for an all_content read (undefined: not read yet, the
+// placeholders a form seeds with).
+export function allContentDeviceFields(
+  devices: VmBaseAllContentDevices | undefined,
+): VmBaseAllContentDevices & DeviceLoadFields {
+  return {
+    devicesLoaded: devices !== undefined,
+    serialConsoleEnabled: devices?.serialConsoleEnabled ?? false,
+    soundcardEnabled: devices?.soundcardEnabled ?? false,
+    virtioScsiEnabled: devices?.virtioScsiEnabled ?? false,
+  }
+}
+
+// What applyVmBaseChanges / vmBaseChangedPayload may send. devicesRead false
+// keeps the all_content device keys (console, soundcard_enabled, virtio_scsi)
+// out of the body: the draft holds placeholders for them, not the entity's
+// devices. Absent ⇒ true, for a form whose device values are its own.
+export interface VmBaseChangeOptions {
+  devicesRead?: boolean
 }
 
 export interface ResourceAllocationFields {
@@ -336,6 +398,7 @@ export function applyVmBaseChanges(
   payload: Record<string, unknown>,
   draft: VmBaseDraft,
   baseline: VmBaseDraft,
+  { devicesRead = true }: VmBaseChangeOptions = {},
 ): void {
   // Resource Allocation.
   if (draft.cpuProfileId && draft.cpuProfileId !== baseline.cpuProfileId) {
@@ -346,7 +409,7 @@ export function applyVmBaseChanges(
     child(payload, 'memory_policy').ballooning = draft.memoryBalloonEnabled
   }
   if (draft.ioThreads !== baseline.ioThreads) payload.io = { threads: draft.ioThreads }
-  if (draft.virtioScsiEnabled !== baseline.virtioScsiEnabled) {
+  if (devicesRead && draft.virtioScsiEnabled !== baseline.virtioScsiEnabled) {
     payload.virtio_scsi = { enabled: draft.virtioScsiEnabled }
   }
   // Queue tuning. The VirtIO-SCSI queue COUNT only rides while the multi-queue
@@ -391,10 +454,11 @@ export function applyVmBaseChanges(
   if (draft.spiceCopyPaste !== baseline.spiceCopyPaste) {
     child(payload, 'display').copy_paste_enabled = draft.spiceCopyPaste
   }
-  if (draft.soundcardEnabled !== baseline.soundcardEnabled) {
+  // Both are all_content device flags: sent only once they were read.
+  if (devicesRead && draft.soundcardEnabled !== baseline.soundcardEnabled) {
     payload.soundcard_enabled = draft.soundcardEnabled
   }
-  if (draft.serialConsoleEnabled !== baseline.serialConsoleEnabled) {
+  if (devicesRead && draft.serialConsoleEnabled !== baseline.serialConsoleEnabled) {
     payload.console = { enabled: draft.serialConsoleEnabled }
   }
   // Guest single sign-on. Enabling sends the guest_agent method; disabling
@@ -497,10 +561,11 @@ export function applyVmBaseCoreChanges(
 export function vmBaseChangedPayload(
   draft: VmBaseDraft,
   baseline: VmBaseDraft,
+  options: VmBaseChangeOptions = {},
 ): Record<string, unknown> {
   const payload: Record<string, unknown> = {}
   applyVmBaseCoreChanges(payload, draft, baseline)
-  applyVmBaseChanges(payload, draft, baseline)
+  applyVmBaseChanges(payload, draft, baseline, options)
   return payload
 }
 

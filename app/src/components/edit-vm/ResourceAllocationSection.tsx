@@ -16,6 +16,7 @@ import type { UseQueryResult } from '@tanstack/react-query'
 import type { ClusterCpuProfile } from '../../api/resources/clusters'
 import { useT } from '../../i18n/useT'
 import { FieldHelp } from '../forms/FieldHelp'
+import { AllContentField } from './AllContentField'
 import {
   CPU_SHARES_CUSTOM,
   CPU_SHARES_PRESETS,
@@ -25,6 +26,7 @@ import {
 } from './editVmDraft'
 import {
   fieldSetter,
+  type AllContentState,
   type ResourceAllocationFields,
   type SectionChange,
   type TpmFields,
@@ -32,14 +34,13 @@ import {
 
 // VM-only part of the section: the TPM device (tpm_enabled) is filled on an
 // all_content VM read only, and templates and instance types do not edit it, so
-// a form opts in by passing it (absent ⇒ the field is left out).
+// a form opts in by passing it (absent ⇒ the field is left out). It is seeded
+// with the other all_content device flags, so the section's `allContent`
+// drives its loading state too: the toggle stays disabled until the draft
+// holds the loaded value, so a pick can never race the seed.
 export interface TpmContext {
   draft: TpmFields
   onChange: SectionChange<TpmFields>
-  // The VM's TPM read the form seeds the draft from, here only for the
-  // loading/error states: the toggle stays disabled until the draft holds the
-  // loaded value (draft.tpmLoaded), so a pick can never race the seed.
-  query: UseQueryResult<boolean>
   // Whether the firmware / guest OS / cluster allow the toggle (the form
   // derives it from the draft), and whether this save would remove a TPM
   // device the VM has.
@@ -53,14 +54,16 @@ export interface TpmContext {
 // Resource Allocation section, one of the shared VmBase sections (contract in
 // vmBaseDraft.ts): CPU profile (fed by the cluster's cpuprofiles query, all
 // four states designed), CPU shares (preset buckets + custom integer), memory
-// balloon, the TPM device when `tpm` is passed, IO threads and VirtIO-SCSI.
-// Presentational — the form owns the draft and the queries
+// balloon, the TPM device when `tpm` is passed, IO threads and VirtIO-SCSI
+// (an all_content device flag: with `allContent` it waits for the form's
+// all_content read, see vmBaseDraft.ts). Presentational — the form owns the draft and the queries
 // (useCpuProfileOptions).
 export function ResourceAllocationSection({
   draft,
   onChange,
   cpuProfiles,
   tpm,
+  allContent,
   hiddenFields,
   idPrefix = 'edit-vm',
 }: {
@@ -71,6 +74,9 @@ export function ResourceAllocationSection({
   cpuProfiles?: UseQueryResult<ClusterCpuProfile[]>
   // The VM's TPM device (VM-only, opt-in; see TpmContext).
   tpm?: TpmContext
+  // The all_content read VirtIO-SCSI (and the TPM) are seeded from. Absent ⇒
+  // plain controls (the form's own values).
+  allContent?: AllContentState
   // Fields this form does not offer (e.g. an instance type has no CPU shares
   // or queue settings over REST). Absent ⇒ every field shows.
   hiddenFields?: readonly (keyof ResourceAllocationFields)[]
@@ -79,6 +85,8 @@ export function ResourceAllocationSection({
   const t = useT()
   const set = fieldSetter(onChange)
   const shown = (key: keyof ResourceAllocationFields) => !hiddenFields?.includes(key)
+  // The all_content device controls stay disabled until the read landed.
+  const devicesPending = allContent !== undefined && !allContent.loaded
   const profiles = cpuProfiles !== undefined && shown('cpuProfileId') ? cpuProfiles : undefined
   // A disabled query (no cluster to read profiles from, e.g. the Blank
   // template) stays pending forever: show "no profiles" instead of an endless
@@ -232,7 +240,7 @@ export function ResourceAllocationSection({
             <FieldHelp field={t('vm.edit.resources.tpm')} content={t('fieldHelp.vm.tpm')} />
           }
         >
-          {!tpm.draft.tpmLoaded && !tpm.query.isError ? (
+          {devicesPending && allContent?.failed !== true ? (
             <Skeleton
               height="1.5rem"
               width="3rem"
@@ -243,11 +251,11 @@ export function ResourceAllocationSection({
               id={`${idPrefix}-tpm`}
               aria-label={t('vm.edit.resources.tpm')}
               isChecked={effectiveTpmEnabled(tpm.draft.tpmEnabled, tpm.availability)}
-              isDisabled={!tpm.draft.tpmLoaded || tpm.availability.state !== 'editable'}
+              isDisabled={devicesPending || tpm.availability.state !== 'editable'}
               onChange={(_event, checked) => tpm.onChange({ tpmEnabled: checked })}
             />
           )}
-          {tpm.draft.tpmLoaded && tpm.availability.state !== 'editable' && (
+          {!devicesPending && tpm.availability.state !== 'editable' && (
             <FormHelperText>
               <HelperText>
                 <HelperTextItem>{t(tpm.availability.reasonId)}</HelperTextItem>
@@ -268,18 +276,6 @@ export function ResourceAllocationSection({
               <HelperText>
                 <HelperTextItem variant="warning" data-testid="tpm-removal-warning">
                   {t('vm.edit.resources.tpm.removalWarning')}
-                </HelperTextItem>
-              </HelperText>
-            </FormHelperText>
-          )}
-          {tpm.query.isError && !tpm.draft.tpmLoaded && (
-            <FormHelperText>
-              <HelperText>
-                <HelperTextItem variant="error">
-                  {t('vm.edit.resources.tpm.error')}{' '}
-                  <Button variant="link" isInline onClick={() => void tpm.query.refetch()}>
-                    {t('common.action.retry')}
-                  </Button>
                 </HelperTextItem>
               </HelperText>
             </FormHelperText>
@@ -316,12 +312,15 @@ export function ResourceAllocationSection({
           />
         }
       >
-        <Switch
-          id={`${idPrefix}-virtio-scsi`}
-          aria-label={t('vm.edit.resources.virtioScsi')}
-          isChecked={draft.virtioScsiEnabled}
-          onChange={(_event, checked) => set('virtioScsiEnabled', checked)}
-        />
+        <AllContentField state={allContent}>
+          <Switch
+            id={`${idPrefix}-virtio-scsi`}
+            aria-label={t('vm.edit.resources.virtioScsi')}
+            isChecked={draft.virtioScsiEnabled}
+            isDisabled={devicesPending}
+            onChange={(_event, checked) => set('virtioScsiEnabled', checked)}
+          />
+        </AllContentField>
       </FormGroup>
 
       {/* VirtIO-SCSI queue tuning only applies while the controller exists. */}

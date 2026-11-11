@@ -55,6 +55,7 @@ import {
   createInstanceType,
   deleteInstanceType,
   getInstanceType,
+  getInstanceTypeAllContentDevices,
   listInstanceTypes,
   updateInstanceType,
 } from '../resources/instanceTypes'
@@ -813,8 +814,12 @@ describe('instance type CRUD (mock)', () => {
     expect(small.memory_policy?.ballooning).toBe(true)
     expect(small.io?.threads).toBe(0)
     const large = await settle(getInstanceType('instance-type-large'))
-    expect(large.virtio_scsi?.enabled).toBe(true)
     expect(large.custom_cpu_model).toBe('Skylake-Server')
+    // the device flags ride the all_content read only (allContent.test.ts)
+    expect(large.virtio_scsi).toBeUndefined()
+    await expect(
+      settle(getInstanceTypeAllContentDevices('instance-type-large')),
+    ).resolves.toMatchObject({ virtioScsiEnabled: true })
   })
 
   it('merges an edit field by field and ignores the keys REST drops for instance types', async () => {

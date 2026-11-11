@@ -3,7 +3,11 @@ import '../../test/env'
 import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { getTemplate, listTemplates } from '../../api/resources/templates'
+import {
+  getTemplate,
+  getTemplateAllContentDevices,
+  listTemplates,
+} from '../../api/resources/templates'
 import { setSessionToken } from '../../api/session'
 import { FIND_TIMEOUT_MS, renderWithProviders } from '../../test/render'
 import { TemplateFormModal } from './TemplateFormModal'
@@ -152,5 +156,98 @@ describe('TemplateFormModal (create)', () => {
       cpu_shares: 2048,
       delete_protected: true,
     })
+  })
+})
+
+// Serial console, sound card and VirtIO-SCSI: the mock serves them on
+// all_content reads only and, like the engine, reports the sound card inverted
+// on the single-template all_content read. tpl-01 carries a sound card.
+describe('TemplateFormModal device flags', () => {
+  const soundSwitch = async () =>
+    (await screen.findByRole('switch', { name: 'Soundcard enabled' }, find)) as HTMLInputElement
+
+  it('seeds from the all_content collection read and an untouched save leaves them alone', async () => {
+    const user = userEvent.setup()
+    const onClose = vi.fn()
+    const template = await readTemplate('tpl-01')
+    // the plain read the template pages hand the dialog carries no device flags
+    expect(template).not.toHaveProperty('soundcard_enabled')
+    renderWithProviders(<TemplateFormModal template={template} isOpen onClose={onClose} />)
+
+    await user.click(await screen.findByRole('tab', { name: 'Console' }, find))
+    const toggle = await soundSwitch()
+    await waitFor(() => expect(toggle.checked).toBe(true), find)
+    expect(toggle.disabled).toBe(false)
+    // never the single-template all_content read, which inverts the sound card
+    expect(
+      requestSpy.mock.calls.some(([path]) => path === '/templates/tpl-01?all_content=true'),
+    ).toBe(false)
+
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+    expect(onClose).toHaveBeenCalled()
+    expect(bodiesOf('PUT', '/templates/tpl-01')).toEqual([])
+  })
+
+  it('sends soundcard_enabled when the user turns it off', async () => {
+    const user = userEvent.setup()
+    const onClose = vi.fn()
+    const template = await readTemplate('tpl-01')
+    renderWithProviders(<TemplateFormModal template={template} isOpen onClose={onClose} />)
+
+    await user.click(await screen.findByRole('tab', { name: 'Console' }, find))
+    const toggle = await soundSwitch()
+    await waitFor(() => expect(toggle.checked).toBe(true), find)
+    await user.click(toggle)
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+    await waitFor(() => expect(onClose).toHaveBeenCalled(), find)
+    expect(bodiesOf('PUT', '/templates/tpl-01')).toEqual([{ soundcard_enabled: false }])
+    setSessionToken('tok-test')
+    await expect(getTemplateAllContentDevices('tpl-01')).resolves.toMatchObject({
+      soundcardEnabled: false,
+    })
+  })
+
+  it('keeps the switches disabled and the keys out of the save when the read fails', async () => {
+    requestSpy.mockImplementation((path, opts) =>
+      path.startsWith('/templates?search=')
+        ? Promise.reject(new Error('denied'))
+        : passthrough.request!(path, opts),
+    )
+    const user = userEvent.setup()
+    const onClose = vi.fn()
+    const template = await readTemplate('tpl-02')
+    renderWithProviders(<TemplateFormModal template={template} isOpen onClose={onClose} />)
+
+    expect(await screen.findByTestId('template-form-devices-error', undefined, find)).toBeDefined()
+    await user.click(screen.getByRole('tab', { name: 'Console' }))
+    expect((await soundSwitch()).disabled).toBe(true)
+    expect(
+      (screen.getByRole('switch', { name: 'Enable VirtIO serial console' }) as HTMLInputElement)
+        .disabled,
+    ).toBe(true)
+    await user.click(screen.getByRole('tab', { name: 'Resource Allocation' }))
+    expect(
+      (screen.getByRole('switch', { name: 'VirtIO-SCSI Enabled' }) as HTMLInputElement).disabled,
+    ).toBe(true)
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+    expect(onClose).toHaveBeenCalled()
+    expect(bodiesOf('PUT', '/templates/tpl-02')).toEqual([])
+  })
+
+  it('seeds a new template from the source VM all_content read', async () => {
+    const user = userEvent.setup()
+    renderWithProviders(<TemplateFormModal isOpen onClose={vi.fn()} />)
+
+    const source = await screen.findByRole('combobox', { name: 'Source VM' }, find)
+    await waitFor(
+      () => expect(screen.getByRole('option', { name: 'legacy-erp' })).toBeTruthy(),
+      find,
+    )
+    await user.selectOptions(source, 'vm-08')
+    await user.click(await screen.findByRole('tab', { name: 'Console' }, find))
+    await waitFor(async () => expect((await soundSwitch()).disabled).toBe(false), find)
+    expect(requestSpy.mock.calls.some(([path]) => path === '/vms/vm-08?all_content=true')).toBe(
+      true,
+    )
   })
 })

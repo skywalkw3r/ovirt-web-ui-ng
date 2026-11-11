@@ -1,6 +1,8 @@
 import { useCallback, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import {
+  Alert,
+  AlertActionLink,
   Button,
   Form,
   FormGroup,
@@ -27,11 +29,12 @@ import { HighAvailabilitySection } from '../edit-vm/HighAvailabilitySection'
 import { IconSection } from '../edit-vm/IconSection'
 import { ResourceAllocationSection } from '../edit-vm/ResourceAllocationSection'
 import { SystemSection } from '../edit-vm/SystemSection'
-import { vmMemoryError } from '../edit-vm/vmBaseDraft'
+import { allContentDeviceFields, vmMemoryError } from '../edit-vm/vmBaseDraft'
 import { useCpuProfileOptions } from '../edit-vm/vmBaseQueries'
 import { FieldHelp } from '../forms/FieldHelp'
 import { ModalVerticalTabs, type ModalTabSection } from '../forms/ModalVerticalTabs'
 import { OptionsHelper } from '../forms/OptionsSelect'
+import { useTemplateAllContentDevices, useVmAllContentDevices } from '../../hooks/useAllContent'
 import { useClusters, operatingSystemKeys } from '../../hooks/useCatalog'
 import { useCreateTemplate, useUpdateTemplate } from '../../hooks/useTemplateMutations'
 import { useVms, vmKeys } from '../../hooks/useVms'
@@ -120,6 +123,27 @@ export function TemplateFormModal({
     setDraft({ ...seeded, ...general })
   }
   const seeded = !isCreate || (seededVmId !== '' && seededVmId === sourceVmId)
+
+  // Serial console, sound card and VirtIO-SCSI are on neither read above (the
+  // engine fills them on an all_content read only), so they come from their
+  // own read: the template's (through the collection, which reports the sound
+  // card right, see getTemplateAllContentDevices) or the source VM's. Folded
+  // into BOTH draft and baseline once the entity's draft is seeded, and again
+  // when the dialog moves to another template or VM. The seed waits out a
+  // fetch in flight, like the Edit VM device read. A failed read leaves the
+  // switches disabled and their keys out of the save.
+  const templateDevices = useTemplateAllContentDevices(template?.id ?? '', isOpen && !isCreate)
+  const vmDevices = useVmAllContentDevices(sourceVmId, isOpen && isCreate)
+  const devices = isCreate ? vmDevices : templateDevices
+  const devicesFor = isCreate ? `vm:${sourceVmId}` : `template:${template.id}`
+  const [devicesSeededFor, setDevicesSeededFor] = useState('')
+  if (seeded && devices.isSuccess && !devices.isFetching && devicesSeededFor !== devicesFor) {
+    setDevicesSeededFor(devicesFor)
+    const fields = allContentDeviceFields(devices.data)
+    setBaseline((current) => ({ ...current, ...fields }))
+    setDraft((current) => ({ ...current, ...fields }))
+  }
+  const devicesFailed = devices.isError && !draft.devicesLoaded
 
   // OS type options — defaults to [] while loading, so the select just shows
   // fewer options rather than blocking on a spinner.
@@ -364,6 +388,7 @@ export function TemplateFormModal({
           <ConsoleSection
             draft={draft}
             onChange={patch}
+            allContent={{ loaded: draft.devicesLoaded, failed: devicesFailed }}
             // Removing a template's graphics device would be a
             // /templates/{id}/graphicsconsoles DELETE this dialog does not
             // perform, so headless is offered only when already headless.
@@ -389,6 +414,7 @@ export function TemplateFormModal({
             draft={draft}
             onChange={patch}
             cpuProfiles={cpuProfiles}
+            allContent={{ loaded: draft.devicesLoaded, failed: devicesFailed }}
             idPrefix={SECTION_ID_PREFIX}
           />
         ),
@@ -425,6 +451,23 @@ export function TemplateFormModal({
         labelId="template-form-title"
       />
       <ModalBody id="template-form-body">
+        {seeded && devicesFailed && (
+          <Alert
+            variant="warning"
+            isInline
+            title={t('vmBase.devices.error.title')}
+            data-testid="template-form-devices-error"
+            style={{ marginBottom: 'var(--pf-t--global--spacer--md)' }}
+            actionLinks={
+              <AlertActionLink onClick={() => void devices.refetch()}>
+                {t('common.action.retry')}
+              </AlertActionLink>
+            }
+          >
+            {t('vmBase.devices.error.body')}
+            {devices.error instanceof Error ? ` (${devices.error.message})` : ''}
+          </Alert>
+        )}
         <ModalVerticalTabs
           idPrefix="template-form"
           ariaLabel={t('templateForm.sections.ariaLabel')}

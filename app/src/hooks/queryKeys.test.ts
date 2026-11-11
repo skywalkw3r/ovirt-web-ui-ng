@@ -22,7 +22,7 @@ import { tagKeys } from './useTags'
 import { directoryKeys } from './useUserMutations'
 import { isoImageKeys } from './useVmCd'
 import { vmKeys } from './useVms'
-import { tpmKeys } from './useVmTpm'
+import { allContentKeys } from './useAllContent'
 
 // The key builders exist so a hand-typed key can never drift from the observer
 // it is meant to hit. These pins are the shapes that were in use across the app
@@ -470,13 +470,19 @@ describe('query-key builders', () => {
   })
 })
 
-describe('tpmKeys', () => {
-  // nested under the detail keys, so a VM save (vmKeys.detail invalidation)
-  // refetches the all_content TPM read by prefix
-  it('nests the TPM slices under the VM and template detail keys', () => {
-    expect(tpmKeys.vm('v1')).toEqual(['vm', 'v1', 'tpm'])
-    expect(tpmKeys.vm('v1').slice(0, 2)).toEqual(vmKeys.detail('v1'))
-    expect(tpmKeys.template('t1')).toEqual(['template', 't1', 'tpm'])
-    expect(tpmKeys.template('t1').slice(0, 2)).toEqual(templateKeys.detail('t1'))
+describe('allContentKeys', () => {
+  // nested under the detail keys, so a VM, template or instance type save
+  // (detail invalidation) refetches the all_content reads by prefix
+  it('nests the all_content slices under the VM, template and instance type detail keys', () => {
+    expect(allContentKeys.vm('v1')).toEqual(['vm', 'v1', 'all-content'])
+    expect(allContentKeys.vm('v1').slice(0, 2)).toEqual(vmKeys.detail('v1'))
+    expect(allContentKeys.templateTpm('t1')).toEqual(['template', 't1', 'tpm'])
+    expect(allContentKeys.templateTpm('t1').slice(0, 2)).toEqual(templateKeys.detail('t1'))
+    expect(allContentKeys.templateDevices('t1')).toEqual(['template', 't1', 'all-content'])
+    expect(allContentKeys.templateDevices('t1').slice(0, 2)).toEqual(templateKeys.detail('t1'))
+    expect(allContentKeys.instanceTypeDevices('i1')).toEqual(['instancetype', 'i1', 'all-content'])
+    expect(allContentKeys.instanceTypeDevices('i1').slice(0, 2)).toEqual(
+      instanceTypeKeys.detail('i1'),
+    )
   })
 })

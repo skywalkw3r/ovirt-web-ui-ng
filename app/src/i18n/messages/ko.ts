@@ -4941,7 +4941,6 @@ export const ko: LocaleCatalog = {
   // VM TPM device (Edit VM Resource Allocation, New VM wizard, General tab)
   'vm.edit.resources.tpm': 'TPM 장치 활성화됨',
   'vm.edit.resources.tpm.loading': 'TPM 장치 로드 중',
-  'vm.edit.resources.tpm.error': 'TPM 장치를 로드할 수 없습니다. 변경되지 않은 상태로 유지됩니다.',
   'vm.edit.resources.tpm.reason.version': '클러스터 호환성 버전 4.5 이상에서 사용할 수 있습니다',
   'vm.edit.resources.tpm.reason.os': '게스트 OS 버전이 지원되지 않습니다',
   'vm.edit.resources.tpm.reason.architecture': '이 CPU 아키텍처에서는 지원되지 않습니다',
@@ -4965,4 +4964,13 @@ export const ko: LocaleCatalog = {
   'vm.create.tpm.templateError':
     '템플릿의 TPM 장치를 로드할 수 없습니다: {message}. 여기에서 설정을 변경하지 않으면 새 VM은 템플릿의 TPM 장치를 그대로 받습니다.',
   'vm.create.tpm.review.inherited': '템플릿과 동일',
+  // all_content device reads (Edit VM, Edit/New Template and Edit Instance Type
+  // device toggles)
+  'vm.edit.devices.loading': '장치 상태를 로드하는 중',
+  'vm.edit.devices.error.title': 'VM의 장치를 읽을 수 없습니다',
+  'vm.edit.devices.error.body':
+    '직렬 콘솔, 사운드카드, VirtIO-SCSI, 난수 생성기 및 TPM은 비활성화된 상태로 유지되며 저장해도 변경되지 않습니다.',
+  'vmBase.devices.error.title': '장치 상태를 읽을 수 없습니다',
+  'vmBase.devices.error.body':
+    '직렬 콘솔, 사운드카드, VirtIO-SCSI는 비활성화된 상태로 유지되며 저장해도 변경되지 않습니다.',
 }

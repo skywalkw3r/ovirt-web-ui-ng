@@ -10,12 +10,18 @@ import {
 } from '@patternfly/react-core'
 import { useT } from '../../i18n/useT'
 import { FieldHelp } from '../forms/FieldHelp'
+import { AllContentField } from './AllContentField'
 import {
   DISCONNECT_ACTION_OPTIONS,
   GRAPHICS_PROTOCOL_OPTIONS,
   VNC_KEYBOARD_LAYOUTS,
 } from './editVmDraft'
-import { fieldSetter, type ConsoleFields, type SectionChange } from './vmBaseDraft'
+import {
+  fieldSetter,
+  type AllContentState,
+  type ConsoleFields,
+  type SectionChange,
+} from './vmBaseDraft'
 
 // Monitor-count choices the console offers — SPICE supports 1/2/4 heads.
 const MONITOR_OPTIONS = [1, 2, 4]
@@ -31,11 +37,14 @@ function keyboardLayoutOptions(current: string): string[] {
 // Console section, one of the shared VmBase sections (contract in
 // vmBaseDraft.ts): every input is controlled from `draft` and writes back
 // through `onChange`. No data fetching and no save logic — the owning form
-// holds the draft state.
+// holds the draft state. The sound card and serial console switches are
+// all_content device flags: with `allContent` they wait for the form's
+// all_content read (vmBaseDraft.ts, "All-content device flags").
 export function ConsoleSection({
   draft,
   onChange,
   allowHeadless = true,
+  allContent,
   hiddenFields,
   idPrefix = 'edit-vm',
 }: {
@@ -46,6 +55,9 @@ export function ConsoleSection({
   // headless only while the entity already is headless, so the select still
   // shows the loaded value.
   allowHeadless?: boolean
+  // The all_content read the sound card and serial console are seeded from.
+  // Absent ⇒ plain switches (the form's own values).
+  allContent?: AllContentState
   // Fields this form does not offer (e.g. an instance type has no SSO or SPICE
   // channel settings over REST). Absent ⇒ every field shows.
   hiddenFields?: readonly (keyof ConsoleFields)[]
@@ -54,6 +66,8 @@ export function ConsoleSection({
   const t = useT()
   const set = fieldSetter(onChange)
   const shown = (key: keyof ConsoleFields) => !hiddenFields?.includes(key)
+  // The all_content device switches stay disabled until the read landed.
+  const devicesPending = allContent !== undefined && !allContent.loaded
   const isVnc = draft.graphicsProtocol === 'vnc'
   const isSpice = draft.graphicsProtocol === 'spice'
   const isHeadless = draft.graphicsProtocol === 'headless'
@@ -234,13 +248,16 @@ export function ConsoleSection({
         label={t('vm.edit.console.soundcard.field')}
         fieldId={`${idPrefix}-console-soundcard`}
       >
-        <Switch
-          id={`${idPrefix}-console-soundcard`}
-          label={t('vm.edit.console.soundcard')}
-          aria-label={t('vm.edit.console.soundcard')}
-          isChecked={draft.soundcardEnabled}
-          onChange={(_event, checked) => set('soundcardEnabled', checked)}
-        />
+        <AllContentField state={allContent}>
+          <Switch
+            id={`${idPrefix}-console-soundcard`}
+            label={t('vm.edit.console.soundcard')}
+            aria-label={t('vm.edit.console.soundcard')}
+            isChecked={draft.soundcardEnabled}
+            isDisabled={devicesPending}
+            onChange={(_event, checked) => set('soundcardEnabled', checked)}
+          />
+        </AllContentField>
       </FormGroup>
 
       <FormGroup
@@ -253,13 +270,16 @@ export function ConsoleSection({
           />
         }
       >
-        <Switch
-          id={`${idPrefix}-console-serial`}
-          label={t('vm.edit.console.serialConsole')}
-          aria-label={t('vm.edit.console.serialConsole')}
-          isChecked={draft.serialConsoleEnabled}
-          onChange={(_event, checked) => set('serialConsoleEnabled', checked)}
-        />
+        <AllContentField state={allContent}>
+          <Switch
+            id={`${idPrefix}-console-serial`}
+            label={t('vm.edit.console.serialConsole')}
+            aria-label={t('vm.edit.console.serialConsole')}
+            isChecked={draft.serialConsoleEnabled}
+            isDisabled={devicesPending}
+            onChange={(_event, checked) => set('serialConsoleEnabled', checked)}
+          />
+        </AllContentField>
       </FormGroup>
 
       {shown('disconnectAction') && (

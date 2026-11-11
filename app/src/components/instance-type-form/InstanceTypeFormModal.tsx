@@ -1,5 +1,7 @@
 import { useCallback, useState } from 'react'
 import {
+  Alert,
+  AlertActionLink,
   Button,
   Form,
   FormGroup,
@@ -18,8 +20,9 @@ import { ConsoleSection } from '../edit-vm/ConsoleSection'
 import { HighAvailabilitySection } from '../edit-vm/HighAvailabilitySection'
 import { ResourceAllocationSection } from '../edit-vm/ResourceAllocationSection'
 import { SystemSection } from '../edit-vm/SystemSection'
-import { vmMemoryError } from '../edit-vm/vmBaseDraft'
+import { allContentDeviceFields, vmMemoryError } from '../edit-vm/vmBaseDraft'
 import { ModalVerticalTabs, type ModalTabSection } from '../forms/ModalVerticalTabs'
+import { useInstanceTypeAllContentDevices } from '../../hooks/useAllContent'
 import { useCreateInstanceType, useUpdateInstanceType } from '../../hooks/useInstanceTypeMutations'
 import {
   blankInstanceTypeDraft,
@@ -71,6 +74,30 @@ export function InstanceTypeFormModal({
     setBaseline(seeded)
     setDraft(seeded)
   }
+
+  // Edit only: serial console, sound card and VirtIO-SCSI are not on the list
+  // read the dialog opens with (the engine fills them on an all_content read
+  // only), so they come from their own read, folded into BOTH draft and
+  // baseline once per instance type. The seed waits out a fetch in flight,
+  // like the Edit VM device read. A failed read leaves the switches disabled
+  // and their keys out of the save.
+  const devices = useInstanceTypeAllContentDevices(instanceType?.id ?? '', isOpen && isEdit)
+  const [devicesSeededId, setDevicesSeededId] = useState<string | undefined>(undefined)
+  if (
+    instanceType !== undefined &&
+    seededId === instanceType.id &&
+    devices.isSuccess &&
+    !devices.isFetching &&
+    devicesSeededId !== instanceType.id
+  ) {
+    setDevicesSeededId(instanceType.id)
+    const fields = allContentDeviceFields(devices.data)
+    setBaseline((current) => ({ ...current, ...fields }))
+    setDraft((current) => ({ ...current, ...fields }))
+  }
+  const devicesFailed = devices.isError && !draft.devicesLoaded
+  // The device switches' state: an edit seeds them, a create's are its own.
+  const allContent = isEdit ? { loaded: draft.devicesLoaded, failed: devicesFailed } : undefined
 
   const patch = useCallback((changes: Partial<InstanceTypeDraft>) => {
     setDraft((current) => ({ ...current, ...changes }))
@@ -161,6 +188,7 @@ export function InstanceTypeFormModal({
           // /instancetypes/{id}/graphicsconsoles DELETE this dialog does not
           // perform, so headless is offered only when already headless.
           allowHeadless={baseline.graphicsProtocol === 'headless'}
+          allContent={allContent}
           hiddenFields={INSTANCE_TYPE_HIDDEN_FIELDS.console}
           idPrefix={SECTION_ID_PREFIX}
         />
@@ -187,6 +215,7 @@ export function InstanceTypeFormModal({
         <ResourceAllocationSection
           draft={draft}
           onChange={patch}
+          allContent={allContent}
           hiddenFields={INSTANCE_TYPE_HIDDEN_FIELDS.resourceAllocation}
           idPrefix={SECTION_ID_PREFIX}
         />
@@ -208,6 +237,23 @@ export function InstanceTypeFormModal({
     >
       <ModalHeader title={title} labelId="instance-type-form-title" />
       <ModalBody id="instance-type-form-body">
+        {devicesFailed && (
+          <Alert
+            variant="warning"
+            isInline
+            title={t('vmBase.devices.error.title')}
+            data-testid="instance-type-form-devices-error"
+            style={{ marginBottom: 'var(--pf-t--global--spacer--md)' }}
+            actionLinks={
+              <AlertActionLink onClick={() => void devices.refetch()}>
+                {t('common.action.retry')}
+              </AlertActionLink>
+            }
+          >
+            {t('vmBase.devices.error.body')}
+            {devices.error instanceof Error ? ` (${devices.error.message})` : ''}
+          </Alert>
+        )}
         <ModalVerticalTabs
           idPrefix="instance-type-form"
           ariaLabel={t('instanceTypeForm.sections.ariaLabel')}

@@ -3,7 +3,11 @@ import '../../test/env'
 import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { getInstanceType, listInstanceTypes } from '../../api/resources/instanceTypes'
+import {
+  getInstanceType,
+  getInstanceTypeAllContentDevices,
+  listInstanceTypes,
+} from '../../api/resources/instanceTypes'
 import { setSessionToken } from '../../api/session'
 import { FIND_TIMEOUT_MS, renderWithProviders } from '../../test/render'
 import { InstanceTypeFormModal } from './InstanceTypeFormModal'
@@ -53,7 +57,8 @@ describe('InstanceTypeFormModal (edit)', () => {
 
     await user.click(await screen.findByRole('tab', { name: 'Console' }, find))
     const soundcard = await screen.findByRole('switch', { name: 'Soundcard enabled' }, find)
-    expect((soundcard as HTMLInputElement).checked).toBe(true)
+    // seeded from the all_content read (the list read carries no devices)
+    await waitFor(() => expect((soundcard as HTMLInputElement).checked).toBe(true), find)
     await user.click(soundcard)
 
     await user.click(screen.getByRole('tab', { name: 'Resource Allocation' }))
@@ -67,7 +72,9 @@ describe('InstanceTypeFormModal (edit)', () => {
     ])
     // the mock merges nested blocks the engine's way: max/guaranteed are kept
     const saved = await readInstanceType('instance-type-medium')
-    expect(saved.soundcard_enabled).toBe(false)
+    await expect(getInstanceTypeAllContentDevices('instance-type-medium')).resolves.toMatchObject({
+      soundcardEnabled: false,
+    })
     expect(saved.memory_policy).toMatchObject({ ballooning: false, max: 4 * 1024 ** 3 })
   })
 
@@ -124,6 +131,40 @@ describe('InstanceTypeFormModal (edit)', () => {
     ).toBeTruthy()
     expect(screen.queryByText('CPU Profile')).toBeNull()
     expect(screen.queryByRole('combobox', { name: 'CPU Shares' })).toBeNull()
+  })
+})
+
+describe('InstanceTypeFormModal device flags', () => {
+  it('keeps the switches disabled and the keys out of the save when the all_content read fails', async () => {
+    requestSpy.mockImplementation((path, opts) =>
+      path.endsWith('?all_content=true')
+        ? Promise.reject(new Error('denied'))
+        : passthrough.request!(path, opts),
+    )
+    const user = userEvent.setup()
+    const onClose = vi.fn()
+    const instanceType = await readInstanceType('instance-type-medium')
+    renderWithProviders(
+      <InstanceTypeFormModal instanceType={instanceType} isOpen onClose={onClose} />,
+    )
+
+    expect(
+      await screen.findByTestId('instance-type-form-devices-error', undefined, find),
+    ).toBeDefined()
+    await user.click(screen.getByRole('tab', { name: 'Console' }))
+    const soundcard = (await screen.findByRole(
+      'switch',
+      { name: 'Soundcard enabled' },
+      find,
+    )) as HTMLInputElement
+    expect(soundcard.disabled).toBe(true)
+    await user.click(screen.getByRole('tab', { name: 'Resource Allocation' }))
+    expect(
+      (screen.getByRole('switch', { name: 'VirtIO-SCSI Enabled' }) as HTMLInputElement).disabled,
+    ).toBe(true)
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+    expect(onClose).toHaveBeenCalled()
+    expect(bodiesOf('PUT', '/instancetypes/instance-type-medium')).toEqual([])
   })
 })
 

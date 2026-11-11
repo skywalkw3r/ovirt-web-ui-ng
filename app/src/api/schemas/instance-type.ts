@@ -44,9 +44,11 @@ export const InstanceTypeSchema = z.looseObject({
     })
     .optional(),
   // Console. display.type comes from the graphics devices
-  // (DisplayHelper.adjustDisplayData); the engine fills console, virtio_scsi
-  // and soundcard_enabled from the instance type's devices on every read
-  // (BackendInstanceTypeResource.doPopulate).
+  // (DisplayHelper.adjustDisplayData). console, virtio_scsi and
+  // soundcard_enabled are device flags the engine fills on an all_content read
+  // only (BackendInstanceType(s)Resource.doPopulate), so the list read the
+  // dialog opens with lacks them: see resources/instanceTypes.ts
+  // getInstanceTypeAllContentDevices.
   display: z
     .looseObject({
       type: z.string().optional(),

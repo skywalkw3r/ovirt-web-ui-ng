@@ -5012,8 +5012,6 @@ export const ja: LocaleCatalog = {
   // VM TPM device (Edit VM Resource Allocation, New VM wizard, General tab)
   'vm.edit.resources.tpm': 'TPMデバイスを有効化',
   'vm.edit.resources.tpm.loading': 'TPMデバイスを読み込んでいます',
-  'vm.edit.resources.tpm.error':
-    'TPMデバイスを読み込めませんでした。変更されずにそのまま残ります。',
   'vm.edit.resources.tpm.reason.version': 'クラスター互換バージョン4.5以降で利用できます',
   'vm.edit.resources.tpm.reason.os': 'ゲストOSのバージョンはサポートされていません',
   'vm.edit.resources.tpm.reason.architecture': 'このCPUアーキテクチャーではサポートされていません',
@@ -5037,4 +5035,13 @@ export const ja: LocaleCatalog = {
   'vm.create.tpm.templateError':
     'テンプレートのTPMデバイスを読み込めませんでした: {message}。ここで設定を変更しない限り、新しいVMにはテンプレートのTPMデバイスがそのまま引き継がれます。',
   'vm.create.tpm.review.inherited': 'テンプレートと同じ',
+  // all_content device reads (Edit VM, Edit/New Template and Edit Instance Type
+  // device toggles)
+  'vm.edit.devices.loading': 'デバイスの状態を読み込んでいます',
+  'vm.edit.devices.error.title': 'VMのデバイスを読み取れませんでした',
+  'vm.edit.devices.error.body':
+    'シリアルコンソール、サウンドカード、VirtIO-SCSI、乱数ジェネレーター、TPMは無効のままとなり、保存しても変更されません。',
+  'vmBase.devices.error.title': 'デバイスの状態を読み取れませんでした',
+  'vmBase.devices.error.body':
+    'シリアルコンソール、サウンドカード、VirtIO-SCSI は無効のままで、保存しても変更されません。',
 }

@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { VmSchema } from '../../api/schemas/vm'
 import { TemplateSchema } from '../../api/schemas/template'
 import {
+  allContentDeviceFields,
   applyVmBaseChanges,
   fieldSetter,
   vmBaseChangedPayload,
@@ -138,6 +139,46 @@ describe('vmBaseChangedPayload', () => {
   it('never writes headless and never sends a zero memory limit', () => {
     const draft: VmBaseDraft = { ...baseline, graphicsProtocol: 'headless', maxMemoryMb: 0 }
     expect(vmBaseChangedPayload(draft, baseline)).toEqual({})
+  })
+})
+
+describe('all_content device flags', () => {
+  const baseline: VmBaseDraft = vmBaseToDraft(VmSchema.parse(wire), 'icon-1')
+  const moved: VmBaseDraft = {
+    ...baseline,
+    soundcardEnabled: !baseline.soundcardEnabled,
+    serialConsoleEnabled: !baseline.serialConsoleEnabled,
+    virtioScsiEnabled: !baseline.virtioScsiEnabled,
+  }
+
+  it('seeds placeholders until the read lands, then its values', () => {
+    expect(allContentDeviceFields(undefined)).toEqual({
+      devicesLoaded: false,
+      serialConsoleEnabled: false,
+      soundcardEnabled: false,
+      virtioScsiEnabled: false,
+    })
+    expect(
+      allContentDeviceFields({
+        serialConsoleEnabled: true,
+        soundcardEnabled: false,
+        virtioScsiEnabled: true,
+      }),
+    ).toEqual({
+      devicesLoaded: true,
+      serialConsoleEnabled: true,
+      soundcardEnabled: false,
+      virtioScsiEnabled: true,
+    })
+  })
+
+  it('sends the device keys by default and never while they are unread', () => {
+    expect(vmBaseChangedPayload(moved, baseline)).toEqual({
+      soundcard_enabled: moved.soundcardEnabled,
+      console: { enabled: moved.serialConsoleEnabled },
+      virtio_scsi: { enabled: moved.virtioScsiEnabled },
+    })
+    expect(vmBaseChangedPayload(moved, baseline, { devicesRead: false })).toEqual({})
   })
 })
 
