@@ -1923,10 +1923,7 @@ export const tr: LocaleCatalog = {
   'hostNuma.loading': 'NUMA topolojisi yükleniyor',
   'host.console.open': 'Ana makine konsolu',
   'host.console.newTab': 'Cockpit’i yeni sekmede açar',
-  'host.console.sso.note': 'Konsol yeni sekmede açılır ve geçerli oturumunuzla oturum açar.',
-  'host.console.direct.title': 'Konsol {url} adresini yeni sekmede açar',
-  'host.console.direct.body':
-    'Ana makinedeki bir hesapla oturum açın. Cockpit ana makinenin sertifikasını kullanır; bu sertifikaya güvenilene kadar tarayıcınız bir uyarı gösterebilir.',
+  'host.console.tooltip': '{name} için Cockpit arayüzünü aç',
   'datacenters.forceRemove.action': 'Zorla kaldır',
   'datacenters.forceRemove.confirm.title': "''{name}'' veri merkezi zorla kaldırılsın mı?",
   'datacenters.forceRemove.confirm.body':

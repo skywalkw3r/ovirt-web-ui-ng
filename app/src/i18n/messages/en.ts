@@ -2340,11 +2340,7 @@ export const en = {
   // Host console (Cockpit): kebab item, host detail header button (lib/hostConsole.ts)
   'host.console.open': 'Host console',
   'host.console.newTab': 'Opens Cockpit in a new tab',
-  'host.console.sso.note':
-    'The console opens in a new tab and signs you in with your current session.',
-  'host.console.direct.title': 'The console opens {url} in a new tab',
-  'host.console.direct.body':
-    'Sign in with an account on the host. Cockpit uses the host certificate, so your browser may show a warning until that certificate is trusted.',
+  'host.console.tooltip': 'Open the Cockpit interface for {name}',
 
   // Data center force remove
   'datacenters.forceRemove.action': 'Force remove',

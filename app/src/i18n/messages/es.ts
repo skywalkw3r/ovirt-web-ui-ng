@@ -1949,11 +1949,7 @@ export const es: LocaleCatalog = {
   'hostNuma.loading': 'Cargando topología NUMA',
   'host.console.open': 'Consola del host',
   'host.console.newTab': 'Abre Cockpit en una pestaña nueva',
-  'host.console.sso.note':
-    'La consola se abre en una pestaña nueva e inicia sesión con su sesión actual.',
-  'host.console.direct.title': 'La consola abre {url} en una pestaña nueva',
-  'host.console.direct.body':
-    'Inicie sesión con una cuenta del host. Cockpit usa el certificado del host, por lo que el navegador puede mostrar una advertencia hasta que se confíe en ese certificado.',
+  'host.console.tooltip': 'Abrir la interfaz de Cockpit de {name}',
   'datacenters.forceRemove.action': 'Forzar eliminación',
   'datacenters.forceRemove.confirm.title': "¿Forzar la eliminación del centro de datos ''{name}''?",
   'datacenters.forceRemove.confirm.body':

@@ -67,7 +67,7 @@ test('host console button and its tooltip have no serious accessibility violatio
 }) => {
   await login(page, { path: '/hosts/host-01' })
   await page.getByRole('button', { name: 'Host console' }).focus()
-  await expect(page.getByRole('tooltip')).toContainText('in a new tab')
+  await expect(page.getByRole('tooltip')).toContainText('Cockpit interface')
 
   // scanned with the tooltip open, so the shared helper (which waits for
   // tooltips to close) does not apply
