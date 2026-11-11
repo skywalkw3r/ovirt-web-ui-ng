@@ -5190,33 +5190,122 @@ function requireIcon(id: string): unknown {
   return icon
 }
 
-// ─── VM virtual NUMA topology (read-only in this pass) ────────────────────────
+// ─── VM virtual NUMA topology ───────────────────────────────────────────────
 // vm-01 (up, on host-01 whose NUMA_FIXTURE reports physical nodes 0/1) carries a
 // two-vnode topology pinned to those physical nodes; scalars mix string/number
-// forms. Every other VM answers {} (the empty-topology case).
-const vmNumaNodes: Record<string, unknown> = {
-  'vm-01': {
-    vm_numa_node: [
-      {
-        id: 'vnuma-0',
-        index: '0',
-        memory: '2048',
-        cpu: { cores: { core: [{ index: '0' }, { index: '1' }] } },
-        numa_node_pins: { numa_node_pin: [{ index: '0', pinned: 'true' }] },
-      },
-      {
-        id: 'vnuma-1',
-        index: 1,
-        memory: 2048,
-        cpu: { cores: { core: [{ index: 2 }, { index: 3 }] } },
-        numa_node_pins: { numa_node_pin: [{ index: 1 }] },
-      },
-    ],
-  },
+// forms. Every other VM starts without nodes (the empty-topology case). The
+// Edit VM dialog writes the collection (POST / PUT / DELETE), so it is mutable
+// state reset by resetMockVms. Like the engine, every write is checked against
+// the resulting topology's index rule (contiguous from 0); the rest of the
+// engine's NumaValidator is the dialog's job to mirror, not the mock's.
+interface MockVmNumaNode {
+  id: string
+  index: number | string
+  memory: number | string
+  cpu: { cores: { core: { index: number | string }[] } }
+  numa_node_pins?: { numa_node_pin: { index: number | string; pinned?: string }[] }
+  numa_tune_mode?: string
 }
+const initialVmNumaNodes = (): Map<string, MockVmNumaNode[]> =>
+  new Map([
+    [
+      'vm-01',
+      [
+        {
+          id: 'vnuma-0',
+          index: '0',
+          memory: '2048',
+          cpu: { cores: { core: [{ index: '0' }, { index: '1' }] } },
+          numa_node_pins: { numa_node_pin: [{ index: '0', pinned: 'true' }] },
+          numa_tune_mode: 'strict',
+        },
+        {
+          id: 'vnuma-1',
+          index: 1,
+          memory: 2048,
+          cpu: { cores: { core: [{ index: 2 }, { index: 3 }] } },
+          numa_node_pins: { numa_node_pin: [{ index: 1 }] },
+        },
+      ],
+    ],
+  ])
+let vmNumaNodes = initialVmNumaNodes()
+let vmNumaSeq = 0
+
 function vmNumaNodesHandler(id: string): unknown {
   requireVm(id)
-  return vmNumaNodes[id] ?? {}
+  const nodes = vmNumaNodes.get(id) ?? []
+  return nodes.length > 0 ? { vm_numa_node: nodes } : {}
+}
+
+// The engine rejects a topology whose indices are not 0..n-1
+// (NumaValidator: VM_NUMA_NODE_INDEX_ERROR).
+function checkVmNumaIndices(nodes: MockVmNumaNode[]): void {
+  const indices = nodes.map((node) => Number(node.index)).sort((a, b) => a - b)
+  if (indices.some((index, position) => index !== position)) {
+    throw new ApiError(
+      409,
+      'Operation Failed',
+      'Cannot edit the VM NUMA nodes: NUMA node indices must run from 0 without gaps.',
+    )
+  }
+}
+
+function requireVmNumaNode(vmId: string, nodeId: string): MockVmNumaNode {
+  const node = vmNumaNodes.get(vmId)?.find((candidate) => candidate.id === nodeId)
+  if (!node) throw new ApiError(404, 'Not Found', `no NUMA node ${nodeId} on VM ${vmId}`)
+  return node
+}
+
+// POST /vms/{id}/numanodes: index, memory and cpu.cores are mandatory.
+function addVmNumaNode(vmId: string, body: unknown): unknown {
+  requireVm(vmId)
+  const spec = (body ?? {}) as Partial<MockVmNumaNode>
+  if (spec.index === undefined || spec.memory === undefined || spec.cpu === undefined) {
+    throw new ApiError(
+      400,
+      'Incomplete parameters',
+      'VirtualNumaNode [index, memory, cpu] required',
+    )
+  }
+  vmNumaSeq += 1
+  const node: MockVmNumaNode = {
+    id: `${vmId}-vnuma-new-${vmNumaSeq}`,
+    index: spec.index,
+    memory: spec.memory,
+    cpu: spec.cpu,
+    ...(spec.numa_node_pins !== undefined ? { numa_node_pins: spec.numa_node_pins } : {}),
+    ...(spec.numa_tune_mode !== undefined ? { numa_tune_mode: spec.numa_tune_mode } : {}),
+  }
+  const next = [...(vmNumaNodes.get(vmId) ?? []), node]
+  checkVmNumaIndices(next)
+  vmNumaNodes.set(vmId, next)
+  return node
+}
+
+// PUT /vms/{id}/numanodes/{nodeId}: each element replaces the stored one only
+// when it is set (the NumaMapper isSet guards), so a present-but-empty pin list
+// unpins.
+function updateVmNumaNode(vmId: string, nodeId: string, body: unknown): unknown {
+  requireVm(vmId)
+  const node = requireVmNumaNode(vmId, nodeId)
+  const patch = (body ?? {}) as Partial<MockVmNumaNode>
+  for (const key of ['index', 'memory', 'cpu', 'numa_node_pins', 'numa_tune_mode'] as const) {
+    if (patch[key] !== undefined) Object.assign(node, { [key]: patch[key] })
+  }
+  checkVmNumaIndices(vmNumaNodes.get(vmId) ?? [])
+  return node
+}
+
+// DELETE /vms/{id}/numanodes/{nodeId}: the api-model asks callers to remove
+// from the highest index first; removing another node breaks the index rule.
+function removeVmNumaNode(vmId: string, nodeId: string): unknown {
+  requireVm(vmId)
+  requireVmNumaNode(vmId, nodeId)
+  const next = (vmNumaNodes.get(vmId) ?? []).filter((node) => node.id !== nodeId)
+  checkVmNumaIndices(next)
+  vmNumaNodes.set(vmId, next)
+  return { status: 'complete' }
 }
 
 // ─── VM mediated devices (vGPU mdev specs) ───────────────────────────────────
@@ -6086,6 +6175,8 @@ export function resetMockVms(): void {
   affinityGroupSeq = 0
   affinityLabelSeq = 0
   snapshotSeq = 0
+  vmNumaNodes = initialVmNumaNodes()
+  vmNumaSeq = 0
   vmSeq = 0
   tagSeq = 0
   diskSeq = 0
@@ -6270,6 +6361,12 @@ function updateVm(id: string, body: unknown, query?: URLSearchParams): unknown {
   if (patch.rng_device !== undefined && Object.keys(patch.rng_device).length === 0) {
     delete vm.rng_device
     delete patch.rng_device
+  }
+  // The engine applies each cpu element only when it is set (VmBaseMapper isSet
+  // guards), so a PUT carrying cpu.topology alone keeps the stored cpu_tune and
+  // architecture: merge one level instead of replacing the whole block.
+  if (patch.cpu !== undefined && vm.cpu !== undefined) {
+    patch.cpu = { ...vm.cpu, ...patch.cpu }
   }
   Object.assign(vm, patch)
   if (query?.get('next_run') === 'true') {
@@ -13642,6 +13739,21 @@ const routes: MockRoute[] = [
     method: 'GET',
     pattern: /^\/vms\/([^/]+)\/numanodes$/,
     handle: ([id]) => vmNumaNodesHandler(id),
+  },
+  {
+    method: 'POST',
+    pattern: /^\/vms\/([^/]+)\/numanodes$/,
+    handle: ([id], body) => addVmNumaNode(id, body),
+  },
+  {
+    method: 'PUT',
+    pattern: /^\/vms\/([^/]+)\/numanodes\/([^/]+)$/,
+    handle: ([id, nodeId], body) => updateVmNumaNode(id, nodeId, body),
+  },
+  {
+    method: 'DELETE',
+    pattern: /^\/vms\/([^/]+)\/numanodes\/([^/]+)$/,
+    handle: ([id, nodeId]) => removeVmNumaNode(id, nodeId),
   },
 
   // VM mediated devices (vGPU mdev specs)

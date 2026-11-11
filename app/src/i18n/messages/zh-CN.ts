@@ -4374,6 +4374,72 @@ export const zhCN: LocaleCatalog = {
     '看门狗更改失败，因此未保存任何内容：{message}。请再次保存以重试。',
   'vm.edit.save.nextRunRefreshFailed':
     '看门狗已保存，但虚拟机待处理的下次运行配置未刷新，因此引擎可能会在下次关机时撤消该更改：{message}。请再次保存以重试。',
+  'vm.edit.pinning.title': 'CPU 固定',
+  'vm.edit.pinning.policy': 'CPU 固定策略',
+  'vm.edit.pinning.policy.none': '无',
+  'vm.edit.pinning.policy.manual': '手动',
+  'vm.edit.pinning.policy.resizeAndPin': '调整大小并固定 NUMA',
+  'vm.edit.pinning.policy.dedicated': '专用',
+  'vm.edit.pinning.policy.isolateThreads': '隔离线程',
+  'vm.edit.pinning.topology': 'CPU 固定拓扑',
+  'vm.edit.pinning.hint.manualNeedsHost': '手动固定要求虚拟机在指定主机上运行。',
+  'vm.edit.pinning.hint.dedicatedNeedsVersion': '专用和隔离线程需要集群兼容版本 4.7 或更高版本。',
+  'vm.edit.pinning.hint.dedicatedNumaPinned': '当有虚拟 NUMA 节点被固定时，专用和隔离线程不可用。',
+  'vm.edit.pinning.hint.resizeAndPin':
+    '调整大小并固定 NUMA 会在虚拟机启动时根据主机确定 CPU 拓扑和虚拟 NUMA 节点。',
+  'vm.edit.pinning.error.required': '请输入固定拓扑，例如 0#0_1#1-3。',
+  'vm.edit.pinning.error.syntax':
+    '请按 vCPU#主机CPU 的格式书写条目，并用 _ 连接，例如 0#0_1#1-3 或 0#0-3,^2。',
+  'vm.edit.pinning.error.needsHost': '手动固定要求虚拟机在指定主机上运行。',
+  'vm.edit.pinning.error.vcpuMissing': 'vCPU {vcpu} 不存在；此虚拟机的 vCPU 为 0 到 {max}。',
+  'vm.edit.pinning.error.duplicate': 'vCPU {vcpu} 被固定了多次。',
+  'vm.edit.pinning.error.noCpu': 'vCPU {vcpu} 未固定到任何主机 CPU。',
+  'fieldHelp.vm.cpuPinningPolicy':
+    'vCPU 如何映射到主机 CPU。无表示交给主机决定；手动使用下方的固定拓扑；调整大小并固定 NUMA 会按主机确定虚拟机大小并进行固定；专用为此虚拟机独占预留主机 CPU；隔离线程还会为每个 vCPU 分配独立的物理核心。对于运行中的虚拟机，将在下次启动时生效。',
+  'fieldHelp.vm.cpuPinningTopology':
+    '以 vCPU#CPU 的格式将每个 vCPU 固定到主机 CPU，条目之间用 _ 连接。CPU 集合可列出 CPU (0,2)、范围 (1-3) 和排除项 (^2)。示例：0#0_1#1-3 将 vCPU 0 固定到主机 CPU 0，将 vCPU 1 固定到主机 CPU 1 到 3。',
+  'fieldHelp.vm.numaCount':
+    '客户机看到的虚拟 NUMA 节点数量。vCPU 和内存会分配到这些节点上；将节点固定到主机 NUMA 节点可使其内存保持本地。仅可在虚拟机关机时更改。',
+  'vm.edit.numa.title': '虚拟 NUMA',
+  'vm.edit.numa.count': 'NUMA 节点数',
+  'vm.edit.numa.loading': '正在加载虚拟 NUMA 节点',
+  'vm.edit.numa.loadError': '无法加载虚拟 NUMA 节点；它们保持不变',
+  'vm.edit.numa.hint.running': '只有在虚拟机关机时才能更改虚拟 NUMA 节点。',
+  'vm.edit.numa.hint.needsHost': '将节点固定到主机 NUMA 节点要求虚拟机在指定主机上运行。',
+  'vm.edit.numa.hint.hostLoading': '正在加载主机 NUMA 拓扑',
+  'vm.edit.numa.hint.hostError': '无法加载主机 NUMA 拓扑',
+  'vm.edit.numa.table': '虚拟 NUMA 节点',
+  'vm.edit.numa.column.node': '节点',
+  'vm.edit.numa.column.resources': 'vCPU 和内存',
+  'vm.edit.numa.column.tune': '调优模式',
+  'vm.edit.numa.column.hostNode': '主机 NUMA 节点',
+  'vm.edit.numa.resources': 'vCPU {cpus}，{memory} MB',
+  'vm.edit.numa.tuneLabel': 'NUMA 节点 {index} 的调优模式',
+  'vm.edit.numa.pinLabel': 'NUMA 节点 {index} 的主机 NUMA 节点',
+  'vm.edit.numa.pin.none': '未固定',
+  'vm.edit.numa.pin.hostNode': '主机节点 {index}',
+  'vm.edit.numa.tune.interleave': '交错 (Interleave)',
+  'vm.edit.numa.tune.strict': '严格 (Strict)',
+  'vm.edit.numa.tune.preferred': '首选 (Preferred)',
+  'vm.edit.numa.error.preferred': '首选仅适用于固定到单个主机节点的单个虚拟 NUMA 节点。',
+  'vm.edit.numa.error.tooManyNodes': '该虚拟机有 {cpus} 个 vCPU，因此不能有 {count} 个 NUMA 节点。',
+  'vm.edit.numa.error.pinsNeedHost': '已固定的 NUMA 节点要求虚拟机在指定主机上运行。',
+  'vm.edit.numa.error.pinsWithDedicated': '专用和隔离线程不能与已固定的 NUMA 节点同时使用。',
+  'vm.edit.numa.error.hostUnsupported':
+    '主机 {host} 未报告 NUMA 拓扑，因此在其上运行的虚拟机不能有虚拟 NUMA 节点。',
+  'vm.edit.numa.error.hostNodeMissing': '主机 {host} 没有 NUMA 节点 {hostNode}。',
+  'vm.edit.numa.error.memory':
+    '虚拟 NUMA 节点 {node} 所需内存超过主机 {host} 的节点 {hostNode} 的内存，严格模式不允许这样做。',
+  'vm.edit.save.numaBeforeVmFailed':
+    '删除旧的虚拟 NUMA 节点失败，因此虚拟机未保存：{message}。请再次保存以重试。',
+  'vm.edit.save.vmFailedAfterNuma':
+    '旧的虚拟 NUMA 节点已删除，但虚拟机无法保存，因此未添加新节点：{message}。请再次保存以重试。',
+  'vm.edit.save.numaAfterVmFailed':
+    '虚拟机已保存，但虚拟 NUMA 更改失败：{message}。请再次保存以重试。',
+  'vm.edit.save.numaFailed': '虚拟 NUMA 更改失败：{message}。请再次保存以重试。',
+  'vm.edit.save.numaState':
+    '该虚拟机现在{count, plural, =0 {没有虚拟 NUMA 节点} other {有 # 个虚拟 NUMA 节点}}。',
+  'vm.edit.save.numaStateUnknown': '无法重新读取其虚拟 NUMA 节点；请重新打开对话框查看当前拓扑。',
   'vm.edit.save.cdFailed': '虚拟机已保存，但 CD 更改失败：{message}。请再次保存以重试。',
   'vm.create.watchdog.templateError':
     '无法加载模板的看门狗：{message}。新虚拟机将完全使用此处选择的看门狗。',

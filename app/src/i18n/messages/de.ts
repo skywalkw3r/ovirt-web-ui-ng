@@ -4666,6 +4666,86 @@ export const de: LocaleCatalog = {
     'Die Watchdog-Änderung ist fehlgeschlagen, daher wurde nichts gespeichert: {message}. Speichern Sie erneut, um es noch einmal zu versuchen.',
   'vm.edit.save.nextRunRefreshFailed':
     'Der Watchdog wurde gespeichert, aber die ausstehende Konfiguration der VM für den nächsten Start wurde nicht aktualisiert, sodass die Engine die Änderung beim nächsten Herunterfahren rückgängig machen könnte: {message}. Speichern Sie erneut, um es noch einmal zu versuchen.',
+  'vm.edit.pinning.title': 'CPU-Bindung',
+  'vm.edit.pinning.policy': 'CPU-Bindungsrichtlinie',
+  'vm.edit.pinning.policy.none': 'Keine',
+  'vm.edit.pinning.policy.manual': 'Manuell',
+  'vm.edit.pinning.policy.resizeAndPin': 'Größe anpassen und NUMA binden',
+  'vm.edit.pinning.policy.dedicated': 'Dediziert',
+  'vm.edit.pinning.policy.isolateThreads': 'Threads isolieren',
+  'vm.edit.pinning.topology': 'CPU-Bindungstopologie',
+  'vm.edit.pinning.hint.manualNeedsHost':
+    'Manuelle Bindung setzt voraus, dass die VM auf bestimmten Hosts läuft.',
+  'vm.edit.pinning.hint.dedicatedNeedsVersion':
+    'Dediziert und Threads isolieren erfordern die Cluster-Kompatibilitätsversion 4.7 oder höher.',
+  'vm.edit.pinning.hint.dedicatedNumaPinned':
+    'Dediziert und Threads isolieren sind nicht verfügbar, solange ein virtueller NUMA-Knoten gebunden ist.',
+  'vm.edit.pinning.hint.resizeAndPin':
+    'Größe anpassen und NUMA binden bemisst die CPU-Topologie und die virtuellen NUMA-Knoten beim Start der VM anhand des Hosts.',
+  'vm.edit.pinning.error.required': 'Geben Sie eine Bindungstopologie ein, zum Beispiel 0#0_1#1-3.',
+  'vm.edit.pinning.error.syntax':
+    'Schreiben Sie Einträge der Form vCPU#Host-CPUs, verbunden mit _, zum Beispiel 0#0_1#1-3 oder 0#0-3,^2.',
+  'vm.edit.pinning.error.needsHost':
+    'Manuelle Bindung setzt voraus, dass die VM auf bestimmten Hosts läuft.',
+  'vm.edit.pinning.error.vcpuMissing':
+    'vCPU {vcpu} existiert nicht; diese VM hat die vCPUs 0 bis {max}.',
+  'vm.edit.pinning.error.duplicate': 'vCPU {vcpu} ist mehr als einmal gebunden.',
+  'vm.edit.pinning.error.noCpu': 'vCPU {vcpu} ist an keine Host-CPU gebunden.',
+  'fieldHelp.vm.cpuPinningPolicy':
+    'Wie die vCPUs auf Host-CPUs abgebildet werden. Keine überlässt dies dem Host; Manuell verwendet die Bindungstopologie unten; Größe anpassen und NUMA binden bemisst die VM nach ihrem Host und bindet sie; Dediziert reserviert Host-CPUs nur für diese VM; Threads isolieren gibt zusätzlich jeder vCPU einen eigenen physischen Kern. Bei einer laufenden VM wird dies beim nächsten Start angewendet.',
+  'fieldHelp.vm.cpuPinningTopology':
+    'Binden Sie jede vCPU als vCPU#CPUs an Host-CPUs, Einträge verbunden mit _. Eine CPU-Menge enthält CPUs (0,2), Bereiche (1-3) und Ausschlüsse (^2). Beispiel: 0#0_1#1-3 bindet vCPU 0 an Host-CPU 0 und vCPU 1 an die Host-CPUs 1 bis 3.',
+  'fieldHelp.vm.numaCount':
+    'Wie viele virtuelle NUMA-Knoten der Gast sieht. vCPUs und Arbeitsspeicher werden auf sie verteilt; binden Sie einen Knoten an einen Host-NUMA-Knoten, damit sein Speicher lokal bleibt. Nur bei einer ausgeschalteten VM änderbar.',
+  'vm.edit.numa.title': 'Virtuelles NUMA',
+  'vm.edit.numa.count': 'Anzahl der NUMA-Knoten',
+  'vm.edit.numa.loading': 'Virtuelle NUMA-Knoten werden geladen',
+  'vm.edit.numa.loadError':
+    'Die virtuellen NUMA-Knoten konnten nicht geladen werden; sie bleiben unverändert',
+  'vm.edit.numa.hint.running':
+    'Die virtuellen NUMA-Knoten können nur geändert werden, während die VM heruntergefahren ist.',
+  'vm.edit.numa.hint.needsHost':
+    'Das Binden eines Knotens an einen Host-NUMA-Knoten setzt voraus, dass die VM auf bestimmten Hosts läuft.',
+  'vm.edit.numa.hint.hostLoading': 'NUMA-Topologie des Hosts wird geladen',
+  'vm.edit.numa.hint.hostError': 'Die NUMA-Topologie des Hosts konnte nicht geladen werden',
+  'vm.edit.numa.table': 'Virtuelle NUMA-Knoten',
+  'vm.edit.numa.column.node': 'Knoten',
+  'vm.edit.numa.column.resources': 'vCPUs und Arbeitsspeicher',
+  'vm.edit.numa.column.tune': 'Tune-Modus',
+  'vm.edit.numa.column.hostNode': 'Host-NUMA-Knoten',
+  'vm.edit.numa.resources': 'vCPUs {cpus}, {memory} MB',
+  'vm.edit.numa.tuneLabel': 'Tune-Modus des NUMA-Knotens {index}',
+  'vm.edit.numa.pinLabel': 'Host-NUMA-Knoten für NUMA-Knoten {index}',
+  'vm.edit.numa.pin.none': 'Nicht gebunden',
+  'vm.edit.numa.pin.hostNode': 'Host-Knoten {index}',
+  'vm.edit.numa.tune.interleave': 'Verschachtelt (Interleave)',
+  'vm.edit.numa.tune.strict': 'Strikt (Strict)',
+  'vm.edit.numa.tune.preferred': 'Bevorzugt (Preferred)',
+  'vm.edit.numa.error.preferred':
+    'Bevorzugt funktioniert nur mit einem einzigen virtuellen NUMA-Knoten, der an einen einzigen Host-Knoten gebunden ist.',
+  'vm.edit.numa.error.tooManyNodes':
+    'Die VM hat {cpus} vCPUs und kann daher keine {count} NUMA-Knoten haben.',
+  'vm.edit.numa.error.pinsNeedHost':
+    'Gebundene NUMA-Knoten setzen voraus, dass die VM auf bestimmten Hosts läuft.',
+  'vm.edit.numa.error.pinsWithDedicated':
+    'Dediziert und Threads isolieren lassen sich nicht mit gebundenen NUMA-Knoten kombinieren.',
+  'vm.edit.numa.error.hostUnsupported':
+    'Host {host} meldet keine NUMA-Topologie, daher kann eine VM, die auf ihm läuft, keine virtuellen NUMA-Knoten haben.',
+  'vm.edit.numa.error.hostNodeMissing': 'Host {host} hat keinen NUMA-Knoten {hostNode}.',
+  'vm.edit.numa.error.memory':
+    'Der virtuelle NUMA-Knoten {node} benötigt mehr Arbeitsspeicher, als Knoten {hostNode} von Host {host} hat, was Strikt nicht zulässt.',
+  'vm.edit.save.numaBeforeVmFailed':
+    'Das Entfernen der alten virtuellen NUMA-Knoten ist fehlgeschlagen, daher wurde die VM nicht gespeichert: {message}. Speichern Sie erneut, um es noch einmal zu versuchen.',
+  'vm.edit.save.vmFailedAfterNuma':
+    'Die alten virtuellen NUMA-Knoten wurden entfernt, aber die VM konnte nicht gespeichert werden, daher wurden die neuen Knoten nicht hinzugefügt: {message}. Speichern Sie erneut, um es noch einmal zu versuchen.',
+  'vm.edit.save.numaAfterVmFailed':
+    'Die VM wurde gespeichert, aber die Änderung der virtuellen NUMA-Knoten ist fehlgeschlagen: {message}. Speichern Sie erneut, um es noch einmal zu versuchen.',
+  'vm.edit.save.numaFailed':
+    'Die Änderung der virtuellen NUMA-Knoten ist fehlgeschlagen: {message}. Speichern Sie erneut, um es noch einmal zu versuchen.',
+  'vm.edit.save.numaState':
+    'Die VM hat jetzt {count, plural, =0 {keine virtuellen NUMA-Knoten} one {# virtuellen NUMA-Knoten} other {# virtuelle NUMA-Knoten}}.',
+  'vm.edit.save.numaStateUnknown':
+    'Ihre virtuellen NUMA-Knoten konnten nicht erneut gelesen werden; öffnen Sie den Dialog erneut, um die aktuelle Topologie zu sehen.',
   'vm.edit.save.cdFailed':
     'Die VM wurde gespeichert, aber die CD-Änderung ist fehlgeschlagen: {message}. Speichern Sie erneut, um es noch einmal zu versuchen.',
   'vm.create.watchdog.templateError':

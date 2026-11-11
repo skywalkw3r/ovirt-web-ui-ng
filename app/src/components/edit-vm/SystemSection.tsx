@@ -51,6 +51,10 @@ interface SystemSectionProps {
 // CPU topology stays plain integer counts.
 export function SystemSection({ draft, set, overcommitPercent }: SystemSectionProps) {
   const t = useT()
+  // Resize and Pin NUMA sizes the CPU topology from the host at start, so
+  // webadmin disables the three counts under it (UnitVmModel.updateCpuFields);
+  // same here.
+  const engineTopology = draft.cpuPinningPolicy === 'resize_and_pin_numa'
   // Topology inputs: TextInput hands back a string; the draft field is a number.
   // Empty input collapses to 0 rather than NaN so the controlled value stays a
   // real number.
@@ -161,6 +165,7 @@ export function SystemSection({ draft, set, overcommitPercent }: SystemSectionPr
             aria-label={t('templateForm.sockets')}
             value={draft.sockets}
             onChange={setNumber('sockets')}
+            isDisabled={engineTopology}
           />
         </FormGroup>
 
@@ -171,6 +176,7 @@ export function SystemSection({ draft, set, overcommitPercent }: SystemSectionPr
             aria-label={t('templateForm.cores')}
             value={draft.coresPerSocket}
             onChange={setNumber('coresPerSocket')}
+            isDisabled={engineTopology}
           />
         </FormGroup>
 
@@ -181,8 +187,15 @@ export function SystemSection({ draft, set, overcommitPercent }: SystemSectionPr
             aria-label={t('templateForm.threads')}
             value={draft.threadsPerCore}
             onChange={setNumber('threadsPerCore')}
+            isDisabled={engineTopology}
           />
         </FormGroup>
+
+        {engineTopology && (
+          <HelperText>
+            <HelperTextItem>{t('vm.edit.pinning.hint.resizeAndPin')}</HelperTextItem>
+          </HelperText>
+        )}
       </FormSection>
 
       <FormSection title={t('vm.edit.system.advancedParams')} titleElement="h3">

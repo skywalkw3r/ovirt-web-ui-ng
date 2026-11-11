@@ -4804,6 +4804,85 @@ export const ru: LocaleCatalog = {
     'Изменить watchdog не удалось, поэтому ничего не сохранено: {message}. Сохраните ещё раз, чтобы повторить попытку.',
   'vm.edit.save.nextRunRefreshFailed':
     'Watchdog сохранён, но ожидающая конфигурация ВМ для следующего запуска не обновлена, поэтому движок может отменить изменение при следующем выключении: {message}. Сохраните ещё раз, чтобы повторить попытку.',
+  'vm.edit.pinning.title': 'Закрепление ЦП',
+  'vm.edit.pinning.policy': 'Политика закрепления ЦП',
+  'vm.edit.pinning.policy.none': 'Нет',
+  'vm.edit.pinning.policy.manual': 'Вручную',
+  'vm.edit.pinning.policy.resizeAndPin': 'Изменить размер и закрепить NUMA',
+  'vm.edit.pinning.policy.dedicated': 'Выделенные',
+  'vm.edit.pinning.policy.isolateThreads': 'Изолировать потоки',
+  'vm.edit.pinning.topology': 'Топология закрепления ЦП',
+  'vm.edit.pinning.hint.manualNeedsHost':
+    'Для ручного закрепления ВМ должна работать на определённых хостах.',
+  'vm.edit.pinning.hint.dedicatedNeedsVersion':
+    'Для политик «Выделенные» и «Изолировать потоки» нужна версия совместимости кластера 4.7 или выше.',
+  'vm.edit.pinning.hint.dedicatedNumaPinned':
+    'Политики «Выделенные» и «Изолировать потоки» недоступны, пока закреплён виртуальный узел NUMA.',
+  'vm.edit.pinning.hint.resizeAndPin':
+    'Политика «Изменить размер и закрепить NUMA» задаёт топологию ЦП и виртуальные узлы NUMA по хосту при запуске ВМ.',
+  'vm.edit.pinning.error.required': 'Введите топологию закрепления, например 0#0_1#1-3.',
+  'vm.edit.pinning.error.syntax':
+    'Записывайте элементы vCPU#ЦП хоста через _, например 0#0_1#1-3 или 0#0-3,^2.',
+  'vm.edit.pinning.error.needsHost':
+    'Для ручного закрепления ВМ должна работать на определённых хостах.',
+  'vm.edit.pinning.error.vcpuMissing':
+    'vCPU {vcpu} не существует; у этой ВМ есть vCPU с 0 по {max}.',
+  'vm.edit.pinning.error.duplicate': 'vCPU {vcpu} закреплён более одного раза.',
+  'vm.edit.pinning.error.noCpu': 'vCPU {vcpu} не закреплён ни за одним ЦП хоста.',
+  'fieldHelp.vm.cpuPinningPolicy':
+    'Как vCPU сопоставляются с ЦП хоста. «Нет» оставляет это хосту; «Вручную» использует топологию закрепления ниже; «Изменить размер и закрепить NUMA» подгоняет ВМ под её хост и закрепляет её; «Выделенные» резервирует ЦП хоста только для этой ВМ; «Изолировать потоки» вдобавок даёт каждому vCPU собственное физическое ядро. Для работающей ВМ применяется при следующем запуске.',
+  'fieldHelp.vm.cpuPinningTopology':
+    'Закрепите каждый vCPU за ЦП хоста в виде vCPU#ЦП, элементы через _. Набор ЦП перечисляет ЦП (0,2), диапазоны (1-3) и исключения (^2). Пример: 0#0_1#1-3 закрепляет vCPU 0 за ЦП 0 хоста, а vCPU 1 за ЦП хоста с 1 по 3.',
+  'fieldHelp.vm.numaCount':
+    'Сколько виртуальных узлов NUMA видит гостевая ОС. vCPU и память распределяются между ними; закрепите узел за узлом NUMA хоста, чтобы его память оставалась локальной. Изменяется только у выключенной ВМ.',
+  'vm.edit.numa.title': 'Виртуальный NUMA',
+  'vm.edit.numa.count': 'Число узлов NUMA',
+  'vm.edit.numa.loading': 'Загрузка виртуальных узлов NUMA',
+  'vm.edit.numa.loadError':
+    'Не удалось загрузить виртуальные узлы NUMA; они остаются без изменений',
+  'vm.edit.numa.hint.running': 'Виртуальные узлы NUMA можно изменить, только когда ВМ выключена.',
+  'vm.edit.numa.hint.needsHost':
+    'Для закрепления узла за узлом NUMA хоста ВМ должна работать на определённых хостах.',
+  'vm.edit.numa.hint.hostLoading': 'Загрузка топологии NUMA хоста',
+  'vm.edit.numa.hint.hostError': 'Не удалось загрузить топологию NUMA хоста',
+  'vm.edit.numa.table': 'Виртуальные узлы NUMA',
+  'vm.edit.numa.column.node': 'Узел',
+  'vm.edit.numa.column.resources': 'vCPU и память',
+  'vm.edit.numa.column.tune': 'Режим настройки',
+  'vm.edit.numa.column.hostNode': 'Узел NUMA хоста',
+  'vm.edit.numa.resources': 'vCPU {cpus}, {memory} МБ',
+  'vm.edit.numa.tuneLabel': 'Режим настройки узла NUMA {index}',
+  'vm.edit.numa.pinLabel': 'Узел NUMA хоста для узла NUMA {index}',
+  'vm.edit.numa.pin.none': 'Не закреплён',
+  'vm.edit.numa.pin.hostNode': 'Узел хоста {index}',
+  'vm.edit.numa.tune.interleave': 'Чередование (Interleave)',
+  'vm.edit.numa.tune.strict': 'Строгий (Strict)',
+  'vm.edit.numa.tune.preferred': 'Предпочтительный (Preferred)',
+  'vm.edit.numa.error.preferred':
+    'Режим «Предпочтительный» работает только с одним виртуальным узлом NUMA, закреплённым за одним узлом хоста.',
+  'vm.edit.numa.error.tooManyNodes':
+    'У ВМ {cpus} vCPU, поэтому у неё не может быть {count} узлов NUMA.',
+  'vm.edit.numa.error.pinsNeedHost':
+    'Для закреплённых узлов NUMA ВМ должна работать на определённых хостах.',
+  'vm.edit.numa.error.pinsWithDedicated':
+    'Политики «Выделенные» и «Изолировать потоки» нельзя сочетать с закреплёнными узлами NUMA.',
+  'vm.edit.numa.error.hostUnsupported':
+    'Хост {host} не сообщает топологию NUMA, поэтому у работающей на нём ВМ не может быть виртуальных узлов NUMA.',
+  'vm.edit.numa.error.hostNodeMissing': 'У хоста {host} нет узла NUMA {hostNode}.',
+  'vm.edit.numa.error.memory':
+    'Виртуальному узлу NUMA {node} нужно больше памяти, чем есть у узла {hostNode} хоста {host}, а режим «Строгий» этого не допускает.',
+  'vm.edit.save.numaBeforeVmFailed':
+    'Не удалось удалить старые виртуальные узлы NUMA, поэтому ВМ не сохранена: {message}. Сохраните ещё раз, чтобы повторить.',
+  'vm.edit.save.vmFailedAfterNuma':
+    'Старые виртуальные узлы NUMA удалены, но ВМ сохранить не удалось, поэтому новые узлы не добавлены: {message}. Сохраните ещё раз, чтобы повторить.',
+  'vm.edit.save.numaAfterVmFailed':
+    'ВМ сохранена, но изменить виртуальный NUMA не удалось: {message}. Сохраните ещё раз, чтобы повторить.',
+  'vm.edit.save.numaFailed':
+    'Изменить виртуальный NUMA не удалось: {message}. Сохраните ещё раз, чтобы повторить.',
+  'vm.edit.save.numaState':
+    'Теперь у ВМ {count, plural, =0 {нет виртуальных узлов NUMA} one {# виртуальный узел NUMA} few {# виртуальных узла NUMA} many {# виртуальных узлов NUMA} other {# виртуального узла NUMA}}.',
+  'vm.edit.save.numaStateUnknown':
+    'Не удалось повторно прочитать её виртуальные узлы NUMA; откройте диалог заново, чтобы увидеть текущую топологию.',
   'vm.edit.save.cdFailed':
     'ВМ сохранена, но изменить CD не удалось: {message}. Сохраните ещё раз, чтобы повторить попытку.',
   'vm.create.watchdog.templateError':

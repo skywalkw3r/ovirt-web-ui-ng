@@ -150,8 +150,31 @@ export const VmSchema = z.looseObject({
           threads: z.coerce.number().optional(),
         })
         .optional(),
+      // Manual CPU pinning (api-model types/CpuTune, a VcpuPin list): one entry
+      // per pinned vCPU, cpu_set being the host CPU set in the engine's own
+      // syntax ("1-3", "0,2", "0-3,^2"). Absent when the VM has no pinning
+      // string.
+      cpu_tune: z
+        .looseObject({
+          vcpu_pins: z
+            .looseObject({
+              vcpu_pin: z
+                .array(
+                  z.looseObject({
+                    vcpu: z.coerce.number().optional(),
+                    cpu_set: z.string().optional(),
+                  }),
+                )
+                .optional(),
+            })
+            .optional(),
+        })
+        .optional(),
     })
     .optional(),
+  // api-model types/CpuPinningPolicy (4.5+): none | manual |
+  // resize_and_pin_numa | dedicated | isolate_threads (the last since 4.5.1).
+  cpu_pinning_policy: z.string().optional(),
   // Top-level CPU shares (Resource Allocation): 0 disabled / 512 low / 1024
   // medium / 2048 high / any other = custom. JSON-string on the live engine.
   cpu_shares: z.coerce.number().optional(),
