@@ -71,6 +71,37 @@ describe('splitFilterTokens', () => {
     )
   })
 
+  it('peels grouping parentheses off a token and drops groups it leaves empty', () => {
+    expect(splitFilterTokens('(folder:/prod)')).toEqual({ rest: '', folders: ['/prod'], tags: [] })
+    expect(splitFilterTokens('(status=up and tag:x)').rest).toBe('(status=up)')
+    expect(splitFilterTokens('(tag:x and status=up)').rest).toBe('(status=up)')
+    expect(splitFilterTokens('(name=a* or tag:x) and status=up')).toEqual({
+      rest: '(name=a*) and status=up',
+      folders: [],
+      tags: ['x'],
+    })
+    expect(splitFilterTokens('status=up and (folder:a or tag:b)')).toEqual({
+      rest: 'status=up',
+      folders: ['a'],
+      tags: ['b'],
+    })
+    expect(splitFilterTokens('((tag:x)) or status=up').rest).toBe('status=up')
+  })
+
+  it('keeps quoted engine values whole and unwraps a quoted token value', () => {
+    expect(splitFilterTokens('description="a  folder:x" tag:y')).toEqual({
+      rest: 'description="a  folder:x"',
+      folders: [],
+      tags: ['y'],
+    })
+    expect(splitFilterTokens('tag:"pci-dss"').tags).toEqual(['pci-dss'])
+    expect(splitFilterTokens('folder:""').folders).toEqual([])
+  })
+
+  it('keeps a colon inside a token value', () => {
+    expect(splitFilterTokens('tag:a:b').tags).toEqual(['a:b'])
+  })
+
   it('ignores a half-typed token without sending it to the engine', () => {
     expect(splitFilterTokens('web folder:')).toEqual({ rest: 'web', folders: [], tags: [] })
   })

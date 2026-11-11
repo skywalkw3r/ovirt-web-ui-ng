@@ -39,44 +39,116 @@ export interface SplitFilter extends FilterTokens {
 
 // A token is a whitespace-delimited word starting with `folder:` or `tag:`
 // (case-insensitive keys). Tag names cannot contain whitespace (the engine
-// allows only letters, numbers, - and _), so no quoting is needed. The
-// engine DSL uses `=` for its own `tag=` term, so the two never collide.
+// allows only letters, numbers, - and _), so quoting is never required, but a
+// value wrapped in double quotes (`tag:"pci-dss"`) is accepted and unwrapped.
+// Grouping parentheses glued to a token (`(folder:/prod`, `tag:x)`) are
+// peeled off it. The engine DSL uses `=` for its own `tag=` term, so the two
+// never collide.
 const TOKEN = /^(folder|tag):(.*)$/i
 const JOINER = /^(and|or)$/i
+const TOKEN_PARENS = /^(\(*)(.*?)(\)*)$/
+
+// Whitespace-separated words, except that whitespace inside a double-quoted
+// span stays in its word: `name="my vm" folder:x` is two engine words and a
+// token, and a quoted engine value never loses its inner spacing or has a
+// token-looking fragment inside it lifted out.
+function splitWords(raw: string): string[] {
+  const words: string[] = []
+  let current = ''
+  let quoted = false
+  for (const char of raw) {
+    if (char === '"') quoted = !quoted
+    if (!quoted && /\s/.test(char)) {
+      if (current !== '') words.push(current)
+      current = ''
+      continue
+    }
+    current += char
+  }
+  if (current !== '') words.push(current)
+  return words
+}
+
+function unquote(value: string): string {
+  return value.length >= 2 && value.startsWith('"') && value.endsWith('"')
+    ? value.slice(1, -1)
+    : value
+}
+
+type Piece = { kind: 'word' | 'joiner' | 'open' | 'close'; text: string }
+
+// Removes what the lifted tokens leave dangling, until nothing changes: a
+// joiner at either end, after `(` or before `)`, two joiners in a row (the
+// later one wins, so `a and folder:x or b` keeps `or`), and empty `( )`.
+function tidy(pieces: Piece[]): Piece[] {
+  let changed = true
+  let out = pieces
+  while (changed) {
+    changed = false
+    const next: Piece[] = []
+    for (let i = 0; i < out.length; i += 1) {
+      const piece = out[i]
+      const prev = next[next.length - 1]
+      const after = out[i + 1]
+      const drop =
+        piece.kind === 'joiner' &&
+        (prev === undefined ||
+          prev.kind === 'open' ||
+          after === undefined ||
+          after.kind === 'close' ||
+          after.kind === 'joiner')
+      if (drop) {
+        changed = true
+        continue
+      }
+      if (piece.kind === 'close' && prev?.kind === 'open') {
+        next.pop()
+        changed = true
+        continue
+      }
+      next.push(piece)
+    }
+    out = next
+  }
+  return out
+}
 
 // Splits the bar input into tokens and the remaining text. A token with an
 // empty value (`folder:` mid-typing) is dropped from both sides, so a
 // half-typed token neither filters nor reaches the engine as garbage. Tokens
-// always AND with the rest, so a boolean joiner left dangling by a removed
-// token (`status=up and folder:/prod`) is removed with it. Input without any
-// token comes back untouched, so token-free searches reach the engine exactly
-// as they did before tokens existed.
+// always AND with the rest, so a boolean joiner or a grouping left dangling
+// by a removed token (`status=up and folder:/prod`, `(tag:x)`) is removed
+// with it. Input without any token comes back untouched, so token-free
+// searches reach the engine exactly as they did before tokens existed.
 export function splitFilterTokens(raw: string): SplitFilter {
   const folders: string[] = []
   const tags: string[] = []
-  const kept: string[] = []
-  // a joiner is only kept between two kept words
-  let pendingJoiner: string | null = null
+  const pieces: Piece[] = []
   let sawToken = false
-  for (const word of raw.split(/\s+/)) {
-    if (word === '') continue
-    const token = TOKEN.exec(word)
+  for (const word of splitWords(raw)) {
+    const [, opens, core, closes] = TOKEN_PARENS.exec(word) ?? ['', '', word, '']
+    const token = TOKEN.exec(core)
     if (token) {
       sawToken = true
-      const value = token[2]
+      const value = unquote(token[2])
       if (value !== '') (token[1].toLowerCase() === 'folder' ? folders : tags).push(value)
-      pendingJoiner = null
+      for (const text of opens) pieces.push({ kind: 'open', text })
+      for (const text of closes) pieces.push({ kind: 'close', text })
       continue
     }
-    if (JOINER.test(word)) {
-      pendingJoiner = kept.length > 0 ? word : null
-      continue
-    }
-    if (pendingJoiner !== null) kept.push(pendingJoiner)
-    pendingJoiner = null
-    kept.push(word)
+    pieces.push({ kind: JOINER.test(word) ? 'joiner' : 'word', text: word })
   }
-  return { rest: sawToken ? kept.join(' ') : raw, folders, tags }
+  if (!sawToken) return { rest: raw, folders, tags }
+  // a structural paren hugs its neighbour: `(status=up and tag:x)` sends
+  // `(status=up)`, not `(status=up )`
+  let rest = ''
+  let prevKind: Piece['kind'] | null = null
+  for (const piece of tidy(pieces)) {
+    if (prevKind !== null && prevKind !== 'open' && piece.kind !== 'close') rest += ' '
+    rest += piece.text
+    prevKind = piece.kind
+  }
+  return { rest, folders, tags }
 }
 
 export function hasFilterTokens(tokens: FilterTokens): boolean {
