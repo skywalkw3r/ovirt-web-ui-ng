@@ -23,7 +23,7 @@ import {
 } from '../../api/resources/icons'
 import { useT } from '../../i18n/useT'
 import { FieldHelp } from '../forms/FieldHelp'
-import type { EditVmDraft } from './editVmDraft'
+import type { IconFields, SectionChange } from './vmBaseDraft'
 import { iconKeys } from '../../hooks/useCatalog'
 
 // Read a File into { data (base64, no prefix), mediaType } for the large_icon
@@ -41,17 +41,19 @@ function readIconFile(file: File): Promise<{ data: string; mediaType: string }> 
   })
 }
 
-// Icon section of the Edit Virtual Machine modal. Shows the VM's current large
-// icon, a pick-from-catalog grid (GET /icons), and a custom PNG/JPEG/GIF upload
-// gated at 24 kB (webadmin's VmIconValidator). Every choice writes back through
-// `set` into the draft's iconId / iconUpload* fields; the modal turns those into
-// the large_icon PUT body (editVmDraft.buildLargeIcon).
+// Icon section, one of the shared VmBase sections (contract in vmBaseDraft.ts).
+// Shows the current large icon, a pick-from-catalog grid (GET /icons), and a
+// custom PNG/JPEG/GIF upload gated at 24 kB (webadmin's VmIconValidator). Every
+// choice writes back through `onChange` into the draft's iconId / iconUpload*
+// fields; the form turns those into the large_icon body (buildLargeIcon).
 export function IconSection({
   draft,
-  set,
+  onChange,
+  idPrefix = 'edit-vm',
 }: {
-  draft: EditVmDraft
-  set: <K extends keyof EditVmDraft>(key: K, value: EditVmDraft[K]) => void
+  draft: IconFields
+  onChange: SectionChange<IconFields>
+  idPrefix?: string
 }) {
   const t = useT()
   const [uploadError, setUploadError] = useState<string | undefined>(undefined)
@@ -81,9 +83,7 @@ export function IconSection({
 
   const pickCatalog = (id: string) => {
     setUploadError(undefined)
-    set('iconUploadData', '')
-    set('iconUploadMediaType', '')
-    set('iconId', id)
+    onChange({ iconUploadData: '', iconUploadMediaType: '', iconId: id })
   }
 
   const onFile = async (file: File | undefined) => {
@@ -99,8 +99,7 @@ export function IconSection({
     try {
       const { data, mediaType } = await readIconFile(file)
       setUploadError(undefined)
-      set('iconUploadMediaType', mediaType)
-      set('iconUploadData', data)
+      onChange({ iconUploadMediaType: mediaType, iconUploadData: data })
     } catch {
       setUploadError(t('vm.edit.icon.readError'))
     }
@@ -108,8 +107,7 @@ export function IconSection({
 
   const clearUpload = () => {
     setUploadError(undefined)
-    set('iconUploadData', '')
-    set('iconUploadMediaType', '')
+    onChange({ iconUploadData: '', iconUploadMediaType: '' })
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
@@ -117,10 +115,10 @@ export function IconSection({
 
   return (
     <Form onSubmit={(event) => event.preventDefault()}>
-      <FormGroup label={t('vm.edit.icon.current')} fieldId="edit-vm-icon-preview">
+      <FormGroup label={t('vm.edit.icon.current')} fieldId={`${idPrefix}-icon-preview`}>
         {previewUrl ? (
           <img
-            id="edit-vm-icon-preview"
+            id={`${idPrefix}-icon-preview`}
             src={previewUrl}
             alt={t('vm.edit.icon.currentAlt')}
             style={{ maxWidth: 150, maxHeight: 120, borderRadius: 4 }}
@@ -136,12 +134,12 @@ export function IconSection({
 
       <FormGroup
         label={t('vm.edit.icon.upload')}
-        fieldId="edit-vm-icon-upload"
+        fieldId={`${idPrefix}-icon-upload`}
         labelHelp={<FieldHelp field={t('vm.edit.icon.upload')} content={t('fieldHelp.vm.icon')} />}
       >
         <input
           ref={fileInputRef}
-          id="edit-vm-icon-upload"
+          id={`${idPrefix}-icon-upload`}
           type="file"
           aria-label={t('vm.edit.icon.upload')}
           accept={ICON_ALLOWED_MEDIA_TYPES.join(',')}
@@ -161,7 +159,11 @@ export function IconSection({
         )}
       </FormGroup>
 
-      <FormGroup label={t('vm.edit.icon.catalog')} fieldId="edit-vm-icon-catalog" role="group">
+      <FormGroup
+        label={t('vm.edit.icon.catalog')}
+        fieldId={`${idPrefix}-icon-catalog`}
+        role="group"
+      >
         {icons.isPending && (
           <Gallery hasGutter aria-label={t('vm.edit.icon.loading')}>
             {[0, 1, 2, 3, 4, 5].map((n) => (

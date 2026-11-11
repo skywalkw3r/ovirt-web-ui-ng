@@ -19,8 +19,13 @@ import {
   STORAGE_ERROR_RESUME_OPTIONS,
   WATCHDOG_ACTION_OPTIONS,
   watchdogModelOptions,
-  type EditVmDraft,
 } from './editVmDraft'
+import {
+  fieldSetter,
+  type HighAvailabilityFields,
+  type SectionChange,
+  type WatchdogFields,
+} from './vmBaseDraft'
 
 // HA restart priority is a free-form integer on the wire, but webadmin exposes
 // only three buckets. Map the draft's numeric priority to Low/Medium/High and
@@ -40,18 +45,33 @@ function nearestPriority(priority: number): number {
   ).value
 }
 
-export function HighAvailabilitySection({
-  draft,
-  set,
-  architecture,
-}: {
-  draft: EditVmDraft
-  set: <K extends keyof EditVmDraft>(key: K, value: EditVmDraft[K]) => void
+// VM-only part of the section: the watchdog device lives in the VM's
+// /vms/{id}/watchdogs subcollection, so a form opts in by passing it.
+export interface WatchdogContext {
+  vmId: string
+  draft: WatchdogFields
+  onChange: SectionChange<WatchdogFields>
   // The VM's CPU architecture (vm.cpu.architecture, else its cluster's); it
   // narrows the watchdog models the way webadmin's osinfo-driven list does.
   architecture?: string
+}
+
+// High Availability section, one of the shared VmBase sections (contract in
+// vmBaseDraft.ts): HA toggle and priority, lease target, resume behaviour, and
+// the watchdog when `watchdog` is passed.
+export function HighAvailabilitySection({
+  draft,
+  onChange,
+  watchdog,
+  idPrefix = 'edit-vm',
+}: {
+  draft: HighAvailabilityFields
+  onChange: SectionChange<HighAvailabilityFields>
+  watchdog?: WatchdogContext
+  idPrefix?: string
 }) {
   const t = useT()
+  const set = fieldSetter(onChange)
   // The lease target must be an active data domain (read-only reuse of the
   // shared storage-domains query — cached with the rest of the app).
   const domains = useStorageDomains()
@@ -64,25 +84,17 @@ export function HighAvailabilitySection({
     draft.leaseStorageDomainId !== '' &&
     !dataDomains.some((domain) => domain.id === draft.leaseStorageDomainId)
 
-  // The watchdog device lives in its own subcollection. This observes the same
-  // query the modal seeds the draft from (shared cache entry), only for the
-  // loading/error states; the selects stay disabled until the draft holds the
-  // loaded device, so a pick can never race the seed.
-  const watchdogs = useVmWatchdogs(draft.id)
-  const watchdogReady = draft.watchdogLoaded
-  const modelOptions = watchdogModelOptions(architecture, draft.watchdogModel)
-
   return (
     <Form onSubmit={(event) => event.preventDefault()}>
       <FormGroup
         label={t('vm.edit.ha.enabled')}
-        fieldId="edit-vm-ha-enabled"
+        fieldId={`${idPrefix}-ha-enabled`}
         labelHelp={
           <FieldHelp field={t('vm.edit.ha.enabled')} content={t('fieldHelp.vm.highlyAvailable')} />
         }
       >
         <Switch
-          id="edit-vm-ha-enabled"
+          id={`${idPrefix}-ha-enabled`}
           aria-label={t('vm.edit.ha.enabled')}
           isChecked={draft.haEnabled}
           onChange={(_event, checked) => set('haEnabled', checked)}
@@ -91,13 +103,13 @@ export function HighAvailabilitySection({
 
       <FormGroup
         label={t('vm.edit.ha.priority')}
-        fieldId="edit-vm-ha-priority"
+        fieldId={`${idPrefix}-ha-priority`}
         labelHelp={
           <FieldHelp field={t('vm.edit.ha.priority')} content={t('fieldHelp.vm.haPriority')} />
         }
       >
         <FormSelect
-          id="edit-vm-ha-priority"
+          id={`${idPrefix}-ha-priority`}
           aria-label={t('vm.edit.ha.priority')}
           value={nearestPriority(draft.haPriority)}
           isDisabled={!draft.haEnabled}
@@ -111,13 +123,13 @@ export function HighAvailabilitySection({
 
       <FormGroup
         label={t('vm.edit.ha.leaseSd')}
-        fieldId="edit-vm-ha-lease-sd"
+        fieldId={`${idPrefix}-ha-lease-sd`}
         labelHelp={
           <FieldHelp field={t('vm.edit.ha.leaseSd')} content={t('fieldHelp.vm.leaseSd')} />
         }
       >
         <FormSelect
-          id="edit-vm-ha-lease-sd"
+          id={`${idPrefix}-ha-lease-sd`}
           aria-label={t('vm.edit.ha.leaseSd')}
           value={draft.leaseStorageDomainId}
           isDisabled={domains.isPending || domains.isError}
@@ -150,13 +162,13 @@ export function HighAvailabilitySection({
 
       <FormGroup
         label={t('vm.edit.ha.resume')}
-        fieldId="edit-vm-ha-resume"
+        fieldId={`${idPrefix}-ha-resume`}
         labelHelp={
           <FieldHelp field={t('vm.edit.ha.resume')} content={t('fieldHelp.vm.resumeBehaviour')} />
         }
       >
         <FormSelect
-          id="edit-vm-ha-resume"
+          id={`${idPrefix}-ha-resume`}
           aria-label={t('vm.edit.ha.resume')}
           value={draft.storageErrorResumeBehaviour}
           onChange={(_event, value) => set('storageErrorResumeBehaviour', value)}
@@ -167,12 +179,38 @@ export function HighAvailabilitySection({
         </FormSelect>
       </FormGroup>
 
+      {watchdog !== undefined && <WatchdogFormGroups {...watchdog} idPrefix={idPrefix} />}
+    </Form>
+  )
+}
+
+// The watchdog model / action selects (webadmin's HA tab "Watchdog Model" /
+// "Watchdog Action"). Saved through the watchdogs subcollection before the VM
+// PUT; a running VM picks it up on its next start.
+function WatchdogFormGroups({
+  vmId,
+  draft,
+  onChange,
+  architecture,
+  idPrefix,
+}: WatchdogContext & { idPrefix: string }) {
+  const t = useT()
+  const set = fieldSetter(onChange)
+  // This observes the same query the modal seeds the draft from (shared cache
+  // entry), only for the loading/error states; the selects stay disabled until
+  // the draft holds the loaded device, so a pick can never race the seed.
+  const watchdogs = useVmWatchdogs(vmId)
+  const watchdogReady = draft.watchdogLoaded
+  const modelOptions = watchdogModelOptions(architecture, draft.watchdogModel)
+
+  return (
+    <>
       {/* Watchdog device (webadmin's HA tab "Watchdog Model" / "Watchdog
-          Action"). Saved through the watchdogs subcollection before the VM PUT;
-          a running VM picks it up on its next start. */}
+            Action"). Saved through the watchdogs subcollection before the VM PUT;
+            a running VM picks it up on its next start. */}
       <FormGroup
         label={t('vm.edit.ha.watchdogModel')}
-        fieldId="edit-vm-watchdog-model"
+        fieldId={`${idPrefix}-watchdog-model`}
         labelHelp={
           <FieldHelp
             field={t('vm.edit.ha.watchdogModel')}
@@ -184,7 +222,7 @@ export function HighAvailabilitySection({
           <Skeleton height="2.25rem" screenreaderText={t('vm.edit.ha.watchdog.loading')} />
         ) : (
           <FormSelect
-            id="edit-vm-watchdog-model"
+            id={`${idPrefix}-watchdog-model`}
             aria-label={t('vm.edit.ha.watchdogModel')}
             value={draft.watchdogModel}
             isDisabled={!watchdogReady}
@@ -212,7 +250,7 @@ export function HighAvailabilitySection({
 
       <FormGroup
         label={t('vm.edit.ha.watchdogAction')}
-        fieldId="edit-vm-watchdog-action"
+        fieldId={`${idPrefix}-watchdog-action`}
         labelHelp={
           <FieldHelp
             field={t('vm.edit.ha.watchdogAction')}
@@ -221,7 +259,7 @@ export function HighAvailabilitySection({
         }
       >
         <FormSelect
-          id="edit-vm-watchdog-action"
+          id={`${idPrefix}-watchdog-action`}
           aria-label={t('vm.edit.ha.watchdogAction')}
           value={draft.watchdogAction}
           // the action only means something once a model is chosen
@@ -233,6 +271,6 @@ export function HighAvailabilitySection({
           ))}
         </FormSelect>
       </FormGroup>
-    </Form>
+    </>
   )
 }
