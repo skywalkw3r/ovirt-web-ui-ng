@@ -1438,6 +1438,41 @@ export const en = {
   'permissions.add.role.none': 'No assignable roles are available on this engine.',
   'permissions.add.role.userGroup': 'User roles',
   'permissions.add.role.adminGroup': 'Administrative roles',
+  // Add Permission picker depth (issue #31): multi-select, My groups,
+  // Everyone, and directory search.
+  'permissions.add.kind.myGroups': 'My groups',
+  'permissions.add.kind.everyone': 'Everyone',
+  'permissions.add.source.label': 'Search in',
+  'permissions.add.source.engine': 'Engine database',
+  'permissions.add.source.directory': 'Directory: {domain}',
+  'permissions.add.source.domainsLoading': 'Loading directories',
+  'permissions.add.source.domainsError': 'Could not load directories: {message}',
+  'permissions.add.source.directoryHint':
+    'Principals found in a directory that are not in the engine yet are added to it when the role is granted.',
+  'permissions.add.empty.directory.users': 'This directory returned no users.',
+  'permissions.add.empty.directory.groups': 'This directory returned no groups.',
+  'permissions.add.myGroups.loading': 'Loading your groups',
+  'permissions.add.myGroups.error': 'Could not load your groups: {message}',
+  'permissions.add.myGroups.empty.title': 'No groups',
+  'permissions.add.myGroups.empty.body': 'Your account is not a member of any directory group.',
+  'permissions.add.myGroups.table.ariaLabel': 'My groups',
+  'permissions.add.everyone.body':
+    'The role is granted to the built-in Everyone group, so every user gets it on this {noun}.',
+  'permissions.add.selectMany.user': 'Select one or more users to grant the role to.',
+  'permissions.add.selectMany.group': 'Select one or more groups to grant the role to.',
+  'permissions.add.selected.count':
+    '{count, plural, one {# principal selected} other {# principals selected}}',
+  'permissions.add.selected.ariaLabel': 'Selected principals',
+  'permissions.add.selected.remove': 'Remove {name} from the selection',
+  'permissions.add.result.failed.title':
+    '{count, plural, one {The role could not be granted to # principal} other {The role could not be granted to # principals}}',
+  'permissions.add.result.failed.body':
+    'The failed principals stay selected. Fix the cause and retry, or remove them from the selection.',
+  'permissions.add.result.failed.item': '{name}: {message}',
+  'permissions.add.submit.retry': 'Retry failed',
+  'permissions.add.toast.granted': '{role} granted to {name}',
+  'permissions.add.toast.grantedMany':
+    '{role} granted to {count, plural, one {# principal} other {# principals}}',
 
   // ==========================================================================
   // USERS (pages/UsersPage) — admin-gated directory of engine users.
@@ -2121,6 +2156,11 @@ export const en = {
   'settings.pref.console.vncDescription': 'Works with noVNC and most desktop viewers.',
   'settings.pref.console.spiceDescription': 'Richer remote experience via virt-viewer.',
   'settings.pref.language': 'Language',
+  // Roaming note (components/UserMenu, settings/RoamingSettingsProvider)
+  'settings.pref.roaming.synced':
+    'Saved to your oVirt user profile, so they follow you to other browsers.',
+  'settings.pref.roaming.local':
+    'Saved in this browser only; your oVirt user profile is not available to store them.',
   'settings.refresh.seconds': '{count, plural, one {# second} other {# seconds}}',
   'settings.timeout.minutes': '{count, plural, one {# minute} other {# minutes}}',
   'settings.timeout.hours': '{count, plural, one {# hour} other {# hours}}',
@@ -2340,11 +2380,7 @@ export const en = {
   // Host console (Cockpit): kebab item, host detail header button (lib/hostConsole.ts)
   'host.console.open': 'Host console',
   'host.console.newTab': 'Opens Cockpit in a new tab',
-  'host.console.sso.note':
-    'The console opens in a new tab and signs you in with your current session.',
-  'host.console.direct.title': 'The console opens {url} in a new tab',
-  'host.console.direct.body':
-    'Sign in with an account on the host. Cockpit uses the host certificate, so your browser may show a warning until that certificate is trusted.',
+  'host.console.tooltip': 'Open the Cockpit interface for {name}',
 
   // Data center force remove
   'datacenters.forceRemove.action': 'Force remove',
@@ -3859,6 +3895,9 @@ export const en = {
   'hostForm.field.rootPassword': 'Root password',
   'hostForm.field.sshPort': 'SSH port',
   'hostForm.field.sshUser': 'SSH user',
+  'hostForm.firewall.configure': 'Automatically configure host firewall',
+  'hostForm.firewall.configure.help':
+    'Let the install open the ports oVirt needs in the host’s firewall, using the cluster’s firewall type. Turn this off only if you manage the host firewall yourself; the required ports must then be opened by hand.',
   'hostForm.hostedEngine.deploy': 'Deploy hosted engine',
   'hostForm.hostedEngine.deploy.help':
     'The install also deploys the self-hosted engine components, so this host can run the engine VM alongside the existing hosted-engine hosts. Leave off for a regular virtualization host.',
@@ -5411,6 +5450,71 @@ export const en = {
   'host.configureLocalStorage.outcome.undoStopped': 'Undoing the partial setup stopped: {error}',
   'host.configureLocalStorage.outcome.rerunHint':
     'To finish, put the host into maintenance if needed and run Configure local storage again; it reuses the empty local data center.',
+  // Guide Me (data center and cluster next steps)
+  'guideMe.action': 'Guide Me',
+  'guideMe.title': 'Guide Me: {name}',
+  'guideMe.loading': 'Loading the next steps',
+  'guideMe.error.title': 'Could not load the next steps',
+  'guideMe.dataCenter.created': 'Data center created.',
+  'guideMe.dataCenter.configured': 'The data center is fully configured and ready for use.',
+  'guideMe.cluster.created': 'Cluster created.',
+  'guideMe.cluster.configured': 'The cluster is fully configured and ready for use.',
+  'guideMe.configured.title': 'Configuration completed',
+  'guideMe.unconfigured': 'Some entities still need to be configured.',
+  'guideMe.section.required': 'Required steps',
+  'guideMe.section.optional': 'Optional steps',
+  'guideMe.configureLater': 'Configure later',
+  'guideMe.step.configureCluster': 'Configure cluster',
+  'guideMe.step.addAnotherCluster': 'Add another cluster',
+  'guideMe.step.configureHost': 'Configure host',
+  'guideMe.step.addAnotherHost': 'Add another host',
+  'guideMe.step.configureStorage': 'Configure storage',
+  'guideMe.step.addMoreStorage': 'Add more storage',
+  'guideMe.step.attachStorage': 'Attach storage',
+  'guideMe.step.attachMoreStorage': 'Attach more storage',
+  'guideMe.step.configureIsoLibrary': 'Configure ISO library',
+  'guideMe.step.attachIsoLibrary': 'Attach ISO library',
+  'guideMe.step.addLocalStorage': 'Add local storage',
+  'guideMe.reason.noUpHost': 'The data center needs at least one active host.',
+  'guideMe.reason.noCluster': 'Add a cluster to the data center first.',
+  'guideMe.reason.noUnattachedData': 'No unattached data domain is available to attach.',
+  'guideMe.reason.noActiveMaster': 'The data center needs an active master data domain first.',
+  'guideMe.reason.noIsoDomain': 'No ISO domain is available to attach.',
+  'guideMe.reason.localDcHasHost':
+    'A local data center holds only one host, and this one already has it.',
+  'guideMe.reason.dcInitialized': 'The data center is already initialized.',
+  'guideMe.reason.clusterLocalHasHost':
+    'This cluster belongs to a local data center that already has its one host.',
+  'guideMe.note.localStorage':
+    'To fully configure the data center, attach and activate at least one local storage domain.',
+  'guideMe.note.clusterNoActions':
+    'No actions are available for this cluster: it is not attached to a data center.',
+  // Configure aggregate entry point (pages/ConfigurePage.tsx): the webadmin
+  // Administration › Configure index linking to its five surfaces.
+  'nav.configure': 'Configure',
+  'configure.title': 'Configure',
+  'configure.intro':
+    'Engine-wide definitions shared by every data center and cluster. Each one opens on its own page.',
+  'configure.loading': 'Loading configuration areas',
+  'configure.notPermitted': 'system configuration',
+  'configure.list.ariaLabel': 'Configuration areas',
+  'configure.card.roles':
+    'Define roles and the permissions each one grants to users and administrators.',
+  'configure.card.systemPermissions': 'Grant roles to users and groups across the whole system.',
+  'configure.card.schedulingPolicies':
+    'Manage the filter, weight and balancing rules clusters use to place VMs.',
+  'configure.card.instanceTypes': 'Define reusable hardware profiles for new virtual machines.',
+  'configure.card.macPools': 'Manage the MAC address ranges assigned to virtual NICs.',
+  // EDIT VM: Foreman/Satellite section (provider picker)
+  'vm.edit.section.foreman': 'Foreman/Satellite',
+  'vm.edit.foreman.provider': 'Provider',
+  'vm.edit.foreman.none': 'No provider',
+  'vm.edit.foreman.unknown': 'Unknown provider ({id})',
+  'vm.edit.foreman.loading': 'Loading Foreman/Satellite providers',
+  'vm.edit.foreman.empty':
+    'No Foreman/Satellite providers are registered. Add one on the Providers page to bind this VM to it.',
+  'vm.edit.foreman.help':
+    'The engine reads the errata for this VM from the chosen Foreman/Satellite provider.',
   // Template Storage tab + scoped Events tabs (issue #33) ----------------
   'scopedEvents.loading': 'Loading events',
   'scopedEvents.error.title': 'Could not load events',

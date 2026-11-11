@@ -1065,6 +1065,42 @@ export const ru: LocaleCatalog = {
   'permissions.add.role.none': 'На этом движке нет назначаемых ролей.',
   'permissions.add.role.userGroup': 'Роли пользователей',
   'permissions.add.role.adminGroup': 'Административные роли',
+  // Add Permission picker depth (issue #31): multi-select, My groups,
+  // Everyone, and directory search.
+  'permissions.add.kind.myGroups': 'Мои группы',
+  'permissions.add.kind.everyone': 'Все',
+  'permissions.add.source.label': 'Искать в',
+  'permissions.add.source.engine': 'База данных движка',
+  'permissions.add.source.directory': 'Каталог: {domain}',
+  'permissions.add.source.domainsLoading': 'Загрузка каталогов...',
+  'permissions.add.source.domainsError': 'Не удалось загрузить каталоги: {message}',
+  'permissions.add.source.directoryHint':
+    'Субъекты из каталога, которых ещё нет в движке, добавляются в него при предоставлении роли.',
+  'permissions.add.empty.directory.users': 'Каталог не вернул ни одного пользователя.',
+  'permissions.add.empty.directory.groups': 'Каталог не вернул ни одной группы.',
+  'permissions.add.myGroups.loading': 'Загрузка ваших групп...',
+  'permissions.add.myGroups.error': 'Не удалось загрузить ваши группы: {message}',
+  'permissions.add.myGroups.empty.title': 'Нет групп',
+  'permissions.add.myGroups.empty.body': 'Ваша учётная запись не входит ни в одну группу каталога.',
+  'permissions.add.myGroups.table.ariaLabel': 'Мои группы',
+  'permissions.add.everyone.body':
+    'Роль предоставляется встроенной группе Everyone, поэтому её получает каждый пользователь для этого объекта ({noun}).',
+  'permissions.add.selectMany.user':
+    'Выберите одного или нескольких пользователей для предоставления роли.',
+  'permissions.add.selectMany.group': 'Выберите одну или несколько групп для предоставления роли.',
+  'permissions.add.selected.count':
+    '{count, plural, one {Выбран # субъект} few {Выбрано # субъекта} many {Выбрано # субъектов} other {Выбрано # субъекта}}',
+  'permissions.add.selected.ariaLabel': 'Выбранные субъекты',
+  'permissions.add.selected.remove': 'Убрать {name} из выбора',
+  'permissions.add.result.failed.title':
+    '{count, plural, one {Не удалось предоставить роль # субъекту} few {Не удалось предоставить роль # субъектам} many {Не удалось предоставить роль # субъектам} other {Не удалось предоставить роль # субъекта}}',
+  'permissions.add.result.failed.body':
+    'Субъекты с ошибкой остаются выбранными. Устраните причину и повторите попытку или уберите их из выбора.',
+  'permissions.add.result.failed.item': '{name}: {message}',
+  'permissions.add.submit.retry': 'Повторить неудачные',
+  'permissions.add.toast.granted': 'Роль {role} предоставлена: {name}',
+  'permissions.add.toast.grantedMany':
+    'Роль {role} предоставлена {count, plural, one {# субъекту} few {# субъектам} many {# субъектам} other {# субъекта}}',
   'users.notPermitted': 'Пользователи',
   'users.title': 'Пользователи',
   'users.search.hint': 'usrname=jdoe* — или обычный текст',
@@ -1760,6 +1796,11 @@ export const ru: LocaleCatalog = {
   'settings.pref.console.vncDescription': 'Работает с noVNC и большинством настольных клиентов.',
   'settings.pref.console.spiceDescription': 'Более богатый удалённый доступ через virt-viewer.',
   'settings.pref.language': 'Язык',
+  // Roaming note (components/UserMenu, settings/RoamingSettingsProvider)
+  'settings.pref.roaming.synced':
+    'Сохраняются в вашем профиле пользователя oVirt и доступны в других браузерах.',
+  'settings.pref.roaming.local':
+    'Сохраняются только в этом браузере: профиль пользователя oVirt недоступен для их хранения.',
   'settings.refresh.seconds':
     '{count, plural, one {# секунда} few {# секунды} many {# секунд} other {# секунды}}',
   'settings.timeout.minutes':
@@ -1944,11 +1985,7 @@ export const ru: LocaleCatalog = {
   'hostNuma.loading': 'Загрузка топологии NUMA',
   'host.console.open': 'Консоль хоста',
   'host.console.newTab': 'Открывает Cockpit в новой вкладке',
-  'host.console.sso.note':
-    'Консоль откроется в новой вкладке и выполнит вход с вашим текущим сеансом.',
-  'host.console.direct.title': 'Консоль откроет {url} в новой вкладке',
-  'host.console.direct.body':
-    'Войдите с учётной записью хоста. Cockpit использует сертификат хоста, поэтому браузер может показывать предупреждение, пока этот сертификат не станет доверенным.',
+  'host.console.tooltip': 'Открыть интерфейс Cockpit для {name}',
   'datacenters.forceRemove.action': 'Принудительно удалить',
   'datacenters.forceRemove.confirm.title': "Принудительно удалить дата-центр ''{name}''?",
   'datacenters.forceRemove.confirm.body':
@@ -3411,6 +3448,9 @@ export const ru: LocaleCatalog = {
   'hostForm.field.rootPassword': 'Пароль root',
   'hostForm.field.sshPort': 'Порт SSH',
   'hostForm.field.sshUser': 'Пользователь SSH',
+  'hostForm.firewall.configure': 'Автоматически настроить брандмауэр хоста',
+  'hostForm.firewall.configure.help':
+    'Установка откроет в брандмауэре хоста порты, необходимые oVirt, используя тип брандмауэра кластера. Отключайте, только если вы сами управляете брандмауэром хоста; тогда нужные порты придётся открыть вручную.',
   'hostForm.hostedEngine.deploy': 'Развернуть hosted engine',
   'hostForm.hostedEngine.deploy.help':
     'Установка также развёртывает компоненты самоуправляемого движка, чтобы этот хост мог запускать ВМ движка наряду с существующими хостами hosted engine. Оставьте выключенным для обычного хоста виртуализации.',
@@ -5083,6 +5123,74 @@ export const ru: LocaleCatalog = {
   'host.configureLocalStorage.outcome.undoStopped': 'Отмена частичной настройки прервана: {error}',
   'host.configureLocalStorage.outcome.rerunHint':
     'Чтобы завершить, при необходимости переведите хост в режим обслуживания и снова запустите «Настроить локальное хранилище»; будет повторно использован пустой локальный дата-центр.',
+  // Guide Me (data center and cluster next steps)
+  'guideMe.action': 'Мастер настройки',
+  'guideMe.title': 'Мастер настройки: {name}',
+  'guideMe.loading': 'Загрузка следующих шагов',
+  'guideMe.error.title': 'Не удалось загрузить следующие шаги',
+  'guideMe.dataCenter.created': 'Дата-центр создан.',
+  'guideMe.dataCenter.configured': 'Дата-центр полностью настроен и готов к работе.',
+  'guideMe.cluster.created': 'Кластер создан.',
+  'guideMe.cluster.configured': 'Кластер полностью настроен и готов к работе.',
+  'guideMe.configured.title': 'Настройка завершена',
+  'guideMe.unconfigured': 'Некоторые объекты ещё нужно настроить.',
+  'guideMe.section.required': 'Обязательные шаги',
+  'guideMe.section.optional': 'Необязательные шаги',
+  'guideMe.configureLater': 'Настроить позже',
+  'guideMe.step.configureCluster': 'Настроить кластер',
+  'guideMe.step.addAnotherCluster': 'Добавить ещё один кластер',
+  'guideMe.step.configureHost': 'Настроить хост',
+  'guideMe.step.addAnotherHost': 'Добавить ещё один хост',
+  'guideMe.step.configureStorage': 'Настроить хранилище',
+  'guideMe.step.addMoreStorage': 'Добавить ещё хранилище',
+  'guideMe.step.attachStorage': 'Прикрепить хранилище',
+  'guideMe.step.attachMoreStorage': 'Прикрепить ещё хранилище',
+  'guideMe.step.configureIsoLibrary': 'Настроить библиотеку ISO',
+  'guideMe.step.attachIsoLibrary': 'Прикрепить библиотеку ISO',
+  'guideMe.step.addLocalStorage': 'Добавить локальное хранилище',
+  'guideMe.reason.noUpHost': 'В дата-центре должен быть хотя бы один активный хост.',
+  'guideMe.reason.noCluster': 'Сначала добавьте кластер в дата-центр.',
+  'guideMe.reason.noUnattachedData': 'Нет доступных неприкреплённых доменов данных.',
+  'guideMe.reason.noActiveMaster':
+    'Сначала в дата-центре должен быть активный главный домен данных.',
+  'guideMe.reason.noIsoDomain': 'Нет доступных доменов ISO для прикрепления.',
+  'guideMe.reason.localDcHasHost':
+    'Локальный дата-центр вмещает только один хост, и в этом он уже есть.',
+  'guideMe.reason.dcInitialized': 'Дата-центр уже инициализирован.',
+  'guideMe.reason.clusterLocalHasHost':
+    'Этот кластер принадлежит локальному дата-центру, в котором уже есть его единственный хост.',
+  'guideMe.note.localStorage':
+    'Чтобы полностью настроить дата-центр, прикрепите и активируйте хотя бы один локальный домен хранения.',
+  'guideMe.note.clusterNoActions':
+    'Для этого кластера нет доступных действий: он не прикреплён к дата-центру.',
+  // Configure aggregate entry point (pages/ConfigurePage.tsx): the webadmin
+  // Administration › Configure index linking to its five surfaces.
+  'nav.configure': 'Конфигурация',
+  'configure.title': 'Конфигурация',
+  'configure.intro':
+    'Общие для всего движка определения, используемые всеми центрами данных и кластерами. Каждое открывается на отдельной странице.',
+  'configure.loading': 'Загрузка разделов конфигурации',
+  'configure.notPermitted': 'системной конфигурации',
+  'configure.list.ariaLabel': 'Разделы конфигурации',
+  'configure.card.roles':
+    'Определение ролей и разрешений, которые каждая из них предоставляет пользователям и администраторам.',
+  'configure.card.systemPermissions':
+    'Назначение ролей пользователям и группам на уровне всей системы.',
+  'configure.card.schedulingPolicies':
+    'Управление правилами фильтрации, весов и балансировки, по которым кластеры размещают ВМ.',
+  'configure.card.instanceTypes':
+    'Определение многократно используемых профилей оборудования для новых виртуальных машин.',
+  'configure.card.macPools': 'Управление диапазонами MAC-адресов, назначаемых виртуальным NIC.',
+  // EDIT VM: Foreman/Satellite section (provider picker)
+  'vm.edit.section.foreman': 'Foreman/Satellite',
+  'vm.edit.foreman.provider': 'Провайдер',
+  'vm.edit.foreman.none': 'Без провайдера',
+  'vm.edit.foreman.unknown': 'Неизвестный провайдер ({id})',
+  'vm.edit.foreman.loading': 'Загрузка провайдеров Foreman/Satellite',
+  'vm.edit.foreman.empty':
+    'Провайдеры Foreman/Satellite не зарегистрированы. Добавьте провайдера на странице «Провайдеры», чтобы привязать к нему эту ВМ.',
+  'vm.edit.foreman.help':
+    'Движок получает errata для этой ВМ от выбранного провайдера Foreman/Satellite.',
   // Template Storage tab + scoped Events tabs (issue #33) ----------------
   'scopedEvents.loading': 'Загрузка событий',
   'scopedEvents.error.title': 'Не удалось загрузить события',

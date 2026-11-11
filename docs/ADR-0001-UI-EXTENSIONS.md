@@ -286,11 +286,12 @@ What ships:
 - A `Host console` item in the shared host menu (list kebab, right-click
   menu, infrastructure tree, cluster host tables).
 - A `Host console` icon button in the host detail header, beside Edit and
-  Remove, whose tooltip explains what will happen. It is a button, not a tab,
+  Remove, with a short tooltip. It is a button, not a tab,
   because the host detail page already has many tabs.
 - Always a new browser tab, opened with `noopener,noreferrer`.
-- **Direct mode** (default): `https://<host address>:9090`, with a note that
-  Cockpit asks for a host account and may raise a certificate warning.
+- **Direct mode** (default): `https://<host address>:9090`. Cockpit asks for
+  a host account and may raise a certificate warning; that guidance is
+  documented rather than shown in the UI.
 - **SSO mode** (opt-in): the legacy `ovirt-cockpit-sso` handoff,
   `https://<engine>:9986/=<host id>/machines#access_token=<token>`, only to an
   `https` origin the deployer configured, and per engine in multi-engine mode.

@@ -41,8 +41,9 @@ because it already knows who you are.
 In direct mode the browser talks to the host, not to the engine. Cockpit
 serves the certificate found in `/etc/cockpit/ws-certs.d/` on the host, which
 is self-signed unless someone replaced it. Until the browser trusts that
-certificate it shows a warning page before Cockpit loads. The tooltip on the
-host console button says so before the administrator clicks.
+certificate it shows a warning page before Cockpit loads. The in-app
+tooltip is kept short ("Open the Cockpit interface for <host>"), so this
+page is the reference for that warning.
 
 To remove the warning, pick one:
 

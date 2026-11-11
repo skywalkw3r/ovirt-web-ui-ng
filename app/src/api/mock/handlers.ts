@@ -13,6 +13,7 @@ import {
 import type { HostAction } from '../resources/hosts'
 import type { VmAction } from '../resources/vms'
 import { extraRoutes, type MockRoute } from './routes'
+import { mockUserIdFor } from './routes/user-options'
 
 const LATENCY_MS = 300
 // Shorter than the 10s VM poll on purpose: refetches see the transitional
@@ -105,6 +106,9 @@ interface MockVm {
   // The pool this VM belongs to (VmPoolService has no vms subcollection, so the
   // pool VMs tab filters the global /vms feed on vm_pool.id).
   vm_pool?: { id?: string; name?: string }
+  // Edit VM — Foreman/Satellite: the bound external host provider (bare
+  // { id } link; an empty object on PUT clears it, see updateVm)
+  external_host_provider?: { id?: string }
   delete_protected?: boolean | string
   high_availability?: { enabled?: boolean | string; priority?: number | string }
   time_zone?: { name?: string; utc_offset?: string }
@@ -1233,6 +1237,8 @@ const initialVms = (): MockVm[] => [
     virtio_scsi_multi_queues: '4',
     // Edit VM — HA: VM lease on the data domain (also feeds sd-01 Leases tab)
     lease: { storage_domain: { id: 'sd-01' } },
+    // Edit VM — Foreman/Satellite: bound to the mock Foreman provider
+    external_host_provider: { id: 'ehp-01' },
     high_availability: { enabled: 'true', priority: '50' },
     time_zone: { name: 'Etc/GMT', utc_offset: '+00:00' },
     custom_properties: {
@@ -3943,6 +3949,25 @@ const initialGroups = (): MockGroup[] => [
 // multi-row read. The internal built-ins have no memberships, so their ids are
 // absent and the read serves the engine's omitted-key empty-list quirk.
 const userGroupMemberships: Record<string, MockGroup[]> = {
+  // The built-in admin (the default mock session) gets two memberships so the
+  // Add Permission dialog's "My groups" has rows. These are DIRECTORY-shaped
+  // (encoded directory ids, like the live GetAuthzGroupsByUserId read):
+  // dev-team is already in the engine DB (group-01, matched by name + domain),
+  // platform-team is not, so granting to it materializes it via POST /groups.
+  'user-01': [
+    {
+      id: 'dir-group-dev',
+      name: 'dev-team',
+      namespace: 'dc=ldap,dc=corp',
+      domain: { id: 'ldap.corp-authz', name: 'ldap.corp' },
+    },
+    {
+      id: 'dir-group-platform',
+      name: 'platform-team',
+      namespace: 'dc=ldap,dc=corp',
+      domain: { id: 'ldap.corp-authz', name: 'ldap.corp' },
+    },
+  ],
   'user-04': [
     {
       id: 'group-01',
@@ -6185,6 +6210,15 @@ export function setMockUsername(name: string): void {
   mockUsername = name
 }
 
+// The api root's authenticated_user.id for a mock identity. A principal with an
+// engine DB row gets that row's id (the live engine links the session's DbUser),
+// so per-user reads such as the Add Permission dialog's My groups
+// (GET /users/{id}/groups) resolve. Anyone else gets an id derived from the
+// username, so each identity still has its own /users/{id}/options profile.
+export function mockAuthenticatedUserId(username: string): string {
+  return users.find((u) => u.user_name === username)?.id ?? mockUserIdFor(username)
+}
+
 // Test hook — restores pristine fixtures between test cases.
 // Data centers and clusters are exported const bindings other modules import
 // by reference, so their reset restores the module-load snapshot in place.
@@ -6447,6 +6481,20 @@ function updateVm(id: string, body: unknown, query?: URLSearchParams): unknown {
   if (patch.rng_device !== undefined && Object.keys(patch.rng_device).length === 0) {
     delete vm.rng_device
     delete patch.rng_device
+  }
+  // external_host_provider: VmMapper sets providerId from the element's id, so
+  // an element without one ({}) unbinds the VM; UpdateVmCommand rejects an id
+  // that names no provider (ACTION_TYPE_FAILED_PROVIDER_DOESNT_EXIST).
+  if (patch.external_host_provider !== undefined) {
+    const providerId = patch.external_host_provider.id
+    if (providerId === undefined || providerId === '') {
+      delete vm.external_host_provider
+      delete patch.external_host_provider
+    } else if (!externalHostProviders.some((provider) => provider.id === providerId)) {
+      throw new ApiError(409, 'Operation Failed', '[Cannot edit VM. Provider does not exist.]')
+    } else {
+      patch.external_host_provider = { id: providerId }
+    }
   }
   // The engine applies each cpu element only when it is set (VmBaseMapper isSet
   // guards), so a PUT carrying cpu.topology alone keeps the stored cpu_tune and
@@ -7606,6 +7654,9 @@ function addHost(body: unknown, query: URLSearchParams): unknown {
     cluster?: { id?: string; name?: string }
     ssh?: { port?: number | string; authentication_method?: string }
     root_password?: string
+    // Install-time knob: accepted and not stored, as on the live engine, whose
+    // HostMapper never maps it back onto the read model
+    override_iptables?: boolean | string
     power_management?: {
       enabled?: boolean | string
       kdump_detection?: boolean | string
@@ -8409,15 +8460,32 @@ function attachDataCenterStorageDomain(dcId: string, body: unknown): unknown {
   if (spec.id === undefined || !summary) {
     throw new ApiError(404, 'Not Found', `no storage domain with id ${spec.id}`)
   }
+  // The first data domain attached to a pool becomes its master, and the pool
+  // leaves Uninitialized for Up (AttachStorageDomainToPool on an empty pool).
+  const firstData =
+    summary.type === 'data' &&
+    !storageDomains.some(
+      (sd) =>
+        sd.type === 'data' &&
+        String(sd.master) === 'true' &&
+        (sd.data_centers?.data_center ?? []).some((dc) => dc.id === dcId),
+    )
   summary.status = 'active'
   delete summary.external_status
   // mirror the inlined DC onto the flat row too (the list now follows it)
   summary.data_centers = { data_center: [{ id: dataCenter.id, name: dataCenter.name }] }
+  if (firstData) summary.master = true
   const detail = storageDomainDetails[spec.id]
   if (detail) {
     detail.status = 'active'
     delete detail.external_status
     detail.data_centers = { data_center: [{ id: dataCenter.id, name: dataCenter.name }] }
+    if (firstData) detail.master = true
+  }
+  if (firstData && dataCenter.status === 'uninitialized') {
+    dataCenter.status = 'up'
+    const dcDetail = dataCenterDetails[dcId]
+    if (dcDetail) dcDetail.status = 'up'
   }
   return { id: spec.id }
 }
@@ -10366,8 +10434,16 @@ function dataCenterStorageDomains(dcId: string): unknown {
     throw new ApiError(404, 'Not Found', `no data center with id ${dcId}`)
   }
   // Only attached domains (those reporting "status", not the unattached iso
-  // domain that reports only external_status) belong to a data center.
-  return { storage_domain: storageDomains.filter((sd) => sd.status !== undefined) }
+  // domain that reports only external_status) belong to a data center — and
+  // only to the one their data_centers link names, so a freshly created data
+  // center starts with no storage (the Guide Me steps key off this).
+  return {
+    storage_domain: storageDomains.filter(
+      (sd) =>
+        sd.status !== undefined &&
+        (sd.data_centers?.data_center ?? []).some((dc) => dc.id === dcId),
+    ),
+  }
 }
 
 // GET /datacenters/{id}/networks — the networks defined in a data center;
@@ -10379,13 +10455,13 @@ function dataCenterNetworks(dcId: string): unknown {
   return { network: networks.filter((net) => net.data_center?.id === dcId) }
 }
 
-// GET /datacenters/{id}/clusters — the clusters that belong to a data center.
-// The mock lab's clusters all live under dc-01, so both are returned there.
+// GET /datacenters/{id}/clusters — the clusters that belong to a data center,
+// by their data_center back-link (the seeded clusters all live under dc-01).
 function dataCenterClusters(dcId: string): unknown {
   if (!dataCenters.some((dc) => dc.id === dcId)) {
     throw new ApiError(404, 'Not Found', `no data center with id ${dcId}`)
   }
-  return { cluster: clusters }
+  return { cluster: clusters.filter((cluster) => cluster.data_center?.id === dcId) }
 }
 
 // GET /datacenters/{id}/qoss — an optional subcollection: a data center without
@@ -11458,6 +11534,18 @@ function addEntityPermission(collection: string, id: string, rawBody: unknown): 
     // exactly one of user.id / group.id
     throw new ApiError(400, 'Bad Request', 'Permission entity requires user.id or group.id.')
   }
+  // PERMISSION_ADD_FAILED_PERMISSION_ALREADY_EXISTS — the same role granted
+  // to the same principal on the same object is refused, which also gives the
+  // Add Permission dialog's partial-failure path something to hit.
+  const principalId = hasUser ? body.user?.id : body.group?.id
+  const existing = effectivePermissions(collection, id) ?? []
+  if (
+    existing.some(
+      (p) => p.role?.id === role.id && (hasUser ? p.user?.id : p.group?.id) === principalId,
+    )
+  ) {
+    throw new ApiError(409, 'Operation Failed', 'Cannot add Permission. Permission already exists.')
+  }
   const created: MockHostPermission = {
     id: `perm-new-${++permissionSeq}`,
     role: { id: role.id, name: role.name, administrative: role.administrative },
@@ -11929,9 +12017,15 @@ const routes: MockRoute[] = [
     pattern: /^$/,
     // authenticated_user feeds fetchCapabilityProfile's tier heuristic; the
     // live engine serializes it as a bare link, the mock inlines user_name.
+    // The id comes from mockAuthenticatedUserId: the DB row when the principal has one
+    // (Add Permission's My groups), else one derived from the username so each mock
+    // identity still has its own /users/{id}/options profile (routes/user-options.ts).
     handle: () => ({
       ...API_ROOT,
-      authenticated_user: { id: 'mock-user', user_name: mockUsername },
+      authenticated_user: {
+        id: mockAuthenticatedUserId(mockUsername),
+        user_name: mockUsername,
+      },
     }),
   },
   {

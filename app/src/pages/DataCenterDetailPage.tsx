@@ -33,6 +33,7 @@ import { ListPageHeader } from '../components/ListPageHeader'
 import { StatusBadge } from '../components/StatusBadge'
 import { NotPermitted } from '../components/NotPermitted'
 import { DataCenterFormModal } from '../components/datacenter-form/DataCenterFormModal'
+import { useGuideMeLauncher } from '../components/guide-me/guideMeContext'
 import {
   useCleanFinishedTasks,
   useDeleteDataCenter,
@@ -100,6 +101,7 @@ export function DataCenterDetailPage() {
   // Clean Finished Tasks is non-destructive (it only removes finished task
   // records), so it fires straight from the kebab with no confirm.
   const cleanTasksMutation = useCleanFinishedTasks()
+  const guideMe = useGuideMeLauncher()
 
   const notFound = dataCenter.error instanceof ApiError && dataCenter.error.status === 404
 
@@ -216,6 +218,16 @@ export function DataCenterDetailPage() {
                   )}
                 >
                   <DropdownList>
+                    {guideMe && (
+                      <DropdownItem
+                        onClick={() => {
+                          setKebabOpen(false)
+                          guideMe.open({ kind: 'dataCenter', id: dataCenterId })
+                        }}
+                      >
+                        {t('guideMe.action')}
+                      </DropdownItem>
+                    )}
                     {canReinitialize(dataCenter.data.status) && (
                       <DropdownItem
                         onClick={() => {

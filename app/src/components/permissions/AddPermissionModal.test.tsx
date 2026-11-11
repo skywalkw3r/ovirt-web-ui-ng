@@ -1,233 +1,198 @@
+// @vitest-environment jsdom
+import '../../test/env'
+import { screen, waitFor, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
-import { renderToStaticMarkup } from 'react-dom/server'
-import type { ReactNode } from 'react'
-import { IntlProvider } from 'react-intl'
-import { en as enMessages } from '../../i18n/messages/en'
+import { mockRequest } from '../../api/mock/handlers'
+import { EVERYONE_GROUP_ID } from '../../api/resources/permissions'
+import { QUOTA_CONSUMER_ROLE_ID, USER_ROLE_ID } from '../../api/resources/roles'
+import { FIND_TIMEOUT_MS, renderWithProviders } from '../../test/render'
+import { AddPermissionModal } from './AddPermissionModal'
 
-// The vitest env is 'node' (no jsdom), and PF react-core's node (CJS) entry
-// requires raw .css files node can't parse, so — like GeneralTab.test.tsx —
-// the PF pieces are stubbed with semantic passthroughs. The assertions target
-// the modal's composition (role catalog shaping, default selection, disabled
-// submit, results table), not PF markup or interaction.
-vi.mock('@patternfly/react-core', () => ({
-  Button: ({
-    children,
-    isDisabled,
-    'aria-label': ariaLabel,
-  }: {
-    children?: ReactNode
-    isDisabled?: boolean
-    'aria-label'?: string
-  }) => (
-    <button disabled={isDisabled} aria-label={ariaLabel}>
-      {children}
-    </button>
-  ),
-  EmptyState: ({ titleText, children }: { titleText?: ReactNode; children?: ReactNode }) => (
-    <div>
-      <h4>{titleText}</h4>
-      {children}
-    </div>
-  ),
-  EmptyStateBody: ({ children }: { children?: ReactNode }) => <div>{children}</div>,
-  Form: ({ children }: { children?: ReactNode }) => <form>{children}</form>,
-  FormGroup: ({ label, children }: { label?: ReactNode; children?: ReactNode }) => (
-    <div>
-      {label !== undefined && <label>{label}</label>}
-      {children}
-    </div>
-  ),
-  FormSelect: ({
-    children,
-    value,
-    'aria-label': ariaLabel,
-  }: {
-    children?: ReactNode
-    value?: string
-    'aria-label'?: string
-  }) => (
-    <select aria-label={ariaLabel} data-value={String(value)}>
-      {children}
-    </select>
-  ),
-  FormSelectOption: ({ value, label }: { value?: string; label?: string }) => (
-    <option value={String(value)}>{label}</option>
-  ),
-  FormSelectOptionGroup: ({ label, children }: { label?: string; children?: ReactNode }) => (
-    <optgroup label={label}>{children}</optgroup>
-  ),
-  HelperText: ({ children }: { children?: ReactNode }) => <div>{children}</div>,
-  HelperTextItem: ({ children }: { children?: ReactNode }) => <div>{children}</div>,
-  Modal: ({ children }: { children?: ReactNode }) => <div role="dialog">{children}</div>,
-  ModalBody: ({ children }: { children?: ReactNode }) => <div>{children}</div>,
-  ModalFooter: ({ children }: { children?: ReactNode }) => <footer>{children}</footer>,
-  ModalHeader: ({ title, description }: { title?: ReactNode; description?: ReactNode }) => (
-    <header>
-      <h1>{title}</h1>
-      <p>{description}</p>
-    </header>
-  ),
-  Radio: ({
-    label,
-    isChecked,
-    'aria-label': ariaLabel,
-  }: {
-    label?: ReactNode
-    isChecked?: boolean
-    'aria-label'?: string
-  }) => (
-    <span data-checked={isChecked ? 'true' : 'false'} aria-label={ariaLabel}>
-      {label}
-    </span>
-  ),
-  // the shared list-toolbar SearchInput wraps these two
-  SearchInput: ({ 'aria-label': ariaLabel }: { 'aria-label'?: string }) => (
-    <input aria-label={ariaLabel} />
-  ),
-  Skeleton: ({ screenreaderText }: { screenreaderText?: string }) => (
-    <span>{screenreaderText ?? 'skeleton'}</span>
-  ),
-  Tooltip: ({ children }: { children?: ReactNode }) => <>{children}</>,
-}))
+// The Add Permission dialog against the in-memory mock engine: multi-select
+// grants, partial failure + retry, Everyone, My groups and the directory
+// search (materialize-then-grant). vm-01 starts with the shared VM fixture
+// grants: SuperUser → admin (user-01) and UserRole → demo (user-02).
 
-vi.mock('@patternfly/react-table', () => ({
-  Table: ({
-    children,
-    'aria-label': ariaLabel,
-  }: {
-    children?: ReactNode
-    'aria-label'?: string
-  }) => <table aria-label={ariaLabel}>{children}</table>,
-  Thead: ({ children }: { children?: ReactNode }) => <thead>{children}</thead>,
-  Tbody: ({ children }: { children?: ReactNode }) => <tbody>{children}</tbody>,
-  Tr: ({ children }: { children?: ReactNode }) => <tr>{children}</tr>,
-  Th: ({ children, screenReaderText }: { children?: ReactNode; screenReaderText?: string }) => (
-    <th>{children ?? screenReaderText}</th>
-  ),
-  Td: ({ children }: { children?: ReactNode }) => <td>{children}</td>,
-}))
-
-// Picker-query state the mocked hooks hand back, mutable per test. Only the
-// fields the modal reads (four-state flags + data) are modeled.
-const state = vi.hoisted(() => {
-  const success = (data: unknown) => ({
-    isPending: false,
-    isError: false,
-    isSuccess: true,
-    data,
-    error: null,
-    refetch: () => Promise.resolve(),
-  })
-  return {
-    success,
-    roles: success([]) as Record<string, unknown>,
-    users: success([]) as Record<string, unknown>,
-    groups: success([]) as Record<string, unknown>,
-  }
-})
-
-vi.mock('../../hooks/usePermissionMutations', () => ({
-  useRoles: () => state.roles,
-  usePermissionUsers: () => state.users,
-  useGroups: () => state.groups,
-}))
-
-const { AddPermissionModal } = await import('./AddPermissionModal')
-const { QUOTA_CONSUMER_ROLE_ID, USER_ROLE_ID } = await import('../../api/resources/roles')
-
-const ROLES = [
-  { id: 'role-superuser', name: 'SuperUser', administrative: 'true' },
-  { id: QUOTA_CONSUMER_ROLE_ID, name: 'QuotaConsumer', administrative: false },
-  { id: USER_ROLE_ID, name: 'UserRole', administrative: false },
-  { id: 'role-vm-manager', name: 'UserVmManager', administrative: false },
-]
-
-const USERS = [
-  { id: 'u-jdoe', user_name: 'jdoe@internal', name: 'Jane', last_name: 'Doe' },
-  { id: 'u-mchen', user_name: 'mchen@internal' },
-]
-
-const GROUPS = [{ id: 'g-dev', name: 'dev-team', domain: { name: 'internal' } }]
-
-function render() {
-  return renderToStaticMarkup(
-    <IntlProvider locale="en" messages={enMessages}>
-      <AddPermissionModal entityNoun="cluster" onSubmit={() => {}} onClose={() => {}} />
-    </IntlProvider>,
-  )
+interface PermissionRow {
+  role?: { id?: string; name?: string }
+  user?: { id?: string }
+  group?: { id?: string }
 }
 
+async function vmPermissions(): Promise<PermissionRow[]> {
+  const data = (await mockRequest('/vms/vm-01/permissions')) as { permission?: PermissionRow[] }
+  return data.permission ?? []
+}
+
+async function renderModal() {
+  const onClose = vi.fn()
+  renderWithProviders(
+    <AddPermissionModal
+      entityKind="vm"
+      entityId="vm-01"
+      entityNoun="virtual machine"
+      onClose={onClose}
+    />,
+  )
+  // roles and the DB user list both loaded
+  await screen.findByRole(
+    'checkbox',
+    { name: 'Select demo@internal' },
+    { timeout: FIND_TIMEOUT_MS },
+  )
+  await screen.findByRole('combobox', { name: 'Role to assign' }, { timeout: FIND_TIMEOUT_MS })
+  return onClose
+}
+
+const addButton = () => screen.getByRole('button', { name: 'Add' })
+
 describe('AddPermissionModal', () => {
-  it('defaults the role select to UserRole and excludes QuotaConsumer (webadmin populateRoles)', () => {
-    state.roles = state.success(ROLES)
-    state.users = state.success(USERS)
-    state.groups = state.success(GROUPS)
-    const html = render()
-
-    expect(html).toContain(`data-value="${USER_ROLE_ID}"`)
-    expect(html).not.toContain('QuotaConsumer')
-    // grouped user vs administrative roles
-    expect(html).toContain('<optgroup label="User roles">')
-    expect(html).toContain('<optgroup label="Administrative roles">')
-    expect(html).toMatch(/<optgroup label="Administrative roles">[^]*?SuperUser[^]*?<\/optgroup>/)
-    expect(html).toMatch(/<optgroup label="User roles">[^]*?UserVmManager[^]*?<\/optgroup>/)
+  it('defaults the role to UserRole and leaves QuotaConsumer out (webadmin populateRoles)', async () => {
+    await renderModal()
+    const role = screen.getByRole('combobox', { name: 'Role to assign' }) as HTMLSelectElement
+    expect(role.value).toBe(USER_ROLE_ID)
+    const values = [...role.options].map((option) => option.value)
+    expect(values).not.toContain(QUOTA_CONSUMER_ROLE_ID)
+    expect(role.querySelector('optgroup[label="Administrative roles"]')).not.toBeNull()
+    expect(role.querySelector('optgroup[label="User roles"]')).not.toBeNull()
+    // nothing picked yet
+    expect(screen.getByText('Select one or more users to grant the role to.')).toBeDefined()
+    expect(addButton()).toHaveProperty('disabled', true)
   })
 
-  it('renders the user results with per-row select radios and starts with Add disabled', () => {
-    state.roles = state.success(ROLES)
-    state.users = state.success(USERS)
-    state.groups = state.success(GROUPS)
-    const html = render()
+  it('grants one role to several principals with one POST each, then closes', async () => {
+    const user = userEvent.setup()
+    const onClose = await renderModal()
+    await user.click(screen.getByRole('checkbox', { name: 'Select ci-service@internal' }))
+    await user.click(screen.getByRole('checkbox', { name: 'Select mchen@ldap.corp' }))
+    // a group picked after switching kind joins the same batch
+    await user.click(screen.getByRole('radio', { name: 'Group' }))
+    await user.click(
+      await screen.findByRole('checkbox', { name: 'Select qa' }, { timeout: FIND_TIMEOUT_MS }),
+    )
+    expect(screen.getByText('3 principals selected')).toBeDefined()
 
-    // principal picker defaults to users; groups stay unrendered
-    expect(html).toContain('jdoe@internal')
-    expect(html).toContain('Jane Doe')
-    expect(html).toContain('aria-label="Select jdoe@internal"')
-    expect(html).toContain('aria-label="Select mchen@internal"')
-    expect(html).not.toContain('dev-team')
-    // nothing selected yet → inline hint + disabled submit
-    expect(html).toContain('Select a user to grant the role to.')
-    expect(html).toContain('disabled="">Add')
-    // header copy names the entity
-    expect(html).toContain('Grant a role on this cluster to a user or group.')
-    expect(html).toContain('aria-label="Search users"')
+    await user.click(addButton())
+    await waitFor(() => expect(onClose).toHaveBeenCalled(), { timeout: FIND_TIMEOUT_MS })
+
+    const rows = await vmPermissions()
+    const userRole = rows.filter((row) => row.role?.id === USER_ROLE_ID)
+    expect(userRole.map((row) => row.user?.id ?? row.group?.id).sort()).toEqual(
+      ['group-03', 'user-02', 'user-03', 'user-05'].sort(),
+    )
   })
 
-  it('shows the empty state when no users are known and skeletons while roles load', () => {
-    state.roles = {
-      isPending: true,
-      isError: false,
-      isSuccess: false,
-      data: undefined,
-      error: null,
-      refetch: () => Promise.resolve(),
-    }
-    state.users = state.success([])
-    state.groups = state.success(GROUPS)
-    const html = render()
+  it('keeps the failed principals selected and retries just those', async () => {
+    const user = userEvent.setup()
+    const onClose = await renderModal()
+    // demo already holds UserRole on every VM → that grant is refused
+    await user.click(screen.getByRole('checkbox', { name: 'Select demo@internal' }))
+    await user.click(screen.getByRole('checkbox', { name: 'Select ci-service@internal' }))
+    await user.click(addButton())
 
-    expect(html).toContain('No users found')
-    expect(html).toContain('No users are known to the engine.')
-    expect(html).toContain('Loading roles')
-    // no role selected while the catalog loads → Add stays disabled
-    expect(html).toContain('disabled="">Add')
+    const alert = await screen.findByText(
+      'The role could not be granted to 1 principal',
+      {},
+      { timeout: FIND_TIMEOUT_MS },
+    )
+    expect(onClose).not.toHaveBeenCalled()
+    const failure = within(alert.closest('.pf-v6-c-alert') as HTMLElement)
+    expect(failure.getByText(/demo@internal: .*Permission already exists/)).toBeDefined()
+    // ci-service went through; only demo is still selected
+    expect(
+      (await vmPermissions()).some(
+        (row) => row.user?.id === 'user-03' && row.role?.id === USER_ROLE_ID,
+      ),
+    ).toBe(true)
+    expect(screen.getByText('1 principal selected')).toBeDefined()
+    expect(screen.getByRole('checkbox', { name: 'Select ci-service@internal' })).toHaveProperty(
+      'checked',
+      false,
+    )
+
+    // a different role makes the retry succeed
+    await user.selectOptions(
+      screen.getByRole('combobox', { name: 'Role to assign' }),
+      'role-poweruser',
+    )
+    await user.click(screen.getByRole('button', { name: 'Retry failed' }))
+    await waitFor(() => expect(onClose).toHaveBeenCalled(), { timeout: FIND_TIMEOUT_MS })
+    expect(
+      (await vmPermissions()).some(
+        (row) => row.user?.id === 'user-02' && row.role?.id === 'role-poweruser',
+      ),
+    ).toBe(true)
   })
 
-  it('surfaces picker query errors with a retry affordance', () => {
-    state.roles = state.success(ROLES)
-    state.users = {
-      isPending: false,
-      isError: true,
-      isSuccess: false,
-      data: undefined,
-      error: new Error('engine unreachable'),
-      refetch: () => Promise.resolve(),
-    }
-    state.groups = state.success(GROUPS)
-    const html = render()
+  it('grants to the built-in Everyone group', async () => {
+    const user = userEvent.setup()
+    const onClose = await renderModal()
+    await user.click(screen.getByRole('radio', { name: 'Everyone' }))
+    expect(
+      screen.getByText(/built-in Everyone group, so every user gets it on this virtual machine/),
+    ).toBeDefined()
+    await user.click(addButton())
+    await waitFor(() => expect(onClose).toHaveBeenCalled(), { timeout: FIND_TIMEOUT_MS })
+    expect(
+      (await vmPermissions()).some(
+        (row) => row.group?.id === EVERYONE_GROUP_ID && row.role?.id === USER_ROLE_ID,
+      ),
+    ).toBe(true)
+  })
 
-    expect(html).toContain('Could not load users:')
-    expect(html).toContain('engine unreachable')
-    expect(html).toContain('Retry')
+  it("grants to the signed-in user's groups, adding a directory group to the engine first", async () => {
+    const user = userEvent.setup()
+    const onClose = await renderModal()
+    await user.click(screen.getByRole('radio', { name: 'My groups' }))
+    const table = await screen.findByRole(
+      'grid',
+      { name: 'My groups' },
+      { timeout: FIND_TIMEOUT_MS },
+    )
+    // select-all over the two memberships
+    await user.click(within(table).getByRole('checkbox', { name: 'Select all rows' }))
+    await user.click(addButton())
+    await waitFor(() => expect(onClose).toHaveBeenCalled(), { timeout: FIND_TIMEOUT_MS })
+
+    // platform-team was not in the engine DB: POST /groups materialized it
+    const groups = ((await mockRequest('/groups')) as { group?: { id: string; name?: string }[] })
+      .group
+    const platform = groups?.find((group) => group.name === 'platform-team')
+    expect(platform).toBeDefined()
+    const granted = (await vmPermissions())
+      .filter((row) => row.role?.id === USER_ROLE_ID)
+      .map((row) => row.group?.id)
+    // dev-team resolved to its existing DB row, platform-team to the new one
+    expect(granted).toContain('group-01')
+    expect(granted).toContain(platform?.id)
+  })
+
+  it('searches a directory and adds a principal that is not in the engine yet', async () => {
+    const user = userEvent.setup()
+    const onClose = await renderModal()
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Search in' }), 'ldap.corp-authz')
+    expect(screen.getByText(/not in the engine yet are added to it/)).toBeDefined()
+    await user.click(
+      await screen.findByRole(
+        'checkbox',
+        { name: 'Select bnewhire@ldap.corp' },
+        { timeout: FIND_TIMEOUT_MS },
+      ),
+    )
+    // jdoe is already a DB user: matched, not re-added
+    await user.click(screen.getByRole('checkbox', { name: 'Select jdoe@ldap.corp' }))
+    await user.click(addButton())
+    await waitFor(() => expect(onClose).toHaveBeenCalled(), { timeout: FIND_TIMEOUT_MS })
+
+    const users = ((await mockRequest('/users')) as { user?: { id: string; user_name?: string }[] })
+      .user
+    const created = users?.find((row) => row.user_name === 'bnewhire@ldap.corp')
+    expect(created?.id).toMatch(/^user-new-/)
+    const granted = (await vmPermissions())
+      .filter((row) => row.role?.id === USER_ROLE_ID)
+      .map((row) => row.user?.id)
+    expect(granted).toContain(created?.id)
+    expect(granted).toContain('user-04')
   })
 })
