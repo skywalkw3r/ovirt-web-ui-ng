@@ -51,11 +51,19 @@ export function setUnauthorizedHandler(handler: (() => void) | null): void {
   unauthorizedHandler = handler
 }
 
-// oVirt error envelope: { fault: { reason, detail } }
+// oVirt error envelope. Resource calls answer { fault: { reason, detail } },
+// but action endpoints (POST .../ticket, .../start, …) answer the fault bare:
+// { reason, detail }. Reading only the wrapped form dropped the engine's reason
+// on every failed action and left a bare "oVirt API error (HTTP 409)" — e.g.
+// the console ticket's "Another user has already accessed the console".
+type Fault = { reason?: unknown; detail?: unknown }
 function extractFault(payload: unknown): { reason?: string; detail?: string } {
   if (typeof payload !== 'object' || payload === null) return {}
-  const fault = (payload as { fault?: { reason?: string; detail?: string } }).fault
-  return { reason: fault?.reason, detail: fault?.detail }
+  const wrapped = (payload as { fault?: Fault }).fault
+  const fault: Fault =
+    typeof wrapped === 'object' && wrapped !== null ? wrapped : (payload as Fault)
+  const text = (value: unknown) => (typeof value === 'string' && value !== '' ? value : undefined)
+  return { reason: text(fault.reason), detail: text(fault.detail) }
 }
 
 // A hung engine must not pin a socket for the browser default (often minutes).
