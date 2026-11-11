@@ -326,9 +326,15 @@ management affordances hidden, filtering intact); the whole surface i18n'd
 the VM/template list reads — the per-VM N+1 is gone. Templates join the same
 tree via `/templates/{id}/tags`, and vCenter's dual navigation shipped as
 **VMs & Templates** (combined typed rows) plus the structural **Hosts &
-Clusters** view. Still open: `folder:`/`tag:` filter-bar tokens, folder
-capture in saved bookmarks, and whether the VMs-page folder pane retires in
-favor of the combined view.
+Clusters** view. `folder:`/`tag:` filter-bar tokens shipped 2026-11-11
+(`lib/filter-tokens.ts`): the VMs, Templates and VMs & Templates bars lift
+them out of the input, filter client-side over the followed tags (a folder
+token covers its subtree; tokens AND together) and pass only the remainder to
+the engine search. No autocomplete, since the list bars have none; the
+command palette and the Hosts list do not take the tokens. Still open: folder
+capture in saved bookmarks (a typed `folder:` token is saved with the query,
+the tree selection in `?folder=` is not), and whether the VMs-page folder pane
+retires in favor of the combined view.
 
 **2026-07-11 right-click pass (shipped):** vCenter-style context menus via a
 cursor-anchored `ContextMenu` primitive — folder nodes (new/rename/move/
@@ -337,8 +343,10 @@ VM/template rows (the row kebab's exact item set in a dual-mode
 `contextMenu` prop, so right-click and kebab share one code path), and
 hosts/clusters/DC tree nodes (Open details + the existing action sets).
 Admin-gated where the underlying ops are; keyboard right-click (Shift+F10)
-anchors to the focused node. Still open: context menus on the flat
-Templates/Hosts list rows.
+anchors to the focused node. The flat Templates and Hosts list rows followed
+on 2026-11-11: each page mounts the same dual-mode menu with its row kebab's
+exact props, and `e2e/context-menu.spec.ts` asserts the right-click item list
+equals the kebab's.
 
 **Exit criteria:** create a VM from a template, boot it, watch status flow
 through the list, edit memory, delete it — all from the new UI, verified by a

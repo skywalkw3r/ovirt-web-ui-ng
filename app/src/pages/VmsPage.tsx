@@ -30,6 +30,12 @@ import type { Vm } from '../api/schemas/vm'
 import { useCapabilities } from '../auth/capabilities'
 import { useT } from '../i18n/useT'
 import { downloadCsv, toCsv } from '../lib/csv'
+import {
+  hasFilterTokens,
+  matchesFilterTokens,
+  resolveFilterTokens,
+  splitFilterTokens,
+} from '../lib/filter-tokens'
 import type { MessageId } from '../i18n/messages/en'
 import { BulkActionsToolbar } from '../components/BulkActionsToolbar'
 import { useContextMenu } from '../components/context-menu/ContextMenu'
@@ -269,8 +275,12 @@ function BulkMigrateBar({ selected }: { selected: Vm[] }) {
 export function VmsPage() {
   // The search runs server-side (oVirt search DSL passthrough); the folder
   // filter then composes client-side on whatever the search returned.
+  // folder:/tag: tokens are lifted out of the query first (lib/filter-tokens
+  // explains why they filter client-side): only the remainder reaches the
+  // engine, and the tokens narrow its results below.
   const { query, draft, setDraft, clear } = useVmSearch()
-  const vms = useVms(query)
+  const filterTokens = useMemo(() => splitFilterTokens(query), [query])
+  const vms = useVms(filterTokens.rest)
   const navigate = useNavigate()
   const t = useT()
   // Resolve column labels for the active locale; identity is stable per locale
@@ -332,15 +342,20 @@ export function VmsPage() {
   usePruneGhostFolder(selectedFolderId, tags)
   const folderIds =
     selectedFolderId === null ? null : folderSubtreeIds(tags.data ?? [], selectedFolderId)
-  const visible =
-    folderIds === null
-      ? (vms.data ?? [])
-      : (vms.data ?? []).filter((vm) =>
-          (followedTagsOf(vm) ?? []).some((tag) => folderIds.has(tag.id)),
-        )
+  // folder:/tag: tokens resolve against the same tag tree and AND with the
+  // tree selection: one id set per token, each of which a row must hit.
+  const tokenIds = useMemo(
+    () => resolveFilterTokens(filterTokens, tags.data ?? []),
+    [filterTokens, tags.data],
+  )
+  const visible = (vms.data ?? []).filter(
+    (vm) =>
+      (folderIds === null || (followedTagsOf(vm) ?? []).some((tag) => folderIds.has(tag.id))) &&
+      matchesFilterTokens(vm, tokenIds),
+  )
   // the whole list holds back while the tag tree (the subtree set's input)
   // is still loading
-  const isFiltering = selectedFolderId !== null && tags.isPending
+  const isFiltering = (selectedFolderId !== null || hasFilterTokens(filterTokens)) && tags.isPending
 
   // id → name joins for the Host/Cluster/Data Center columns (admin-gated
   // queries; user tier renders an em dash and those columns start hidden)
