@@ -19,6 +19,8 @@ import {
   FormHelperText,
   FormSelect,
   FormSelectOption,
+  Grid,
+  GridItem,
   HelperText,
   HelperTextItem,
   Label,
@@ -36,14 +38,18 @@ import {
   TextInput,
   Tooltip,
 } from '@patternfly/react-core'
-import { MinusCircleIcon, NetworkIcon } from '@patternfly/react-icons'
+import { MinusCircleIcon, NetworkIcon, PlusCircleIcon } from '@patternfly/react-icons'
 import { StatusBadge } from '../StatusBadge'
 import { FieldHelp } from '../forms/FieldHelp'
 import { useT } from '../../i18n/useT'
 import type { MessageId } from '../../i18n/messages/en'
 import type { HostNic } from '../../api/schemas/host-nic'
-import { listHostNicDetails, type HostNicDetail } from '../../api/resources/hosts'
-import { useClusterNetworks } from '../../hooks/useClusterDetail'
+import {
+  fetchNetworkCustomPropertyDefinitions,
+  listHostNicDetails,
+  type HostNicDetail,
+} from '../../api/resources/hosts'
+import { useCluster, useClusterNetworks } from '../../hooks/useClusterDetail'
 import { useHostNetworkAttachments, useHostNics } from '../../hooks/useHostDetail'
 import { useSetupHostNetworks } from '../../hooks/useHostMutations'
 import { statusText } from '../../lib/format'
@@ -51,12 +57,15 @@ import { NicLldpPopoverButton } from './NicLldp'
 import { SriovVfModal } from './SriovVfModal'
 import {
   BOND_MODES,
+  BRIDGE_OPTS_KEY,
   DEFAULT_BOND_MODE,
+  WELL_KNOWN_PROPERTY_KEYS,
   addBondMember,
   addNicLabel,
   attachTargetNames,
   breakBond,
   createBond,
+  customPropertyErrors,
   draftBlocksSave,
   draftHasChanges,
   draftToSpec,
@@ -75,8 +84,10 @@ import {
   setNameServers,
   syncAll,
   updateRow,
+  validPropertyKeys,
   type BondDraft,
   type BootProtocol,
+  type CustomPropertyRow,
   type Ipv6BootProtocol,
   type NetworkRow,
   type NetworkRowPatch,
@@ -338,18 +349,209 @@ function QosOverrideEditor({
   )
 }
 
+// The per-attachment custom properties (webadmin's Custom Properties tab of the
+// edit-attachment dialog): key/value rows such as bridge_opts. The row layout
+// follows the vNIC profile editor. When the engine reported its valid keys the
+// key is a closed select (each key once, bridge_opts only on a VM network, like
+// webadmin's KeyValueModel) and the value is checked against the key's regex;
+// otherwise the key is free text with the well-known keys as suggestions and
+// the engine has the last word on save. Disabled while the row is locked.
+function CustomPropertiesEditor({
+  row,
+  draft,
+  locked,
+  patch,
+}: {
+  row: NetworkRow
+  draft: SetupNetworksDraft
+  locked: boolean
+  patch: (update: NetworkRowPatch) => void
+}) {
+  const t = useT()
+  const idBase = `setup-networks-${row.networkId}-prop`
+  const properties = row.customProperties
+  const errors = customPropertyErrors(row, draft)
+  const validKeys = validPropertyKeys(row, draft)
+  const usedKeys = new Set(properties.map((property) => property.name.trim()))
+  const unusedKeys = validKeys?.filter((key) => !usedKeys.has(key)) ?? []
+  const suggestions = WELL_KNOWN_PROPERTY_KEYS.filter(
+    (key) => key !== BRIDGE_OPTS_KEY || row.isVmNetwork,
+  )
+
+  const update = (index: number, change: Partial<CustomPropertyRow>) =>
+    patch({
+      customProperties: properties.map((property, i) =>
+        i === index ? { ...property, ...change } : property,
+      ),
+    })
+  const remove = (index: number) =>
+    patch({ customProperties: properties.filter((_property, i) => i !== index) })
+  const add = () => patch({ customProperties: [...properties, { name: '', value: '' }] })
+
+  // role="group" names the rows by the section label without pointing a
+  // <label for> at any one control (a label bound to the Add button would add a
+  // row whenever the label text is clicked)
+  return (
+    <FormGroup
+      role="group"
+      label={t('setupNetworks.customProperties.label')}
+      fieldId={`${idBase}s`}
+      labelHelp={
+        <FieldHelp
+          field={t('setupNetworks.customProperties.label')}
+          content={t('setupNetworks.customProperties.help')}
+        />
+      }
+    >
+      {validKeys === null && (
+        <datalist id={`${idBase}-keys`}>
+          {suggestions.map((key) => (
+            <option key={key} value={key} />
+          ))}
+        </datalist>
+      )}
+      {properties.map((property, index) => {
+        const error = errors[index]
+        // the row's inline error describes both of its inputs
+        const errorId = `${idBase}-error-${index}`
+        const describedBy = error !== undefined ? { 'aria-describedby': errorId } : {}
+        // the select offers the keys not taken by another row, plus this row's
+        // own key even when the engine no longer lists it (so it stays visible
+        // and removable)
+        const keyOptions =
+          validKeys === null
+            ? []
+            : [
+                ...(property.name !== '' && !validKeys.includes(property.name)
+                  ? [property.name]
+                  : []),
+                ...validKeys.filter((key) => key === property.name || !usedKeys.has(key)),
+              ]
+        return (
+          <Grid hasGutter key={index} style={{ marginBottom: '0.5rem' }}>
+            <GridItem span={5}>
+              {validKeys === null ? (
+                <TextInput
+                  id={`${idBase}-name-${index}`}
+                  aria-label={t('setupNetworks.aria.customPropertyKey', {
+                    index: index + 1,
+                    name: row.networkName,
+                  })}
+                  placeholder={t('vm.edit.customProperties.name')}
+                  list={`${idBase}-keys`}
+                  validated={error !== undefined ? 'error' : 'default'}
+                  {...describedBy}
+                  value={property.name}
+                  isDisabled={locked}
+                  onChange={(_event, value) => update(index, { name: value })}
+                />
+              ) : (
+                <FormSelect
+                  id={`${idBase}-name-${index}`}
+                  aria-label={t('setupNetworks.aria.customPropertyKey', {
+                    index: index + 1,
+                    name: row.networkName,
+                  })}
+                  validated={error !== undefined ? 'error' : 'default'}
+                  {...describedBy}
+                  value={property.name}
+                  isDisabled={locked}
+                  onChange={(_event, value) => update(index, { name: value })}
+                >
+                  <FormSelectOption
+                    value=""
+                    label={t('setupNetworks.customProperties.keyPlaceholder')}
+                    isPlaceholder
+                    isDisabled
+                  />
+                  {keyOptions.map((key) => (
+                    <FormSelectOption key={key} value={key} label={key} />
+                  ))}
+                </FormSelect>
+              )}
+            </GridItem>
+            <GridItem span={6}>
+              <TextInput
+                id={`${idBase}-value-${index}`}
+                aria-label={t('setupNetworks.aria.customPropertyValue', {
+                  index: index + 1,
+                  name: row.networkName,
+                })}
+                placeholder={t('vm.edit.customProperties.value')}
+                validated={error !== undefined ? 'error' : 'default'}
+                {...describedBy}
+                value={property.value}
+                isDisabled={locked}
+                onChange={(_event, value) => update(index, { value })}
+              />
+            </GridItem>
+            <GridItem span={1}>
+              <Button
+                variant="plain"
+                aria-label={t('setupNetworks.aria.customPropertyRemove', {
+                  index: index + 1,
+                  name: row.networkName,
+                })}
+                icon={<MinusCircleIcon />}
+                isDisabled={locked}
+                onClick={() => remove(index)}
+              />
+            </GridItem>
+            {error !== undefined && (
+              <GridItem span={12}>
+                <HelperText id={errorId}>
+                  <HelperTextItem variant="error">{t(error.id, error.values)}</HelperTextItem>
+                </HelperText>
+              </GridItem>
+            )}
+          </Grid>
+        )
+      })}
+      <Button
+        id={`${idBase}-add`}
+        variant="link"
+        isInline
+        icon={<PlusCircleIcon />}
+        // with a closed key list there is nothing left to add once every valid
+        // key has a row
+        isDisabled={locked || (validKeys !== null && unusedKeys.length === 0)}
+        onClick={add}
+        aria-label={t('setupNetworks.aria.customPropertyAdd', { name: row.networkName })}
+      >
+        {t('setupNetworks.customProperties.add')}
+      </Button>
+      {validKeys === null && (
+        <FormHelperText>
+          <HelperText>
+            <HelperTextItem>{t('setupNetworks.customProperties.freeForm')}</HelperTextItem>
+          </HelperText>
+        </FormHelperText>
+      )}
+      {validKeys !== null && validKeys.length === 0 && (
+        <FormHelperText>
+          <HelperText>
+            <HelperTextItem>{t('setupNetworks.customProperties.noKeys')}</HelperTextItem>
+          </HelperText>
+        </FormHelperText>
+      )}
+    </FormGroup>
+  )
+}
+
 // The inline per-attachment editor: NIC/bond (move target), IPv4 + IPv6 boot
-// protocol with static fields, the Sync checkbox for drifted attachments, and
-// the host-network QoS override. Everything but Sync/detach stays disabled while
-// the row is locked (webadmin: "an out-of-sync network cannot be modified" until
-// synced).
+// protocol with static fields, the Sync checkbox for drifted attachments, the
+// host-network QoS override and the custom properties. Everything but
+// Sync/detach stays disabled while the row is locked (webadmin: "an out-of-sync
+// network cannot be modified" until synced).
 function AttachmentEditor({
   row,
+  draft,
   targetNames,
   patch,
   onDone,
 }: {
   row: NetworkRow
+  draft: SetupNetworksDraft
   targetNames: string[]
   patch: (update: NetworkRowPatch) => void
   onDone: () => void
@@ -467,6 +669,8 @@ function AttachmentEditor({
 
       <QosOverrideEditor row={row} locked={locked} patch={patch} />
 
+      <CustomPropertiesEditor row={row} draft={draft} locked={locked} patch={patch} />
+
       <FormGroup fieldId={`${idBase}-done`}>
         <Button
           variant="link"
@@ -535,6 +739,7 @@ function AttachmentArea({
         <StackItem>
           <AttachmentEditor
             row={editingRow}
+            draft={draft}
             targetNames={targetNames}
             patch={(update) => onPatch(editingRow.networkId, update)}
             onDone={() => setEditing(null)}
@@ -1066,6 +1271,7 @@ export function SetupNetworksModal({
   const nics = useHostNics(hostId)
   const attachments = useHostNetworkAttachments(hostId)
   const networks = useClusterNetworks(clusterId)
+  const cluster = useCluster(clusterId)
   const setup = useSetupHostNetworks()
   // NIC labels + SR-IOV VF config the base NIC read (useHostNics) doesn't carry:
   // network_labels is a @Link sub-collection (followed here), the VF config is
@@ -1077,6 +1283,21 @@ export function SetupNetworksModal({
     enabled: isOpen,
   })
 
+  // The valid custom-property keys are engine config versioned by cluster
+  // compatibility level, so the read waits for the cluster to settle (a failed
+  // cluster read just asks without a version). Like nicDetails it never blocks
+  // the dialog: on error the draft seeds null and the editor goes free-form.
+  const clusterVersion =
+    cluster.data?.version?.major !== undefined && cluster.data.version.minor !== undefined
+      ? `${cluster.data.version.major}.${cluster.data.version.minor}`
+      : undefined
+  const propertyDefinitions = useQuery({
+    queryKey: hostKeys.networkCustomProperties(clusterVersion),
+    queryFn: () => fetchNetworkCustomPropertyDefinitions(clusterVersion),
+    enabled: isOpen && !cluster.isPending,
+    retry: false,
+  })
+
   // Seed once when all sources land; polling refetches after that must not
   // clobber in-progress edits, hence the null-gated effect instead of a derived
   // value. nicDetails is allowed to be pending-then-settled independently, so a
@@ -1086,17 +1307,45 @@ export function SetupNetworksModal({
   const [creatingBond, setCreatingBond] = useState(false)
   const [sriovNicId, setSriovNicId] = useState<string | null>(null)
   const ready =
-    nics.isSuccess && attachments.isSuccess && networks.isSuccess && !nicDetails.isPending
+    nics.isSuccess &&
+    attachments.isSuccess &&
+    networks.isSuccess &&
+    !nicDetails.isPending &&
+    !propertyDefinitions.isPending
+  // The draft is the diff baseline, so it seeds only from a settled read: on
+  // reopen the cached NIC/attachment data is already marked stale (and right
+  // after a Save the invalidation refetch is still in flight), so wait for that
+  // refetch instead of seeding the pre-Save attachments, custom properties
+  // included.
+  const settled = !nics.isFetching && !attachments.isFetching && !nicDetails.isFetching
   useEffect(() => {
-    if (ready && draft === null) {
+    if (ready && settled && draft === null) {
       setDraft(
-        seedSetupNetworksDraft(networks.data, attachments.data, nics.data, nicDetails.data ?? []),
+        seedSetupNetworksDraft(
+          networks.data,
+          attachments.data,
+          nics.data,
+          nicDetails.data ?? [],
+          propertyDefinitions.data ?? null,
+        ),
       )
     }
-  }, [ready, draft, networks.data, attachments.data, nics.data, nicDetails.data])
+  }, [
+    ready,
+    settled,
+    draft,
+    networks.data,
+    attachments.data,
+    nics.data,
+    nicDetails.data,
+    propertyDefinitions.data,
+  ])
 
-  const isPending = nics.isPending || attachments.isPending || networks.isPending
   const isError = nics.isError || attachments.isError || networks.isError
+  // the skeleton also covers the optional reads (NIC details, property keys)
+  // still settling after the three required ones landed, and the seeding
+  // refetch above
+  const isPending = !isError && draft === null
   const retryFailed = () => {
     if (nics.isError) void nics.refetch()
     if (attachments.isError) void attachments.refetch()

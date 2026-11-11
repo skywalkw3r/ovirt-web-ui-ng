@@ -637,6 +637,20 @@ interface MockNetworkAttachment {
     outbound_average_upperlimit?: number | string
     outbound_average_realtime?: number | string
   }
+  // Custom properties (bridge_opts and admin-defined keys). Round-tripped by
+  // setupnetworks; the key is absent when the attachment has none, like the
+  // live NetworkAttachmentMapper.
+  properties?: { property?: Array<{ name?: string; value?: string }> }
+}
+
+// The engine-config values behind network custom properties, as GET
+// /options/{name} serves them: one row per cluster compatibility level and no
+// 'general' row. The predefined value is the engine's shipped default
+// (0000_config.sql: bridge_opts only); the user-defined one models an admin
+// who added the documented ethtool_opts example with engine-config.
+const NETWORK_CUSTOM_PROPERTY_OPTIONS: Record<string, string> = {
+  PreDefinedNetworkCustomProperties: 'bridge_opts=^[^\\s=]+=[^\\s=]+(\\s+[^\\s=]+=[^\\s=]+)*$',
+  UserDefinedNetworkCustomProperties: 'ethtool_opts=.*',
 }
 
 interface MockHostDevice {
@@ -2911,6 +2925,11 @@ const initialHostNetworkAttachments = (): Map<string, MockNetworkAttachment[]> =
               },
             ],
           },
+          // a seeded custom property so the Setup Networks editor opens with a
+          // live row (the api-model's own bridge_opts example value)
+          properties: {
+            property: [{ name: 'bridge_opts', value: 'forward_delay=1500 multicast_snooping=1' }],
+          },
         },
         {
           id: 'host-01-att-storage',
@@ -5171,33 +5190,122 @@ function requireIcon(id: string): unknown {
   return icon
 }
 
-// ─── VM virtual NUMA topology (read-only in this pass) ────────────────────────
+// ─── VM virtual NUMA topology ───────────────────────────────────────────────
 // vm-01 (up, on host-01 whose NUMA_FIXTURE reports physical nodes 0/1) carries a
 // two-vnode topology pinned to those physical nodes; scalars mix string/number
-// forms. Every other VM answers {} (the empty-topology case).
-const vmNumaNodes: Record<string, unknown> = {
-  'vm-01': {
-    vm_numa_node: [
-      {
-        id: 'vnuma-0',
-        index: '0',
-        memory: '2048',
-        cpu: { cores: { core: [{ index: '0' }, { index: '1' }] } },
-        numa_node_pins: { numa_node_pin: [{ index: '0', pinned: 'true' }] },
-      },
-      {
-        id: 'vnuma-1',
-        index: 1,
-        memory: 2048,
-        cpu: { cores: { core: [{ index: 2 }, { index: 3 }] } },
-        numa_node_pins: { numa_node_pin: [{ index: 1 }] },
-      },
-    ],
-  },
+// forms. Every other VM starts without nodes (the empty-topology case). The
+// Edit VM dialog writes the collection (POST / PUT / DELETE), so it is mutable
+// state reset by resetMockVms. Like the engine, every write is checked against
+// the resulting topology's index rule (contiguous from 0); the rest of the
+// engine's NumaValidator is the dialog's job to mirror, not the mock's.
+interface MockVmNumaNode {
+  id: string
+  index: number | string
+  memory: number | string
+  cpu: { cores: { core: { index: number | string }[] } }
+  numa_node_pins?: { numa_node_pin: { index: number | string; pinned?: string }[] }
+  numa_tune_mode?: string
 }
+const initialVmNumaNodes = (): Map<string, MockVmNumaNode[]> =>
+  new Map([
+    [
+      'vm-01',
+      [
+        {
+          id: 'vnuma-0',
+          index: '0',
+          memory: '2048',
+          cpu: { cores: { core: [{ index: '0' }, { index: '1' }] } },
+          numa_node_pins: { numa_node_pin: [{ index: '0', pinned: 'true' }] },
+          numa_tune_mode: 'strict',
+        },
+        {
+          id: 'vnuma-1',
+          index: 1,
+          memory: 2048,
+          cpu: { cores: { core: [{ index: 2 }, { index: 3 }] } },
+          numa_node_pins: { numa_node_pin: [{ index: 1 }] },
+        },
+      ],
+    ],
+  ])
+let vmNumaNodes = initialVmNumaNodes()
+let vmNumaSeq = 0
+
 function vmNumaNodesHandler(id: string): unknown {
   requireVm(id)
-  return vmNumaNodes[id] ?? {}
+  const nodes = vmNumaNodes.get(id) ?? []
+  return nodes.length > 0 ? { vm_numa_node: nodes } : {}
+}
+
+// The engine rejects a topology whose indices are not 0..n-1
+// (NumaValidator: VM_NUMA_NODE_INDEX_ERROR).
+function checkVmNumaIndices(nodes: MockVmNumaNode[]): void {
+  const indices = nodes.map((node) => Number(node.index)).sort((a, b) => a - b)
+  if (indices.some((index, position) => index !== position)) {
+    throw new ApiError(
+      409,
+      'Operation Failed',
+      'Cannot edit the VM NUMA nodes: NUMA node indices must run from 0 without gaps.',
+    )
+  }
+}
+
+function requireVmNumaNode(vmId: string, nodeId: string): MockVmNumaNode {
+  const node = vmNumaNodes.get(vmId)?.find((candidate) => candidate.id === nodeId)
+  if (!node) throw new ApiError(404, 'Not Found', `no NUMA node ${nodeId} on VM ${vmId}`)
+  return node
+}
+
+// POST /vms/{id}/numanodes: index, memory and cpu.cores are mandatory.
+function addVmNumaNode(vmId: string, body: unknown): unknown {
+  requireVm(vmId)
+  const spec = (body ?? {}) as Partial<MockVmNumaNode>
+  if (spec.index === undefined || spec.memory === undefined || spec.cpu === undefined) {
+    throw new ApiError(
+      400,
+      'Incomplete parameters',
+      'VirtualNumaNode [index, memory, cpu] required',
+    )
+  }
+  vmNumaSeq += 1
+  const node: MockVmNumaNode = {
+    id: `${vmId}-vnuma-new-${vmNumaSeq}`,
+    index: spec.index,
+    memory: spec.memory,
+    cpu: spec.cpu,
+    ...(spec.numa_node_pins !== undefined ? { numa_node_pins: spec.numa_node_pins } : {}),
+    ...(spec.numa_tune_mode !== undefined ? { numa_tune_mode: spec.numa_tune_mode } : {}),
+  }
+  const next = [...(vmNumaNodes.get(vmId) ?? []), node]
+  checkVmNumaIndices(next)
+  vmNumaNodes.set(vmId, next)
+  return node
+}
+
+// PUT /vms/{id}/numanodes/{nodeId}: each element replaces the stored one only
+// when it is set (the NumaMapper isSet guards), so a present-but-empty pin list
+// unpins.
+function updateVmNumaNode(vmId: string, nodeId: string, body: unknown): unknown {
+  requireVm(vmId)
+  const node = requireVmNumaNode(vmId, nodeId)
+  const patch = (body ?? {}) as Partial<MockVmNumaNode>
+  for (const key of ['index', 'memory', 'cpu', 'numa_node_pins', 'numa_tune_mode'] as const) {
+    if (patch[key] !== undefined) Object.assign(node, { [key]: patch[key] })
+  }
+  checkVmNumaIndices(vmNumaNodes.get(vmId) ?? [])
+  return node
+}
+
+// DELETE /vms/{id}/numanodes/{nodeId}: the api-model asks callers to remove
+// from the highest index first; removing another node breaks the index rule.
+function removeVmNumaNode(vmId: string, nodeId: string): unknown {
+  requireVm(vmId)
+  requireVmNumaNode(vmId, nodeId)
+  const next = (vmNumaNodes.get(vmId) ?? []).filter((node) => node.id !== nodeId)
+  checkVmNumaIndices(next)
+  vmNumaNodes.set(vmId, next)
+  return { status: 'complete' }
 }
 
 // ─── VM mediated devices (vGPU mdev specs) ───────────────────────────────────
@@ -6067,6 +6175,8 @@ export function resetMockVms(): void {
   affinityGroupSeq = 0
   affinityLabelSeq = 0
   snapshotSeq = 0
+  vmNumaNodes = initialVmNumaNodes()
+  vmNumaSeq = 0
   vmSeq = 0
   tagSeq = 0
   diskSeq = 0
@@ -6251,6 +6361,12 @@ function updateVm(id: string, body: unknown, query?: URLSearchParams): unknown {
   if (patch.rng_device !== undefined && Object.keys(patch.rng_device).length === 0) {
     delete vm.rng_device
     delete patch.rng_device
+  }
+  // The engine applies each cpu element only when it is set (VmBaseMapper isSet
+  // guards), so a PUT carrying cpu.topology alone keeps the stored cpu_tune and
+  // architecture: merge one level instead of replacing the whole block.
+  if (patch.cpu !== undefined && vm.cpu !== undefined) {
+    patch.cpu = { ...vm.cpu, ...patch.cpu }
   }
   Object.assign(vm, patch)
   if (query?.get('next_run') === 'true') {
@@ -9097,6 +9213,19 @@ function runHostReinstall(id: string, body: unknown): unknown {
   return { status: 'complete' }
 }
 
+// key -> value regex from the two engine-config options, the same merge
+// HostSetupNetworksValidator.validateCustomProperties performs.
+function networkCustomPropertyDefinitions(): Map<string, string> {
+  const definitions = new Map<string, string>()
+  for (const value of Object.values(NETWORK_CUSTOM_PROPERTY_OPTIONS)) {
+    for (const pair of value.split(';')) {
+      const index = pair.indexOf('=')
+      if (index > 0) definitions.set(pair.slice(0, index), pair.slice(index + 1))
+    }
+  }
+  return definitions
+}
+
 // The wire shape of the POST /hosts/{id}/setupnetworks action body — the
 // wrapped-list convention setupHostNetworks builds.
 interface SetupNetworksBody {
@@ -9115,6 +9244,8 @@ interface SetupNetworksBody {
         outbound_average_upperlimit?: number | string
         outbound_average_realtime?: number | string
       }
+      // custom properties; a present block replaces the whole set
+      properties?: { property?: Array<{ name?: string; value?: string }> }
     }>
   }
   removed_network_attachments?: { network_attachment?: Array<{ id?: string }> }
@@ -9154,6 +9285,11 @@ interface SetupNetworksBody {
 // must stay attached somewhere — webadmin's mgmtNotAttachedToolTip guard,
 // answered as the 409 fault the engine raises. Static assignments also
 // rewrite the NIC's reported ip so the NICs tab round-trips the change.
+// Custom properties are checked the way HostSetupNetworksValidator
+// .validateCustomProperties does (valid keys from the two engine-config values,
+// bridge_opts dropped for a non-VM network, value matched against the key's
+// regex) and refused with a 409 like the engine's
+// ACTION_TYPE_FAILED_NETWORK_CUSTOM_PROPERTIES_BAD_INPUT (message paraphrased).
 function setupNetworks(hostId: string, rawBody: unknown): unknown {
   requireHost(hostId)
   if (typeof rawBody !== 'object' || rawBody === null) {
@@ -9226,6 +9362,36 @@ function setupNetworks(hostId: string, rawBody: unknown): unknown {
         'Not Found',
         `host ${hostId} has no NIC ${entry.host_nic?.name ?? entry.host_nic?.id}`,
       )
+    }
+    const properties = entry.properties?.property ?? []
+    if (properties.length > 0) {
+      const valid = networkCustomPropertyDefinitions()
+      // the cluster attachment carries the network's usages; 'vm' marks a
+      // bridged network
+      const isVmNetwork = Object.values(clusterNetworkAttachments).some((attached) =>
+        attached.some((n) => n.id === network.id && n.usages?.usage?.includes('vm')),
+      )
+      if (!isVmNetwork) valid.delete('bridge_opts')
+      const seenKeys = new Set<string>()
+      for (const property of properties) {
+        const key = property.name ?? ''
+        const pattern = valid.get(key)
+        let matches = false
+        try {
+          matches =
+            pattern !== undefined && new RegExp(`^(?:${pattern})$`).test(property.value ?? '')
+        } catch {
+          matches = false
+        }
+        if (seenKeys.has(key) || !matches) {
+          throw new ApiError(
+            409,
+            'Operation Failed',
+            `Cannot setup Networks. Bad input for custom properties of network '${network.name}'`,
+          )
+        }
+        seenKeys.add(key)
+      }
     }
   }
   for (const entry of [...removed, ...synced]) {
@@ -9309,6 +9475,13 @@ function setupNetworks(hostId: string, rawBody: unknown): unknown {
     // empty { type: 'hostnetwork' } clears the outbound values)
     if (entry.qos) {
       target.qos = entry.qos
+    }
+    // custom properties: a present block replaces the whole set, and an empty
+    // one clears it (the read then omits the key, as the live mapper does)
+    if (entry.properties) {
+      const properties = entry.properties.property ?? []
+      if (properties.length > 0) target.properties = { property: properties }
+      else delete target.properties
     }
     // reflect a static assignment on the NIC itself so the NICs tab
     // round-trips the new address without a lab engine
@@ -11662,6 +11835,22 @@ const routes: MockRoute[] = [
     }),
   },
   {
+    // The network custom-property key lists (fetchNetworkCustomPropertyDefinitions).
+    // Versioned config values: one row per cluster level, no 'general' row.
+    method: 'GET',
+    pattern: /^\/options\/(PreDefinedNetworkCustomProperties|UserDefinedNetworkCustomProperties)$/,
+    handle: ([name]) => ({
+      name,
+      id: name,
+      values: {
+        system_option_value: ['4.6', '4.7', '4.8'].map((version) => ({
+          value: NETWORK_CUSTOM_PROPERTY_OPTIONS[name],
+          version,
+        })),
+      },
+    }),
+  },
+  {
     // Engine options answer one system_option_value row PER VERSION with the
     // real value on the 'general' row — version rows FIRST (like the live
     // engine), so a consumer that naively reads row [0] fails here too.
@@ -13550,6 +13739,21 @@ const routes: MockRoute[] = [
     method: 'GET',
     pattern: /^\/vms\/([^/]+)\/numanodes$/,
     handle: ([id]) => vmNumaNodesHandler(id),
+  },
+  {
+    method: 'POST',
+    pattern: /^\/vms\/([^/]+)\/numanodes$/,
+    handle: ([id], body) => addVmNumaNode(id, body),
+  },
+  {
+    method: 'PUT',
+    pattern: /^\/vms\/([^/]+)\/numanodes\/([^/]+)$/,
+    handle: ([id, nodeId], body) => updateVmNumaNode(id, nodeId, body),
+  },
+  {
+    method: 'DELETE',
+    pattern: /^\/vms\/([^/]+)\/numanodes\/([^/]+)$/,
+    handle: ([id, nodeId]) => removeVmNumaNode(id, nodeId),
   },
 
   // VM mediated devices (vGPU mdev specs)

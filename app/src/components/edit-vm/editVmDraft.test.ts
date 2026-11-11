@@ -1222,3 +1222,69 @@ describe('partial-save helpers', () => {
     expect(buildWatchdogChange(retryDraft, next)).toEqual({ kind: 'remove', id: 'w1' })
   })
 })
+
+describe('CPU pinning and vNUMA draft fields', () => {
+  const pinnedVm = {
+    id: 'vm-p',
+    name: 'p',
+    cpu: {
+      topology: { sockets: 2, cores: 1, threads: 1 },
+      cpu_tune: {
+        vcpu_pins: {
+          vcpu_pin: [
+            { vcpu: 0, cpu_set: '0' },
+            { vcpu: 1, cpu_set: '1-3' },
+          ],
+        },
+      },
+    },
+  } as Vm
+
+  it('seeds the policy and the manual string from the read', () => {
+    const d = vmToDraft({ ...pinnedVm, cpu_pinning_policy: 'manual' })
+    expect(d.cpuPinningPolicy).toBe('manual')
+    expect(d.cpuPinning).toBe('0#0_1#1-3')
+    // the vNUMA nodes are seeded later, from their own subcollection
+    expect(d.numaLoaded).toBe(false)
+    expect(d.numaNodes).toEqual([])
+  })
+
+  it('derives the policy from the string on an engine without cpu_pinning_policy', () => {
+    expect(vmToDraft(pinnedVm).cpuPinningPolicy).toBe('manual')
+    expect(vmToDraft({ id: 'x', name: 'x' }).cpuPinningPolicy).toBe('none')
+  })
+
+  it('keeps no string under any other policy', () => {
+    expect(vmToDraft({ ...pinnedVm, cpu_pinning_policy: 'dedicated' }).cpuPinning).toBe('')
+  })
+
+  it('sends the policy and cpu_tune only when they move', () => {
+    const baseline = vmToDraft({ ...pinnedVm, cpu_pinning_policy: 'manual' })
+    expect(draftToPayload(baseline, baseline)).not.toHaveProperty('cpu_pinning_policy')
+    expect(draftToPayload(baseline, baseline).cpu).not.toHaveProperty('cpu_tune')
+
+    const edited = draftToPayload({ ...baseline, cpuPinning: '0#2' }, baseline)
+    expect(edited).not.toHaveProperty('cpu_pinning_policy')
+    expect((edited.cpu as Record<string, unknown>).cpu_tune).toEqual({
+      vcpu_pins: { vcpu_pin: [{ vcpu: 0, cpu_set: '2' }] },
+    })
+  })
+
+  it('clears the string whenever the policy leaves Manual', () => {
+    const baseline = vmToDraft({ ...pinnedVm, cpu_pinning_policy: 'manual' })
+    const payload = draftToPayload({ ...baseline, cpuPinningPolicy: 'none' }, baseline)
+    expect(payload.cpu_pinning_policy).toBe('none')
+    expect((payload.cpu as Record<string, unknown>).cpu_tune).toEqual({})
+  })
+
+  it('treats the pinning as next-run and the vNUMA nodes as a subcollection', () => {
+    const baseline = { ...draft(), numaLoaded: true }
+    expect(editRequiresRestart({ ...baseline, cpuPinningPolicy: 'dedicated' }, baseline)).toBe(true)
+    const nodes = [{ id: '', index: 0, cpuIds: [], memoryMb: 0, tuneMode: 'interleave', pins: [] }]
+    expect(vmFieldsChanged({ ...baseline, numaNodes: nodes }, baseline)).toBe(false)
+    // the vm PUT settles the vm fields only; the nodes keep the baseline's
+    const saved = baselineAfterVmSave({ ...baseline, numaNodes: nodes, name: 'n' }, baseline)
+    expect(saved.name).toBe('n')
+    expect(saved.numaNodes).toEqual([])
+  })
+})

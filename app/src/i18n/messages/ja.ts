@@ -187,7 +187,7 @@ export const ja: LocaleCatalog = {
   'inventory.tree.ariaLabel': 'VMとテンプレートフォルダー',
   'inventory.sidebar.resize': 'サイドバーのサイズを変更',
   'inventory.filter.ariaLabel': '名前でVMとテンプレートを絞り込む',
-  'inventory.filter.hint': '名称でフィルタ',
+  'inventory.filter.hint': '名称、folder:/prod/web、tag:pci-dss でフィルタ',
   'infra.filter.ariaLabel': '名前でインフラを絞り込む',
   'infra.filter.hint': '名称でフィルタ',
   'inventory.column.type': 'タイプ',
@@ -417,7 +417,8 @@ export const ja: LocaleCatalog = {
   'vms.searchEmpty.matches': '{query}に一致するものはありません',
   'vms.empty.title': '仮想マシンがありません',
   'vms.empty.body': '表示する権限のあるVMがここに表示されます。',
-  'vms.search.hint': 'name = web * and status = up —またはプレーンテキスト',
+  'vms.search.hint':
+    'name=web* and status=up、folder:/prod/web、tag:pci-dss、またはプレーンテキスト',
   'vms.search.ariaLabel': '仮想マシンの検索',
   'vms.pagination.ariaLabel': '仮想マシンのページネーション',
   'vms.table.ariaLabel': '仮想マシン',
@@ -2229,7 +2230,7 @@ export const ja: LocaleCatalog = {
   'dc.field.macPool': 'MACアドレスプール',
   'search.autocomplete.hint': '検索構文',
   'templates.title': 'テンプレート',
-  'templates.search.hint': 'name=web* — またはプレーンテキスト',
+  'templates.search.hint': 'name=web*、folder:/prod、tag:legacy、またはプレーンテキスト',
   'templates.search.ariaLabel': 'テンプレートを検索',
   'templates.pagination.ariaLabel': 'テンプレートのページネーション',
   'templates.loading': 'テンプレートを読み込んでいます',
@@ -3745,6 +3746,10 @@ export const ja: LocaleCatalog = {
   'schedulingPolicy.weights.factorError': '各ファクターは1以上の整数である必要があります。',
   'schedulingPolicy.weights.label': 'ウェイトモジュール',
   'setupNetworks.aria.configureSriov': '{name}のSR-IOVを構成',
+  'setupNetworks.aria.customPropertyAdd': '{name}にカスタムプロパティを追加',
+  'setupNetworks.aria.customPropertyKey': '{name}のカスタムプロパティ{index}のキー',
+  'setupNetworks.aria.customPropertyRemove': '{name}からカスタムプロパティ{index}を削除',
+  'setupNetworks.aria.customPropertyValue': '{name}のカスタムプロパティ{index}の値',
   'setupNetworks.aria.labelsOn': '{name}上のラベル',
   'setupNetworks.aria.newLabel': '{name}の新しいラベル',
   'setupNetworks.aria.qosField': '{name}の{label}',
@@ -3754,6 +3759,15 @@ export const ja: LocaleCatalog = {
   'setupNetworks.bondMode.mode2': '負荷分散 — balance-xor（mode 2）',
   'setupNetworks.bondMode.mode4': '動的リンクアグリゲーション — 802.3ad（mode 4）',
   'setupNetworks.bondMode.mode5': 'アダプティブ送信負荷分散 — balance-tlb（mode 5）',
+  'setupNetworks.customProperties.add': 'カスタムプロパティを追加',
+  'setupNetworks.customProperties.freeForm':
+    'エンジンが許可するキーを報告しなかったため、キーは保存時にのみ検証されます。',
+  'setupNetworks.customProperties.help':
+    'ホスト上でこのネットワークに適用されるキー/値オプションです。たとえば bridge_opts はVMネットワークのブリッジを調整します。使用できるキーはエンジンの設定で決まります。',
+  'setupNetworks.customProperties.keyPlaceholder': 'キーを選択',
+  'setupNetworks.customProperties.label': 'カスタムプロパティ',
+  'setupNetworks.customProperties.noKeys':
+    'このネットワークに対してエンジンが許可するカスタムプロパティのキーはありません。',
   'setupNetworks.labels.add': 'ラベルを追加',
   'setupNetworks.labels.help':
     'このNICに添付されたネットワークラベル。エンジンは、一致するラベルを持つすべてのネットワークをNICに自動的に配線します。',
@@ -3805,6 +3819,15 @@ export const ja: LocaleCatalog = {
   'setupNetworks.sriov.networks.removeAria': '許可されたネットワーク{name}を削除',
   'setupNetworks.sriov.networks.selectPlaceholder': 'ネットワークを選択',
   'setupNetworks.sriov.title': 'SR-IOV構成 — {name}',
+  'setupNetworks.validation.customPropertyBridgeOpts': '{key}はVMネットワークにのみ適用できます',
+  'setupNetworks.validation.customPropertyDuplicate': '{key}はすでに設定されています',
+  'setupNetworks.validation.customPropertyKey':
+    'キーに使用できるのは英字、数字、アンダースコアのみです',
+  'setupNetworks.validation.customPropertyKeyRequired': 'この値のキーを入力してください',
+  'setupNetworks.validation.customPropertyUnknown':
+    '{key}はこのエンジンが許可するカスタムプロパティではありません',
+  'setupNetworks.validation.customPropertyValue': '{key}の値は{format}に一致する必要があります',
+  'setupNetworks.validation.customPropertyValueSyntax': '値にセミコロンを含めることはできません',
   'setupNetworks.validation.ipv4': '有効なIPv4アドレスを入力してください',
   'setupNetworks.validation.ipv6': '有効なIPv6アドレスを入力してください',
   'setupNetworks.validation.managementGuard':
@@ -4547,6 +4570,83 @@ export const ja: LocaleCatalog = {
     'ウォッチドッグの変更に失敗したため、何も保存されませんでした: {message}。再試行するには、もう一度保存してください。',
   'vm.edit.save.nextRunRefreshFailed':
     'ウォッチドッグは保存されましたが、VMの保留中の次回起動用設定が更新されなかったため、次回のシャットダウン時にエンジンが変更を元に戻す可能性があります: {message}。再試行するには、もう一度保存してください。',
+  'vm.edit.pinning.title': 'CPU 固定',
+  'vm.edit.pinning.policy': 'CPU 固定ポリシー',
+  'vm.edit.pinning.policy.none': 'なし',
+  'vm.edit.pinning.policy.manual': '手動',
+  'vm.edit.pinning.policy.resizeAndPin': 'サイズ変更と NUMA の固定',
+  'vm.edit.pinning.policy.dedicated': '専有',
+  'vm.edit.pinning.policy.isolateThreads': 'スレッドの分離',
+  'vm.edit.pinning.topology': 'CPU 固定トポロジー',
+  'vm.edit.pinning.hint.manualNeedsHost':
+    '手動固定には、VM を特定のホストで実行する必要があります。',
+  'vm.edit.pinning.hint.dedicatedNeedsVersion':
+    '専有とスレッドの分離には、クラスター互換バージョン 4.7 以降が必要です。',
+  'vm.edit.pinning.hint.dedicatedNumaPinned':
+    '仮想 NUMA ノードが固定されている間は、専有とスレッドの分離は使用できません。',
+  'vm.edit.pinning.hint.resizeAndPin':
+    'サイズ変更と NUMA の固定では、VM の起動時にホストに合わせて CPU トポロジーと仮想 NUMA ノードが決まります。',
+  'vm.edit.pinning.error.required': '固定トポロジーを入力してください (例: 0#0_1#1-3)。',
+  'vm.edit.pinning.error.syntax':
+    'vCPU#ホストCPU 形式のエントリーを _ でつないで記述してください (例: 0#0_1#1-3 または 0#0-3,^2)。',
+  'vm.edit.pinning.error.needsHost': '手動固定には、VM を特定のホストで実行する必要があります。',
+  'vm.edit.pinning.error.vcpuMissing':
+    'vCPU {vcpu} は存在しません。この VM の vCPU は 0 から {max} です。',
+  'vm.edit.pinning.error.duplicate': 'vCPU {vcpu} が複数回固定されています。',
+  'vm.edit.pinning.error.noCpu': 'vCPU {vcpu} はどのホスト CPU にも固定されていません。',
+  'fieldHelp.vm.cpuPinningPolicy':
+    'vCPU をホスト CPU にどう割り当てるか。なしはホストに任せます。手動は下の固定トポロジーを使用します。サイズ変更と NUMA の固定はホストに合わせて VM のサイズを決めて固定します。専有はこの VM 専用にホスト CPU を予約します。スレッドの分離はさらに各 vCPU に専用の物理コアを割り当てます。実行中の VM では次回起動時に適用されます。',
+  'fieldHelp.vm.cpuPinningTopology':
+    '各 vCPU を vCPU#CPU の形式でホスト CPU に固定し、エントリーを _ でつなぎます。CPU セットには CPU (0,2)、範囲 (1-3)、除外 (^2) を指定できます。例: 0#0_1#1-3 は vCPU 0 をホスト CPU 0 に、vCPU 1 をホスト CPU 1 から 3 に固定します。',
+  'fieldHelp.vm.numaCount':
+    'ゲストに見える仮想 NUMA ノードの数。vCPU とメモリーはこれらに分配されます。ノードをホストの NUMA ノードに固定すると、そのメモリーをローカルに保てます。電源オフの VM でのみ変更できます。',
+  'vm.edit.numa.title': '仮想 NUMA',
+  'vm.edit.numa.count': 'NUMA ノード数',
+  'vm.edit.numa.loading': '仮想 NUMA ノードを読み込み中',
+  'vm.edit.numa.loadError': '仮想 NUMA ノードを読み込めませんでした。変更されません',
+  'vm.edit.numa.hint.running': '仮想 NUMA ノードは VM の停止中にのみ変更できます。',
+  'vm.edit.numa.hint.needsHost':
+    'ノードをホストの NUMA ノードに固定するには、VM を特定のホストで実行する必要があります。',
+  'vm.edit.numa.hint.hostLoading': 'ホストの NUMA トポロジーを読み込み中',
+  'vm.edit.numa.hint.hostError': 'ホストの NUMA トポロジーを読み込めませんでした',
+  'vm.edit.numa.table': '仮想 NUMA ノード',
+  'vm.edit.numa.column.node': 'ノード',
+  'vm.edit.numa.column.resources': 'vCPU とメモリー',
+  'vm.edit.numa.column.tune': 'チューニングモード',
+  'vm.edit.numa.column.hostNode': 'ホスト NUMA ノード',
+  'vm.edit.numa.resources': 'vCPU {cpus}、{memory} MB',
+  'vm.edit.numa.tuneLabel': 'NUMA ノード {index} のチューニングモード',
+  'vm.edit.numa.pinLabel': 'NUMA ノード {index} のホスト NUMA ノード',
+  'vm.edit.numa.pin.none': '固定なし',
+  'vm.edit.numa.pin.hostNode': 'ホストノード {index}',
+  'vm.edit.numa.tune.interleave': 'インターリーブ (Interleave)',
+  'vm.edit.numa.tune.strict': '厳格 (Strict)',
+  'vm.edit.numa.tune.preferred': '優先 (Preferred)',
+  'vm.edit.numa.error.preferred':
+    '優先は、単一のホストノードに固定された単一の仮想 NUMA ノードでのみ機能します。',
+  'vm.edit.numa.error.tooManyNodes':
+    'この VM の vCPU は {cpus} 個なので、NUMA ノードを {count} 個持つことはできません。',
+  'vm.edit.numa.error.pinsNeedHost':
+    '固定された NUMA ノードには、VM を特定のホストで実行する必要があります。',
+  'vm.edit.numa.error.pinsWithDedicated':
+    '専有とスレッドの分離は、固定された NUMA ノードと組み合わせられません。',
+  'vm.edit.numa.error.hostUnsupported':
+    'ホスト {host} は NUMA トポロジーを報告していないため、そこで実行される VM は仮想 NUMA ノードを持てません。',
+  'vm.edit.numa.error.hostNodeMissing': 'ホスト {host} には NUMA ノード {hostNode} がありません。',
+  'vm.edit.numa.error.memory':
+    '仮想 NUMA ノード {node} には、ホスト {host} のノード {hostNode} より多くのメモリーが必要です。厳格ではこれは許可されません。',
+  'vm.edit.save.numaBeforeVmFailed':
+    '古い仮想 NUMA ノードを削除できなかったため、VM は保存されていません: {message}。再試行するにはもう一度保存してください。',
+  'vm.edit.save.vmFailedAfterNuma':
+    '古い仮想 NUMA ノードは削除されましたが、VM を保存できなかったため、新しいノードは追加されていません: {message}。再試行するにはもう一度保存してください。',
+  'vm.edit.save.numaAfterVmFailed':
+    'VM は保存されましたが、仮想 NUMA の変更に失敗しました: {message}。再試行するにはもう一度保存してください。',
+  'vm.edit.save.numaFailed':
+    '仮想 NUMA の変更に失敗しました: {message}。再試行するにはもう一度保存してください。',
+  'vm.edit.save.numaState':
+    'この VM の仮想 NUMA ノードは現在 {count, plural, =0 {ありません} other {# 個です}}。',
+  'vm.edit.save.numaStateUnknown':
+    '仮想 NUMA ノードを再読み込みできませんでした。現在のトポロジーを確認するには、ダイアログを開き直してください。',
   'vm.edit.save.cdFailed':
     'VMは保存されましたが、CDの変更に失敗しました: {message}。再試行するには、もう一度保存してください。',
   'vm.create.watchdog.templateError':

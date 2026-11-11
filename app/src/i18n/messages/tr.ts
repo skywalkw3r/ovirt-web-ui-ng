@@ -186,7 +186,7 @@ export const tr: LocaleCatalog = {
   'inventory.tree.ariaLabel': 'VM ve şablon klasörleri',
   'inventory.sidebar.resize': 'Kenar çubuğunu yeniden boyutlandır',
   'inventory.filter.ariaLabel': "VM'leri ve şablonları ada göre filtrele",
-  'inventory.filter.hint': 'Ada göre filtrele',
+  'inventory.filter.hint': 'Ada, folder:/prod/web veya tag:pci-dss ile filtrele',
   'infra.filter.ariaLabel': 'Altyapıyı ada göre filtrele',
   'infra.filter.hint': 'Ada göre filtrele',
   'inventory.column.type': 'Tür',
@@ -422,7 +422,7 @@ export const tr: LocaleCatalog = {
   'vms.searchEmpty.matches': 'Hiçbir şey {query} ile eşleşmiyor',
   'vms.empty.title': 'Sanal makine yok',
   'vms.empty.body': 'Görme izniniz olan sanal makineler burada görünecektir.',
-  'vms.search.hint': 'name=web* and status=up — veya düz metin',
+  'vms.search.hint': 'name=web* and status=up, folder:/prod/web, tag:pci-dss veya düz metin',
   'vms.search.ariaLabel': 'Sanal makine ara',
   'vms.pagination.ariaLabel': 'Sanal makineler sayfalandırması',
   'vms.table.ariaLabel': 'Sanal makineler',
@@ -2225,7 +2225,7 @@ export const tr: LocaleCatalog = {
   'dc.field.macPool': 'MAC adres havuzu',
   'search.autocomplete.hint': 'Arama sözdizimi',
   'templates.title': 'Şablonlar',
-  'templates.search.hint': 'name=web* — veya düz metin',
+  'templates.search.hint': 'name=web*, folder:/prod, tag:legacy veya düz metin',
   'templates.search.ariaLabel': 'Şablon ara',
   'templates.pagination.ariaLabel': 'Şablonlar sayfalandırması',
   'templates.loading': 'Şablonlar yükleniyor',
@@ -3742,6 +3742,10 @@ export const tr: LocaleCatalog = {
   'schedulingPolicy.weights.factorError': 'Her faktör en az 1 olan bir tam sayı olmalıdır.',
   'schedulingPolicy.weights.label': 'Ağırlık modülleri',
   'setupNetworks.aria.configureSriov': '{name} için SR-IOV yapılandır',
+  'setupNetworks.aria.customPropertyAdd': '{name} ağına özel özellik ekle',
+  'setupNetworks.aria.customPropertyKey': '{name} üzerindeki {index}. özel özelliğin anahtarı',
+  'setupNetworks.aria.customPropertyRemove': '{index}. özel özelliği {name} ağından kaldır',
+  'setupNetworks.aria.customPropertyValue': '{name} üzerindeki {index}. özel özelliğin değeri',
   'setupNetworks.aria.labelsOn': '{name} üzerindeki etiketler',
   'setupNetworks.aria.newLabel': '{name} için yeni etiket',
   'setupNetworks.aria.qosField': '{name} için {label}',
@@ -3751,6 +3755,15 @@ export const tr: LocaleCatalog = {
   'setupNetworks.bondMode.mode2': 'Yük dengeleme — balance-xor (mod 2)',
   'setupNetworks.bondMode.mode4': 'Dinamik bağlantı toplama — 802.3ad (mod 4)',
   'setupNetworks.bondMode.mode5': 'Uyarlanabilir iletim yük dengeleme — balance-tlb (mod 5)',
+  'setupNetworks.customProperties.add': 'Özel özellik ekle',
+  'setupNetworks.customProperties.freeForm':
+    'Engine hangi anahtarlara izin verdiğini bildirmedi; bu nedenle anahtarlar yalnızca kaydederken denetlenir.',
+  'setupNetworks.customProperties.help':
+    'Ana makinede bu ağa uygulanan anahtar/değer seçenekleri; örneğin bir VM ağının köprüsünü ayarlamak için bridge_opts. Kullanılabilir anahtarlar engine yapılandırmasından gelir.',
+  'setupNetworks.customProperties.keyPlaceholder': 'Bir anahtar seçin',
+  'setupNetworks.customProperties.label': 'Özel özellikler',
+  'setupNetworks.customProperties.noKeys':
+    'Engine bu ağ için hiçbir özel özellik anahtarına izin vermiyor.',
   'setupNetworks.labels.add': 'Etiket ekle',
   'setupNetworks.labels.help':
     'Bu NIC’e eklenmiş ağ etiketleri. Motor, eşleşen bir etiket taşıyan her ağı otomatik olarak NIC’e bağlar.',
@@ -3802,6 +3815,15 @@ export const tr: LocaleCatalog = {
   'setupNetworks.sriov.networks.removeAria': 'İzin verilen ağ {name} kaldır',
   'setupNetworks.sriov.networks.selectPlaceholder': 'Bir ağ seçin',
   'setupNetworks.sriov.title': 'SR-IOV yapılandırması — {name}',
+  'setupNetworks.validation.customPropertyBridgeOpts': '{key} yalnızca VM ağları için geçerlidir',
+  'setupNetworks.validation.customPropertyDuplicate': '{key} zaten ayarlanmış',
+  'setupNetworks.validation.customPropertyKey':
+    'Bir anahtar yalnızca harf, rakam ve alt çizgi içerebilir',
+  'setupNetworks.validation.customPropertyKeyRequired': 'Bu değer için bir anahtar girin',
+  'setupNetworks.validation.customPropertyUnknown':
+    '{key}, bu engine tarafından izin verilen bir özel özellik değil',
+  'setupNetworks.validation.customPropertyValue': '{key} değeri {format} ile eşleşmelidir',
+  'setupNetworks.validation.customPropertyValueSyntax': 'Bir değer noktalı virgül içeremez',
   'setupNetworks.validation.ipv4': 'Geçerli bir IPv4 adresi girin',
   'setupNetworks.validation.ipv6': 'Geçerli bir IPv6 adresi girin',
   'setupNetworks.validation.managementGuard':
@@ -4544,6 +4566,85 @@ export const tr: LocaleCatalog = {
     'Watchdog değişikliği başarısız olduğu için hiçbir şey kaydedilmedi: {message}. Yeniden denemek için tekrar kaydedin.',
   'vm.edit.save.nextRunRefreshFailed':
     'Watchdog kaydedildi ancak VM’nin bekleyen sonraki çalıştırma yapılandırması yenilenmedi; bu nedenle motor değişikliği bir sonraki kapatmada geri alabilir: {message}. Yeniden denemek için tekrar kaydedin.',
+  'vm.edit.pinning.title': 'CPU sabitleme',
+  'vm.edit.pinning.policy': 'CPU sabitleme ilkesi',
+  'vm.edit.pinning.policy.none': 'Yok',
+  'vm.edit.pinning.policy.manual': 'El ile',
+  'vm.edit.pinning.policy.resizeAndPin': 'Yeniden boyutlandır ve NUMA sabitle',
+  'vm.edit.pinning.policy.dedicated': 'Ayrılmış',
+  'vm.edit.pinning.policy.isolateThreads': 'İş parçacıklarını yalıt',
+  'vm.edit.pinning.topology': 'CPU sabitleme topolojisi',
+  'vm.edit.pinning.hint.manualNeedsHost':
+    'El ile sabitleme, sanal makinenin belirli ana makinelerde çalışmasını gerektirir.',
+  'vm.edit.pinning.hint.dedicatedNeedsVersion':
+    'Ayrılmış ve İş parçacıklarını yalıt, küme uyumluluk sürümü 4.7 veya üstünü gerektirir.',
+  'vm.edit.pinning.hint.dedicatedNumaPinned':
+    'Bir sanal NUMA düğümü sabitliyken Ayrılmış ve İş parçacıklarını yalıt kullanılamaz.',
+  'vm.edit.pinning.hint.resizeAndPin':
+    'Yeniden boyutlandır ve NUMA sabitle, sanal makine başlarken CPU topolojisini ve sanal NUMA düğümlerini ana makineye göre belirler.',
+  'vm.edit.pinning.error.required': 'Bir sabitleme topolojisi girin, örneğin 0#0_1#1-3.',
+  'vm.edit.pinning.error.syntax':
+    'vCPU#ana makine CPU girdilerini _ ile birleştirerek yazın, örneğin 0#0_1#1-3 veya 0#0-3,^2.',
+  'vm.edit.pinning.error.needsHost':
+    'El ile sabitleme, sanal makinenin belirli ana makinelerde çalışmasını gerektirir.',
+  'vm.edit.pinning.error.vcpuMissing':
+    'vCPU {vcpu} yok; bu sanal makinenin vCPU’ları 0 ile {max} arasındadır.',
+  'vm.edit.pinning.error.duplicate': 'vCPU {vcpu} birden fazla kez sabitlenmiş.',
+  'vm.edit.pinning.error.noCpu': 'vCPU {vcpu} hiçbir ana makine CPU’suna sabitlenmemiş.',
+  'fieldHelp.vm.cpuPinningPolicy':
+    'vCPU’ların ana makine CPU’larına nasıl eşlendiği. Yok bunu ana makineye bırakır; El ile aşağıdaki sabitleme topolojisini kullanır; Yeniden boyutlandır ve NUMA sabitle sanal makineyi ana makinesine göre boyutlandırıp sabitler; Ayrılmış ana makine CPU’larını yalnızca bu sanal makineye ayırır; İş parçacıklarını yalıt ayrıca her vCPU’ya kendi fiziksel çekirdeğini verir. Çalışan bir sanal makinede bir sonraki başlatmada uygulanır.',
+  'fieldHelp.vm.cpuPinningTopology':
+    'Her vCPU’yu vCPU#CPU biçiminde ana makine CPU’larına sabitleyin, girdileri _ ile birleştirin. Bir CPU kümesi CPU’ları (0,2), aralıkları (1-3) ve hariç tutmaları (^2) listeler. Örnek: 0#0_1#1-3, vCPU 0’ı ana makine CPU 0’a ve vCPU 1’i ana makine CPU 1 ile 3 arasına sabitler.',
+  'fieldHelp.vm.numaCount':
+    'Konuğun gördüğü sanal NUMA düğümü sayısı. vCPU’lar ve bellek bunlara dağıtılır; belleğini yerel tutmak için bir düğümü bir ana makine NUMA düğümüne sabitleyin. Yalnızca kapalı bir sanal makinede değiştirilir.',
+  'vm.edit.numa.title': 'Sanal NUMA',
+  'vm.edit.numa.count': 'NUMA düğümü sayısı',
+  'vm.edit.numa.loading': 'Sanal NUMA düğümleri yükleniyor',
+  'vm.edit.numa.loadError': 'Sanal NUMA düğümleri yüklenemedi; değiştirilmeden bırakıldılar',
+  'vm.edit.numa.hint.running':
+    'Sanal NUMA düğümleri yalnızca sanal makine kapalıyken değiştirilebilir.',
+  'vm.edit.numa.hint.needsHost':
+    'Bir düğümü bir ana makine NUMA düğümüne sabitlemek, sanal makinenin belirli ana makinelerde çalışmasını gerektirir.',
+  'vm.edit.numa.hint.hostLoading': 'Ana makine NUMA topolojisi yükleniyor',
+  'vm.edit.numa.hint.hostError': 'Ana makine NUMA topolojisi yüklenemedi',
+  'vm.edit.numa.table': 'Sanal NUMA düğümleri',
+  'vm.edit.numa.column.node': 'Düğüm',
+  'vm.edit.numa.column.resources': 'vCPU’lar ve bellek',
+  'vm.edit.numa.column.tune': 'Ayar modu',
+  'vm.edit.numa.column.hostNode': 'Ana makine NUMA düğümü',
+  'vm.edit.numa.resources': 'vCPU {cpus}, {memory} MB',
+  'vm.edit.numa.tuneLabel': 'NUMA düğümü {index} ayar modu',
+  'vm.edit.numa.pinLabel': 'NUMA düğümü {index} için ana makine NUMA düğümü',
+  'vm.edit.numa.pin.none': 'Sabitlenmemiş',
+  'vm.edit.numa.pin.hostNode': 'Ana makine düğümü {index}',
+  'vm.edit.numa.tune.interleave': 'Serpiştirilmiş (Interleave)',
+  'vm.edit.numa.tune.strict': 'Katı (Strict)',
+  'vm.edit.numa.tune.preferred': 'Tercih edilen (Preferred)',
+  'vm.edit.numa.error.preferred':
+    'Tercih edilen yalnızca tek bir ana makine düğümüne sabitlenmiş tek bir sanal NUMA düğümüyle çalışır.',
+  'vm.edit.numa.error.tooManyNodes':
+    'Sanal makinenin {cpus} vCPU’su var, bu yüzden {count} NUMA düğümü olamaz.',
+  'vm.edit.numa.error.pinsNeedHost':
+    'Sabitlenmiş NUMA düğümleri, sanal makinenin belirli ana makinelerde çalışmasını gerektirir.',
+  'vm.edit.numa.error.pinsWithDedicated':
+    'Ayrılmış ve İş parçacıklarını yalıt, sabitlenmiş NUMA düğümleriyle birlikte kullanılamaz.',
+  'vm.edit.numa.error.hostUnsupported':
+    '{host} ana makinesi NUMA topolojisi bildirmiyor, bu yüzden üzerinde çalışan bir sanal makinenin sanal NUMA düğümleri olamaz.',
+  'vm.edit.numa.error.hostNodeMissing': '{host} ana makinesinde {hostNode} NUMA düğümü yok.',
+  'vm.edit.numa.error.memory':
+    'Sanal NUMA düğümü {node}, {host} ana makinesinin {hostNode} düğümünde bulunandan daha fazla bellek gerektiriyor ve Katı buna izin vermez.',
+  'vm.edit.save.numaBeforeVmFailed':
+    'Eski sanal NUMA düğümleri kaldırılamadı, bu yüzden sanal makine kaydedilmedi: {message}. Yeniden denemek için tekrar kaydedin.',
+  'vm.edit.save.vmFailedAfterNuma':
+    'Eski sanal NUMA düğümleri kaldırıldı, ancak sanal makine kaydedilemediği için yeni düğümler eklenmedi: {message}. Yeniden denemek için tekrar kaydedin.',
+  'vm.edit.save.numaAfterVmFailed':
+    'Sanal makine kaydedildi, ancak sanal NUMA değişikliği başarısız oldu: {message}. Yeniden denemek için tekrar kaydedin.',
+  'vm.edit.save.numaFailed':
+    'Sanal NUMA değişikliği başarısız oldu: {message}. Yeniden denemek için tekrar kaydedin.',
+  'vm.edit.save.numaState':
+    'Sanal makinenin artık {count, plural, =0 {sanal NUMA düğümü yok} other {# sanal NUMA düğümü var}}.',
+  'vm.edit.save.numaStateUnknown':
+    'Sanal NUMA düğümleri yeniden okunamadı; geçerli topolojiyi görmek için iletişim kutusunu yeniden açın.',
   'vm.edit.save.cdFailed':
     'VM kaydedildi ancak CD değişikliği başarısız oldu: {message}. Yeniden denemek için tekrar kaydedin.',
   'vm.create.watchdog.templateError':

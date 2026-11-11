@@ -187,7 +187,7 @@ export const ko: LocaleCatalog = {
   'inventory.tree.ariaLabel': 'VM 및 템플릿 폴더',
   'inventory.sidebar.resize': '사이드바 크기 조정',
   'inventory.filter.ariaLabel': '이름별로 VM 및 템플릿 필터링',
-  'inventory.filter.hint': '이름으로 필터링',
+  'inventory.filter.hint': '이름, folder:/prod/web 또는 tag:pci-dss로 필터링',
   'infra.filter.ariaLabel': '이름으로 인프라 필터링',
   'infra.filter.hint': '이름으로 필터링',
   'inventory.column.type': '유형',
@@ -417,7 +417,7 @@ export const ko: LocaleCatalog = {
   'vms.searchEmpty.matches': '{query}와 일치하는 항목이 없습니다.',
   'vms.empty.title': '가상 머신 없음',
   'vms.empty.body': '볼 수 있는 권한이 있는 VM이 여기에 표시됩니다.',
-  'vms.search.hint': 'name = web * 및 status = up — 또는 일반 텍스트',
+  'vms.search.hint': 'name=web* and status=up, folder:/prod/web, tag:pci-dss 또는 일반 텍스트',
   'vms.search.ariaLabel': '가상 머신 검색',
   'vms.pagination.ariaLabel': '가상 머신 페이지 매김',
   'vms.table.ariaLabel': '가상 머신',
@@ -2196,7 +2196,7 @@ export const ko: LocaleCatalog = {
   'dc.field.macPool': 'MAC 주소 풀',
   'search.autocomplete.hint': '검색 구문',
   'templates.title': '템플릿',
-  'templates.search.hint': 'name=web* — 또는 일반 텍스트',
+  'templates.search.hint': 'name=web*, folder:/prod, tag:legacy 또는 일반 텍스트',
   'templates.search.ariaLabel': '템플릿 검색',
   'templates.pagination.ariaLabel': '템플릿 페이지 매김',
   'templates.loading': '템플릿 로드 중',
@@ -3697,6 +3697,10 @@ export const ko: LocaleCatalog = {
   'schedulingPolicy.weights.factorError': '각 계수는 1 이상의 정수여야 합니다.',
   'schedulingPolicy.weights.label': '가중치 모듈',
   'setupNetworks.aria.configureSriov': '{name}의 SR-IOV 구성',
+  'setupNetworks.aria.customPropertyAdd': '{name}에 사용자 지정 속성 추가',
+  'setupNetworks.aria.customPropertyKey': '{name}의 사용자 지정 속성 {index} 키',
+  'setupNetworks.aria.customPropertyRemove': '{name}에서 사용자 지정 속성 {index} 제거',
+  'setupNetworks.aria.customPropertyValue': '{name}의 사용자 지정 속성 {index} 값',
   'setupNetworks.aria.labelsOn': '{name}의 레이블',
   'setupNetworks.aria.newLabel': '{name}의 새 레이블',
   'setupNetworks.aria.qosField': '{name}의 {label}',
@@ -3706,6 +3710,15 @@ export const ko: LocaleCatalog = {
   'setupNetworks.bondMode.mode2': '부하 분산 — balance-xor (모드 2)',
   'setupNetworks.bondMode.mode4': '동적 링크 집계 — 802.3ad (모드 4)',
   'setupNetworks.bondMode.mode5': '적응형 전송 부하 분산 — balance-tlb (모드 5)',
+  'setupNetworks.customProperties.add': '사용자 지정 속성 추가',
+  'setupNetworks.customProperties.freeForm':
+    '엔진이 허용하는 키를 보고하지 않았으므로 키는 저장할 때만 확인됩니다.',
+  'setupNetworks.customProperties.help':
+    '호스트에서 이 네트워크에 적용되는 키/값 옵션입니다. 예를 들어 bridge_opts는 VM 네트워크의 브리지를 조정합니다. 사용 가능한 키는 엔진 구성에서 가져옵니다.',
+  'setupNetworks.customProperties.keyPlaceholder': '키 선택',
+  'setupNetworks.customProperties.label': '사용자 지정 속성',
+  'setupNetworks.customProperties.noKeys':
+    '엔진이 이 네트워크에 허용하는 사용자 지정 속성 키가 없습니다.',
   'setupNetworks.labels.add': '레이블 추가',
   'setupNetworks.labels.help':
     '이 NIC에 연결된 네트워크 레이블입니다. 엔진은 일치하는 레이블을 지닌 모든 네트워크를 NIC에 자동으로 연결합니다.',
@@ -3756,6 +3769,14 @@ export const ko: LocaleCatalog = {
   'setupNetworks.sriov.networks.removeAria': '허용된 네트워크 {name} 제거',
   'setupNetworks.sriov.networks.selectPlaceholder': '네트워크 선택',
   'setupNetworks.sriov.title': 'SR-IOV 구성 — {name}',
+  'setupNetworks.validation.customPropertyBridgeOpts': '{key}은(는) VM 네트워크에만 적용됩니다',
+  'setupNetworks.validation.customPropertyDuplicate': '{key}은(는) 이미 설정되어 있습니다',
+  'setupNetworks.validation.customPropertyKey': '키에는 문자, 숫자, 밑줄만 사용할 수 있습니다',
+  'setupNetworks.validation.customPropertyKeyRequired': '이 값의 키를 입력하십시오',
+  'setupNetworks.validation.customPropertyUnknown':
+    '{key}은(는) 이 엔진이 허용하는 사용자 지정 속성이 아닙니다',
+  'setupNetworks.validation.customPropertyValue': '{key} 값은 {format}과(와) 일치해야 합니다',
+  'setupNetworks.validation.customPropertyValueSyntax': '값에는 세미콜론을 사용할 수 없습니다',
   'setupNetworks.validation.ipv4': '유효한 IPv4 주소를 입력하십시오',
   'setupNetworks.validation.ipv6': '유효한 IPv6 주소를 입력하십시오',
   'setupNetworks.validation.managementGuard':
@@ -4494,6 +4515,84 @@ export const ko: LocaleCatalog = {
     'watchdog 변경에 실패하여 아무것도 저장되지 않았습니다: {message}. 다시 시도하려면 다시 저장하십시오.',
   'vm.edit.save.nextRunRefreshFailed':
     'watchdog은 저장되었지만 VM의 보류 중인 다음 실행 구성이 갱신되지 않아 다음 종료 시 엔진이 변경 사항을 되돌릴 수 있습니다: {message}. 다시 시도하려면 다시 저장하십시오.',
+  'vm.edit.pinning.title': 'CPU 고정',
+  'vm.edit.pinning.policy': 'CPU 고정 정책',
+  'vm.edit.pinning.policy.none': '없음',
+  'vm.edit.pinning.policy.manual': '수동',
+  'vm.edit.pinning.policy.resizeAndPin': '크기 조정 및 NUMA 고정',
+  'vm.edit.pinning.policy.dedicated': '전용',
+  'vm.edit.pinning.policy.isolateThreads': '스레드 격리',
+  'vm.edit.pinning.topology': 'CPU 고정 토폴로지',
+  'vm.edit.pinning.hint.manualNeedsHost':
+    '수동 고정을 사용하려면 VM이 특정 호스트에서 실행되어야 합니다.',
+  'vm.edit.pinning.hint.dedicatedNeedsVersion':
+    '전용 및 스레드 격리에는 클러스터 호환 버전 4.7 이상이 필요합니다.',
+  'vm.edit.pinning.hint.dedicatedNumaPinned':
+    '가상 NUMA 노드가 고정되어 있는 동안에는 전용 및 스레드 격리를 사용할 수 없습니다.',
+  'vm.edit.pinning.hint.resizeAndPin':
+    '크기 조정 및 NUMA 고정은 VM이 시작될 때 호스트에 맞춰 CPU 토폴로지와 가상 NUMA 노드를 정합니다.',
+  'vm.edit.pinning.error.required': '고정 토폴로지를 입력하십시오(예: 0#0_1#1-3).',
+  'vm.edit.pinning.error.syntax':
+    'vCPU#호스트CPU 형식의 항목을 _로 연결하여 작성하십시오(예: 0#0_1#1-3 또는 0#0-3,^2).',
+  'vm.edit.pinning.error.needsHost':
+    '수동 고정을 사용하려면 VM이 특정 호스트에서 실행되어야 합니다.',
+  'vm.edit.pinning.error.vcpuMissing':
+    'vCPU {vcpu}이(가) 없습니다. 이 VM의 vCPU는 0부터 {max}까지입니다.',
+  'vm.edit.pinning.error.duplicate': 'vCPU {vcpu}이(가) 두 번 이상 고정되었습니다.',
+  'vm.edit.pinning.error.noCpu': 'vCPU {vcpu}이(가) 어떤 호스트 CPU에도 고정되지 않았습니다.',
+  'fieldHelp.vm.cpuPinningPolicy':
+    'vCPU를 호스트 CPU에 매핑하는 방식입니다. 없음은 호스트에 맡기고, 수동은 아래 고정 토폴로지를 사용하며, 크기 조정 및 NUMA 고정은 호스트에 맞춰 VM 크기를 정하고 고정하고, 전용은 이 VM만을 위해 호스트 CPU를 예약하며, 스레드 격리는 여기에 더해 각 vCPU에 자체 물리 코어를 할당합니다. 실행 중인 VM에는 다음 시작 시 적용됩니다.',
+  'fieldHelp.vm.cpuPinningTopology':
+    '각 vCPU를 vCPU#CPU 형식으로 호스트 CPU에 고정하고 항목은 _로 연결합니다. CPU 집합에는 CPU(0,2), 범위(1-3), 제외(^2)를 나열합니다. 예: 0#0_1#1-3은 vCPU 0을 호스트 CPU 0에, vCPU 1을 호스트 CPU 1~3에 고정합니다.',
+  'fieldHelp.vm.numaCount':
+    '게스트에 보이는 가상 NUMA 노드 수입니다. vCPU와 메모리가 노드에 분배되며, 노드를 호스트 NUMA 노드에 고정하면 메모리를 로컬로 유지할 수 있습니다. 전원이 꺼진 VM에서만 변경할 수 있습니다.',
+  'vm.edit.numa.title': '가상 NUMA',
+  'vm.edit.numa.count': 'NUMA 노드 수',
+  'vm.edit.numa.loading': '가상 NUMA 노드 불러오는 중',
+  'vm.edit.numa.loadError': '가상 NUMA 노드를 불러올 수 없습니다. 변경되지 않습니다',
+  'vm.edit.numa.hint.running': '가상 NUMA 노드는 VM이 중지된 동안에만 변경할 수 있습니다.',
+  'vm.edit.numa.hint.needsHost':
+    '노드를 호스트 NUMA 노드에 고정하려면 VM이 특정 호스트에서 실행되어야 합니다.',
+  'vm.edit.numa.hint.hostLoading': '호스트 NUMA 토폴로지 불러오는 중',
+  'vm.edit.numa.hint.hostError': '호스트 NUMA 토폴로지를 불러올 수 없습니다',
+  'vm.edit.numa.table': '가상 NUMA 노드',
+  'vm.edit.numa.column.node': '노드',
+  'vm.edit.numa.column.resources': 'vCPU 및 메모리',
+  'vm.edit.numa.column.tune': '튜닝 모드',
+  'vm.edit.numa.column.hostNode': '호스트 NUMA 노드',
+  'vm.edit.numa.resources': 'vCPU {cpus}, {memory} MB',
+  'vm.edit.numa.tuneLabel': 'NUMA 노드 {index}의 튜닝 모드',
+  'vm.edit.numa.pinLabel': 'NUMA 노드 {index}의 호스트 NUMA 노드',
+  'vm.edit.numa.pin.none': '고정 안 함',
+  'vm.edit.numa.pin.hostNode': '호스트 노드 {index}',
+  'vm.edit.numa.tune.interleave': '인터리브(Interleave)',
+  'vm.edit.numa.tune.strict': '엄격(Strict)',
+  'vm.edit.numa.tune.preferred': '우선(Preferred)',
+  'vm.edit.numa.error.preferred':
+    '우선은 단일 호스트 노드에 고정된 단일 가상 NUMA 노드에서만 작동합니다.',
+  'vm.edit.numa.error.tooManyNodes':
+    'VM의 vCPU가 {cpus}개이므로 NUMA 노드를 {count}개 가질 수 없습니다.',
+  'vm.edit.numa.error.pinsNeedHost':
+    '고정된 NUMA 노드를 사용하려면 VM이 특정 호스트에서 실행되어야 합니다.',
+  'vm.edit.numa.error.pinsWithDedicated':
+    '전용 및 스레드 격리는 고정된 NUMA 노드와 함께 사용할 수 없습니다.',
+  'vm.edit.numa.error.hostUnsupported':
+    '호스트 {host}이(가) NUMA 토폴로지를 보고하지 않으므로 이 호스트에서 실행되는 VM은 가상 NUMA 노드를 가질 수 없습니다.',
+  'vm.edit.numa.error.hostNodeMissing': '호스트 {host}에 NUMA 노드 {hostNode}이(가) 없습니다.',
+  'vm.edit.numa.error.memory':
+    '가상 NUMA 노드 {node}에는 호스트 {host}의 노드 {hostNode}보다 많은 메모리가 필요하며, 엄격 모드에서는 허용되지 않습니다.',
+  'vm.edit.save.numaBeforeVmFailed':
+    '이전 가상 NUMA 노드를 제거하지 못해 VM이 저장되지 않았습니다: {message}. 다시 시도하려면 다시 저장하십시오.',
+  'vm.edit.save.vmFailedAfterNuma':
+    '이전 가상 NUMA 노드는 제거되었지만 VM을 저장할 수 없어 새 노드가 추가되지 않았습니다: {message}. 다시 시도하려면 다시 저장하십시오.',
+  'vm.edit.save.numaAfterVmFailed':
+    'VM은 저장되었지만 가상 NUMA 변경에 실패했습니다: {message}. 다시 시도하려면 다시 저장하십시오.',
+  'vm.edit.save.numaFailed':
+    '가상 NUMA 변경에 실패했습니다: {message}. 다시 시도하려면 다시 저장하십시오.',
+  'vm.edit.save.numaState':
+    '이제 VM에 {count, plural, =0 {가상 NUMA 노드가 없습니다} other {가상 NUMA 노드가 #개 있습니다}}.',
+  'vm.edit.save.numaStateUnknown':
+    '가상 NUMA 노드를 다시 읽을 수 없습니다. 현재 토폴로지를 보려면 대화 상자를 다시 여십시오.',
   'vm.edit.save.cdFailed':
     'VM은 저장되었지만 CD 변경에 실패했습니다: {message}. 다시 시도하려면 다시 저장하십시오.',
   'vm.create.watchdog.templateError':

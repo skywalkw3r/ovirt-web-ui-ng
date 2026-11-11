@@ -90,3 +90,77 @@ test('right-clicking a folder row (its badge) opens the folder menu', async ({ p
   }).toPass({ timeout: 20_000 })
   await expect(menu.getByRole('menuitem', { name: 'New folder…' })).toBeVisible()
 })
+
+// folder: and tag: filter-bar tokens (lib/filter-tokens): lifted out of the
+// search client-side and matched over the tags the list rows embed, so they
+// compose with the engine DSL that remains. Fixture tree: prod(web, db) +
+// staging; web-01/web-02 sit in web, db-01 (pci-dss) and db-02 in db.
+test('folder: and tag: tokens narrow the VM list and compose with the search DSL', async ({
+  page,
+}) => {
+  await login(page, { path: '/vms' })
+  const rows = page.locator('table[aria-label="Virtual machines"] tbody tr')
+  const search = page.getByLabel('Search virtual machines')
+  const link = (name: string) => page.getByRole('link', { name, exact: true })
+  await expect(rows.first()).toBeVisible()
+
+  // an anchored path selects exactly that folder
+  await search.fill('folder:/prod/web')
+  await expect(rows).toHaveCount(2)
+  await expect(link('web-01')).toBeVisible()
+  await expect(link('web-02')).toBeVisible()
+  // the token rides the URL like any other query, so it is linkable and
+  // saved with a bookmark
+  await expect(page).toHaveURL(/q=folder/)
+
+  // a folder token covers its subfolders, like selecting it in the tree
+  await search.fill('folder:prod')
+  await expect(rows).toHaveCount(4)
+
+  // tokens AND together…
+  await search.fill('folder:prod tag:pci-dss')
+  await expect(rows).toHaveCount(1)
+  await expect(link('db-01')).toBeVisible()
+
+  // …and with the engine DSL left over once they are lifted out (db-02 is
+  // migrating, so status=up keeps three of prod's four)
+  await search.fill('folder:prod and status=up')
+  await expect(rows).toHaveCount(3)
+  await expect(link('db-02')).toHaveCount(0)
+
+  // a token naming nothing reads as "no results", not as "no filter"
+  await search.fill('tag:no-such-tag')
+  await expect(page.getByText('No virtual machines match the search')).toBeVisible()
+})
+
+test('folder: and tag: tokens filter the Templates list', async ({ page }) => {
+  await login(page, { path: '/templates' })
+  const templateRows = page.locator('table[aria-label="Templates"] tbody tr')
+  const search = page.getByLabel('Search templates')
+  await expect(templateRows.first()).toBeVisible()
+
+  // the Templates bar commits on Enter; win2022-base is the legacy-labelled one
+  await search.fill('tag:legacy')
+  await search.press('Enter')
+  await expect(templateRows).toHaveCount(1)
+  await expect(page.getByRole('link', { name: 'win2022-base', exact: true })).toBeVisible()
+
+  await search.fill('folder:/prod')
+  await search.press('Enter')
+  await expect(templateRows).toHaveCount(1)
+  await expect(page.getByRole('link', { name: 'centos-stream-9', exact: true })).toBeVisible()
+})
+
+// Combined view: the same tokens ahead of its client-side name needle.
+// staging holds one VM and one template; the needle keeps the template.
+test('folder: token composes with the name filter on VMs & Templates', async ({ page }) => {
+  await login(page, { path: '/vms-templates' })
+  const combinedRows = page.locator('table[aria-label="VMs and templates"] tbody tr')
+  const filter = page.getByLabel('Filter VMs and templates by name')
+  await expect(combinedRows.first()).toBeVisible()
+  await filter.fill('folder:/staging')
+  await expect(combinedRows).toHaveCount(2)
+  await filter.fill('folder:/staging win')
+  await expect(combinedRows).toHaveCount(1)
+  await expect(page.getByRole('link', { name: 'win2022-base', exact: true })).toBeVisible()
+})

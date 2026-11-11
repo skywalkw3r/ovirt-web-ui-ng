@@ -59,15 +59,14 @@ can eventually be retired. It shares **no runtime code** with either.
   capacity tiles (free capacity, status, busiest host, per-cluster rows) and
   VM / host / cluster Monitoring tabs, plus a Monitoring Portal link out to
   each engine's Grafana for Data Warehouse history. DWH-heavy webadmin
-  analytics stay deferred (tracked in
-  [`docs/GAP-ANALYSIS.md`](docs/GAP-ANALYSIS.md)).
+  analytics stay deferred.
 
 ## Status
 
 A unified user/admin console at broad **oVirt 4.5 Administration-Portal parity**
 across **Compute / Network / Storage / Administration**, reached through
 successive review-and-implement waves. 42 routed pages; the remaining honest
-gaps are tracked in [`docs/GAP-ANALYSIS.md`](docs/GAP-ANALYSIS.md).
+gaps are tracked as [GitHub issues](https://github.com/skywalkw3r/ovirt-web-ui-ng/issues).
 
 - **Compute** — full VM lifecycle (create wizard with cloud-init/sysprep, bulk
   actions, snapshots / disks / NICs, migration, console launch incl. RDP), a
@@ -125,7 +124,7 @@ release/signing in [`docs/RELEASING.md`](docs/RELEASING.md)):
 | `app/`         | The console. `npm run dev:mock` runs it against built-in fixtures — no engine needed.                                                                                                                              |
 | `packaging/`   | Deploy artifacts: RPM spec, `Containerfile`, nginx config, `openshift/` manifests.                                                                                                                                 |
 | `lab/ansible/` | Fully automated single-node oVirt lab: Proxmox VM (nested virt) → CentOS Stream 9 node → self-hosted engine. See its README.                                                                                        |
-| `docs/`        | [`PLAN.md`](docs/PLAN.md) (roadmap, IA), [`COMPONENTS.md`](docs/COMPONENTS.md) (PF6 map + design rules), [`GAP-ANALYSIS.md`](docs/GAP-ANALYSIS.md), [`DEPLOY.md`](docs/DEPLOY.md), [`RELEASING.md`](docs/RELEASING.md), security & lab references. |
+| `docs/`        | [`PLAN.md`](docs/PLAN.md) (roadmap, IA), [`COMPONENTS.md`](docs/COMPONENTS.md) (PF6 map + design rules), [`DEPLOY.md`](docs/DEPLOY.md), [`RELEASING.md`](docs/RELEASING.md), security & lab references. |
 
 ## Acknowledgements
 

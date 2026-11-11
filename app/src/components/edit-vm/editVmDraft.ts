@@ -4,6 +4,8 @@ import type { Vm } from '../../api/schemas/vm'
 import type { Watchdog } from '../../api/schemas/watchdog'
 import type { MessageId } from '../../i18n/messages/en'
 import { statusKind } from '../../lib/vm-status'
+import { cpuTuneBody, effectiveCpuPinning, formatCpuPinning } from './cpuPinning'
+import type { NumaNodeDraft } from './numaDraft'
 
 // Memory is stored in bytes on the wire (see schemas/vm.ts) but edited in MiB
 // in the modal — convert at the draft boundary so every section works in MiB.
@@ -149,6 +151,19 @@ export interface EditVmDraft {
   placementHostIds: string[]
   migrationMode: string
   hostPassthroughCpu: boolean
+  // Host depth: CPU pinning. The 4.5 policy (api-model CpuPinningPolicy) and,
+  // for Manual, the pinning string in webadmin's format ("0#0_1#1-3"), which
+  // maps 1:1 to cpu.cpu_tune.vcpu_pins (see cpuPinning.ts). '' under every
+  // other policy.
+  cpuPinningPolicy: string
+  cpuPinning: string
+  // Host depth: virtual NUMA nodes. They live in the /vms/{id}/numanodes
+  // subcollection, not on the vm read, so vmToDraft seeds "not loaded" and the
+  // modal folds the nodes into BOTH draft and baseline once the read lands
+  // (numaDraftFields), exactly like the watchdog. numaLoaded gates the controls
+  // and the save-time plan so an unread topology is never touched.
+  numaLoaded: boolean
+  numaNodes: NumaNodeDraft[]
   // Resource Allocation
   cpuProfileId: string
   cpuShares: number
@@ -248,6 +263,18 @@ function placementHostIds(vm: Vm): string[] {
   return hosts.map((host) => host.id ?? '').filter(Boolean)
 }
 
+// The loaded manual pinning as webadmin's string (the engine's own stored form).
+function loadedCpuPinning(vm: Vm): string {
+  const pins = vm.cpu?.cpu_tune?.vcpu_pins?.vcpu_pin ?? []
+  return formatCpuPinning(
+    pins.flatMap((pin) =>
+      pin.vcpu !== undefined && pin.cpu_set !== undefined
+        ? [{ vcpu: pin.vcpu, cpuSet: pin.cpu_set }]
+        : [],
+    ),
+  )
+}
+
 // Vm read model → fully-populated draft. Every optional wire field is given a
 // concrete fallback so the returned draft has no undefined members.
 export function vmToDraft(vm: Vm): EditVmDraft {
@@ -255,6 +282,10 @@ export function vmToDraft(vm: Vm): EditVmDraft {
   const memoryMb = bytesToMb(vm.memory)
   const init = vm.initialization
   const hostIds = placementHostIds(vm)
+  const cpuPinning = loadedCpuPinning(vm)
+  // An engine that predates cpu_pinning_policy (4.4) derives it the same way:
+  // a pinning string means Manual, none means None.
+  const cpuPinningPolicy = vm.cpu_pinning_policy ?? (cpuPinning !== '' ? 'manual' : 'none')
   return {
     name: vm.name ?? '',
     description: vm.description ?? '',
@@ -350,6 +381,13 @@ export function vmToDraft(vm: Vm): EditVmDraft {
     // Default migration affinity is 'migratable' when the engine omits it.
     migrationMode: vm.placement_policy?.affinity ?? 'migratable',
     hostPassthroughCpu: vm.cpu?.mode === 'host_passthrough',
+    cpuPinningPolicy,
+    // Webadmin only shows the string under Manual
+    // (CpuPinningVmBaseToUnitBuilder).
+    cpuPinning: cpuPinningPolicy === 'manual' ? cpuPinning : '',
+    // Seeded from the numanodes subcollection later (numaDraftFields).
+    numaLoaded: false,
+    numaNodes: [],
     cpuProfileId: vm.cpu_profile?.id ?? '',
     cpuShares: vm.cpu_shares ?? 0,
     // Ballooning defaults on (webadmin default) when the engine omits it.
@@ -410,14 +448,17 @@ export function buildWatchdogChange(
   return watchdogChangeFor(current, { model: draft.watchdogModel, action: draft.watchdogAction })
 }
 
-// Keys vmFieldsChanged ignores: the watchdog and the CD, which each ride their
-// own subcollection (the CD tray id is also seeded into the draft alone on
-// open; a real CD pick is cdTouched + attachedCdId, see buildCdromChange).
+// Keys vmFieldsChanged ignores: the watchdog, the vNUMA nodes and the CD, which
+// each ride their own subcollection (the CD tray id is also seeded into the
+// draft alone on open; a real CD pick is cdTouched + attachedCdId, see
+// buildCdromChange).
 const NON_VM_DRAFT_KEYS: ReadonlySet<keyof EditVmDraft> = new Set([
   'watchdogLoaded',
   'watchdogId',
   'watchdogModel',
   'watchdogAction',
+  'numaLoaded',
+  'numaNodes',
   'attachedCdId',
   'cdTouched',
 ])
@@ -441,8 +482,8 @@ export function baselineWithWatchdog(
 }
 
 // The baseline once the vm PUT landed: every vm field the draft carries is
-// saved. The watchdog and CD keep the baseline's own state (each is settled by
-// its own step), and a pending icon upload is spent (the caller clears it from
+// saved. The watchdog, vNUMA nodes and CD keep the baseline's own state (each is
+// settled by its own step), and a pending icon upload is spent (the caller clears it from
 // the draft too) so it is not re-sent.
 export function baselineAfterVmSave(draft: EditVmDraft, baseline: EditVmDraft): EditVmDraft {
   return {
@@ -453,6 +494,8 @@ export function baselineAfterVmSave(draft: EditVmDraft, baseline: EditVmDraft): 
     watchdogId: baseline.watchdogId,
     watchdogModel: baseline.watchdogModel,
     watchdogAction: baseline.watchdogAction,
+    numaLoaded: baseline.numaLoaded,
+    numaNodes: baseline.numaNodes,
     attachedCdId: baseline.attachedCdId,
     cdTouched: baseline.cdTouched,
   }
@@ -594,6 +637,22 @@ function applyChangedSections(
     ;(payload.cpu as Record<string, unknown>).mode = draft.hostPassthroughCpu
       ? 'host_passthrough'
       : 'custom'
+  }
+
+  // Host depth: CPU pinning. The policy is its own top-level key; the manual
+  // string rides the cpu block as cpu_tune (see cpuPinning.ts). Leaving Manual
+  // must also CLEAR the stored string: the engine rejects a string under any
+  // other policy, and its REST layer flips a None policy that still has a
+  // string back to Manual (BackendVmsResource.updateCpuPinningFields). So a
+  // policy change to anything but Manual always sends the clearing cpu_tune.
+  const policyMoved = draft.cpuPinningPolicy !== baseline.cpuPinningPolicy
+  if (policyMoved) payload.cpu_pinning_policy = draft.cpuPinningPolicy
+  const pinning = effectiveCpuPinning(draft)
+  if (
+    pinning !== effectiveCpuPinning(baseline) ||
+    (policyMoved && draft.cpuPinningPolicy !== 'manual')
+  ) {
+    ;(payload.cpu as Record<string, unknown>).cpu_tune = cpuTuneBody(pinning)
   }
 
   // Resource Allocation.
@@ -938,6 +997,10 @@ const NEXT_RUN_KEYS: (keyof EditVmDraft)[] = [
   'virtioScsiMultiQueuesEnabled',
   'virtioScsiMultiQueues',
   'hostPassthroughCpu',
+  // Host depth: the engine marks both CPU pinning fields editable on status
+  // Down only (VmBase @EditableVmField(onStatuses = VMStatus.Down)).
+  'cpuPinningPolicy',
+  'cpuPinning',
   'virtioScsiEnabled',
   'ioThreads',
   'cpuProfileId',

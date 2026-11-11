@@ -189,7 +189,7 @@ export const fr: LocaleCatalog = {
   'inventory.tree.ariaLabel': 'Dossiers de VMs et de modèles',
   'inventory.sidebar.resize': 'Redimensionner la barre latérale',
   'inventory.filter.ariaLabel': 'Filtrer les VM et les modèles par nom',
-  'inventory.filter.hint': 'Filtrer par nom',
+  'inventory.filter.hint': 'Filtrer par nom, folder:/prod/web ou tag:pci-dss',
   'infra.filter.ariaLabel': "Filtrer l'infrastructure par nom",
   'infra.filter.hint': 'Filtrer par nom',
   'inventory.column.type': 'Type',
@@ -429,7 +429,7 @@ export const fr: LocaleCatalog = {
   'vms.searchEmpty.matches': 'Rien ne correspond à {query}',
   'vms.empty.title': 'Aucune machine virtuelle',
   'vms.empty.body': "Les VMs que vous avez l'autorisation de voir apparaîtront ici.",
-  'vms.search.hint': 'name=web* and status=up — ou texte brut',
+  'vms.search.hint': 'name=web* and status=up, folder:/prod/web, tag:pci-dss ou texte brut',
   'vms.search.ariaLabel': 'Rechercher des machines virtuelles',
   'vms.pagination.ariaLabel': 'Pagination des machines virtuelles',
   'vms.table.ariaLabel': 'Machines virtuelles',
@@ -2258,7 +2258,7 @@ export const fr: LocaleCatalog = {
   'dc.field.macPool': "Pool d'adresses MAC",
   'search.autocomplete.hint': 'Syntaxe de recherche',
   'templates.title': 'Modèles',
-  'templates.search.hint': 'name=web* — ou du texte simple',
+  'templates.search.hint': 'name=web*, folder:/prod, tag:legacy ou du texte simple',
   'templates.search.ariaLabel': 'Rechercher des modèles',
   'templates.pagination.ariaLabel': 'Pagination des modèles',
   'templates.loading': 'Chargement des modèles',
@@ -3801,6 +3801,12 @@ export const fr: LocaleCatalog = {
   'schedulingPolicy.weights.factorError': "Chaque facteur doit être un nombre entier d'au moins 1.",
   'schedulingPolicy.weights.label': 'Modules de poids',
   'setupNetworks.aria.configureSriov': 'Configurer SR-IOV pour {name}',
+  'setupNetworks.aria.customPropertyAdd': 'Ajouter une propriété personnalisée à {name}',
+  'setupNetworks.aria.customPropertyKey': 'Clé de la propriété personnalisée {index} sur {name}',
+  'setupNetworks.aria.customPropertyRemove':
+    'Supprimer la propriété personnalisée {index} de {name}',
+  'setupNetworks.aria.customPropertyValue':
+    'Valeur de la propriété personnalisée {index} sur {name}',
   'setupNetworks.aria.labelsOn': 'Étiquettes sur {name}',
   'setupNetworks.aria.newLabel': 'Nouvelle étiquette pour {name}',
   'setupNetworks.aria.qosField': '{label} pour {name}',
@@ -3811,6 +3817,15 @@ export const fr: LocaleCatalog = {
   'setupNetworks.bondMode.mode4': 'Agrégation dynamique de liens — 802.3ad (mode 4)',
   'setupNetworks.bondMode.mode5':
     'Répartition de charge adaptative en émission — balance-tlb (mode 5)',
+  'setupNetworks.customProperties.add': 'Ajouter une propriété personnalisée',
+  'setupNetworks.customProperties.freeForm':
+    "Le moteur n'a pas indiqué les clés qu'il autorise ; les clés ne sont donc vérifiées qu'à l'enregistrement.",
+  'setupNetworks.customProperties.help':
+    "Options clé/valeur appliquées à ce réseau sur l'hôte, comme bridge_opts pour régler le pont d'un réseau de VM. Les clés disponibles proviennent de la configuration du moteur.",
+  'setupNetworks.customProperties.keyPlaceholder': 'Sélectionnez une clé',
+  'setupNetworks.customProperties.label': 'Propriétés personnalisées',
+  'setupNetworks.customProperties.noKeys':
+    "Le moteur n'autorise aucune clé de propriété personnalisée pour ce réseau.",
   'setupNetworks.labels.add': 'Ajouter une étiquette',
   'setupNetworks.labels.help':
     'Étiquettes réseau attachées à cette carte réseau. Le moteur câble automatiquement sur la carte réseau chaque réseau portant une étiquette correspondante.',
@@ -3862,6 +3877,16 @@ export const fr: LocaleCatalog = {
   'setupNetworks.sriov.networks.removeAria': 'Supprimer le réseau autorisé {name}',
   'setupNetworks.sriov.networks.selectPlaceholder': 'Sélectionnez un réseau',
   'setupNetworks.sriov.title': 'Configuration SR-IOV — {name}',
+  'setupNetworks.validation.customPropertyBridgeOpts': "{key} ne s'applique qu'aux réseaux de VM",
+  'setupNetworks.validation.customPropertyDuplicate': '{key} est déjà définie',
+  'setupNetworks.validation.customPropertyKey':
+    'Une clé ne peut contenir que des lettres, des chiffres et des tirets bas',
+  'setupNetworks.validation.customPropertyKeyRequired': 'Saisissez une clé pour cette valeur',
+  'setupNetworks.validation.customPropertyUnknown':
+    "{key} n'est pas une propriété personnalisée autorisée par ce moteur",
+  'setupNetworks.validation.customPropertyValue': 'La valeur de {key} doit correspondre à {format}',
+  'setupNetworks.validation.customPropertyValueSyntax':
+    'Une valeur ne peut pas contenir de point-virgule',
   'setupNetworks.validation.ipv4': 'Saisissez une adresse IPv4 valide',
   'setupNetworks.validation.ipv6': 'Saisissez une adresse IPv6 valide',
   'setupNetworks.validation.managementGuard':
@@ -4616,6 +4641,85 @@ export const fr: LocaleCatalog = {
     "La modification du watchdog a échoué, rien n'a donc été enregistré : {message}. Enregistrez de nouveau pour réessayer.",
   'vm.edit.save.nextRunRefreshFailed':
     "Le watchdog a été enregistré, mais la configuration en attente de la VM pour le prochain démarrage n'a pas été actualisée ; le moteur pourrait donc annuler la modification au prochain arrêt : {message}. Enregistrez de nouveau pour réessayer.",
+  'vm.edit.pinning.title': 'Épinglage de CPU',
+  'vm.edit.pinning.policy': "Politique d'épinglage de CPU",
+  'vm.edit.pinning.policy.none': 'Aucune',
+  'vm.edit.pinning.policy.manual': 'Manuelle',
+  'vm.edit.pinning.policy.resizeAndPin': 'Redimensionner et épingler NUMA',
+  'vm.edit.pinning.policy.dedicated': 'Dédiée',
+  'vm.edit.pinning.policy.isolateThreads': 'Isoler les threads',
+  'vm.edit.pinning.topology': "Topologie d'épinglage de CPU",
+  'vm.edit.pinning.hint.manualNeedsHost':
+    "L'épinglage manuel nécessite que la VM s'exécute sur des hôtes spécifiques.",
+  'vm.edit.pinning.hint.dedicatedNeedsVersion':
+    'Dédiée et Isoler les threads nécessitent la version de compatibilité de cluster 4.7 ou ultérieure.',
+  'vm.edit.pinning.hint.dedicatedNumaPinned':
+    "Dédiée et Isoler les threads sont indisponibles tant qu'un nœud NUMA virtuel est épinglé.",
+  'vm.edit.pinning.hint.resizeAndPin':
+    "Redimensionner et épingler NUMA dimensionne la topologie CPU et les nœuds NUMA virtuels d'après l'hôte au démarrage de la VM.",
+  'vm.edit.pinning.error.required': "Saisissez une topologie d'épinglage, par exemple 0#0_1#1-3.",
+  'vm.edit.pinning.error.syntax':
+    "Écrivez des entrées vCPU#CPU de l'hôte reliées par _, par exemple 0#0_1#1-3 ou 0#0-3,^2.",
+  'vm.edit.pinning.error.needsHost':
+    "L'épinglage manuel nécessite que la VM s'exécute sur des hôtes spécifiques.",
+  'vm.edit.pinning.error.vcpuMissing':
+    "La vCPU {vcpu} n'existe pas ; cette VM a les vCPU 0 à {max}.",
+  'vm.edit.pinning.error.duplicate': 'La vCPU {vcpu} est épinglée plus d’une fois.',
+  'vm.edit.pinning.error.noCpu': "La vCPU {vcpu} n'est épinglée à aucun CPU de l'hôte.",
+  'fieldHelp.vm.cpuPinningPolicy':
+    "Comment les vCPU sont associées aux CPU de l'hôte. Aucune laisse l'hôte décider ; Manuelle utilise la topologie d'épinglage ci-dessous ; Redimensionner et épingler NUMA dimensionne la VM selon son hôte et l'épingle ; Dédiée réserve des CPU de l'hôte à cette seule VM ; Isoler les threads donne en plus à chaque vCPU son propre cœur physique. Appliqué au prochain démarrage d'une VM en cours d'exécution.",
+  'fieldHelp.vm.cpuPinningTopology':
+    "Épinglez chaque vCPU à des CPU de l'hôte sous la forme vCPU#CPU, entrées reliées par _. Un ensemble de CPU liste des CPU (0,2), des plages (1-3) et des exclusions (^2). Exemple : 0#0_1#1-3 épingle la vCPU 0 au CPU 0 de l'hôte et la vCPU 1 aux CPU 1 à 3 de l'hôte.",
+  'fieldHelp.vm.numaCount':
+    "Nombre de nœuds NUMA virtuels que voit l'invité. Les vCPU et la mémoire y sont répartis ; épinglez un nœud à un nœud NUMA de l'hôte pour garder sa mémoire locale. Modifiable uniquement sur une VM arrêtée.",
+  'vm.edit.numa.title': 'NUMA virtuel',
+  'vm.edit.numa.count': 'Nombre de nœuds NUMA',
+  'vm.edit.numa.loading': 'Chargement des nœuds NUMA virtuels',
+  'vm.edit.numa.loadError': 'Impossible de charger les nœuds NUMA virtuels ; ils restent inchangés',
+  'vm.edit.numa.hint.running':
+    'Les nœuds NUMA virtuels ne peuvent être modifiés que lorsque la VM est arrêtée.',
+  'vm.edit.numa.hint.needsHost':
+    "Épingler un nœud à un nœud NUMA de l'hôte nécessite que la VM s'exécute sur des hôtes spécifiques.",
+  'vm.edit.numa.hint.hostLoading': "Chargement de la topologie NUMA de l'hôte",
+  'vm.edit.numa.hint.hostError': "Impossible de charger la topologie NUMA de l'hôte",
+  'vm.edit.numa.table': 'Nœuds NUMA virtuels',
+  'vm.edit.numa.column.node': 'Nœud',
+  'vm.edit.numa.column.resources': 'vCPU et mémoire',
+  'vm.edit.numa.column.tune': "Mode d'ajustement",
+  'vm.edit.numa.column.hostNode': "Nœud NUMA de l'hôte",
+  'vm.edit.numa.resources': 'vCPU {cpus}, {memory} Mo',
+  'vm.edit.numa.tuneLabel': "Mode d'ajustement du nœud NUMA {index}",
+  'vm.edit.numa.pinLabel': "Nœud NUMA de l'hôte pour le nœud NUMA {index}",
+  'vm.edit.numa.pin.none': 'Non épinglé',
+  'vm.edit.numa.pin.hostNode': "Nœud de l'hôte {index}",
+  'vm.edit.numa.tune.interleave': 'Entrelacé (Interleave)',
+  'vm.edit.numa.tune.strict': 'Strict',
+  'vm.edit.numa.tune.preferred': 'Préféré (Preferred)',
+  'vm.edit.numa.error.preferred':
+    "Préféré ne fonctionne qu'avec un seul nœud NUMA virtuel épinglé à un seul nœud de l'hôte.",
+  'vm.edit.numa.error.tooManyNodes':
+    'La VM a {cpus} vCPU, elle ne peut donc pas avoir {count} nœuds NUMA.',
+  'vm.edit.numa.error.pinsNeedHost':
+    "Les nœuds NUMA épinglés nécessitent que la VM s'exécute sur des hôtes spécifiques.",
+  'vm.edit.numa.error.pinsWithDedicated':
+    'Dédiée et Isoler les threads ne peuvent pas être combinées avec des nœuds NUMA épinglés.',
+  'vm.edit.numa.error.hostUnsupported':
+    "L'hôte {host} ne signale aucune topologie NUMA, une VM qui s'y exécute ne peut donc pas avoir de nœuds NUMA virtuels.",
+  'vm.edit.numa.error.hostNodeMissing': "L'hôte {host} n'a pas de nœud NUMA {hostNode}.",
+  'vm.edit.numa.error.memory':
+    "Le nœud NUMA virtuel {node} nécessite plus de mémoire que n'en a le nœud {hostNode} de l'hôte {host}, ce que Strict n'autorise pas.",
+  'vm.edit.save.numaBeforeVmFailed':
+    "La suppression des anciens nœuds NUMA virtuels a échoué, la VM n'a donc pas été enregistrée : {message}. Enregistrez à nouveau pour réessayer.",
+  'vm.edit.save.vmFailedAfterNuma':
+    "Les anciens nœuds NUMA virtuels ont été supprimés, mais la VM n'a pas pu être enregistrée, les nouveaux nœuds n'ont donc pas été ajoutés : {message}. Enregistrez à nouveau pour réessayer.",
+  'vm.edit.save.numaAfterVmFailed':
+    'La VM a été enregistrée, mais la modification du NUMA virtuel a échoué : {message}. Enregistrez à nouveau pour réessayer.',
+  'vm.edit.save.numaFailed':
+    'La modification du NUMA virtuel a échoué : {message}. Enregistrez à nouveau pour réessayer.',
+  'vm.edit.save.numaState':
+    'La VM a maintenant {count, plural, =0 {aucun nœud NUMA virtuel} one {# nœud NUMA virtuel} other {# nœuds NUMA virtuels}}.',
+  'vm.edit.save.numaStateUnknown':
+    "Ses nœuds NUMA virtuels n'ont pas pu être relus ; rouvrez la boîte de dialogue pour voir la topologie actuelle.",
   'vm.edit.save.cdFailed':
     'La VM a été enregistrée, mais la modification du CD a échoué : {message}. Enregistrez de nouveau pour réessayer.',
   'vm.create.watchdog.templateError':
