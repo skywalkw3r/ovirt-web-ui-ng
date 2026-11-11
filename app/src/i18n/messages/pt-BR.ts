@@ -2373,6 +2373,19 @@ export const ptBR: LocaleCatalog = {
   'poolForm.size': 'Número de VMs',
   'poolForm.prestarted': 'VMs pré-iniciadas',
   'poolForm.maxUser': 'Máx. de VMs por usuário',
+  // Pool dialog VM tabs (#29)
+  'poolForm.sections.ariaLabel': 'Seções do pool',
+  'poolForm.template.hint':
+    'Selecione um modelo para definir o sistema, o console e outras configurações das VMs do pool.',
+  'poolForm.template.overrideNote':
+    'As VMs do pool são criadas a partir deste modelo. O que você alterar nas outras abas substitui as configurações dele.',
+  'poolForm.template.loading': 'Carregando a configuração do modelo',
+  'poolForm.template.error': 'Não foi possível carregar a configuração do modelo.',
+  'poolForm.fromTemplate': 'Vem do modelo. Um pool não pode alterá-lo.',
+  'poolForm.vmSettings.readOnly':
+    'As configurações de VM são definidas na criação do pool. As VMs adicionadas ao aumentar o pool as copiam.',
+  'poolForm.vmSettings.loading': 'Carregando as configurações de VM do pool',
+  'poolForm.vmSettings.error': 'Não foi possível carregar as configurações de VM do pool.',
   'clusters.remove.confirm.title': 'Remover {name}?',
   'clusters.remove.confirm.body':
     'O cluster será removido permanentemente. Isso não pode ser desfeito.',

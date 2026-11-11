@@ -3,6 +3,7 @@ import {
   Button,
   Form,
   FormGroup,
+  FormHelperText,
   FormSelect,
   FormSelectOption,
   HelperText,
@@ -27,11 +28,16 @@ export function ResourceAllocationSection({
   draft,
   onChange,
   cpuProfiles,
+  virtioScsiLockedReason,
   idPrefix = 'edit-vm',
 }: {
   draft: ResourceAllocationFields
   onChange: SectionChange<ResourceAllocationFields>
   cpuProfiles: UseQueryResult<ClusterCpuProfile[]>
+  // When set, the VirtIO-SCSI toggle is shown read-only with this reason
+  // underneath: a form whose API ignores it (POST /vmpools takes the
+  // controller from the template) must not offer a toggle with no effect.
+  virtioScsiLockedReason?: string
   idPrefix?: string
 }) {
   const t = useT()
@@ -203,8 +209,16 @@ export function ResourceAllocationSection({
           id={`${idPrefix}-virtio-scsi`}
           aria-label={t('vm.edit.resources.virtioScsi')}
           isChecked={draft.virtioScsiEnabled}
+          isDisabled={virtioScsiLockedReason !== undefined}
           onChange={(_event, checked) => set('virtioScsiEnabled', checked)}
         />
+        {virtioScsiLockedReason !== undefined && (
+          <FormHelperText>
+            <HelperText>
+              <HelperTextItem>{virtioScsiLockedReason}</HelperTextItem>
+            </HelperText>
+          </FormHelperText>
+        )}
       </FormGroup>
 
       {/* VirtIO-SCSI queue tuning only applies while the controller exists. */}

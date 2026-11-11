@@ -2803,6 +2803,19 @@ export const en = {
   'poolForm.size': 'Number of VMs',
   'poolForm.prestarted': 'Prestarted VMs',
   'poolForm.maxUser': 'Max VMs per user',
+  // Pool dialog VM tabs (#29)
+  'poolForm.sections.ariaLabel': 'Pool sections',
+  'poolForm.template.hint':
+    "Select a template to set the pool VMs' system, console and other settings.",
+  'poolForm.template.overrideNote':
+    "The pool's VMs are built from this template. What you change in the other tabs overrides its settings.",
+  'poolForm.template.loading': 'Loading the template configuration',
+  'poolForm.template.error': 'The template configuration could not be loaded.',
+  'poolForm.fromTemplate': 'Comes from the template. A pool cannot change it.',
+  'poolForm.vmSettings.readOnly':
+    'VM settings are fixed when the pool is created. VMs added by growing the pool copy them.',
+  'poolForm.vmSettings.loading': 'Loading the pool VM settings',
+  'poolForm.vmSettings.error': 'The pool VM settings could not be loaded.',
 
   // Cluster remove confirm (components/cluster-actions/ClusterActionsBar)
   'clusters.remove.confirm.title': 'Remove {name}?',

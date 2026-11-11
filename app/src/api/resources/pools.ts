@@ -21,7 +21,9 @@ export async function getPool(id: string): Promise<VmPool> {
 }
 
 // Webadmin-style create: POST the new pool's fields (name, cluster.{id},
-// template.{id}, size, prestarted_vms?, max_user_vms?, type). The engine answers
+// template.{id}, size, prestarted_vms?, max_user_vms?, type), plus a `vm`
+// sub-element with the VM settings that override the template's (see
+// components/pool-form/poolDraft.ts for what the engine reads). The engine answers
 // with the full created pool, which we parse through VmPoolSchema so the create
 // modal gets a coerced read model — mirror resources/clusters.ts createCluster.
 export async function createPool(body: Record<string, unknown>): Promise<VmPool> {
@@ -29,8 +31,9 @@ export async function createPool(body: Record<string, unknown>): Promise<VmPool>
 }
 
 // Webadmin-style edit: PUT the changed fields back. name/cluster/template/type
-// are immutable after create (UpdateVmPoolCommand rejects them) so the edit
-// modal only sends description/comment/size/prestarted_vms/max_user_vms. The
+// are immutable after create (UpdateVmPoolCommand rejects them) and `vm` is
+// ignored on PUT, so the edit modal only sends the changed
+// description/comment/size/prestarted_vms/max_user_vms. The
 // engine answers with the full updated pool, parsed through VmPoolSchema —
 // mirror resources/clusters.ts updateCluster.
 export async function updatePool(id: string, body: Record<string, unknown>): Promise<VmPool> {

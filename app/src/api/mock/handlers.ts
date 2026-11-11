@@ -945,6 +945,9 @@ interface MockVmPool {
   // is NOT populated by VmPoolMapper on a live read (mock inlines it for dev).
   stateful?: boolean | string
   template?: { id?: string; name?: string }
+  // pool-level device flags POST /vmpools reads (BackendVmPoolsResource.add)
+  soundcard_enabled?: boolean | string
+  tpm_enabled?: boolean | string
 }
 
 interface MockUser {
@@ -6147,6 +6150,7 @@ const pristineDataCenterDetails = structuredClone(dataCenterDetails)
 const pristineClusters = structuredClone(clusters)
 const pristineClusterDetails = structuredClone(clusterDetails)
 const pristineTemplates = structuredClone(templates)
+const pristinePools = structuredClone(pools)
 const pristineTemplateDetails = structuredClone(templateDetails)
 const pristineIconCatalog = structuredClone(iconCatalog)
 
@@ -6165,6 +6169,7 @@ export function resetMockVms(): void {
   restoreInPlace(clusters, pristineClusters)
   restoreRecordInPlace(clusterDetails, pristineClusterDetails)
   restoreInPlace(templates, pristineTemplates)
+  restoreInPlace(pools, pristinePools)
   restoreRecordInPlace(templateDetails, pristineTemplateDetails)
   restoreInPlace(iconCatalog, pristineIconCatalog)
   uploadedIconSeq = 0
@@ -10846,12 +10851,59 @@ function requirePool(id: string): MockVmPool {
   return pool
 }
 
+// The VmBase keys of a pool's `vm` sub-element that POST /vmpools does NOT
+// read: the USB policy and the VirtIO-SCSI controller come from the template
+// (the pool add never resolves them from `vm`), and the sound card is the
+// pool-level soundcard_enabled. A large_icon upload is dropped too (the add
+// never calls IconHelper); a catalog { id } still maps.
+const POOL_VM_IGNORED_KEYS = ['usb', 'virtio_scsi', 'soundcard_enabled']
+
+// Add `count` member VMs to `pool`, each a down copy of `config` (the pool's
+// VM configuration). Named like the engine's NameForVmInPoolGenerator
+// (<pool>-<n>), skipping names already taken. Returns the VMs added.
+function addPoolMembers(
+  pool: MockVmPool,
+  config: Record<string, unknown>,
+  count: number,
+): MockVm[] {
+  const added: MockVm[] = []
+  let index = vms.filter((vm) => vm.vm_pool?.id === pool.id).length
+  for (let i = 0; i < count; i += 1) {
+    let name: string
+    do {
+      index += 1
+      name = `${pool.name}-${index}`
+    } while (vms.some((vm) => vm.name === name))
+    vmSeq += 1
+    const vm = {
+      ...structuredClone(config),
+      id: `vm-new-${vmSeq}`,
+      name,
+      status: 'down',
+      cluster: pool.cluster,
+      vm_pool: { id: pool.id },
+      stateless: pool.stateful !== true && pool.stateful !== 'true',
+    } as MockVm
+    vms.push(vm)
+    snapshots.set(vm.id, [activeSnapshot(vm.id)])
+    disks.set(vm.id, [])
+    nics.set(vm.id, [])
+    added.push(vm)
+  }
+  return added
+}
+
 // POST /vmpools — webadmin-style create. BackendVmPoolsResource requires name,
-// cluster.{id|name} and template.{id|name}; template is consumed by the engine
-// to build the base VM and never stored on the pool entity, so we validate it
-// but don't echo it back. Assigns a fresh id derived from the fixture count (no
-// Date/Math.random, so tests stay deterministic), pushes the new pool, and
-// returns it so GET /vmpools sees it. Mirrors addCluster.
+// cluster.{id|name} and template.{id|name}; an unknown template 404s. The
+// engine builds the pool's VMs from the template's configuration with the `vm`
+// sub-element mapped over it (VmPoolMapper → VmMapper), so the mock does the
+// same: the template's VmBase keys, then `vm` merged key by key, minus the
+// keys add() does not read from `vm` (POOL_VM_IGNORED_KEYS); a pool-level
+// soundcard_enabled sets the sound card. It then adds `size` member VMs with
+// that configuration and links the first as the pool's vm, as the live read
+// does. Assigns a fresh id derived from the fixture count (no
+// Date/Math.random, so tests stay deterministic) and returns the new pool so
+// GET /vmpools sees it. Mirrors addCluster.
 function addPool(body: unknown): unknown {
   const spec = (body ?? {}) as {
     name?: string
@@ -10863,6 +10915,10 @@ function addPool(body: unknown): unknown {
     type?: string
     prestarted_vms?: number | string
     max_user_vms?: number | string
+    stateful?: boolean
+    soundcard_enabled?: boolean
+    tpm_enabled?: boolean
+    vm?: Record<string, unknown>
   }
   if (!spec.name) {
     throw new ApiError(400, 'Incomplete parameters', 'VmPool [name] required for add')
@@ -10876,6 +10932,31 @@ function addPool(body: unknown): unknown {
   if (pools.some((p) => p.name === spec.name)) {
     throw new ApiError(409, 'Operation Failed', `VmPool name ${spec.name} is already in use`)
   }
+  const templateName = spec.template.name
+  const template = requireTemplateDetail(
+    spec.template.id ??
+      Object.values(templateDetails).find((t) => t.name === templateName)?.id ??
+      '',
+  )
+
+  // The template's VmBase configuration, then the `vm` overrides on top.
+  const config: Record<string, unknown> = structuredClone(
+    Object.fromEntries(
+      TEMPLATE_INHERITED_VM_KEYS.flatMap((key) => {
+        const value = (template as unknown as Record<string, unknown>)[key]
+        return key !== 'cluster' && value !== undefined ? [[key, value]] : []
+      }),
+    ),
+  )
+  const overrides = Object.fromEntries(
+    Object.entries(spec.vm ?? {}).filter(([key]) => !POOL_VM_IGNORED_KEYS.includes(key)),
+  )
+  const icon = overrides.large_icon as { id?: string } | undefined
+  if (icon !== undefined && icon.id === undefined) delete overrides.large_icon
+  mergeEntity(config, overrides)
+  if (spec.soundcard_enabled !== undefined) config.soundcard_enabled = spec.soundcard_enabled
+  config.template = { id: template.id, name: template.name }
+
   const id = `pool-new-${pools.length}`
   const pool: MockVmPool = {
     id,
@@ -10887,15 +10968,24 @@ function addPool(body: unknown): unknown {
     type: spec.type ?? 'automatic',
     prestarted_vms: spec.prestarted_vms ?? 0,
     max_user_vms: spec.max_user_vms ?? 1,
+    stateful: spec.stateful ?? false,
+    template: { id: template.id, name: template.name },
+    ...(spec.soundcard_enabled !== undefined ? { soundcard_enabled: spec.soundcard_enabled } : {}),
+    ...(spec.tpm_enabled !== undefined ? { tpm_enabled: spec.tpm_enabled } : {}),
   }
+  const members = addPoolMembers(pool, config, Number(pool.size))
+  if (members[0]) pool.vm = { id: members[0].id }
   pools.push(pool)
   return pool
 }
 
 // PUT /vmpools/{id} — webadmin-style edit. The engine (UpdateVmPoolCommand)
-// treats name, type, cluster and template as immutable and refuses to shrink the
-// pool; enforce the same so the edit-lock UI is exercised. Everything else
-// shallow-merges. Returns the merged pool. Mirrors updateCluster.
+// treats name, type, stateful and cluster as immutable and refuses to shrink
+// the pool; enforce the same so the edit-lock UI is exercised. The `vm`
+// sub-element is ignored, as BackendVmPoolResource.update rebuilds the VM
+// configuration from an existing pool VM: VMs added by growing the pool copy
+// the linked member's settings. Everything else shallow-merges. Returns the
+// merged pool. Mirrors updateCluster.
 function updatePool(id: string, body: unknown): unknown {
   const pool = requirePool(id)
   const patch = (body ?? {}) as Partial<MockVmPool>
@@ -10905,15 +10995,38 @@ function updatePool(id: string, body: unknown): unknown {
   if (patch.type !== undefined && patch.type !== pool.type) {
     throw new ApiError(409, 'Operation Failed', 'Cannot change VM pool type')
   }
+  const isStateful = (value: unknown) => value === true || value === 'true'
+  if (patch.stateful !== undefined && isStateful(patch.stateful) !== isStateful(pool.stateful)) {
+    throw new ApiError(409, 'Operation Failed', 'Cannot change the VM pool stateful option')
+  }
   if (patch.size !== undefined && Number(patch.size) < Number(pool.size ?? 0)) {
     throw new ApiError(409, 'Operation Failed', 'Cannot decrease the number of VMs in the pool')
   }
-  // name/type only reach here when unchanged (the guards above reject a diff);
-  // cluster/template have no guard, so strip all four so a stray patch can never
-  // rewrite an edit-locked field. Everything else (description, comment, size,
-  // prestarted_vms, max_user_vms) shallow-merges.
-  const { name: _name, type: _type, cluster: _cluster, ...mutable } = patch
+  // name/type/stateful only reach here when unchanged (the guards above reject
+  // a diff); cluster has no guard and vm is never read on PUT, so strip them
+  // all so a stray patch can never rewrite an edit-locked field. Everything
+  // else (description, comment, size, prestarted_vms, max_user_vms)
+  // shallow-merges.
+  const {
+    name: _name,
+    type: _type,
+    stateful: _stateful,
+    cluster: _cluster,
+    vm: _vm,
+    ...mutable
+  } = patch
+  const grownBy = patch.size !== undefined ? Number(patch.size) - Number(pool.size ?? 0) : 0
   Object.assign(pool, mutable)
+  const source = vms.find((vm) => vm.id === pool.vm?.id)
+  if (grownBy > 0 && source) {
+    const {
+      id: _vmId,
+      name: _vmName,
+      status: _vmStatus,
+      ...config
+    } = source as unknown as Record<string, unknown>
+    addPoolMembers(pool, config, grownBy)
+  }
   return pool
 }
 
