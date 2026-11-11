@@ -4954,4 +4954,36 @@ export const de: LocaleCatalog = {
     'Das Rückgängigmachen der teilweisen Einrichtung wurde abgebrochen: {error}',
   'host.configureLocalStorage.outcome.rerunHint':
     'Versetzen Sie zum Abschließen den Host bei Bedarf in die Wartung und führen Sie „Lokalen Speicher konfigurieren“ erneut aus; dabei wird das leere lokale Rechenzentrum wiederverwendet.',
+  // Template Storage tab + scoped Events tabs (issue #33) ----------------
+  'scopedEvents.loading': 'Ereignisse werden geladen',
+  'scopedEvents.error.title': 'Ereignisse konnten nicht geladen werden',
+  'scopedEvents.empty.title': 'Keine Ereignisse',
+  'templateDetail.tab.storage': 'Speicher',
+  'templateDetail.tab.events': 'Ereignisse',
+  'templateEvents.empty.body':
+    'Engine-Audit-Log-Ereignisse für diese Vorlage werden hier angezeigt.',
+  'templateEvents.table.ariaLabel': 'Ereignisse für diese Vorlage',
+  'templateStorage.empty.body':
+    'Keiner der Datenträger dieser Vorlage liegt auf einer Speicherdomäne.',
+  'templateStorage.table.ariaLabel': 'Speicherdomänen mit den Datenträgern dieser Vorlage',
+  'templateStorage.column.used': 'Belegter Platz',
+  'templateStorage.column.disks': 'Datenträger',
+  'templateStorage.expand.ariaLabel': 'Datenträger anzeigen',
+  'templateStorage.disks.ariaLabel': 'Vorlagen-Datenträger auf {name}',
+  'clusterDetail.tab.events': 'Ereignisse',
+  'clusterEvents.empty.body':
+    'Engine-Audit-Log-Ereignisse für diesen Cluster werden hier angezeigt.',
+  'clusterEvents.table.ariaLabel': 'Ereignisse für diesen Cluster',
+  'dcDetail.tab.events': 'Ereignisse',
+  'dcEvents.empty.body':
+    'Engine-Audit-Log-Ereignisse für dieses Rechenzentrum werden hier angezeigt.',
+  'dcEvents.table.ariaLabel': 'Ereignisse für dieses Rechenzentrum',
+  'storageDetail.tab.events': 'Ereignisse',
+  'storageEvents.empty.body':
+    'Engine-Audit-Log-Ereignisse für diese Speicherdomäne werden hier angezeigt.',
+  'storageEvents.table.ariaLabel': 'Ereignisse für diese Speicherdomäne',
+  'quotaDetail.tab.events': 'Ereignisse',
+  'quotaEvents.empty.body':
+    'Engine-Audit-Log-Ereignisse für diese Kontingentregelung werden hier angezeigt.',
+  'quotaEvents.table.ariaLabel': 'Ereignisse für diese Kontingentregelung',
 }

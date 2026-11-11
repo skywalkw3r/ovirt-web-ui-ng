@@ -4894,4 +4894,35 @@ export const ptBR: LocaleCatalog = {
     'A reversão da configuração parcial foi interrompida: {error}',
   'host.configureLocalStorage.outcome.rerunHint':
     'Para concluir, coloque o host em manutenção, se necessário, e execute “Configurar armazenamento local” novamente; o data center local vazio será reutilizado.',
+  // Template Storage tab + scoped Events tabs (issue #33) ----------------
+  'scopedEvents.loading': 'Carregando eventos',
+  'scopedEvents.error.title': 'Não foi possível carregar eventos',
+  'scopedEvents.empty.title': 'Nenhum evento',
+  'templateDetail.tab.storage': 'Armazenamento',
+  'templateDetail.tab.events': 'Eventos',
+  'templateEvents.empty.body':
+    'Os eventos do log de auditoria do engine para este modelo aparecerão aqui.',
+  'templateEvents.table.ariaLabel': 'Eventos deste modelo',
+  'templateStorage.empty.body': 'Nenhum disco deste modelo está em um domínio de armazenamento.',
+  'templateStorage.table.ariaLabel': 'Domínios de armazenamento com os discos deste modelo',
+  'templateStorage.column.used': 'Espaço usado',
+  'templateStorage.column.disks': 'Discos',
+  'templateStorage.expand.ariaLabel': 'Mostrar discos',
+  'templateStorage.disks.ariaLabel': 'Discos do modelo em {name}',
+  'clusterDetail.tab.events': 'Eventos',
+  'clusterEvents.empty.body':
+    'Os eventos do log de auditoria do engine para este cluster aparecerão aqui.',
+  'clusterEvents.table.ariaLabel': 'Eventos deste cluster',
+  'dcDetail.tab.events': 'Eventos',
+  'dcEvents.empty.body':
+    'Os eventos do log de auditoria do engine para este centro de dados aparecerão aqui.',
+  'dcEvents.table.ariaLabel': 'Eventos deste centro de dados',
+  'storageDetail.tab.events': 'Eventos',
+  'storageEvents.empty.body':
+    'Os eventos do log de auditoria do engine para este domínio de armazenamento aparecerão aqui.',
+  'storageEvents.table.ariaLabel': 'Eventos deste domínio de armazenamento',
+  'quotaDetail.tab.events': 'Eventos',
+  'quotaEvents.empty.body':
+    'Os eventos do log de auditoria do engine para esta cota aparecerão aqui.',
+  'quotaEvents.table.ariaLabel': 'Eventos desta cota',
 }

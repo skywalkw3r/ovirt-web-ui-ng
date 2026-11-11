@@ -4929,4 +4929,36 @@ export const fr: LocaleCatalog = {
     "L'annulation de la configuration partielle s'est arrêtée : {error}",
   'host.configureLocalStorage.outcome.rerunHint':
     "Pour terminer, mettez l'hôte en maintenance si nécessaire et relancez « Configurer le stockage local » ; le centre de données local vide sera réutilisé.",
+  // Template Storage tab + scoped Events tabs (issue #33) ----------------
+  'scopedEvents.loading': 'Chargement des événements',
+  'scopedEvents.error.title': 'Impossible de charger les événements',
+  'scopedEvents.empty.title': 'Aucun événement',
+  'templateDetail.tab.storage': 'Stockage',
+  'templateDetail.tab.events': 'Événements',
+  'templateEvents.empty.body':
+    "Les événements du journal d'audit du moteur pour ce modèle apparaîtront ici.",
+  'templateEvents.table.ariaLabel': 'Événements pour ce modèle',
+  'templateStorage.empty.body':
+    'Aucun disque de ce modèle ne se trouve sur un domaine de stockage.',
+  'templateStorage.table.ariaLabel': 'Domaines de stockage contenant les disques de ce modèle',
+  'templateStorage.column.used': 'Espace utilisé',
+  'templateStorage.column.disks': 'Disques',
+  'templateStorage.expand.ariaLabel': 'Afficher les disques',
+  'templateStorage.disks.ariaLabel': 'Disques du modèle sur {name}',
+  'clusterDetail.tab.events': 'Événements',
+  'clusterEvents.empty.body':
+    "Les événements du journal d'audit du moteur pour ce cluster apparaîtront ici.",
+  'clusterEvents.table.ariaLabel': 'Événements pour ce cluster',
+  'dcDetail.tab.events': 'Événements',
+  'dcEvents.empty.body':
+    "Les événements du journal d'audit du moteur pour ce centre de données apparaîtront ici.",
+  'dcEvents.table.ariaLabel': 'Événements pour ce centre de données',
+  'storageDetail.tab.events': 'Événements',
+  'storageEvents.empty.body':
+    "Les événements du journal d'audit du moteur pour ce domaine de stockage apparaîtront ici.",
+  'storageEvents.table.ariaLabel': 'Événements pour ce domaine de stockage',
+  'quotaDetail.tab.events': 'Événements',
+  'quotaEvents.empty.body':
+    "Les événements du journal d'audit du moteur pour ce quota apparaîtront ici.",
+  'quotaEvents.table.ariaLabel': 'Événements pour ce quota',
 }
