@@ -1438,6 +1438,41 @@ export const en = {
   'permissions.add.role.none': 'No assignable roles are available on this engine.',
   'permissions.add.role.userGroup': 'User roles',
   'permissions.add.role.adminGroup': 'Administrative roles',
+  // Add Permission picker depth (issue #31): multi-select, My groups,
+  // Everyone, and directory search.
+  'permissions.add.kind.myGroups': 'My groups',
+  'permissions.add.kind.everyone': 'Everyone',
+  'permissions.add.source.label': 'Search in',
+  'permissions.add.source.engine': 'Engine database',
+  'permissions.add.source.directory': 'Directory: {domain}',
+  'permissions.add.source.domainsLoading': 'Loading directories',
+  'permissions.add.source.domainsError': 'Could not load directories: {message}',
+  'permissions.add.source.directoryHint':
+    'Principals found in a directory that are not in the engine yet are added to it when the role is granted.',
+  'permissions.add.empty.directory.users': 'This directory returned no users.',
+  'permissions.add.empty.directory.groups': 'This directory returned no groups.',
+  'permissions.add.myGroups.loading': 'Loading your groups',
+  'permissions.add.myGroups.error': 'Could not load your groups: {message}',
+  'permissions.add.myGroups.empty.title': 'No groups',
+  'permissions.add.myGroups.empty.body': 'Your account is not a member of any directory group.',
+  'permissions.add.myGroups.table.ariaLabel': 'My groups',
+  'permissions.add.everyone.body':
+    'The role is granted to the built-in Everyone group, so every user gets it on this {noun}.',
+  'permissions.add.selectMany.user': 'Select one or more users to grant the role to.',
+  'permissions.add.selectMany.group': 'Select one or more groups to grant the role to.',
+  'permissions.add.selected.count':
+    '{count, plural, one {# principal selected} other {# principals selected}}',
+  'permissions.add.selected.ariaLabel': 'Selected principals',
+  'permissions.add.selected.remove': 'Remove {name} from the selection',
+  'permissions.add.result.failed.title':
+    '{count, plural, one {The role could not be granted to # principal} other {The role could not be granted to # principals}}',
+  'permissions.add.result.failed.body':
+    'The failed principals stay selected. Fix the cause and retry, or remove them from the selection.',
+  'permissions.add.result.failed.item': '{name}: {message}',
+  'permissions.add.submit.retry': 'Retry failed',
+  'permissions.add.toast.granted': '{role} granted to {name}',
+  'permissions.add.toast.grantedMany':
+    '{role} granted to {count, plural, one {# principal} other {# principals}}',
 
   // ==========================================================================
   // USERS (pages/UsersPage) — admin-gated directory of engine users.

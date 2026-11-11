@@ -52,7 +52,7 @@ export function useSystemPermissions() {
 }
 
 // Display names ride through the mutation variables purely for the toasts —
-// the house pattern (useAddPermission carries them the same way). The modal
+// the house pattern (useRemovePermission carries them the same way). The modal
 // resolves them from the selected role/principal rows.
 export interface SystemPermissionVars {
   spec: PermissionSpec

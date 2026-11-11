@@ -1070,6 +1070,43 @@ export const fr: LocaleCatalog = {
   'permissions.add.role.none': "Aucun rôle assignable n'est disponible sur ce moteur.",
   'permissions.add.role.userGroup': 'Rôles des utilisateurs',
   'permissions.add.role.adminGroup': 'Rôles d’administrateur',
+  // Add Permission picker depth (issue #31): multi-select, My groups,
+  // Everyone, and directory search.
+  'permissions.add.kind.myGroups': 'Mes groupes',
+  'permissions.add.kind.everyone': 'Tout le monde',
+  'permissions.add.source.label': 'Rechercher dans',
+  'permissions.add.source.engine': 'Base de données du moteur',
+  'permissions.add.source.directory': 'Annuaire : {domain}',
+  'permissions.add.source.domainsLoading': 'Chargement des annuaires',
+  'permissions.add.source.domainsError': 'Impossible de charger les annuaires : {message}',
+  'permissions.add.source.directoryHint':
+    "Les principaux trouvés dans un annuaire qui ne sont pas encore dans le moteur y sont ajoutés lors de l'attribution du rôle.",
+  'permissions.add.empty.directory.users': "Cet annuaire n'a renvoyé aucun utilisateur.",
+  'permissions.add.empty.directory.groups': "Cet annuaire n'a renvoyé aucun groupe.",
+  'permissions.add.myGroups.loading': 'Chargement de vos groupes',
+  'permissions.add.myGroups.error': 'Impossible de charger vos groupes : {message}',
+  'permissions.add.myGroups.empty.title': 'Aucun groupe',
+  'permissions.add.myGroups.empty.body': "Votre compte n'est membre d'aucun groupe d'annuaire.",
+  'permissions.add.myGroups.table.ariaLabel': 'Mes groupes',
+  'permissions.add.everyone.body':
+    'Le rôle est attribué au groupe intégré Everyone : chaque utilisateur l’obtient donc sur ce {noun}.',
+  'permissions.add.selectMany.user':
+    'Sélectionnez un ou plusieurs utilisateurs à qui attribuer le rôle.',
+  'permissions.add.selectMany.group':
+    'Sélectionnez un ou plusieurs groupes auxquels attribuer le rôle.',
+  'permissions.add.selected.count':
+    '{count, plural, one {# principal sélectionné} other {# principaux sélectionnés}}',
+  'permissions.add.selected.ariaLabel': 'Principaux sélectionnés',
+  'permissions.add.selected.remove': 'Retirer {name} de la sélection',
+  'permissions.add.result.failed.title':
+    "{count, plural, one {Le rôle n'a pas pu être attribué à # principal} other {Le rôle n'a pas pu être attribué à # principaux}}",
+  'permissions.add.result.failed.body':
+    'Les principaux en échec restent sélectionnés. Corrigez la cause puis réessayez, ou retirez-les de la sélection.',
+  'permissions.add.result.failed.item': '{name} : {message}',
+  'permissions.add.submit.retry': 'Réessayer les échecs',
+  'permissions.add.toast.granted': '{role} attribué à {name}',
+  'permissions.add.toast.grantedMany':
+    '{role} attribué à {count, plural, one {# principal} other {# principaux}}',
   'users.notPermitted': 'Utilisateurs',
   'users.title': 'Utilisateurs',
   'users.search.hint': 'usrname=jdoe* — ou texte brut',

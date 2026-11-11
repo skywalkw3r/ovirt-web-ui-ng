@@ -1076,6 +1076,43 @@ export const de: LocaleCatalog = {
   'permissions.add.role.none': 'Auf dieser Engine sind keine zuweisbaren Rollen verfügbar.',
   'permissions.add.role.userGroup': 'Benutzerrollen',
   'permissions.add.role.adminGroup': 'Administrative Rollen',
+  // Add Permission picker depth (issue #31): multi-select, My groups,
+  // Everyone, and directory search.
+  'permissions.add.kind.myGroups': 'Meine Gruppen',
+  'permissions.add.kind.everyone': 'Alle',
+  'permissions.add.source.label': 'Suchen in',
+  'permissions.add.source.engine': 'Engine-Datenbank',
+  'permissions.add.source.directory': 'Verzeichnis: {domain}',
+  'permissions.add.source.domainsLoading': 'Verzeichnisse werden geladen',
+  'permissions.add.source.domainsError': 'Verzeichnisse konnten nicht geladen werden: {message}',
+  'permissions.add.source.directoryHint':
+    'In einem Verzeichnis gefundene Principals, die der Engine noch nicht bekannt sind, werden beim Zuweisen der Rolle zur Engine hinzugefügt.',
+  'permissions.add.empty.directory.users': 'Dieses Verzeichnis hat keine Benutzer zurückgegeben.',
+  'permissions.add.empty.directory.groups': 'Dieses Verzeichnis hat keine Gruppen zurückgegeben.',
+  'permissions.add.myGroups.loading': 'Ihre Gruppen werden geladen',
+  'permissions.add.myGroups.error': 'Ihre Gruppen konnten nicht geladen werden: {message}',
+  'permissions.add.myGroups.empty.title': 'Keine Gruppen',
+  'permissions.add.myGroups.empty.body': 'Ihr Konto ist in keiner Verzeichnisgruppe Mitglied.',
+  'permissions.add.myGroups.table.ariaLabel': 'Meine Gruppen',
+  'permissions.add.everyone.body':
+    'Die Rolle wird der integrierten Gruppe „Everyone“ zugewiesen, sodass jeder Benutzer sie für diese(s) {noun} erhält.',
+  'permissions.add.selectMany.user':
+    'Wählen Sie einen oder mehrere Benutzer aus, denen die Rolle zugewiesen werden soll.',
+  'permissions.add.selectMany.group':
+    'Wählen Sie eine oder mehrere Gruppen aus, denen die Rolle zugewiesen werden soll.',
+  'permissions.add.selected.count':
+    '{count, plural, one {# Principal ausgewählt} other {# Principals ausgewählt}}',
+  'permissions.add.selected.ariaLabel': 'Ausgewählte Principals',
+  'permissions.add.selected.remove': '{name} aus der Auswahl entfernen',
+  'permissions.add.result.failed.title':
+    '{count, plural, one {Die Rolle konnte # Principal nicht zugewiesen werden} other {Die Rolle konnte # Principals nicht zugewiesen werden}}',
+  'permissions.add.result.failed.body':
+    'Die fehlgeschlagenen Principals bleiben ausgewählt. Beheben Sie die Ursache und versuchen Sie es erneut, oder entfernen Sie sie aus der Auswahl.',
+  'permissions.add.result.failed.item': '{name}: {message}',
+  'permissions.add.submit.retry': 'Fehlgeschlagene wiederholen',
+  'permissions.add.toast.granted': '{role} an {name} vergeben',
+  'permissions.add.toast.grantedMany':
+    '{role} an {count, plural, one {# Principal} other {# Principals}} vergeben',
   'users.notPermitted': 'Benutzer',
   'users.title': 'Benutzer',
   'users.search.hint': 'usrname=jdoe* — oder Klartext',

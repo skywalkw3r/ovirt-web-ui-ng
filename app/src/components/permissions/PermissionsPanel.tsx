@@ -20,11 +20,7 @@ import { useCapabilities } from '../../auth/capabilities'
 import { useT } from '../../i18n/useT'
 import { sortRows, useColumnSort } from '../../hooks/useColumnSort'
 import { useGroups, usePermissionUsers } from '../../hooks/usePermissionMutations'
-import {
-  useAddPermission,
-  useRemovePermission,
-  type RemovePermissionVars,
-} from '../../hooks/usePermissionMutations'
+import { useRemovePermission, type RemovePermissionVars } from '../../hooks/usePermissionMutations'
 import { SearchInput } from '../list-toolbar/SearchInput'
 import { AddPermissionModal } from './AddPermissionModal'
 import { RemovePermissionConfirm } from './RemovePermissionConfirm'
@@ -173,9 +169,9 @@ export function PermissionsPanel<T extends PermissionRow>({
   const [search, setSearch] = useState('')
   const [isAddOpen, setIsAddOpen] = useState(false)
   const [removing, setRemoving] = useState<RemovePermissionVars | null>(null)
-  const add = useAddPermission(entityKind, entityId)
   const remove = useRemovePermission(entityKind, entityId)
-  const mutating = add.isPending || remove.isPending
+  // the Add dialog runs its own batch grant and stays open while it does
+  const mutating = remove.isPending
   // client-side header sort; no default — the engine list order stands until a
   // header is clicked (see hooks/useColumnSort)
   const { sort, thSort } = useColumnSort()
@@ -363,11 +359,9 @@ export function PermissionsPanel<T extends PermissionRow>({
 
       {isAddOpen && (
         <AddPermissionModal
+          entityKind={entityKind}
+          entityId={entityId}
           entityNoun={entityNoun}
-          onSubmit={(vars) => {
-            setIsAddOpen(false)
-            add.mutate(vars)
-          }}
           onClose={() => setIsAddOpen(false)}
         />
       )}

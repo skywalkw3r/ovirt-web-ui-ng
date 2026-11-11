@@ -1051,6 +1051,41 @@ export const tr: LocaleCatalog = {
   'permissions.add.role.none': 'Bu motorda atanabilir rol yok.',
   'permissions.add.role.userGroup': 'Kullanıcı Rolleri',
   'permissions.add.role.adminGroup': 'İdari roller',
+  // Add Permission picker depth (issue #31): multi-select, My groups,
+  // Everyone, and directory search.
+  'permissions.add.kind.myGroups': 'Gruplarım',
+  'permissions.add.kind.everyone': 'Herkes',
+  'permissions.add.source.label': 'Arama yeri',
+  'permissions.add.source.engine': 'Motor veritabanı',
+  'permissions.add.source.directory': 'Dizin: {domain}',
+  'permissions.add.source.domainsLoading': 'Dizinler yükleniyor',
+  'permissions.add.source.domainsError': 'Dizinler yüklenemedi: {message}',
+  'permissions.add.source.directoryHint':
+    'Bir dizinde bulunan ve henüz motorda olmayan kullanıcı ve gruplar, rol verildiğinde motora eklenir.',
+  'permissions.add.empty.directory.users': 'Bu dizin hiç kullanıcı döndürmedi.',
+  'permissions.add.empty.directory.groups': 'Bu dizin hiç grup döndürmedi.',
+  'permissions.add.myGroups.loading': 'Gruplarınız yükleniyor',
+  'permissions.add.myGroups.error': 'Gruplarınız yüklenemedi: {message}',
+  'permissions.add.myGroups.empty.title': 'Grup yok',
+  'permissions.add.myGroups.empty.body': 'Hesabınız hiçbir dizin grubunun üyesi değil.',
+  'permissions.add.myGroups.table.ariaLabel': 'Gruplarım',
+  'permissions.add.everyone.body':
+    'Rol yerleşik Everyone grubuna verilir; böylece her kullanıcı bu {noun} üzerinde bu role sahip olur.',
+  'permissions.add.selectMany.user': 'Rolün verileceği bir veya daha fazla kullanıcı seçin.',
+  'permissions.add.selectMany.group': 'Rolün verileceği bir veya daha fazla grup seçin.',
+  'permissions.add.selected.count':
+    '{count, plural, one {# kullanıcı/grup seçildi} other {# kullanıcı/grup seçildi}}',
+  'permissions.add.selected.ariaLabel': 'Seçilen kullanıcı ve gruplar',
+  'permissions.add.selected.remove': '{name} öğesini seçimden kaldır',
+  'permissions.add.result.failed.title':
+    '{count, plural, one {Rol # kullanıcıya/gruba verilemedi} other {Rol # kullanıcıya/gruba verilemedi}}',
+  'permissions.add.result.failed.body':
+    'Başarısız olanlar seçili kalır. Nedeni giderip yeniden deneyin veya bunları seçimden kaldırın.',
+  'permissions.add.result.failed.item': '{name}: {message}',
+  'permissions.add.submit.retry': 'Başarısız olanları yeniden dene',
+  'permissions.add.toast.granted': '{role}, {name} için verildi',
+  'permissions.add.toast.grantedMany':
+    '{role}, {count, plural, one {# kullanıcı/grup} other {# kullanıcı/grup}} için verildi',
   'users.notPermitted': 'Kullanıcılar',
   'users.title': 'Kullanıcılar',
   'users.search.hint': 'usrname=jdoe* — veya düz metin',
