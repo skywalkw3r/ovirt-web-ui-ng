@@ -62,6 +62,23 @@ test('host Monitoring tab has no serious accessibility violations', async ({ pag
   await expectNoSeriousViolations(page)
 })
 
+test('host console button and its tooltip have no serious accessibility violations', async ({
+  page,
+}) => {
+  await login(page, { path: '/hosts/host-01' })
+  await page.getByRole('button', { name: 'Host console' }).focus()
+  await expect(page.getByRole('tooltip')).toContainText('in a new tab')
+
+  // scanned with the tooltip open, so the shared helper (which waits for
+  // tooltips to close) does not apply
+  const results = await new AxeBuilder({ page }).analyze()
+  expect(
+    results.violations
+      .filter((violation) => violation.impact === 'critical' || violation.impact === 'serious')
+      .map((violation) => violation.id),
+  ).toEqual([])
+})
+
 test('cluster Monitoring tab has no serious accessibility violations', async ({ page }) => {
   await login(page, { path: '/clusters/cluster-01' })
   await page.getByRole('tab', { name: 'Monitoring' }).click()

@@ -1852,7 +1852,12 @@ export const zhCN: LocaleCatalog = {
   'hostNuma.empty.body': '此主机未报告任何 NUMA 节点。',
   'hostNuma.error.title': '无法加载 NUMA 拓扑',
   'hostNuma.loading': '正在加载 NUMA 拓扑',
-  'host.cockpit.open': 'Cockpit',
+  'host.console.open': '主机控制台',
+  'host.console.newTab': '在新标签页中打开 Cockpit',
+  'host.console.sso.note': '控制台将在新标签页中打开，并使用当前会话登录。',
+  'host.console.direct.title': '控制台将在新标签页中打开 {url}',
+  'host.console.direct.body':
+    '请使用主机上的帐户登录。Cockpit 使用主机的证书，因此在信任该证书之前，浏览器可能会显示警告。',
   'datacenters.forceRemove.action': '强制移除',
   'datacenters.forceRemove.confirm.title': "强制移除数据中心 ''{name}''？",
   'datacenters.forceRemove.confirm.body':

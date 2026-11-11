@@ -38,6 +38,10 @@ Content-Security-Policy: default-src 'self'; connect-src 'self' wss:; img-src 's
   link), so the console neither frames nor calls Grafana. The SPICE `.vv`
   handoff downloads rather than framing. Reintroducing any frame would need
   `frame-src` back **plus** a security review.
+  The host console follows the same rule: Cockpit opens in a new tab with
+  `noopener,noreferrer` (a navigation, which CSP fetch directives do not
+  govern), so it adds no `frame-src` and no `connect-src` entry. See
+  [HOST-CONSOLE.md](HOST-CONSOLE.md).
 - No `font-src` — PF fonts are bundled and same-origin, covered by
   `default-src`.
 - No `report-uri`/`report-to` — add a reporting endpoint before a public

@@ -33,7 +33,14 @@ interface Window {
     // Honored only in multi-engine-capable builds (VITE_MULTI_ENGINE=1 —
     // proxy/external deploys); the integrated RPM build ignores it entirely.
     servers?: {
-      list?: { name?: string; url?: string; fqdn?: string; profile?: string }[]
+      list?: {
+        name?: string
+        url?: string
+        fqdn?: string
+        profile?: string
+        wan?: boolean
+        cockpitSsoUrl?: string
+      }[]
     }
     // Deploy-time, truly-global login-screen notice (shown pre-auth, same for
     // every user/engine — see config/runtime.ts LoginConfig).
@@ -53,6 +60,14 @@ interface Window {
     // SupportConfig). http(s) only — runtime.ts drops anything else.
     support?: {
       url?: string
+    }
+    // Host console (Cockpit) links (see config/runtime.ts CockpitConfig).
+    // Kept permissive because runtime.ts narrows bad values to defaults.
+    cockpit?: {
+      enabled?: boolean
+      port?: number
+      ssoUrl?: string
+      ssoPage?: string
     }
   }
 }

@@ -1950,7 +1950,13 @@ export const it: LocaleCatalog = {
   'hostNuma.empty.body': 'Questo host non segnala nodi NUMA.',
   'hostNuma.error.title': 'Impossibile caricare la topologia NUMA',
   'hostNuma.loading': 'Caricamento della topologia NUMA',
-  'host.cockpit.open': 'Cockpit',
+  'host.console.open': 'Console host',
+  'host.console.newTab': 'Apre Cockpit in una nuova scheda',
+  'host.console.sso.note':
+    'La console si apre in una nuova scheda ed esegue l’accesso con la sessione corrente.',
+  'host.console.direct.title': 'La console apre {url} in una nuova scheda',
+  'host.console.direct.body':
+    'Accedi con un account dell’host. Cockpit usa il certificato dell’host, quindi il browser potrebbe mostrare un avviso finché quel certificato non viene considerato attendibile.',
   'datacenters.forceRemove.action': 'Forza rimozione',
   'datacenters.forceRemove.confirm.title': "Forzare la rimozione del data center ''{name}''?",
   'datacenters.forceRemove.confirm.body':
