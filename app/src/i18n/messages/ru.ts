@@ -1944,11 +1944,7 @@ export const ru: LocaleCatalog = {
   'hostNuma.loading': 'Загрузка топологии NUMA',
   'host.console.open': 'Консоль хоста',
   'host.console.newTab': 'Открывает Cockpit в новой вкладке',
-  'host.console.sso.note':
-    'Консоль откроется в новой вкладке и выполнит вход с вашим текущим сеансом.',
-  'host.console.direct.title': 'Консоль откроет {url} в новой вкладке',
-  'host.console.direct.body':
-    'Войдите с учётной записью хоста. Cockpit использует сертификат хоста, поэтому браузер может показывать предупреждение, пока этот сертификат не станет доверенным.',
+  'host.console.tooltip': 'Открыть интерфейс Cockpit для {name}',
   'datacenters.forceRemove.action': 'Принудительно удалить',
   'datacenters.forceRemove.confirm.title': "Принудительно удалить дата-центр ''{name}''?",
   'datacenters.forceRemove.confirm.body':

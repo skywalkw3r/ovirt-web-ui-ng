@@ -1961,11 +1961,7 @@ export const de: LocaleCatalog = {
   'hostNuma.loading': 'NUMA-Topologie wird geladen',
   'host.console.open': 'Host-Konsole',
   'host.console.newTab': 'Öffnet Cockpit in einem neuen Tab',
-  'host.console.sso.note':
-    'Die Konsole wird in einem neuen Tab geöffnet und meldet Sie mit Ihrer aktuellen Sitzung an.',
-  'host.console.direct.title': 'Die Konsole öffnet {url} in einem neuen Tab',
-  'host.console.direct.body':
-    'Melden Sie sich mit einem Konto auf dem Host an. Cockpit verwendet das Zertifikat des Hosts, daher zeigt Ihr Browser möglicherweise eine Warnung an, bis diesem Zertifikat vertraut wird.',
+  'host.console.tooltip': 'Cockpit-Oberfläche für {name} öffnen',
   'datacenters.forceRemove.action': 'Entfernen erzwingen',
   'datacenters.forceRemove.confirm.title': "Entfernen von Rechenzentrum ''{name}'' erzwingen?",
   'datacenters.forceRemove.confirm.body':

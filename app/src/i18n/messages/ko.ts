@@ -1901,10 +1901,7 @@ export const ko: LocaleCatalog = {
   'hostNuma.loading': 'NUMA 토폴로지 로드 중',
   'host.console.open': '호스트 콘솔',
   'host.console.newTab': '새 탭에서 Cockpit을 엽니다',
-  'host.console.sso.note': '콘솔이 새 탭에서 열리고 현재 세션으로 로그인됩니다.',
-  'host.console.direct.title': '콘솔이 새 탭에서 {url}을(를) 엽니다',
-  'host.console.direct.body':
-    '호스트의 계정으로 로그인하세요. Cockpit은 호스트 인증서를 사용하므로 해당 인증서를 신뢰할 때까지 브라우저에 경고가 표시될 수 있습니다.',
+  'host.console.tooltip': '{name}의 Cockpit 인터페이스 열기',
   'datacenters.forceRemove.action': '강제 제거',
   'datacenters.forceRemove.confirm.title': "''{name}'' 데이터 센터를 강제로 제거하시겠습니까?",
   'datacenters.forceRemove.confirm.body':
