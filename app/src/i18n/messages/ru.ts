@@ -1796,6 +1796,11 @@ export const ru: LocaleCatalog = {
   'settings.pref.console.vncDescription': 'Работает с noVNC и большинством настольных клиентов.',
   'settings.pref.console.spiceDescription': 'Более богатый удалённый доступ через virt-viewer.',
   'settings.pref.language': 'Язык',
+  // Roaming note (components/UserMenu, settings/RoamingSettingsProvider)
+  'settings.pref.roaming.synced':
+    'Сохраняются в вашем профиле пользователя oVirt и доступны в других браузерах.',
+  'settings.pref.roaming.local':
+    'Сохраняются только в этом браузере: профиль пользователя oVirt недоступен для их хранения.',
   'settings.refresh.seconds':
     '{count, plural, one {# секунда} few {# секунды} many {# секунд} other {# секунды}}',
   'settings.timeout.minutes':

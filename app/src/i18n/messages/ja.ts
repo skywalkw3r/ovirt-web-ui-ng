@@ -1780,6 +1780,11 @@ export const ja: LocaleCatalog = {
     'noVNCおよびほとんどのデスクトップビューアーで動作します。',
   'settings.pref.console.spiceDescription': 'virt-viewerを介したよりリッチなリモート体験。',
   'settings.pref.language': '言語',
+  // Roaming note (components/UserMenu, settings/RoamingSettingsProvider)
+  'settings.pref.roaming.synced':
+    'oVirt ユーザープロファイルに保存されるため、他のブラウザーでも同じ設定が使われます。',
+  'settings.pref.roaming.local':
+    'このブラウザーにのみ保存されます。oVirt ユーザープロファイルには保存できません。',
   'settings.refresh.seconds': '{count, plural, other {# 秒}}',
   'settings.timeout.minutes': '{count, plural, other {# 分}}',
   'settings.timeout.hours': '{count, plural, other {# 時間}}',

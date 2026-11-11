@@ -1803,6 +1803,11 @@ export const it: LocaleCatalog = {
     'Funziona con noVNC e la maggior parte dei visualizzatori desktop.',
   'settings.pref.console.spiceDescription': 'Esperienza remota più ricca tramite virt-viewer.',
   'settings.pref.language': 'Lingua',
+  // Roaming note (components/UserMenu, settings/RoamingSettingsProvider)
+  'settings.pref.roaming.synced':
+    'Salvate nel tuo profilo utente oVirt, quindi ti seguono negli altri browser.',
+  'settings.pref.roaming.local':
+    'Salvate solo in questo browser; il tuo profilo utente oVirt non è disponibile per memorizzarle.',
   'settings.refresh.seconds': '{count, plural, one {# secondo} other {# secondi}}',
   'settings.timeout.minutes': '{count, plural, one {# minuto} other {# minuti}}',
   'settings.timeout.hours': '{count, plural, one {# ora} other {# ore}}',

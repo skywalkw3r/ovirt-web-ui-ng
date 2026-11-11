@@ -13,6 +13,7 @@ import {
 import type { HostAction } from '../resources/hosts'
 import type { VmAction } from '../resources/vms'
 import { extraRoutes, type MockRoute } from './routes'
+import { mockUserIdFor } from './routes/user-options'
 
 const LATENCY_MS = 300
 // Shorter than the 10s VM poll on purpose: refetches see the transitional
@@ -6123,6 +6124,15 @@ export function setMockUsername(name: string): void {
   mockUsername = name
 }
 
+// The api root's authenticated_user.id for a mock identity. A principal with an
+// engine DB row gets that row's id (the live engine links the session's DbUser),
+// so per-user reads such as the Add Permission dialog's My groups
+// (GET /users/{id}/groups) resolve. Anyone else gets an id derived from the
+// username, so each identity still has its own /users/{id}/options profile.
+export function mockAuthenticatedUserId(username: string): string {
+  return users.find((u) => u.user_name === username)?.id ?? mockUserIdFor(username)
+}
+
 // Test hook — restores pristine fixtures between test cases.
 // Data centers and clusters are exported const bindings other modules import
 // by reference, so their reset restores the module-load snapshot in place.
@@ -11907,13 +11917,13 @@ const routes: MockRoute[] = [
     pattern: /^$/,
     // authenticated_user feeds fetchCapabilityProfile's tier heuristic; the
     // live engine serializes it as a bare link, the mock inlines user_name.
-    // The id is the signed-in principal's DB row when there is one (the live
-    // engine links the session's DbUser), so per-user reads such as the Add
-    // Permission dialog's My groups (GET /users/{id}/groups) resolve.
+    // The id comes from mockAuthenticatedUserId: the DB row when the principal has one
+    // (Add Permission's My groups), else one derived from the username so each mock
+    // identity still has its own /users/{id}/options profile (routes/user-options.ts).
     handle: () => ({
       ...API_ROOT,
       authenticated_user: {
-        id: users.find((u) => u.user_name === mockUsername)?.id ?? 'mock-user',
+        id: mockAuthenticatedUserId(mockUsername),
         user_name: mockUsername,
       },
     }),
