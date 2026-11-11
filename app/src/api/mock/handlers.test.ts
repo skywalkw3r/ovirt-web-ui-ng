@@ -66,6 +66,7 @@ import {
   listDirectoryUsers,
   listDomains,
   listGroups,
+  listMyGroups,
   listUserEventSubscriptions,
   listUsers,
   removeUser,
@@ -414,6 +415,26 @@ describe('permissions data layer (mock)', () => {
       }),
       { status: 400 },
     )
+  })
+
+  it('refuses the same role granted twice to the same principal', async () => {
+    // the shared VM fixture already grants UserRole to demo (user-02)
+    await settleRejection(
+      addPermission('vm', 'vm-01', { roleId: USER_ROLE_ID, userId: 'user-02' }),
+      { status: 409, message: expect.stringContaining('Permission already exists') },
+    )
+    // a different role for the same principal is fine
+    await settle(addPermission('vm', 'vm-01', { roleId: 'role-poweruser', userId: 'user-02' }))
+  })
+
+  it("serves the signed-in admin's directory groups for My groups", async () => {
+    // two round trips: the api root (session user id), then its groups
+    const pending = listMyGroups()
+    await vi.advanceTimersByTimeAsync(500)
+    const groups = await settle(pending)
+    expect(groups.map((group) => group.name)).toEqual(['dev-team', 'platform-team'])
+    // directory-shaped ids, not the engine-DB group ids
+    expect(groups.map((group) => group.id)).toEqual(['dir-group-dev', 'dir-group-platform'])
   })
 
   it('removes a granted permission (list drops to empty, not 404)', async () => {

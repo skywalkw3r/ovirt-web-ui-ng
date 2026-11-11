@@ -32,6 +32,13 @@ test('creates a host from the New host dialog and watches it install and come up
   // mock backend only — any password works and is never stored or echoed
   await dialog.getByRole('textbox', { name: 'Root password' }).fill('fixture-password')
 
+  // Firewall configuration defaults on (webadmin and engine default) and can
+  // be turned off for hosts whose firewall is managed elsewhere.
+  const firewall = dialog.getByRole('checkbox', { name: 'Automatically configure host firewall' })
+  await expect(firewall).toBeChecked()
+  await firewall.uncheck()
+  await expect(firewall).not.toBeChecked()
+
   // The sections ported from the edit modal are reachable and writable.
   // force: PF renders the switch input visually hidden behind its styled
   // toggle span, which intercepts pointer events; check() still asserts the

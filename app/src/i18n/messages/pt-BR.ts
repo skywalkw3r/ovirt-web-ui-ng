@@ -1064,6 +1064,41 @@ export const ptBR: LocaleCatalog = {
   'permissions.add.role.none': 'Nenhuma função atribuível está disponível neste engine.',
   'permissions.add.role.userGroup': 'Funções de usuário',
   'permissions.add.role.adminGroup': 'Funções administrativas',
+  // Add Permission picker depth (issue #31): multi-select, My groups,
+  // Everyone, and directory search.
+  'permissions.add.kind.myGroups': 'Meus grupos',
+  'permissions.add.kind.everyone': 'Todos',
+  'permissions.add.source.label': 'Pesquisar em',
+  'permissions.add.source.engine': 'Banco de dados do engine',
+  'permissions.add.source.directory': 'Diretório: {domain}',
+  'permissions.add.source.domainsLoading': 'Carregando diretórios',
+  'permissions.add.source.domainsError': 'Não foi possível carregar diretórios: {message}',
+  'permissions.add.source.directoryHint':
+    'Principais encontrados em um diretório que ainda não estão no engine são adicionados a ele quando a função é concedida.',
+  'permissions.add.empty.directory.users': 'Este diretório não retornou usuários.',
+  'permissions.add.empty.directory.groups': 'Este diretório não retornou grupos.',
+  'permissions.add.myGroups.loading': 'Carregando seus grupos',
+  'permissions.add.myGroups.error': 'Não foi possível carregar seus grupos: {message}',
+  'permissions.add.myGroups.empty.title': 'Nenhum grupo',
+  'permissions.add.myGroups.empty.body': 'Sua conta não é membro de nenhum grupo do diretório.',
+  'permissions.add.myGroups.table.ariaLabel': 'Meus grupos',
+  'permissions.add.everyone.body':
+    'A função é concedida ao grupo integrado Everyone, então todos os usuários a recebem neste {noun}.',
+  'permissions.add.selectMany.user': 'Selecione um ou mais usuários a quem conceder a função.',
+  'permissions.add.selectMany.group': 'Selecione um ou mais grupos aos quais conceder a função.',
+  'permissions.add.selected.count':
+    '{count, plural, one {# principal selecionado} other {# principais selecionados}}',
+  'permissions.add.selected.ariaLabel': 'Principais selecionados',
+  'permissions.add.selected.remove': 'Remover {name} da seleção',
+  'permissions.add.result.failed.title':
+    '{count, plural, one {Não foi possível conceder a função a # principal} other {Não foi possível conceder a função a # principais}}',
+  'permissions.add.result.failed.body':
+    'Os principais com falha continuam selecionados. Corrija a causa e tente novamente, ou remova-os da seleção.',
+  'permissions.add.result.failed.item': '{name}: {message}',
+  'permissions.add.submit.retry': 'Tentar novamente as falhas',
+  'permissions.add.toast.granted': '{role} concedida a {name}',
+  'permissions.add.toast.grantedMany':
+    '{role} concedida a {count, plural, one {# principal} other {# principais}}',
   'users.notPermitted': 'Usuários',
   'users.title': 'Usuários',
   'users.search.hint': 'usrname=jdoe* — ou texto simples',
@@ -3329,6 +3364,9 @@ export const ptBR: LocaleCatalog = {
   'hostForm.field.rootPassword': 'Senha de root',
   'hostForm.field.sshPort': 'Porta SSH',
   'hostForm.field.sshUser': 'Usuário SSH',
+  'hostForm.firewall.configure': 'Configurar automaticamente o firewall do host',
+  'hostForm.firewall.configure.help':
+    'Permite que a instalação abra no firewall do host as portas de que o oVirt precisa, usando o tipo de firewall do cluster. Desative somente se você mesmo gerencia o firewall do host; nesse caso, as portas necessárias devem ser abertas manualmente.',
   'hostForm.hostedEngine.deploy': 'Implantar hosted engine',
   'hostForm.hostedEngine.deploy.help':
     'A instalação também implanta os componentes do self-hosted engine, para que este host possa executar a VM do engine junto com os hosts hosted-engine existentes. Deixe desativado para um host de virtualização comum.',
@@ -4891,6 +4929,45 @@ export const ptBR: LocaleCatalog = {
     'A reversão da configuração parcial foi interrompida: {error}',
   'host.configureLocalStorage.outcome.rerunHint':
     'Para concluir, coloque o host em manutenção, se necessário, e execute “Configurar armazenamento local” novamente; o data center local vazio será reutilizado.',
+  // Guide Me (data center and cluster next steps)
+  'guideMe.action': 'Guie-me',
+  'guideMe.title': 'Guie-me: {name}',
+  'guideMe.loading': 'Carregando as próximas etapas',
+  'guideMe.error.title': 'Não foi possível carregar as próximas etapas',
+  'guideMe.dataCenter.created': 'Data center criado.',
+  'guideMe.dataCenter.configured': 'O data center está totalmente configurado e pronto para uso.',
+  'guideMe.cluster.created': 'Cluster criado.',
+  'guideMe.cluster.configured': 'O cluster está totalmente configurado e pronto para uso.',
+  'guideMe.configured.title': 'Configuração concluída',
+  'guideMe.unconfigured': 'Ainda há entidades a configurar.',
+  'guideMe.section.required': 'Etapas obrigatórias',
+  'guideMe.section.optional': 'Etapas opcionais',
+  'guideMe.configureLater': 'Configurar depois',
+  'guideMe.step.configureCluster': 'Configurar cluster',
+  'guideMe.step.addAnotherCluster': 'Adicionar outro cluster',
+  'guideMe.step.configureHost': 'Configurar host',
+  'guideMe.step.addAnotherHost': 'Adicionar outro host',
+  'guideMe.step.configureStorage': 'Configurar armazenamento',
+  'guideMe.step.addMoreStorage': 'Adicionar mais armazenamento',
+  'guideMe.step.attachStorage': 'Anexar armazenamento',
+  'guideMe.step.attachMoreStorage': 'Anexar mais armazenamento',
+  'guideMe.step.configureIsoLibrary': 'Configurar biblioteca ISO',
+  'guideMe.step.attachIsoLibrary': 'Anexar biblioteca ISO',
+  'guideMe.step.addLocalStorage': 'Adicionar armazenamento local',
+  'guideMe.reason.noUpHost': 'O data center precisa de pelo menos um host ativo.',
+  'guideMe.reason.noCluster': 'Primeiro adicione um cluster ao data center.',
+  'guideMe.reason.noUnattachedData': 'Nenhum domínio de dados não anexado está disponível.',
+  'guideMe.reason.noActiveMaster':
+    'O data center precisa primeiro de um domínio de dados mestre ativo.',
+  'guideMe.reason.noIsoDomain': 'Nenhum domínio ISO está disponível para anexar.',
+  'guideMe.reason.localDcHasHost': 'Um data center local comporta apenas um host, e este já o tem.',
+  'guideMe.reason.dcInitialized': 'O data center já está inicializado.',
+  'guideMe.reason.clusterLocalHasHost':
+    'Este cluster pertence a um data center local que já tem seu único host.',
+  'guideMe.note.localStorage':
+    'Para configurar totalmente o data center, anexe e ative pelo menos um domínio de armazenamento local.',
+  'guideMe.note.clusterNoActions':
+    'Nenhuma ação está disponível para este cluster: ele não está anexado a um data center.',
   // Configure aggregate entry point (pages/ConfigurePage.tsx): the webadmin
   // Administration › Configure index linking to its five surfaces.
   'nav.configure': 'Configurar',
