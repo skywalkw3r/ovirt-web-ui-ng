@@ -5079,4 +5079,44 @@ export const ru: LocaleCatalog = {
   'host.configureLocalStorage.outcome.undoStopped': 'Отмена частичной настройки прервана: {error}',
   'host.configureLocalStorage.outcome.rerunHint':
     'Чтобы завершить, при необходимости переведите хост в режим обслуживания и снова запустите «Настроить локальное хранилище»; будет повторно использован пустой локальный дата-центр.',
+  // Guide Me (data center and cluster next steps)
+  'guideMe.action': 'Мастер настройки',
+  'guideMe.title': 'Мастер настройки: {name}',
+  'guideMe.loading': 'Загрузка следующих шагов',
+  'guideMe.error.title': 'Не удалось загрузить следующие шаги',
+  'guideMe.dataCenter.created': 'Дата-центр создан.',
+  'guideMe.dataCenter.configured': 'Дата-центр полностью настроен и готов к работе.',
+  'guideMe.cluster.created': 'Кластер создан.',
+  'guideMe.cluster.configured': 'Кластер полностью настроен и готов к работе.',
+  'guideMe.configured.title': 'Настройка завершена',
+  'guideMe.unconfigured': 'Некоторые объекты ещё нужно настроить.',
+  'guideMe.section.required': 'Обязательные шаги',
+  'guideMe.section.optional': 'Необязательные шаги',
+  'guideMe.configureLater': 'Настроить позже',
+  'guideMe.step.configureCluster': 'Настроить кластер',
+  'guideMe.step.addAnotherCluster': 'Добавить ещё один кластер',
+  'guideMe.step.configureHost': 'Настроить хост',
+  'guideMe.step.addAnotherHost': 'Добавить ещё один хост',
+  'guideMe.step.configureStorage': 'Настроить хранилище',
+  'guideMe.step.addMoreStorage': 'Добавить ещё хранилище',
+  'guideMe.step.attachStorage': 'Прикрепить хранилище',
+  'guideMe.step.attachMoreStorage': 'Прикрепить ещё хранилище',
+  'guideMe.step.configureIsoLibrary': 'Настроить библиотеку ISO',
+  'guideMe.step.attachIsoLibrary': 'Прикрепить библиотеку ISO',
+  'guideMe.step.addLocalStorage': 'Добавить локальное хранилище',
+  'guideMe.reason.noUpHost': 'В дата-центре должен быть хотя бы один активный хост.',
+  'guideMe.reason.noCluster': 'Сначала добавьте кластер в дата-центр.',
+  'guideMe.reason.noUnattachedData': 'Нет доступных неприкреплённых доменов данных.',
+  'guideMe.reason.noActiveMaster':
+    'Сначала в дата-центре должен быть активный главный домен данных.',
+  'guideMe.reason.noIsoDomain': 'Нет доступных доменов ISO для прикрепления.',
+  'guideMe.reason.localDcHasHost':
+    'Локальный дата-центр вмещает только один хост, и в этом он уже есть.',
+  'guideMe.reason.dcInitialized': 'Дата-центр уже инициализирован.',
+  'guideMe.reason.clusterLocalHasHost':
+    'Этот кластер принадлежит локальному дата-центру, в котором уже есть его единственный хост.',
+  'guideMe.note.localStorage':
+    'Чтобы полностью настроить дата-центр, прикрепите и активируйте хотя бы один локальный домен хранения.',
+  'guideMe.note.clusterNoActions':
+    'Для этого кластера нет доступных действий: он не прикреплён к дата-центру.',
 }

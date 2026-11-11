@@ -8323,15 +8323,32 @@ function attachDataCenterStorageDomain(dcId: string, body: unknown): unknown {
   if (spec.id === undefined || !summary) {
     throw new ApiError(404, 'Not Found', `no storage domain with id ${spec.id}`)
   }
+  // The first data domain attached to a pool becomes its master, and the pool
+  // leaves Uninitialized for Up (AttachStorageDomainToPool on an empty pool).
+  const firstData =
+    summary.type === 'data' &&
+    !storageDomains.some(
+      (sd) =>
+        sd.type === 'data' &&
+        String(sd.master) === 'true' &&
+        (sd.data_centers?.data_center ?? []).some((dc) => dc.id === dcId),
+    )
   summary.status = 'active'
   delete summary.external_status
   // mirror the inlined DC onto the flat row too (the list now follows it)
   summary.data_centers = { data_center: [{ id: dataCenter.id, name: dataCenter.name }] }
+  if (firstData) summary.master = true
   const detail = storageDomainDetails[spec.id]
   if (detail) {
     detail.status = 'active'
     delete detail.external_status
     detail.data_centers = { data_center: [{ id: dataCenter.id, name: dataCenter.name }] }
+    if (firstData) detail.master = true
+  }
+  if (firstData && dataCenter.status === 'uninitialized') {
+    dataCenter.status = 'up'
+    const dcDetail = dataCenterDetails[dcId]
+    if (dcDetail) dcDetail.status = 'up'
   }
   return { id: spec.id }
 }
@@ -10280,8 +10297,16 @@ function dataCenterStorageDomains(dcId: string): unknown {
     throw new ApiError(404, 'Not Found', `no data center with id ${dcId}`)
   }
   // Only attached domains (those reporting "status", not the unattached iso
-  // domain that reports only external_status) belong to a data center.
-  return { storage_domain: storageDomains.filter((sd) => sd.status !== undefined) }
+  // domain that reports only external_status) belong to a data center — and
+  // only to the one their data_centers link names, so a freshly created data
+  // center starts with no storage (the Guide Me steps key off this).
+  return {
+    storage_domain: storageDomains.filter(
+      (sd) =>
+        sd.status !== undefined &&
+        (sd.data_centers?.data_center ?? []).some((dc) => dc.id === dcId),
+    ),
+  }
 }
 
 // GET /datacenters/{id}/networks — the networks defined in a data center;
@@ -10293,13 +10318,13 @@ function dataCenterNetworks(dcId: string): unknown {
   return { network: networks.filter((net) => net.data_center?.id === dcId) }
 }
 
-// GET /datacenters/{id}/clusters — the clusters that belong to a data center.
-// The mock lab's clusters all live under dc-01, so both are returned there.
+// GET /datacenters/{id}/clusters — the clusters that belong to a data center,
+// by their data_center back-link (the seeded clusters all live under dc-01).
 function dataCenterClusters(dcId: string): unknown {
   if (!dataCenters.some((dc) => dc.id === dcId)) {
     throw new ApiError(404, 'Not Found', `no data center with id ${dcId}`)
   }
-  return { cluster: clusters }
+  return { cluster: clusters.filter((cluster) => cluster.data_center?.id === dcId) }
 }
 
 // GET /datacenters/{id}/qoss — an optional subcollection: a data center without

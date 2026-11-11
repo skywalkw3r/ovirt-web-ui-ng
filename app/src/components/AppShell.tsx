@@ -39,6 +39,7 @@ import { monitoringPortalUrl, showMonitoringPortal } from '../lib/monitoringPort
 import { useCapabilities } from '../auth/capabilities'
 import { useNavShortcuts } from '../hooks/useNavShortcuts'
 import { ConfigureLocalStorageProvider } from './host-actions/ConfigureLocalStorageProvider'
+import { GuideMeProvider } from './guide-me/GuideMeProvider'
 import { useProductBrand } from '../hooks/useProductBrand'
 import { NotificationBell } from '../notifications/NotificationDrawerPanel'
 import { getActiveServer } from '../servers/registry'
@@ -540,7 +541,11 @@ export function AppShell() {
       {/* Configure Local Storage moves its host out of the list it was
           started from, so its dialog lives here rather than in the row. */}
       <ConfigureLocalStorageProvider>
-        <Outlet />
+        {/* Guide Me opens from right-click menus and from create dialogs that
+            unmount on save, so it is hosted here too. */}
+        <GuideMeProvider>
+          <Outlet />
+        </GuideMeProvider>
       </ConfigureLocalStorageProvider>
     </Page>
   )

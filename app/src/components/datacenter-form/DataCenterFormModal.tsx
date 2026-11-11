@@ -20,6 +20,7 @@ import { useCreateDataCenter, useUpdateDataCenter } from '../../hooks/useDataCen
 import { useMacPools } from '../../hooks/useMacPools'
 import type { MessageId } from '../../i18n/messages/en'
 import { useT } from '../../i18n/useT'
+import { useGuideMeLauncher } from '../guide-me/guideMeContext'
 import {
   QUOTA_MODE_OPTIONS,
   VERSION_OPTIONS,
@@ -71,6 +72,7 @@ export function DataCenterFormModal({
   }
 
   const create = useCreateDataCenter()
+  const guideMe = useGuideMeLauncher()
   const update = useUpdateDataCenter()
   const macPools = useMacPools()
   const pending = create.isPending || update.isPending
@@ -80,7 +82,13 @@ export function DataCenterFormModal({
     if (isEdit) {
       update.mutate({ id: dataCenter.id, payload }, { onSuccess: () => onClose() })
     } else {
-      create.mutate(payload, { onSuccess: () => onClose() })
+      create.mutate(payload, {
+        onSuccess: (created) => {
+          onClose()
+          // webadmin opens the data center's Guide Me after a create
+          guideMe?.open({ kind: 'dataCenter', id: created.id, justCreated: true })
+        },
+      })
     }
   }
 

@@ -5407,6 +5407,45 @@ export const en = {
   'host.configureLocalStorage.outcome.undoStopped': 'Undoing the partial setup stopped: {error}',
   'host.configureLocalStorage.outcome.rerunHint':
     'To finish, put the host into maintenance if needed and run Configure local storage again; it reuses the empty local data center.',
+  // Guide Me (data center and cluster next steps)
+  'guideMe.action': 'Guide Me',
+  'guideMe.title': 'Guide Me: {name}',
+  'guideMe.loading': 'Loading the next steps',
+  'guideMe.error.title': 'Could not load the next steps',
+  'guideMe.dataCenter.created': 'Data center created.',
+  'guideMe.dataCenter.configured': 'The data center is fully configured and ready for use.',
+  'guideMe.cluster.created': 'Cluster created.',
+  'guideMe.cluster.configured': 'The cluster is fully configured and ready for use.',
+  'guideMe.configured.title': 'Configuration completed',
+  'guideMe.unconfigured': 'Some entities still need to be configured.',
+  'guideMe.section.required': 'Required steps',
+  'guideMe.section.optional': 'Optional steps',
+  'guideMe.configureLater': 'Configure later',
+  'guideMe.step.configureCluster': 'Configure cluster',
+  'guideMe.step.addAnotherCluster': 'Add another cluster',
+  'guideMe.step.configureHost': 'Configure host',
+  'guideMe.step.addAnotherHost': 'Add another host',
+  'guideMe.step.configureStorage': 'Configure storage',
+  'guideMe.step.addMoreStorage': 'Add more storage',
+  'guideMe.step.attachStorage': 'Attach storage',
+  'guideMe.step.attachMoreStorage': 'Attach more storage',
+  'guideMe.step.configureIsoLibrary': 'Configure ISO library',
+  'guideMe.step.attachIsoLibrary': 'Attach ISO library',
+  'guideMe.step.addLocalStorage': 'Add local storage',
+  'guideMe.reason.noUpHost': 'The data center needs at least one active host.',
+  'guideMe.reason.noCluster': 'Add a cluster to the data center first.',
+  'guideMe.reason.noUnattachedData': 'No unattached data domain is available to attach.',
+  'guideMe.reason.noActiveMaster': 'The data center needs an active master data domain first.',
+  'guideMe.reason.noIsoDomain': 'No ISO domain is available to attach.',
+  'guideMe.reason.localDcHasHost':
+    'A local data center holds only one host, and this one already has it.',
+  'guideMe.reason.dcInitialized': 'The data center is already initialized.',
+  'guideMe.reason.clusterLocalHasHost':
+    'This cluster belongs to a local data center that already has its one host.',
+  'guideMe.note.localStorage':
+    'To fully configure the data center, attach and activate at least one local storage domain.',
+  'guideMe.note.clusterNoActions':
+    'No actions are available for this cluster: it is not attached to a data center.',
 } as const
 
 // The id union — source of truth for every typed i18n surface (useT, the

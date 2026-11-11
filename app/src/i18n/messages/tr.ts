@@ -4840,4 +4840,43 @@ export const tr: LocaleCatalog = {
   'host.configureLocalStorage.outcome.undoStopped': 'Kısmi kurulumun geri alınması durdu: {error}',
   'host.configureLocalStorage.outcome.rerunHint':
     'Tamamlamak için gerekirse ana makineyi bakıma alın ve "Yerel depolamayı yapılandır" işlemini yeniden çalıştırın; boş yerel veri merkezi yeniden kullanılır.',
+  // Guide Me (data center and cluster next steps)
+  'guideMe.action': 'Rehber',
+  'guideMe.title': 'Rehber: {name}',
+  'guideMe.loading': 'Sonraki adımlar yükleniyor',
+  'guideMe.error.title': 'Sonraki adımlar yüklenemedi',
+  'guideMe.dataCenter.created': 'Veri merkezi oluşturuldu.',
+  'guideMe.dataCenter.configured': 'Veri merkezi tamamen yapılandırıldı ve kullanıma hazır.',
+  'guideMe.cluster.created': 'Küme oluşturuldu.',
+  'guideMe.cluster.configured': 'Küme tamamen yapılandırıldı ve kullanıma hazır.',
+  'guideMe.configured.title': 'Yapılandırma tamamlandı',
+  'guideMe.unconfigured': 'Hâlâ yapılandırılması gereken varlıklar var.',
+  'guideMe.section.required': 'Gerekli adımlar',
+  'guideMe.section.optional': 'İsteğe bağlı adımlar',
+  'guideMe.configureLater': 'Daha sonra yapılandır',
+  'guideMe.step.configureCluster': 'Kümeyi yapılandır',
+  'guideMe.step.addAnotherCluster': 'Başka bir küme ekle',
+  'guideMe.step.configureHost': 'Ana makineyi yapılandır',
+  'guideMe.step.addAnotherHost': 'Başka bir ana makine ekle',
+  'guideMe.step.configureStorage': 'Depolamayı yapılandır',
+  'guideMe.step.addMoreStorage': 'Daha fazla depolama ekle',
+  'guideMe.step.attachStorage': 'Depolama bağla',
+  'guideMe.step.attachMoreStorage': 'Daha fazla depolama bağla',
+  'guideMe.step.configureIsoLibrary': 'ISO kitaplığını yapılandır',
+  'guideMe.step.attachIsoLibrary': 'ISO kitaplığı bağla',
+  'guideMe.step.addLocalStorage': 'Yerel depolama ekle',
+  'guideMe.reason.noUpHost': 'Veri merkezinde en az bir etkin ana makine olmalıdır.',
+  'guideMe.reason.noCluster': 'Önce veri merkezine bir küme ekleyin.',
+  'guideMe.reason.noUnattachedData': 'Bağlanabilecek bağlı olmayan bir veri alanı yok.',
+  'guideMe.reason.noActiveMaster': 'Veri merkezinin önce etkin bir ana veri alanı olmalıdır.',
+  'guideMe.reason.noIsoDomain': 'Bağlanabilecek bir ISO alanı yok.',
+  'guideMe.reason.localDcHasHost':
+    'Yerel bir veri merkezi yalnızca bir ana makine barındırır ve bu veri merkezinde zaten var.',
+  'guideMe.reason.dcInitialized': 'Veri merkezi zaten başlatıldı.',
+  'guideMe.reason.clusterLocalHasHost':
+    'Bu küme, tek ana makinesi zaten olan yerel bir veri merkezine aittir.',
+  'guideMe.note.localStorage':
+    'Veri merkezini tamamen yapılandırmak için en az bir yerel depolama alanı bağlayıp etkinleştirin.',
+  'guideMe.note.clusterNoActions':
+    'Bu küme için kullanılabilir eylem yok: herhangi bir veri merkezine bağlı değil.',
 }
