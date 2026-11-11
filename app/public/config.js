@@ -107,6 +107,28 @@ window.ovirtWebUiConfig = {
   //   ssoUrl: 'https://engine.example.com:9986',
   // },
 
+  // UI plugins (docs/PLUGINS.md): ES modules that add pages, detail subtabs,
+  // VM/host actions and dashboard cards. Off unless `enabled` is true, and
+  // ONLY the plugins listed here load. A plugin runs inside the admin's
+  // session: list only code you have reviewed or trust.
+  //
+  // `manifest`: 'plugins/<name>/manifest.json' (under this console's path,
+  // the recommended layout: no CSP change), '/path/manifest.json' (from the
+  // origin root) or an absolute https:// URL (needs CORS on that server and
+  // the origin in the CSP script-src AND connect-src, see
+  // docs/SECURITY-HEADERS.md "UI plugins").
+  // `servers` (optional, multi-engine): load only for these engines (names
+  // from servers.list above).
+  // Remove an entry and reload to remove the plugin. User menu → About lists
+  // what loaded and what failed.
+  //
+  // plugins: {
+  //   enabled: true,
+  //   list: [
+  //     { name: 'acme-backup', manifest: 'plugins/acme-backup/manifest.json' },
+  //   ],
+  // },
+
   // Monitoring Portal: the admin links (sidebar and Monitoring tabs) that open
   // the engine's bundled Grafana / Data Warehouse dashboards in a new tab.
   // Live utilization on the Dashboard and the Monitoring tabs comes from the

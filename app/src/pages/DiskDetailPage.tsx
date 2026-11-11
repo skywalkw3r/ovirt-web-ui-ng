@@ -27,6 +27,7 @@ import { useDisk } from '../hooks/useDiskDetail'
 import { useT } from '../i18n/useT'
 import { statusText } from '../lib/format'
 import { diskDetailRoute } from '../routes/router'
+import { useExtensionTabs } from '../extensions/useExtensionTabs'
 
 // oVirt disk states are ok/locked/illegal; anything unrecognized stays grey
 // (same coloring policy as DisksPage's DiskStatusLabel).
@@ -45,6 +46,8 @@ export function DiskDetailPage() {
   const t = useT()
   const { diskId } = diskDetailRoute.useParams()
   const disk = useDisk(diskId)
+  // plugin subtabs (docs/PLUGINS.md); a hook, so above any early return
+  const extensionTabs = useExtensionTabs('disk', disk.data)
   const navigate = useNavigate()
   const [activeKey, setActiveKey] = useState<string | number>('general')
 
@@ -159,6 +162,7 @@ export function DiskDetailPage() {
                 <DiskPermissionsTab diskId={diskId} />
               </TabContentBody>
             </Tab>
+            {extensionTabs}
           </Tabs>
         </>
       )}

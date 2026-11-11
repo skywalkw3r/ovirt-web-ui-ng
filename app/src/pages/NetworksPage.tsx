@@ -28,11 +28,11 @@ import { RefreshControl } from '../components/RefreshControl'
 import { ColumnPicker } from '../components/list-toolbar/ColumnPicker'
 import { ResizableTh, resizableTableProps } from '../components/list-toolbar/ResizableTh'
 import { SearchInput } from '../components/list-toolbar/SearchInput'
-import { useDataCenters } from '../hooks/useAdminResources'
+import { useAllDataCenterQoss, useDataCenters } from '../hooks/useAdminResources'
 import { useColumnPrefs } from '../hooks/useColumnPrefs'
 import { sortRows, useColumnSort } from '../hooks/useColumnSort'
 import { useListSearch } from '../hooks/useListSearch'
-import { useNetworks } from '../hooks/useNetworks'
+import { useNetworkLabelTexts, useNetworks } from '../hooks/useNetworks'
 import { usePagination } from '../hooks/usePagination'
 import { useProviders } from '../hooks/useParityResources'
 import { statusText } from '../lib/format'
@@ -75,6 +75,10 @@ function RoleBadges({ usages }: { usages: Network['usages'] }) {
 interface NetworkColumnCtx {
   dataCenterName: (id: string | undefined) => string | undefined
   providerName: (id: string | undefined) => string | undefined
+  // QoS id → name across every data center's /qoss (useAllDataCenterQoss)
+  qosName: (id: string | undefined) => string | undefined
+  // label texts from useNetworkLabelTexts; undefined while not loaded
+  labels: (networkId: string) => string[] | undefined
   t: ReturnType<typeof useT>
 }
 
@@ -141,6 +145,27 @@ const COLUMNS: NetworkColumn[] = [
       ),
   },
   {
+    // the flat list carries qos as a bare { id } link; the name joins against
+    // one /qoss read per data center, issued only while this column is shown
+    key: 'qos',
+    labelId: 'networks.column.qos',
+    sortValue: (network, ctx) => ctx.qosName(network.qos?.id),
+    defaultHidden: true,
+    cell: (network, ctx) => ctx.qosName(network.qos?.id) ?? '—',
+  },
+  {
+    // labels live in each network's networklabels subcollection — one
+    // /networks?follow=network_labels read covers the grid while shown
+    key: 'label',
+    labelId: 'networkLabels.column.label',
+    sortValue: (network, ctx) => ctx.labels(network.id)?.join(', ') || undefined,
+    defaultHidden: true,
+    cell: (network, ctx) => {
+      const labels = ctx.labels(network.id)
+      return labels !== undefined && labels.length > 0 ? labels.join(', ') : '—'
+    },
+  },
+  {
     key: 'provider',
     labelId: 'networks.column.provider',
     sortValue: (network, ctx) => ctx.providerName(network.external_provider?.id),
@@ -175,12 +200,12 @@ const COLUMNS: NetworkColumn[] = [
           : ctx.t('common.no'),
   },
 ]
-// Deferred vs webadmin's grid: QoS Name (the flat list carries qos as a bare
-// { id } link; names would need a per-DC /datacenters/{id}/qoss fan-out),
-// Label (network labels live in the /networks/{id}/networklabels
-// subcollection — an N+1 per row), Status (a cluster-network attribute:
-// NetworkMapper only sets it on /clusters/{id}/networks reads, so the flat
-// list never carries it).
+// Deferred vs webadmin's grid: Status. It is a per-cluster attribute
+// (network_cluster.status): NetworkMapper only sets it on
+// /clusters/{id}/networks reads, so the flat list never carries it, and a
+// network attached to several clusters has one status per cluster. Filling it
+// would take one /clusters/{id}/networks read per cluster plus a rule for
+// folding several statuses into one cell; left out until that rule is agreed.
 
 export function NetworksPage() {
   const t = useT()
@@ -190,13 +215,20 @@ export function NetworksPage() {
   // are already cached app-wide at the 60s admin cadence)
   const dataCenters = useDataCenters()
   const providers = useProviders()
+  const columns = useMemo(() => COLUMNS.map((c) => ({ ...c, label: t(c.labelId) })), [t])
+  const prefs = useColumnPrefs('networks', columns)
+  // opt-in joins: each read runs only while its column is visible
+  const qoss = useAllDataCenterQoss(prefs.isVisible('qos'))
+  const labelTexts = useNetworkLabelTexts(prefs.isVisible('label'))
   const columnCtx: NetworkColumnCtx = {
     dataCenterName: (id) => dataCenters.data?.find((dc) => dc.id === id)?.name,
     providerName: (id) => providers.data?.find((provider) => provider.id === id)?.name,
+    qosName: (id) => (id === undefined ? undefined : qoss.data?.find((qos) => qos.id === id)?.name),
+    // a loaded map without the network means "no labels"
+    labels: (networkId) =>
+      labelTexts.data === undefined ? undefined : (labelTexts.data[networkId] ?? []),
     t,
   }
-  const columns = useMemo(() => COLUMNS.map((c) => ({ ...c, label: t(c.labelId) })), [t])
-  const prefs = useColumnPrefs('networks', columns)
   // client-side header sort; no default — the engine list order stands
   // until a header is clicked (see hooks/useColumnSort)
   const { sort, thSort } = useColumnSort()

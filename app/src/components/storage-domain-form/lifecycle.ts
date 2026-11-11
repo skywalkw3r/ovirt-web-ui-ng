@@ -24,6 +24,18 @@ export function isAttached(domain: StorageDomain): boolean {
   return domain.status !== undefined
 }
 
+// Not attached to any data center, judged on both read shapes: no flat status
+// and no followed data_centers entry (the live top-level list carries the
+// attachment only on data_centers).
+export function isUnattachedDomain(domain: StorageDomain): boolean {
+  return domain.status === undefined && (domain.data_centers?.data_center?.length ?? 0) === 0
+}
+
+// Attached to this data center, per the followed data_centers link.
+export function isAttachedTo(domain: StorageDomain, dataCenterId: string): boolean {
+  return (domain.data_centers?.data_center ?? []).some((dc) => dc.id === dataCenterId)
+}
+
 // The data-center id the DC-scoped actions (detach/activate/deactivate) POST
 // against. getStorageDomain follows data_centers, so an attached domain inlines
 // exactly one; undefined for an unattached domain (no data_centers link).

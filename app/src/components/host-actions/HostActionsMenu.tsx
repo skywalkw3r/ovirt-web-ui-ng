@@ -41,6 +41,7 @@ import {
 } from '../../hooks/useHostActions'
 import { useT } from '../../i18n/useT'
 import { hostConsoleInfo, openHostConsole } from '../../lib/hostConsole'
+import { ExtensionMenuItems } from '../../extensions/ExtensionActions'
 import { ConfirmModal } from '../ConfirmModal'
 import { ContextMenu, type ContextMenuPosition } from '../context-menu/ContextMenu'
 import { ReinstallHostModal } from '../host-form/ReinstallHostModal'
@@ -487,6 +488,9 @@ export function HostActionsMenu({
           {t('host.console.open')}
         </DropdownItem>
       )}
+
+      {/* Plugin actions (docs/PLUGINS.md): their own section, above Tags. */}
+      <ExtensionMenuItems kind="host" entity={host} onSelect={() => setIsOpen(false)} />
 
       {/* Tags — assign/unassign the engine tag vocabulary. Always available
           (independent of host lifecycle state), so it anchors its own

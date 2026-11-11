@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { ApiError, request } from '../transport'
+import { fetchWithFollowFallback } from '../followDegrade'
 import { NetworkListSchema, NetworkSchema, type Network } from '../schemas/network'
 import { VnicProfileListSchema, type VnicProfile } from '../schemas/vnic-profile'
 import { NicListSchema } from '../schemas/nic'
@@ -67,6 +68,42 @@ export async function listNetworkVnicProfiles(id: string): Promise<VnicProfile[]
     await request(`/networks/${encodeURIComponent(id)}/vnicprofiles`),
   )
   return data.vnic_profile ?? []
+}
+
+// The Networks grid's Label column: network id → its label texts. Labels live
+// only in each network's networklabels subcollection, so follow=network_labels
+// inlines them on ONE /networks read instead of a per-network fan-out. It is a
+// modeled link (types/Network.java `@Link NetworkLabel[] networkLabels`) that
+// every network carries, so an unlabelled network answers an empty wrapper,
+// not the absent-link 500. Degrades through the sticky follow denial to {}
+// (the column renders em dashes; a bare list has no labels to show).
+const NetworkLabelsListSchema = z.looseObject({
+  network: z
+    .array(
+      z.looseObject({
+        id: z.string(),
+        network_labels: z
+          .looseObject({ network_label: z.array(z.looseObject({ id: z.string() })).optional() })
+          .optional(),
+      }),
+    )
+    .optional(),
+})
+
+export async function listNetworkLabelTexts(): Promise<Record<string, string[]>> {
+  return fetchWithFollowFallback(
+    'networks.list:network_labels',
+    async () => {
+      const data = NetworkLabelsListSchema.parse(await request('/networks?follow=network_labels'))
+      return Object.fromEntries(
+        (data.network ?? []).map((network) => [
+          network.id,
+          (network.network_labels?.network_label ?? []).map((label) => label.id),
+        ]),
+      )
+    },
+    async () => ({}),
+  )
 }
 
 // Network labels carry the label text as their id — no other fields matter to

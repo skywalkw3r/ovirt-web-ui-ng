@@ -25,6 +25,11 @@ export interface NewHostDraft {
   // ?activate / ?reboot install knobs; webadmin defaults both to true
   activateAfterInstall: boolean
   rebootAfterInstall: boolean
+  // override_iptables — let host-deploy configure the host firewall with the
+  // cluster's firewall type. webadmin's "Automatically configure host
+  // firewall" checkbox, checked once a cluster is picked; the engine default
+  // (VdsOperationActionParameters.overrideFirewall) is also true
+  overrideFirewall: boolean
   // Power Management — the POST-able flags only; fence agents cannot ride on
   // POST /hosts and are added afterward via /hosts/{id}/fenceagents
   pmEnabled: boolean
@@ -45,7 +50,8 @@ export interface NewHostDraft {
 }
 
 // Blank create-mode defaults, mirroring webadmin's NewHostModel/newEntity:
-// SSH port 22, password auth, activate + reboot after install, PM off with
+// SSH port 22, password auth, activate + reboot after install, firewall
+// configured by the install, PM off with
 // kdump and automatic PM at their engine defaults, SPM priority Normal (5).
 // The cluster is chosen by the modal (first cluster, like newEntity picking
 // the first data center's cluster) — '' here means "not resolved yet".
@@ -60,6 +66,7 @@ export function blankNewHostDraft(): NewHostDraft {
     clusterId: '',
     activateAfterInstall: true,
     rebootAfterInstall: true,
+    overrideFirewall: true,
     pmEnabled: false,
     kdumpDetection: true,
     automaticPm: true,
@@ -144,6 +151,11 @@ export function draftToAddSpec(draft: NewHostDraft): AddHostSpec {
   // SECURITY: the password is handed over only here, at save time, and only
   // for password auth — publickey installs never carry a secret at all
   if (draft.authMethod === 'password') spec.rootPassword = draft.rootPassword
+  // Sent only when turned off: on is the engine default, so an untouched
+  // checkbox leaves the POST body as it was
+  if (draft.overrideFirewall !== defaults.overrideFirewall) {
+    spec.overrideFirewall = draft.overrideFirewall
+  }
   if (
     draft.pmEnabled !== defaults.pmEnabled ||
     draft.kdumpDetection !== defaults.kdumpDetection ||

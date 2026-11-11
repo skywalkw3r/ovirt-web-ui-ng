@@ -1070,6 +1070,43 @@ export const fr: LocaleCatalog = {
   'permissions.add.role.none': "Aucun rôle assignable n'est disponible sur ce moteur.",
   'permissions.add.role.userGroup': 'Rôles des utilisateurs',
   'permissions.add.role.adminGroup': 'Rôles d’administrateur',
+  // Add Permission picker depth (issue #31): multi-select, My groups,
+  // Everyone, and directory search.
+  'permissions.add.kind.myGroups': 'Mes groupes',
+  'permissions.add.kind.everyone': 'Tout le monde',
+  'permissions.add.source.label': 'Rechercher dans',
+  'permissions.add.source.engine': 'Base de données du moteur',
+  'permissions.add.source.directory': 'Annuaire : {domain}',
+  'permissions.add.source.domainsLoading': 'Chargement des annuaires',
+  'permissions.add.source.domainsError': 'Impossible de charger les annuaires : {message}',
+  'permissions.add.source.directoryHint':
+    "Les principaux trouvés dans un annuaire qui ne sont pas encore dans le moteur y sont ajoutés lors de l'attribution du rôle.",
+  'permissions.add.empty.directory.users': "Cet annuaire n'a renvoyé aucun utilisateur.",
+  'permissions.add.empty.directory.groups': "Cet annuaire n'a renvoyé aucun groupe.",
+  'permissions.add.myGroups.loading': 'Chargement de vos groupes',
+  'permissions.add.myGroups.error': 'Impossible de charger vos groupes : {message}',
+  'permissions.add.myGroups.empty.title': 'Aucun groupe',
+  'permissions.add.myGroups.empty.body': "Votre compte n'est membre d'aucun groupe d'annuaire.",
+  'permissions.add.myGroups.table.ariaLabel': 'Mes groupes',
+  'permissions.add.everyone.body':
+    'Le rôle est attribué au groupe intégré Everyone : chaque utilisateur l’obtient donc sur ce {noun}.',
+  'permissions.add.selectMany.user':
+    'Sélectionnez un ou plusieurs utilisateurs à qui attribuer le rôle.',
+  'permissions.add.selectMany.group':
+    'Sélectionnez un ou plusieurs groupes auxquels attribuer le rôle.',
+  'permissions.add.selected.count':
+    '{count, plural, one {# principal sélectionné} other {# principaux sélectionnés}}',
+  'permissions.add.selected.ariaLabel': 'Principaux sélectionnés',
+  'permissions.add.selected.remove': 'Retirer {name} de la sélection',
+  'permissions.add.result.failed.title':
+    "{count, plural, one {Le rôle n'a pas pu être attribué à # principal} other {Le rôle n'a pas pu être attribué à # principaux}}",
+  'permissions.add.result.failed.body':
+    'Les principaux en échec restent sélectionnés. Corrigez la cause puis réessayez, ou retirez-les de la sélection.',
+  'permissions.add.result.failed.item': '{name} : {message}',
+  'permissions.add.submit.retry': 'Réessayer les échecs',
+  'permissions.add.toast.granted': '{role} attribué à {name}',
+  'permissions.add.toast.grantedMany':
+    '{role} attribué à {count, plural, one {# principal} other {# principaux}}',
   'users.notPermitted': 'Utilisateurs',
   'users.title': 'Utilisateurs',
   'users.search.hint': 'usrname=jdoe* — ou texte brut',
@@ -1770,6 +1807,11 @@ export const fr: LocaleCatalog = {
     'Fonctionne avec noVNC et la plupart des visionneuses de bureau.',
   'settings.pref.console.spiceDescription': 'Expérience à distance plus riche via virt-viewer.',
   'settings.pref.language': 'Langue',
+  // Roaming note (components/UserMenu, settings/RoamingSettingsProvider)
+  'settings.pref.roaming.synced':
+    'Enregistrées dans votre profil utilisateur oVirt, elles vous suivent dans les autres navigateurs.',
+  'settings.pref.roaming.local':
+    'Enregistrées dans ce navigateur uniquement ; votre profil utilisateur oVirt n’est pas disponible pour les stocker.',
   'settings.refresh.seconds': '{count, plural, one {# seconde} other {# secondes}}',
   'settings.timeout.minutes': '{count, plural, one {# minute} other {# minutes}}',
   'settings.timeout.hours': '{count, plural, one {# heure} other {# heures}}',
@@ -3350,6 +3392,9 @@ export const fr: LocaleCatalog = {
   'hostForm.field.rootPassword': 'Mot de passe root',
   'hostForm.field.sshPort': 'Port SSH',
   'hostForm.field.sshUser': 'Utilisateur SSH',
+  'hostForm.firewall.configure': 'Configurer automatiquement le pare-feu de l’hôte',
+  'hostForm.firewall.configure.help':
+    'Laisser l’installation ouvrir dans le pare-feu de l’hôte les ports dont oVirt a besoin, selon le type de pare-feu du cluster. Ne désactivez cette option que si vous gérez vous-même le pare-feu de l’hôte ; les ports requis devront alors être ouverts manuellement.',
   'hostForm.hostedEngine.deploy': 'Déployer le hosted engine',
   'hostForm.hostedEngine.deploy.help':
     "L'installation déploie également les composants du self-hosted engine, afin que cet hôte puisse exécuter la VM du moteur aux côtés des hôtes hosted-engine existants. Laissez désactivé pour un hôte de virtualisation standard.",
@@ -4921,4 +4966,130 @@ export const fr: LocaleCatalog = {
     "L'annulation de la configuration partielle s'est arrêtée : {error}",
   'host.configureLocalStorage.outcome.rerunHint':
     "Pour terminer, mettez l'hôte en maintenance si nécessaire et relancez « Configurer le stockage local » ; le centre de données local vide sera réutilisé.",
+  // Guide Me (data center and cluster next steps)
+  'guideMe.action': 'Guidez-moi',
+  'guideMe.title': 'Guidez-moi : {name}',
+  'guideMe.loading': 'Chargement des étapes suivantes',
+  'guideMe.error.title': 'Impossible de charger les étapes suivantes',
+  'guideMe.dataCenter.created': 'Centre de données créé.',
+  'guideMe.dataCenter.configured':
+    'Le centre de données est entièrement configuré et prêt à être utilisé.',
+  'guideMe.cluster.created': 'Cluster créé.',
+  'guideMe.cluster.configured': 'Le cluster est entièrement configuré et prêt à être utilisé.',
+  'guideMe.configured.title': 'Configuration terminée',
+  'guideMe.unconfigured': 'Certaines entités restent à configurer.',
+  'guideMe.section.required': 'Étapes obligatoires',
+  'guideMe.section.optional': 'Étapes facultatives',
+  'guideMe.configureLater': 'Configurer plus tard',
+  'guideMe.step.configureCluster': 'Configurer le cluster',
+  'guideMe.step.addAnotherCluster': 'Ajouter un autre cluster',
+  'guideMe.step.configureHost': "Configurer l'hôte",
+  'guideMe.step.addAnotherHost': 'Ajouter un autre hôte',
+  'guideMe.step.configureStorage': 'Configurer le stockage',
+  'guideMe.step.addMoreStorage': 'Ajouter du stockage',
+  'guideMe.step.attachStorage': 'Attacher le stockage',
+  'guideMe.step.attachMoreStorage': 'Attacher plus de stockage',
+  'guideMe.step.configureIsoLibrary': 'Configurer la bibliothèque ISO',
+  'guideMe.step.attachIsoLibrary': 'Attacher la bibliothèque ISO',
+  'guideMe.step.addLocalStorage': 'Ajouter un stockage local',
+  'guideMe.reason.noUpHost': 'Le centre de données doit avoir au moins un hôte actif.',
+  'guideMe.reason.noCluster': "Ajoutez d'abord un cluster au centre de données.",
+  'guideMe.reason.noUnattachedData': "Aucun domaine de données non attaché n'est disponible.",
+  'guideMe.reason.noActiveMaster':
+    "Le centre de données doit d'abord avoir un domaine de données maître actif.",
+  'guideMe.reason.noIsoDomain': "Aucun domaine ISO n'est disponible pour l'attachement.",
+  'guideMe.reason.localDcHasHost':
+    "Un centre de données local ne contient qu'un seul hôte, et celui-ci en a déjà un.",
+  'guideMe.reason.dcInitialized': 'Le centre de données est déjà initialisé.',
+  'guideMe.reason.clusterLocalHasHost':
+    'Ce cluster appartient à un centre de données local qui a déjà son unique hôte.',
+  'guideMe.note.localStorage':
+    'Pour configurer entièrement le centre de données, attachez et activez au moins un domaine de stockage local.',
+  'guideMe.note.clusterNoActions':
+    "Aucune action n'est disponible pour ce cluster : il n'est attaché à aucun centre de données.",
+  // Configure aggregate entry point (pages/ConfigurePage.tsx): the webadmin
+  // Administration › Configure index linking to its five surfaces.
+  'nav.configure': 'Configurer',
+  'configure.title': 'Configurer',
+  'configure.intro':
+    "Définitions à l'échelle du moteur, partagées par tous les centres de données et clusters. Chacune s'ouvre sur sa propre page.",
+  'configure.loading': 'Chargement des zones de configuration',
+  'configure.notPermitted': 'la configuration du système',
+  'configure.list.ariaLabel': 'Zones de configuration',
+  'configure.card.roles':
+    'Définir les rôles et les permissions que chacun accorde aux utilisateurs et aux administrateurs.',
+  'configure.card.systemPermissions':
+    "Attribuer des rôles aux utilisateurs et aux groupes à l'échelle du système.",
+  'configure.card.schedulingPolicies':
+    "Gérer les règles de filtre, de pondération et d'équilibrage utilisées par les clusters pour placer les VM.",
+  'configure.card.instanceTypes':
+    'Définir des profils matériels réutilisables pour les nouvelles machines virtuelles.',
+  'configure.card.macPools': "Gérer les plages d'adresses MAC attribuées aux NIC virtuelles.",
+  // EDIT VM: Foreman/Satellite section (provider picker)
+  'vm.edit.section.foreman': 'Foreman/Satellite',
+  'vm.edit.foreman.provider': 'Fournisseur',
+  'vm.edit.foreman.none': 'Aucun fournisseur',
+  'vm.edit.foreman.unknown': 'Fournisseur inconnu ({id})',
+  'vm.edit.foreman.loading': 'Chargement des fournisseurs Foreman/Satellite',
+  'vm.edit.foreman.empty':
+    'Aucun fournisseur Foreman/Satellite n’est enregistré. Ajoutez-en un sur la page Fournisseurs pour y rattacher cette VM.',
+  'vm.edit.foreman.help':
+    'Le moteur récupère les errata de cette VM auprès du fournisseur Foreman/Satellite choisi.',
+  // Template Storage tab + scoped Events tabs (issue #33) ----------------
+  'scopedEvents.loading': 'Chargement des événements',
+  'scopedEvents.error.title': 'Impossible de charger les événements',
+  'scopedEvents.empty.title': 'Aucun événement',
+  'templateDetail.tab.storage': 'Stockage',
+  'templateDetail.tab.events': 'Événements',
+  'templateEvents.empty.body':
+    "Les événements du journal d'audit du moteur pour ce modèle apparaîtront ici.",
+  'templateEvents.table.ariaLabel': 'Événements pour ce modèle',
+  'templateStorage.empty.body':
+    'Aucun disque de ce modèle ne se trouve sur un domaine de stockage.',
+  'templateStorage.table.ariaLabel': 'Domaines de stockage contenant les disques de ce modèle',
+  'templateStorage.column.used': 'Espace utilisé',
+  'templateStorage.column.disks': 'Disques',
+  'templateStorage.expand.ariaLabel': 'Afficher les disques',
+  'templateStorage.disks.ariaLabel': 'Disques du modèle sur {name}',
+  'clusterDetail.tab.events': 'Événements',
+  'clusterEvents.empty.body':
+    "Les événements du journal d'audit du moteur pour ce cluster apparaîtront ici.",
+  'clusterEvents.table.ariaLabel': 'Événements pour ce cluster',
+  'dcDetail.tab.events': 'Événements',
+  'dcEvents.empty.body':
+    "Les événements du journal d'audit du moteur pour ce centre de données apparaîtront ici.",
+  'dcEvents.table.ariaLabel': 'Événements pour ce centre de données',
+  'storageDetail.tab.events': 'Événements',
+  'storageEvents.empty.body':
+    "Les événements du journal d'audit du moteur pour ce domaine de stockage apparaîtront ici.",
+  'storageEvents.table.ariaLabel': 'Événements pour ce domaine de stockage',
+  'quotaDetail.tab.events': 'Événements',
+  'quotaEvents.empty.body':
+    "Les événements du journal d'audit du moteur pour ce quota apparaîtront ici.",
+  'quotaEvents.table.ariaLabel': 'Événements pour ce quota',
+  // List-grid columns filled by a follow= or one shared read (issue #34)
+  'vms.column.cpu': 'CPU',
+  'vms.column.network': 'Réseau',
+  'vms.column.ips': 'Adresses IP',
+  'disks.column.attachedTo': 'Attaché à',
+  'disks.column.quota': 'Quota',
+  'networks.column.qos': 'Nom de la QoS',
+  'vnicProfiles.column.qos': 'Nom de la QoS',
+  'vnicProfiles.column.networkFilter': 'Filtre réseau',
+  'pools.column.running': 'VM en cours d’exécution',
+  'volumes.column.spaceUsed': 'Espace utilisé',
+  // UI extensions (docs/PLUGINS.md): sidebar group, plugin error state,
+  // plugin page states, About dialog plugin list ------------------------
+  'nav.group.extensions': 'Extensions',
+  'extensions.error.title': '{plugin} n’a pas pu afficher ce contenu',
+  'extensions.page.loading': 'Chargement de la page de l’extension',
+  'extensions.page.notFound.title': 'Page d’extension indisponible',
+  'extensions.page.notFound.body':
+    'Aucune extension chargée ne fournit cette page. Elle a peut-être été retirée de la configuration du déploiement, n’a pas pu être chargée ou n’est pas disponible pour votre compte.',
+  'extensions.page.notFound.back': 'Retour au tableau de bord',
+  'about.extensions': 'Extensions',
+  'about.extensions.status.active': 'Chargée',
+  'about.extensions.status.loading': 'Chargement',
+  'about.extensions.status.skipped': 'Non chargée pour ce moteur',
+  'about.extensions.status.failed': 'Échec : {reason}',
 }

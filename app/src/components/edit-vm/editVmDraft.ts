@@ -5,6 +5,7 @@ import type { Watchdog } from '../../api/schemas/watchdog'
 import type { MessageId } from '../../i18n/messages/en'
 import { statusKind } from '../../lib/vm-status'
 import { cpuTuneBody, effectiveCpuPinning, formatCpuPinning } from './cpuPinning'
+import { buildExternalHostProvider, vmExternalHostProviderId } from './foremanDraft'
 import type { NumaNodeDraft } from './numaDraft'
 import {
   applyVmBaseChanges,
@@ -126,6 +127,9 @@ export interface EditVmDraft extends VmBaseDraft, WatchdogFields {
   rngSource: string
   rngBytes: number
   rngPeriod: number
+  // Foreman/Satellite — the bound external host provider's id ('' = none).
+  // external_host_provider.id; see foremanDraft.ts.
+  externalHostProviderId: string
 }
 
 // One static NIC row in the Initial Run cloud-init network config. Every field
@@ -274,6 +278,7 @@ export function vmToDraft(vm: Vm): EditVmDraft {
     rngSource: vm.rng_device?.source ?? 'urandom',
     rngBytes: vm.rng_device?.rate?.bytes ?? 0,
     rngPeriod: vm.rng_device?.rate?.period ?? 0,
+    externalHostProviderId: vmExternalHostProviderId(vm),
   }
 }
 
@@ -575,6 +580,13 @@ function applyChangedSections(
   // Console, System and High Availability depth, Custom Properties, Icon):
   // vmBaseDraft.applyVmBaseChanges, same omit-unchanged rule.
   applyVmBaseChanges(payload, draft, baseline)
+
+  // Foreman/Satellite — the bound provider, only when the pick moved.
+  const provider = buildExternalHostProvider(
+    draft.externalHostProviderId,
+    baseline.externalHostProviderId,
+  )
+  if (provider !== undefined) payload.external_host_provider = provider
 }
 
 // Draft → PUT body for updateVm. Memory fields go back to bytes; empty-string

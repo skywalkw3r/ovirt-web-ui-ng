@@ -39,6 +39,7 @@ import type { MessageId } from '../../i18n/messages/en'
 import { useT } from '../../i18n/useT'
 import { defaultManagementNetworkId, findManagementNetwork } from '../../lib/clusterNetworking'
 import { FieldHelp } from '../forms/FieldHelp'
+import { useGuideMeLauncher } from '../guide-me/guideMeContext'
 import { ModalVerticalTabs } from '../forms/ModalVerticalTabs'
 import { OptionsHelper, OptionsSelect } from '../forms/OptionsSelect'
 import {
@@ -222,6 +223,7 @@ export function ClusterFormModal({
   }
 
   const create = useCreateCluster()
+  const guideMe = useGuideMeLauncher()
   const update = useUpdateCluster()
   const pending = create.isPending || update.isPending
 
@@ -230,7 +232,15 @@ export function ClusterFormModal({
     if (isEdit) {
       update.mutate({ id: cluster.id, payload }, { onSuccess: () => onClose() })
     } else {
-      create.mutate(payload, { onSuccess: () => onClose() })
+      create.mutate(payload, {
+        onSuccess: (created) => {
+          onClose()
+          // webadmin opens the cluster's Guide Me after a create (unless a
+          // guide is already open: the data center guide's Configure Cluster
+          // step returns to that guide)
+          guideMe?.open({ kind: 'cluster', id: created.id, justCreated: true })
+        },
+      })
     }
   }
 

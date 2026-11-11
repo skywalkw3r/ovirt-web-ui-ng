@@ -41,10 +41,16 @@ import { SpmSection } from './SpmSection'
 // address, SSH auth, install knobs) that the edit-mode GeneralSection
 // deliberately renders read-only, so the two don't share markup. Webadmin's
 // General tab order: cluster, name, comment, hostname/IP, SSH port, then
-// authentication. Consciously deferred from webadmin's tab: the advanced
-// expander's override-iptables toggle (engine default true — omitting it from
-// the POST yields the same result) and the fetch-host-SSH-key button (needs
-// an engine endpoint we don't model yet).
+// authentication, then the install knobs (activate, reboot, and the
+// advanced expander's "Automatically configure host firewall", which rides as
+// override_iptables). Dropped from webadmin's tab, checked against the 4.5
+// api-model and engine sources: the Fetch button for the host's SSH public
+// key. webadmin runs the GetServerSSHPublicKey query over GWT RPC, and no
+// REST resource exposes that query, so the key cannot be fetched before the
+// host exists. Pasting a key into ssh.public_key would not pin it either:
+// EngineSSHClient treats a host with no stored fingerprint as new and stores
+// whatever key the host presents, so only the deprecated ssh.fingerprint
+// (which webadmin does not send) would make the engine check it.
 function GeneralSection({
   draft,
   set,
@@ -226,8 +232,9 @@ function GeneralSection({
           </FormHelperText>
         </FormGroup>
       ) : (
-        // Webadmin fetches and displays the engine's SSH public key here; we
-        // don't model that endpoint yet, so a static pointer stands in.
+        // Webadmin fetches and displays the engine's SSH public key here (the
+        // GetEngineSSHPublicKey query, not exposed by the REST API), so a
+        // static pointer to the engine's pki-resource download stands in.
         <FormGroup fieldId="new-host-publickey-hint">
           <HelperText>
             <HelperTextItem>{t('hostForm.publicKey.hint')}</HelperTextItem>
@@ -270,6 +277,24 @@ function GeneralSection({
           onChange={(_event, checked) => set('rebootAfterInstall', checked)}
         />
       </FormGroup>
+
+      <FormGroup
+        label={t('hostForm.firewall.configure')}
+        fieldId="new-host-override-firewall"
+        labelHelp={
+          <FieldHelp
+            field={t('hostForm.firewall.configure')}
+            content={t('hostForm.firewall.configure.help')}
+          />
+        }
+      >
+        <Checkbox
+          id="new-host-override-firewall"
+          aria-label={t('hostForm.firewall.configure')}
+          isChecked={draft.overrideFirewall}
+          onChange={(_event, checked) => set('overrideFirewall', checked)}
+        />
+      </FormGroup>
     </Form>
   )
 }
@@ -280,9 +305,16 @@ function GeneralSection({
 // polling. A rejected add keeps the modal open with the engine fault toast.
 // Section parity with webadmin's HostPopupView: General, Power Management,
 // SPM, Console and GPU (address override only — vGPU placement is deferred
-// like in the edit modal), Kernel, and Hosted Engine. Consciously deferred
-// tabs: Network Provider (Foreman/Satellite provisioning is not modeled) and
-// Affinity Labels (labels are assignable after the host exists).
+// like in the edit modal), Kernel, and Hosted Engine. Not ported:
+// - Network Provider: webadmin 4.5 has no such tab (removed upstream in
+//   2019, "Remove config of network provider for hosts and neutron agent").
+//   The api-model documents host.external_network_provider_configurations as
+//   read-only, reflecting the cluster's default network provider, and
+//   BackendHostsResource.add only resolves the provider names without mapping
+//   them into AddVdsActionParameters, so a value sent on POST has no effect.
+//   OVN is deployed from the cluster's default provider instead.
+// - Foreman/Satellite provisioning (external_host_provider): not modeled.
+// - Affinity Labels: labels are assignable after the host exists.
 // SECURITY: mount this conditionally ({creating && <NewHostModal …>}) — the
 // root password lives in this component's state, so unmounting on close
 // drops it instead of retaining it behind a hidden modal.

@@ -97,6 +97,52 @@ callers via `CORSAllowedOrigins` (set with `engine-config`; see the annotated
 under a same-origin path (`/e/<slug>`) avoid CORS entirely — `connect-src`
 stays `'self'` and this section does not apply.
 
+## UI plugins
+
+UI plugins ([PLUGINS.md](PLUGINS.md), [ADR-0001](ADR-0001-UI-EXTENSIONS.md))
+are ES modules the console loads with `import()` after sign-in, only when
+`config.js` sets `plugins.enabled` and names them in `plugins.list`. The CSP
+is what makes that allow-list hold in the browser: a module the policy does
+not admit is refused no matter what config.js says.
+
+- **Plugins on the console's own origin** (the recommended layout, under
+  `/ovirt-engine/web-ui-ng/plugins/`): no change. `script-src 'self'` and
+  `connect-src 'self'` already cover the module and its manifest. This is the
+  only shape the integrated RPM supports, and the default policy above stays
+  byte for byte.
+- **Plugins on another origin**: that origin is added, enumerated, never as a
+  bare `https:`, to **`script-src`** (the module) **and `connect-src`** (the
+  manifest is fetched):
+
+  ```
+  script-src 'self' https://plugins.example.com
+  connect-src 'self' wss: https://plugins.example.com
+  ```
+
+  - **Container / OpenShift**: `CSP_SCRIPT_EXTRA` (space-separated origins)
+    is substituted into the nginx header and, through the baked
+    `__CSP_SCRIPT_EXTRA__` placeholder and `sub_filter`, into the `<meta>`,
+    exactly like `CSP_CONNECT_EXTRA`, which takes the manifest origins.
+    Empty (the default) keeps `script-src 'self'`. A build for a deployment
+    that mounts its own `default.conf` passes `--build-arg
+    VITE_CSP_SCRIPT_EXTRA=` for a clean meta, as for connect-src.
+  - **Source builds**: the meta interpolates `%VITE_CSP_SCRIPT_EXTRA%`
+    (default empty in `vite.config.ts`); widen the serving config's header to
+    match.
+
+What stays fixed whatever plugins are configured:
+
+- No `'unsafe-inline'` and no `'unsafe-eval'` in `script-src`. A plugin that
+  needs either does not load.
+- No `frame-src`: plugins render into the page with React, they are not
+  framed.
+- `connect-src` gains nothing for the engine: plugins call it through the
+  console's transport (`api.engine.request`), which adds the bearer token and
+  `Filter` header itself. The plugin never holds the token.
+- The integrity of a plugin's code rests on the origin that serves it (TLS
+  plus whoever controls that server); there is no subresource-integrity pin
+  for `import()` yet (ADR-0001 open question 1).
+
 ## Companion headers (also set at Apache)
 
 These are not CSP but belong in the same server config and complete the

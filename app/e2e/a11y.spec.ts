@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'
-import { login } from './helpers'
+import { login, openUserMenuItem } from './helpers'
 
 // Gate: 'critical' and 'serious' violations fail the suite; 'moderate' and
 // 'minor' still show up in axe's report locally but do not block. Each scan
@@ -137,6 +137,21 @@ test('New affinity group dialog with members selected has no serious violations'
   const toggle = dialog.getByRole('button', { name: '2 selected — Select virtual machines' })
   await toggle.click()
   await expect(toggle).toHaveAttribute('aria-expanded', 'false')
+
+  await expectNoSeriousViolations(page)
+})
+
+test('Add permission dialog with directory picks has no serious violations', async ({ page }) => {
+  // The multi-select table, the selected-principal chips and the directory
+  // hint only render once a directory is searched and rows are picked.
+  await login(page, { path: '/vms/vm-01' })
+  await page.getByRole('tab', { name: 'Permissions' }).click()
+  await page.getByRole('button', { name: 'Add permission' }).click()
+  const dialog = page.getByRole('dialog')
+  await dialog.getByRole('combobox', { name: 'Search in' }).selectOption('ldap.corp-authz')
+  await dialog.getByRole('checkbox', { name: 'Select bnewhire@ldap.corp' }).check()
+  await dialog.getByRole('checkbox', { name: 'Select rpatel@ldap.corp' }).check()
+  await expect(dialog.getByText('2 principals selected')).toBeVisible()
 
   await expectNoSeriousViolations(page)
 })
@@ -284,3 +299,72 @@ test('User detail page has no serious accessibility violations as admin', async 
 
   await expectNoSeriousViolations(page)
 })
+
+test('Configure page has no serious accessibility violations as admin', async ({ page }) => {
+  // The Administration › Configure index: five cards, each an h2 link plus a
+  // description, in a labelled list.
+  await login(page, { path: '/configure' })
+  await expect(page.getByRole('heading', { name: 'Configure', level: 1 })).toBeVisible()
+  await expect(
+    page.getByRole('list', { name: 'Configuration areas' }).getByRole('listitem'),
+  ).toHaveCount(5)
+
+  await expectNoSeriousViolations(page)
+})
+
+test('Edit VM Foreman/Satellite tab has no serious accessibility violations', async ({ page }) => {
+  // vm-01 is bound to the mock Foreman provider, so the picker is scanned
+  // loaded, with the bound provider selected.
+  await login(page, { path: '/vms/vm-01' })
+  await page.getByRole('button', { name: 'Edit', exact: true }).click()
+  const dialog = page.getByRole('dialog', { name: 'Edit virtual machine — web-01' })
+  await expect(dialog).toBeVisible()
+  await dialog.getByRole('tab', { name: 'Foreman/Satellite' }).click()
+  const provider = dialog.getByRole('combobox', { name: 'Provider' })
+  await expect(provider).toBeEnabled()
+  await expect(provider).toHaveValue('ehp-01')
+
+  await expectNoSeriousViolations(page)
+})
+
+test('Settings Preferences with the roaming note has no serious violations', async ({ page }) => {
+  await login(page)
+  const dialog = await openUserMenuItem(page, 'Settings')
+  await dialog.getByRole('tab', { name: 'Preferences' }).click()
+  await expect(dialog.getByText('Saved to your oVirt user profile')).toBeVisible()
+
+  await expectNoSeriousViolations(page)
+})
+
+test('template Storage (expanded) and Events tabs have no serious violations', async ({ page }) => {
+  await login(page, { path: '/templates/tpl-01' })
+  await page.getByRole('tab', { name: 'Storage' }).click()
+  const storage = page.getByRole('grid', { name: 'Storage domains holding this template’s disks' })
+  await expect(storage.getByRole('link', { name: 'hosted_storage' })).toBeVisible()
+  // expand a domain so the nested disks table is scanned too
+  await storage.getByRole('button', { name: 'Details' }).first().click()
+  await expect(page.getByRole('grid', { name: /^Template disks on / })).toBeVisible()
+  await expectNoSeriousViolations(page)
+
+  await page.getByRole('tab', { name: 'Events' }).click()
+  await expect(page.getByRole('grid', { name: 'Events for this template' })).toBeVisible()
+  await expectNoSeriousViolations(page)
+})
+
+// Each subject has at least one linked fixture event, so the table is scanned
+// populated. One test per page: every test signs in fresh.
+const SCOPED_EVENT_TABS = [
+  { entity: 'cluster', path: '/clusters/cluster-01', grid: 'Events for this cluster' },
+  { entity: 'data center', path: '/datacenters/dc-01', grid: 'Events for this data center' },
+  { entity: 'storage domain', path: '/storage/sd-01', grid: 'Events for this storage domain' },
+  { entity: 'quota', path: '/quotas/quota-02', grid: 'Events for this quota' },
+]
+
+for (const entry of SCOPED_EVENT_TABS) {
+  test(`${entry.entity} Events tab has no serious accessibility violations`, async ({ page }) => {
+    await login(page, { path: entry.path })
+    await page.getByRole('tab', { name: 'Events' }).click()
+    await expect(page.getByRole('grid', { name: entry.grid })).toBeVisible()
+    await expectNoSeriousViolations(page)
+  })
+}

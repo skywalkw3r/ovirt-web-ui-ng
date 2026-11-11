@@ -42,6 +42,8 @@ import { NumaTab } from '../components/host-tabs/NumaTab'
 import { HostPermissionsTab } from '../components/host-tabs/HostPermissionsTab'
 import { HostVmsTab } from '../components/host-tabs/HostVmsTab'
 import { HostMonitoringTab } from '../components/host-tabs/HostMonitoringTab'
+import { ExtensionHeaderActions } from '../extensions/ExtensionActions'
+import { useExtensionTabs } from '../extensions/useExtensionTabs'
 import { useHost } from '../hooks/useHost'
 import { useDeleteHost } from '../hooks/useHostMutations'
 import { hostDetailRoute } from '../routes/router'
@@ -58,6 +60,8 @@ export function HostDetailPage() {
   // (docs/COMPONENTS.md: typed-name confirm for delete)
   const [removing, setRemoving] = useState<{ nameInput: string } | null>(null)
   const deleteMutation = useDeleteHost()
+  // plugin subtabs (docs/PLUGINS.md); a hook, so above the early return
+  const extensionTabs = useExtensionTabs('host', host.data)
 
   const notFound = host.error instanceof ApiError && host.error.status === 404
 
@@ -171,6 +175,7 @@ export function HostDetailPage() {
                     </Button>
                   </Tooltip>
                 )}
+                <ExtensionHeaderActions kind="host" entity={host.data} />
                 <HostActionsMenu host={host.data} />
               </>
             }
@@ -304,6 +309,7 @@ export function HostDetailPage() {
                 <HostEventsTab hostName={host.data.name ?? ''} />
               </TabContentBody>
             </Tab>
+            {extensionTabs}
           </Tabs>
         </>
       )}

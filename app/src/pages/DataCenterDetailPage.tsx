@@ -33,6 +33,7 @@ import { ListPageHeader } from '../components/ListPageHeader'
 import { StatusBadge } from '../components/StatusBadge'
 import { NotPermitted } from '../components/NotPermitted'
 import { DataCenterFormModal } from '../components/datacenter-form/DataCenterFormModal'
+import { useGuideMeLauncher } from '../components/guide-me/guideMeContext'
 import {
   useCleanFinishedTasks,
   useDeleteDataCenter,
@@ -47,9 +48,12 @@ import { DataCenterQuotasTab } from '../components/datacenter-tabs/DataCenterQuo
 import { DataCenterStorageActionsTab } from '../components/datacenter-form/DataCenterStorageActionsTab'
 import { ReinitializeDataCenterModal } from '../components/datacenter-form/ReinitializeDataCenterModal'
 import { IscsiMultipathTab } from '../components/datacenter-tabs/IscsiMultipathTab'
+import { ScopedEventsTab } from '../components/events/ScopedEventsTab'
+import { scopedEventsSearch } from '../lib/scopedEvents'
 import { useDataCenter } from '../hooks/useDataCenterDetail'
 import { statusText } from '../lib/format'
 import { dataCenterDetailRoute } from '../routes/router'
+import { useExtensionTabs } from '../extensions/useExtensionTabs'
 
 // Re-Initialize recovers a data center whose master storage domain is lost or
 // inactive (webadmin's Re-Initialize / RecoveryStoragePool). It is meaningful
@@ -81,6 +85,8 @@ export function DataCenterDetailPage() {
   const { dataCenterId } = dataCenterDetailRoute.useParams()
   const { loaded, isAdmin } = useCapabilities()
   const dataCenter = useDataCenter(dataCenterId)
+  // plugin subtabs (docs/PLUGINS.md); a hook, so above any early return
+  const extensionTabs = useExtensionTabs('dataCenter', dataCenter.data)
   const navigate = useNavigate()
   const [activeKey, setActiveKey] = useState<string | number>('general')
   const [editing, setEditing] = useState(false)
@@ -98,6 +104,7 @@ export function DataCenterDetailPage() {
   // Clean Finished Tasks is non-destructive (it only removes finished task
   // records), so it fires straight from the kebab with no confirm.
   const cleanTasksMutation = useCleanFinishedTasks()
+  const guideMe = useGuideMeLauncher()
 
   const notFound = dataCenter.error instanceof ApiError && dataCenter.error.status === 404
 
@@ -214,6 +221,16 @@ export function DataCenterDetailPage() {
                   )}
                 >
                   <DropdownList>
+                    {guideMe && (
+                      <DropdownItem
+                        onClick={() => {
+                          setKebabOpen(false)
+                          guideMe.open({ kind: 'dataCenter', id: dataCenterId })
+                        }}
+                      >
+                        {t('guideMe.action')}
+                      </DropdownItem>
+                    )}
                     {canReinitialize(dataCenter.data.status) && (
                       <DropdownItem
                         onClick={() => {
@@ -399,6 +416,16 @@ export function DataCenterDetailPage() {
                 <DataCenterPermissionsTab dataCenterId={dataCenterId} />
               </TabContentBody>
             </Tab>
+            <Tab eventKey="events" title={<TabTitleText>{t('dcDetail.tab.events')}</TabTitleText>}>
+              <TabContentBody hasPadding>
+                <ScopedEventsTab
+                  search={scopedEventsSearch.dataCenter(dataCenter.data.name)}
+                  ariaLabel={t('dcEvents.table.ariaLabel')}
+                  emptyBody={t('dcEvents.empty.body')}
+                />
+              </TabContentBody>
+            </Tab>
+            {extensionTabs}
           </Tabs>
         </>
       )}

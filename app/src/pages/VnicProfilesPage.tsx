@@ -25,11 +25,11 @@ import { ColumnPicker } from '../components/list-toolbar/ColumnPicker'
 import { ResizableTh, resizableTableProps } from '../components/list-toolbar/ResizableTh'
 import { SearchInput } from '../components/list-toolbar/SearchInput'
 import { VnicProfileFormModal } from '../components/vnic-profile-form/VnicProfileFormModal'
-import { useDataCenters } from '../hooks/useAdminResources'
+import { useAllDataCenterQoss, useDataCenters } from '../hooks/useAdminResources'
 import { useVnicProfiles } from '../hooks/useCatalogPages'
 import { useColumnPrefs } from '../hooks/useColumnPrefs'
 import { sortRows, useColumnSort } from '../hooks/useColumnSort'
-import { useNetworks } from '../hooks/useNetworks'
+import { useNetworkFilters, useNetworks } from '../hooks/useNetworks'
 import { usePagination } from '../hooks/usePagination'
 import { useDeleteVnicProfile } from '../hooks/useVnicProfileMutations'
 import { useT } from '../i18n/useT'
@@ -46,6 +46,10 @@ interface VnicProfileColumnCtx {
   // the owning data center's compatibility version — see the compatVersion column
   compatVersion: (networkId: string | undefined) => string | undefined
   profileName: (profileId: string | undefined) => string | undefined
+  // QoS id → name across every data center's /qoss (useAllDataCenterQoss)
+  qosName: (qosId: string | undefined) => string | undefined
+  // network filter id → name from the static /networkfilters catalog
+  networkFilterName: (filterId: string | undefined) => string | undefined
   t: ReturnType<typeof useT>
 }
 
@@ -100,6 +104,24 @@ const COLUMNS: VnicProfileColumn[] = [
     cell: (profile, ctx) => ctx.compatVersion(profile.network?.id) ?? '—',
   },
   {
+    // bare { id } link on the flat list; the name joins against one /qoss
+    // read per data center, issued only while this column is shown
+    key: 'qos',
+    labelId: 'vnicProfiles.column.qos',
+    sortValue: (profile, ctx) => ctx.qosName(profile.qos?.id),
+    defaultHidden: true,
+    cell: (profile, ctx) => ctx.qosName(profile.qos?.id) ?? '—',
+  },
+  {
+    // bare { id } link; joins against one /networkfilters read (the static
+    // catalog the profile form's select uses), only while this column shows
+    key: 'networkFilter',
+    labelId: 'vnicProfiles.column.networkFilter',
+    sortValue: (profile, ctx) => ctx.networkFilterName(profile.network_filter?.id),
+    defaultHidden: true,
+    cell: (profile, ctx) => ctx.networkFilterName(profile.network_filter?.id) ?? '—',
+  },
+  {
     key: 'portMirroring',
     labelId: 'vnicProfiles.column.portMirroring',
     sortValue: (profile) =>
@@ -135,10 +157,8 @@ const COLUMNS: VnicProfileColumn[] = [
     cell: (profile) => profile.description || '—',
   },
 ]
-// Deferred vs webadmin's grid: QoS Name and Network Filter (the flat list
-// carries both as bare id links, and no cached inventory covers /qoss or
-// /networkfilters). Compatibility Version is covered by the compatVersion
-// column above via the already-cached data-center join.
+// Nothing deferred vs webadmin's grid. Compatibility Version is covered by the
+// compatVersion column above via the already-cached data-center join.
 
 // Mounted only for the admin tier (gate below), so user tier never fires the
 // /vnicprofiles request the engine would answer with a permission fault.
@@ -153,6 +173,9 @@ function VnicProfilesTable() {
   // (t is memoized on intl) so useColumnPrefs' seeding stays sound.
   const columns = useMemo(() => COLUMNS.map((c) => ({ ...c, label: t(c.labelId) })), [t])
   const prefs = useColumnPrefs('vnic-profiles', columns)
+  // opt-in joins: each read runs only while its column is visible
+  const qoss = useAllDataCenterQoss(prefs.isVisible('qos'))
+  const networkFilters = useNetworkFilters(prefs.isVisible('networkFilter'))
   // client-side header sort; no default — the engine list order stands
   // until a header is clicked (see hooks/useColumnSort)
   const { sort, thSort } = useColumnSort()
@@ -179,6 +202,12 @@ function VnicProfilesTable() {
       return version.minor === undefined ? `${version.major}` : `${version.major}.${version.minor}`
     },
     profileName: (profileId) => profiles.data?.find((entry) => entry.id === profileId)?.name,
+    qosName: (qosId) =>
+      qosId === undefined ? undefined : qoss.data?.find((qos) => qos.id === qosId)?.name,
+    networkFilterName: (filterId) =>
+      filterId === undefined
+        ? undefined
+        : networkFilters.data?.find((filter) => filter.id === filterId)?.name,
     t,
   }
 

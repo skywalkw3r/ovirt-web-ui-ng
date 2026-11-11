@@ -109,6 +109,9 @@ export default defineConfig(({ mode }) => {
   // var as literal text, which would corrupt the policy — default it to empty
   // so a plain build emits today's strict CSP unchanged.
   process.env.VITE_CSP_CONNECT_EXTRA = env.VITE_CSP_CONNECT_EXTRA ?? ''
+  // Same for %VITE_CSP_SCRIPT_EXTRA%: script-src origins of UI plugins served
+  // from another origin (docs/PLUGINS.md). Empty keeps script-src 'self'.
+  process.env.VITE_CSP_SCRIPT_EXTRA = env.VITE_CSP_SCRIPT_EXTRA ?? ''
   return {
     base,
     // Inline the app + component versions as literals; read at config time above.
@@ -134,8 +137,19 @@ export default defineConfig(({ mode }) => {
     // react-virtual), Vite re-optimizes mid-session and the new chunk
     // generation ships its own React copy — a second hooks dispatcher, and
     // navigating dashboard → VMs list crashes in useVirtualizer's useReducer.
+    // The UI-plugin shared-module table (src/extensions/shared.ts) imports the
+    // whole React / PatternFly packages at run time, only once a plugin loads;
+    // listing them keeps that from triggering the same mid-session
+    // re-optimization (and dev-server page reload).
     optimizeDeps: {
-      include: ['@tanstack/react-virtual'],
+      include: [
+        '@tanstack/react-virtual',
+        'react',
+        'react-dom',
+        'react/jsx-runtime',
+        '@patternfly/react-core',
+        '@patternfly/react-table',
+      ],
     },
     server: {
       proxy: engine
