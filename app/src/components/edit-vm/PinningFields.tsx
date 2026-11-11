@@ -20,6 +20,7 @@ import {
   CPU_PINNING_POLICY_OPTIONS,
   cpuPinningDraftError,
   draftHasSpecificHost,
+  draftVcpuCount,
   type DraftError,
 } from './cpuPinning'
 import type { EditVmDraft } from './editVmDraft'
@@ -44,22 +45,25 @@ function nudgeMigrationMode(draft: EditVmDraft, set: SetDraft): void {
 }
 
 // CPU pinning block of the Host section: the 4.5 policy and, for Manual, the
-// pinning string. Webadmin keeps these two under Resource Allocation; they sit
-// here because every rule they obey (a specific host, pinned vNUMA nodes) is
-// edited on this tab.
+// pinning string. Deliberate divergence: webadmin keeps these two under
+// Resource Allocation; they sit here because every rule they obey (a specific
+// host, pinned vNUMA nodes) is edited on this tab.
 export function CpuPinningFields({
   draft,
   set,
-  baselinePolicy,
+  baseline,
   dedicatedSupported,
+  numaEditable,
 }: {
   draft: EditVmDraft
   set: SetDraft
-  // the policy the VM was loaded with (leaving Resize and Pin drops the nodes'
+  // the loaded draft (leaving a loaded Resize and Pin drops the nodes'
   // engine-made pins, as webadmin's NumaUnitToVmBaseBuilder does)
-  baselinePolicy: string
+  baseline: EditVmDraft
   // cluster compatibility >= 4.7 (engine config IsDedicatedSupported)
   dedicatedSupported: boolean
+  // the vNUMA topology is loaded and the VM is down, so this save can rewrite it
+  numaEditable: boolean
 }) {
   const t = useT()
   const specificHost = draftHasSpecificHost(draft)
@@ -79,11 +83,18 @@ export function CpuPinningFields({
     return false
   }
 
+  // Leaving a loaded Resize and Pin NUMA starts from unpinned default nodes;
+  // going back to it restores the loaded (engine-made) nodes, which a save under
+  // that policy never touches.
   const changePolicy = (policy: string) => {
     set('cpuPinningPolicy', policy)
-    if (baselinePolicy === 'resize_and_pin_numa' && policy !== 'resize_and_pin_numa') {
-      set('numaNodes', freshNumaNodes(draft.numaNodes.length))
-    }
+    if (!numaEditable || baseline.cpuPinningPolicy !== 'resize_and_pin_numa') return
+    set(
+      'numaNodes',
+      policy === 'resize_and_pin_numa'
+        ? baseline.numaNodes
+        : freshNumaNodes(baseline.numaNodes.length),
+    )
   }
 
   return (
@@ -210,7 +221,14 @@ export function NumaFields({
   // support NUMA (VmModelBehaviorBase.updateNumaPinningEnabled); "supports
   // NUMA" is "reports more than one node" on the engine.
   const canPin = editable && specificHost && hostNodes.length > 1
-  const nodes = resolveNumaNodes(draft, baseline)
+  // A topology this save cannot write (running VM, engine-owned) shows as
+  // loaded; an editable one shows what the save would leave on the engine.
+  const nodes = editable
+    ? resolveNumaNodes(draft, baseline)
+    : [...draft.numaNodes].sort((a, b) => a.index - b.index)
+  // More virtual nodes than vCPUs is never valid (numaError), so the count is
+  // capped there; that also keeps a typo from rendering thousands of rows.
+  const maxCount = Math.max(draftVcpuCount(draft), draft.numaNodes.length)
 
   // rows are the draft nodes in index order, so a row's position addresses its
   // draft node even when the indices get renumbered by a redistribution
@@ -231,7 +249,7 @@ export function NumaFields({
         <>
           <HelperText>
             <HelperTextItem variant="error">
-              {t('vm.edit.numa.error')}
+              {t('vm.edit.numa.loadError')}
               {numaNodes.error instanceof Error ? `: ${numaNodes.error.message}` : ''}
             </HelperTextItem>
           </HelperText>
@@ -253,11 +271,12 @@ export function NumaFields({
               id="edit-vm-numa-count"
               type="number"
               min={0}
+              max={maxCount}
               aria-label={t('vm.edit.numa.count')}
               value={draft.numaNodes.length}
               isDisabled={!editable}
               onChange={(_event, value) => {
-                const count = Math.max(0, Math.floor(Number(value) || 0))
+                const count = Math.min(maxCount, Math.max(0, Math.floor(Number(value) || 0)))
                 if (count !== draft.numaNodes.length) set('numaNodes', freshNumaNodes(count))
               }}
             />

@@ -121,15 +121,15 @@ export function cpuPinningError(
   return undefined
 }
 
-// The cpu.cpu_tune body for a pinning string. '' sends a present-but-empty
-// vcpu_pin list, which the mapper turns into the empty pinning string (clears
-// the pinning; the same present-but-empty convention placement_policy.hosts
-// uses).
+// The cpu.cpu_tune body for a pinning string. '' sends an empty cpu_tune: the
+// mapper (VmBaseMapper.cpuTuneToString) maps a cpu_tune without vcpu_pins to the
+// empty pinning string, which clears it. That is the null-list branch of the
+// mapper, so it does not depend on how the engine reads an empty JSON list.
 export function cpuTuneBody(text: string): Record<string, unknown> {
+  const pins = parseCpuPinning(text)
+  if (pins.length === 0) return {}
   return {
-    vcpu_pins: {
-      vcpu_pin: parseCpuPinning(text).map((pin) => ({ vcpu: pin.vcpu, cpu_set: pin.cpuSet })),
-    },
+    vcpu_pins: { vcpu_pin: pins.map((pin) => ({ vcpu: pin.vcpu, cpu_set: pin.cpuSet })) },
   }
 }
 

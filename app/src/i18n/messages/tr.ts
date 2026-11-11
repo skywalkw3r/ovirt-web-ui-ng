@@ -4542,6 +4542,85 @@ export const tr: LocaleCatalog = {
     'Watchdog değişikliği başarısız olduğu için hiçbir şey kaydedilmedi: {message}. Yeniden denemek için tekrar kaydedin.',
   'vm.edit.save.nextRunRefreshFailed':
     'Watchdog kaydedildi ancak VM’nin bekleyen sonraki çalıştırma yapılandırması yenilenmedi; bu nedenle motor değişikliği bir sonraki kapatmada geri alabilir: {message}. Yeniden denemek için tekrar kaydedin.',
+  'vm.edit.pinning.title': 'CPU sabitleme',
+  'vm.edit.pinning.policy': 'CPU sabitleme ilkesi',
+  'vm.edit.pinning.policy.none': 'Yok',
+  'vm.edit.pinning.policy.manual': 'El ile',
+  'vm.edit.pinning.policy.resizeAndPin': 'Yeniden boyutlandır ve NUMA sabitle',
+  'vm.edit.pinning.policy.dedicated': 'Ayrılmış',
+  'vm.edit.pinning.policy.isolateThreads': 'İş parçacıklarını yalıt',
+  'vm.edit.pinning.topology': 'CPU sabitleme topolojisi',
+  'vm.edit.pinning.hint.manualNeedsHost':
+    'El ile sabitleme, sanal makinenin belirli ana makinelerde çalışmasını gerektirir.',
+  'vm.edit.pinning.hint.dedicatedNeedsVersion':
+    'Ayrılmış ve İş parçacıklarını yalıt, küme uyumluluk sürümü 4.7 veya üstünü gerektirir.',
+  'vm.edit.pinning.hint.dedicatedNumaPinned':
+    'Bir sanal NUMA düğümü sabitliyken Ayrılmış ve İş parçacıklarını yalıt kullanılamaz.',
+  'vm.edit.pinning.hint.resizeAndPin':
+    'Yeniden boyutlandır ve NUMA sabitle, sanal makine başlarken CPU topolojisini ve sanal NUMA düğümlerini ana makineye göre belirler.',
+  'vm.edit.pinning.error.required': 'Bir sabitleme topolojisi girin, örneğin 0#0_1#1-3.',
+  'vm.edit.pinning.error.syntax':
+    'vCPU#ana makine CPU girdilerini _ ile birleştirerek yazın, örneğin 0#0_1#1-3 veya 0#0-3,^2.',
+  'vm.edit.pinning.error.needsHost':
+    'El ile sabitleme, sanal makinenin belirli ana makinelerde çalışmasını gerektirir.',
+  'vm.edit.pinning.error.vcpuMissing':
+    'vCPU {vcpu} yok; bu sanal makinenin vCPU’ları 0 ile {max} arasındadır.',
+  'vm.edit.pinning.error.duplicate': 'vCPU {vcpu} birden fazla kez sabitlenmiş.',
+  'vm.edit.pinning.error.noCpu': 'vCPU {vcpu} hiçbir ana makine CPU’suna sabitlenmemiş.',
+  'fieldHelp.vm.cpuPinningPolicy':
+    'vCPU’ların ana makine CPU’larına nasıl eşlendiği. Yok bunu ana makineye bırakır; El ile aşağıdaki sabitleme topolojisini kullanır; Yeniden boyutlandır ve NUMA sabitle sanal makineyi ana makinesine göre boyutlandırıp sabitler; Ayrılmış ana makine CPU’larını yalnızca bu sanal makineye ayırır; İş parçacıklarını yalıt ayrıca her vCPU’ya kendi fiziksel çekirdeğini verir. Çalışan bir sanal makinede bir sonraki başlatmada uygulanır.',
+  'fieldHelp.vm.cpuPinningTopology':
+    'Her vCPU’yu vCPU#CPU biçiminde ana makine CPU’larına sabitleyin, girdileri _ ile birleştirin. Bir CPU kümesi CPU’ları (0,2), aralıkları (1-3) ve hariç tutmaları (^2) listeler. Örnek: 0#0_1#1-3, vCPU 0’ı ana makine CPU 0’a ve vCPU 1’i ana makine CPU 1 ile 3 arasına sabitler.',
+  'fieldHelp.vm.numaCount':
+    'Konuğun gördüğü sanal NUMA düğümü sayısı. vCPU’lar ve bellek bunlara dağıtılır; belleğini yerel tutmak için bir düğümü bir ana makine NUMA düğümüne sabitleyin. Yalnızca kapalı bir sanal makinede değiştirilir.',
+  'vm.edit.numa.title': 'Sanal NUMA',
+  'vm.edit.numa.count': 'NUMA düğümü sayısı',
+  'vm.edit.numa.loading': 'Sanal NUMA düğümleri yükleniyor',
+  'vm.edit.numa.loadError': 'Sanal NUMA düğümleri yüklenemedi; değiştirilmeden bırakıldılar',
+  'vm.edit.numa.hint.running':
+    'Sanal NUMA düğümleri yalnızca sanal makine kapalıyken değiştirilebilir.',
+  'vm.edit.numa.hint.needsHost':
+    'Bir düğümü bir ana makine NUMA düğümüne sabitlemek, sanal makinenin belirli ana makinelerde çalışmasını gerektirir.',
+  'vm.edit.numa.hint.hostLoading': 'Ana makine NUMA topolojisi yükleniyor',
+  'vm.edit.numa.hint.hostError': 'Ana makine NUMA topolojisi yüklenemedi',
+  'vm.edit.numa.table': 'Sanal NUMA düğümleri',
+  'vm.edit.numa.column.node': 'Düğüm',
+  'vm.edit.numa.column.resources': 'vCPU’lar ve bellek',
+  'vm.edit.numa.column.tune': 'Ayar modu',
+  'vm.edit.numa.column.hostNode': 'Ana makine NUMA düğümü',
+  'vm.edit.numa.resources': 'vCPU {cpus}, {memory} MB',
+  'vm.edit.numa.tuneLabel': 'NUMA düğümü {index} ayar modu',
+  'vm.edit.numa.pinLabel': 'NUMA düğümü {index} için ana makine NUMA düğümü',
+  'vm.edit.numa.pin.none': 'Sabitlenmemiş',
+  'vm.edit.numa.pin.hostNode': 'Ana makine düğümü {index}',
+  'vm.edit.numa.tune.interleave': 'Serpiştirilmiş (Interleave)',
+  'vm.edit.numa.tune.strict': 'Katı (Strict)',
+  'vm.edit.numa.tune.preferred': 'Tercih edilen (Preferred)',
+  'vm.edit.numa.error.preferred':
+    'Tercih edilen yalnızca tek bir ana makine düğümüne sabitlenmiş tek bir sanal NUMA düğümüyle çalışır.',
+  'vm.edit.numa.error.tooManyNodes':
+    'Sanal makinenin {cpus} vCPU’su var, bu yüzden {count} NUMA düğümü olamaz.',
+  'vm.edit.numa.error.pinsNeedHost':
+    'Sabitlenmiş NUMA düğümleri, sanal makinenin belirli ana makinelerde çalışmasını gerektirir.',
+  'vm.edit.numa.error.pinsWithDedicated':
+    'Ayrılmış ve İş parçacıklarını yalıt, sabitlenmiş NUMA düğümleriyle birlikte kullanılamaz.',
+  'vm.edit.numa.error.hostUnsupported':
+    '{host} ana makinesi NUMA topolojisi bildirmiyor, bu yüzden üzerinde çalışan bir sanal makinenin sanal NUMA düğümleri olamaz.',
+  'vm.edit.numa.error.hostNodeMissing': '{host} ana makinesinde {hostNode} NUMA düğümü yok.',
+  'vm.edit.numa.error.memory':
+    'Sanal NUMA düğümü {node}, {host} ana makinesinin {hostNode} düğümünde bulunandan daha fazla bellek gerektiriyor ve Katı buna izin vermez.',
+  'vm.edit.save.numaBeforeVmFailed':
+    'Eski sanal NUMA düğümleri kaldırılamadı, bu yüzden sanal makine kaydedilmedi: {message}. Yeniden denemek için tekrar kaydedin.',
+  'vm.edit.save.vmFailedAfterNuma':
+    'Eski sanal NUMA düğümleri kaldırıldı, ancak sanal makine kaydedilemediği için yeni düğümler eklenmedi: {message}. Yeniden denemek için tekrar kaydedin.',
+  'vm.edit.save.numaAfterVmFailed':
+    'Sanal makine kaydedildi, ancak sanal NUMA değişikliği başarısız oldu: {message}. Yeniden denemek için tekrar kaydedin.',
+  'vm.edit.save.numaFailed':
+    'Sanal NUMA değişikliği başarısız oldu: {message}. Yeniden denemek için tekrar kaydedin.',
+  'vm.edit.save.numaState':
+    'Sanal makinenin artık {count, plural, =0 {sanal NUMA düğümü yok} other {# sanal NUMA düğümü var}}.',
+  'vm.edit.save.numaStateUnknown':
+    'Sanal NUMA düğümleri yeniden okunamadı; geçerli topolojiyi görmek için iletişim kutusunu yeniden açın.',
   'vm.edit.save.cdFailed':
     'VM kaydedildi ancak CD değişikliği başarısız oldu: {message}. Yeniden denemek için tekrar kaydedin.',
   'vm.create.watchdog.templateError':

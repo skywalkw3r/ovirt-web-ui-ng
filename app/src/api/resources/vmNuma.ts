@@ -134,14 +134,16 @@ function pinsBody(pins: number[]): Record<string, unknown> {
   return { numa_node_pin: pins.map((index) => ({ index })) }
 }
 
-// The full vm_numa_node body for Add.
+// The full vm_numa_node body for Add. An unpinned node leaves numa_node_pins
+// out entirely (a new node starts unpinned), so only a re-pin on Update relies
+// on the empty-list form.
 export function vmNumaNodeBody(spec: VmNumaNodeSpec): Record<string, unknown> {
   return {
     index: spec.index,
     memory: spec.memoryMb,
     cpu: { cores: { core: spec.cpuIds.map((index) => ({ index })) } },
     numa_tune_mode: spec.tuneMode,
-    numa_node_pins: pinsBody(spec.pins),
+    ...(spec.pins.length > 0 ? { numa_node_pins: pinsBody(spec.pins) } : {}),
   }
 }
 

@@ -644,7 +644,7 @@ function applyChangedSections(
   // must also CLEAR the stored string: the engine rejects a string under any
   // other policy, and its REST layer flips a None policy that still has a
   // string back to Manual (BackendVmsResource.updateCpuPinningFields). So a
-  // policy change to anything but Manual always sends the empty pin list.
+  // policy change to anything but Manual always sends the clearing cpu_tune.
   const policyMoved = draft.cpuPinningPolicy !== baseline.cpuPinningPolicy
   if (policyMoved) payload.cpu_pinning_policy = draft.cpuPinningPolicy
   const pinning = effectiveCpuPinning(draft)

@@ -71,7 +71,7 @@ import {
   removeUser,
   removeUserEventSubscription,
 } from '../resources/users'
-import { listVmPermissions, listVms } from '../resources/vms'
+import { getVm, listVmPermissions, listVms, updateVm } from '../resources/vms'
 import {
   activateStorageDomain,
   deactivateStorageDomain,
@@ -144,7 +144,14 @@ import {
 } from '../resources/bookmarks'
 import { listEvents, removeEvent } from '../resources/events'
 import { getIcon, listIcons } from '../resources/icons'
-import { listVmNumaNodes, pinnedHostNodeIndices, vmNumaNodeCpuIndices } from '../resources/vmNuma'
+import {
+  addVmNumaNode,
+  listVmNumaNodes,
+  pinnedHostNodeIndices,
+  removeVmNumaNode,
+  updateVmNumaNodePinning,
+  vmNumaNodeCpuIndices,
+} from '../resources/vmNuma'
 import {
   addVmMediatedDevice,
   listHostMdevTypes,
@@ -3772,6 +3779,33 @@ describe('wave endpoints (mock)', () => {
 
   it('vm numa: a VM with no vNUMA topology returns an empty list', async () => {
     expect(await settle(listVmNumaNodes('vm-02'))).toEqual([])
+  })
+
+  it('vm numa: add, re-pin and remove round-trip, enforcing contiguous indices', async () => {
+    const spec = { memoryMb: 1024, cpuIds: [0], tuneMode: 'strict', pins: [0] }
+    // index 1 before index 0 leaves a gap
+    await settleRejection(addVmNumaNode('vm-02', { ...spec, index: 1 }), { status: 409 })
+    const added = await settle(addVmNumaNode('vm-02', { ...spec, index: 0 }))
+    await settle(updateVmNumaNodePinning('vm-02', added.id!, { tuneMode: 'interleave', pins: [] }))
+    const [node] = await settle(listVmNumaNodes('vm-02'))
+    expect(node).toMatchObject({ index: 0, memory: 1024, numa_tune_mode: 'interleave' })
+    expect(pinnedHostNodeIndices(node!)).toEqual([])
+    // vm-01's lower node cannot go first
+    await settleRejection(removeVmNumaNode('vm-01', 'vnuma-0'), { status: 409 })
+    await settle(removeVmNumaNode('vm-02', added.id!))
+    expect(await settle(listVmNumaNodes('vm-02'))).toEqual([])
+  })
+
+  it('vm update merges the cpu block, keeping a cpu_tune the PUT does not carry', async () => {
+    await settle(
+      updateVm('vm-02', {
+        cpu: { cpu_tune: { vcpu_pins: { vcpu_pin: [{ vcpu: 0, cpu_set: '1' }] } } },
+      }),
+    )
+    await settle(updateVm('vm-02', { cpu: { topology: { sockets: 2, cores: 1, threads: 1 } } }))
+    const vm = await settle(getVm('vm-02'))
+    expect(vm.cpu?.cpu_tune?.vcpu_pins?.vcpu_pin).toEqual([{ vcpu: 0, cpu_set: '1' }])
+    expect(vm.cpu?.topology?.sockets).toBe(2)
   })
 
   // ─── VM mediated devices (vGPU) ────────────────────────────────────────────

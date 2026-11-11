@@ -5096,6 +5096,79 @@ export const en = {
     'The watchdog change failed, so nothing was saved: {message}. Save again to retry.',
   'vm.edit.save.nextRunRefreshFailed':
     "The watchdog was saved, but the VM's pending next-run configuration was not refreshed, so the engine could undo the change at the next shutdown: {message}. Save again to retry.",
+  'vm.edit.pinning.title': 'CPU pinning',
+  'vm.edit.pinning.policy': 'CPU pinning policy',
+  'vm.edit.pinning.policy.none': 'None',
+  'vm.edit.pinning.policy.manual': 'Manual',
+  'vm.edit.pinning.policy.resizeAndPin': 'Resize and Pin NUMA',
+  'vm.edit.pinning.policy.dedicated': 'Dedicated',
+  'vm.edit.pinning.policy.isolateThreads': 'Isolate Threads',
+  'vm.edit.pinning.topology': 'CPU pinning topology',
+  'vm.edit.pinning.hint.manualNeedsHost': 'Manual pinning needs the VM to run on specific hosts.',
+  'vm.edit.pinning.hint.dedicatedNeedsVersion':
+    'Dedicated and Isolate Threads need cluster compatibility version 4.7 or later.',
+  'vm.edit.pinning.hint.dedicatedNumaPinned':
+    'Dedicated and Isolate Threads are unavailable while a virtual NUMA node is pinned.',
+  'vm.edit.pinning.hint.resizeAndPin':
+    'Resize and Pin NUMA sizes the CPU topology and the virtual NUMA nodes from the host when the VM starts.',
+  'vm.edit.pinning.error.required': 'Enter a pinning topology, for example 0#0_1#1-3.',
+  'vm.edit.pinning.error.syntax':
+    'Write vCPU#host CPUs entries joined by _, for example 0#0_1#1-3 or 0#0-3,^2.',
+  'vm.edit.pinning.error.needsHost': 'Manual pinning needs the VM to run on specific hosts.',
+  'vm.edit.pinning.error.vcpuMissing': 'vCPU {vcpu} does not exist; this VM has vCPUs 0 to {max}.',
+  'vm.edit.pinning.error.duplicate': 'vCPU {vcpu} is pinned more than once.',
+  'vm.edit.pinning.error.noCpu': 'vCPU {vcpu} is pinned to no host CPU.',
+  'fieldHelp.vm.cpuPinningPolicy':
+    'How the vCPUs map to host CPUs. None leaves it to the host; Manual uses the pinning topology below; Resize and Pin NUMA sizes the VM to its host and pins it; Dedicated reserves host CPUs for this VM alone; Isolate Threads also gives each vCPU a physical core of its own. Applied on the next start of a running VM.',
+  'fieldHelp.vm.cpuPinningTopology':
+    'Pin each vCPU to host CPUs as vCPU#CPUs, entries joined by _. A CPU set lists CPUs (0,2), ranges (1-3) and exclusions (^2). Example: 0#0_1#1-3 pins vCPU 0 to host CPU 0 and vCPU 1 to host CPUs 1 to 3.',
+  'fieldHelp.vm.numaCount':
+    'How many virtual NUMA nodes the guest sees. The vCPUs and memory are spread over them; pin a node to a host NUMA node to keep its memory local. Changed on a powered-off VM only.',
+  'vm.edit.numa.title': 'Virtual NUMA',
+  'vm.edit.numa.count': 'NUMA node count',
+  'vm.edit.numa.loading': 'Loading virtual NUMA nodes',
+  'vm.edit.numa.loadError': 'Could not load the virtual NUMA nodes; they are left unchanged',
+  'vm.edit.numa.hint.running': 'The virtual NUMA nodes can only be changed while the VM is down.',
+  'vm.edit.numa.hint.needsHost':
+    'Pinning a node to a host NUMA node needs the VM to run on specific hosts.',
+  'vm.edit.numa.hint.hostLoading': 'Loading the host NUMA topology',
+  'vm.edit.numa.hint.hostError': 'Could not load the host NUMA topology',
+  'vm.edit.numa.table': 'Virtual NUMA nodes',
+  'vm.edit.numa.column.node': 'Node',
+  'vm.edit.numa.column.resources': 'vCPUs and memory',
+  'vm.edit.numa.column.tune': 'Tune mode',
+  'vm.edit.numa.column.hostNode': 'Host NUMA node',
+  'vm.edit.numa.resources': 'vCPUs {cpus}, {memory} MB',
+  'vm.edit.numa.tuneLabel': 'Tune mode of NUMA node {index}',
+  'vm.edit.numa.pinLabel': 'Host NUMA node for NUMA node {index}',
+  'vm.edit.numa.pin.none': 'Not pinned',
+  'vm.edit.numa.pin.hostNode': 'Host node {index}',
+  'vm.edit.numa.tune.interleave': 'Interleave',
+  'vm.edit.numa.tune.strict': 'Strict',
+  'vm.edit.numa.tune.preferred': 'Preferred',
+  'vm.edit.numa.error.preferred':
+    'Preferred only works with a single virtual NUMA node pinned to a single host node.',
+  'vm.edit.numa.error.tooManyNodes':
+    'The VM has {cpus} vCPUs, so it cannot have {count} NUMA nodes.',
+  'vm.edit.numa.error.pinsNeedHost': 'Pinned NUMA nodes need the VM to run on specific hosts.',
+  'vm.edit.numa.error.pinsWithDedicated':
+    'Dedicated and Isolate Threads cannot be combined with pinned NUMA nodes.',
+  'vm.edit.numa.error.hostUnsupported':
+    'Host {host} reports no NUMA topology, so a VM that runs on it cannot have virtual NUMA nodes.',
+  'vm.edit.numa.error.hostNodeMissing': 'Host {host} has no NUMA node {hostNode}.',
+  'vm.edit.numa.error.memory':
+    'Virtual NUMA node {node} needs more memory than node {hostNode} of host {host} has, which Strict does not allow.',
+  'vm.edit.save.numaBeforeVmFailed':
+    'Removing the old virtual NUMA nodes failed, so the VM was not saved: {message}. Save again to retry.',
+  'vm.edit.save.vmFailedAfterNuma':
+    'The old virtual NUMA nodes were removed, but the VM could not be saved, so the new nodes were not added: {message}. Save again to retry.',
+  'vm.edit.save.numaAfterVmFailed':
+    'The VM was saved, but the virtual NUMA change failed: {message}. Save again to retry.',
+  'vm.edit.save.numaFailed': 'The virtual NUMA change failed: {message}. Save again to retry.',
+  'vm.edit.save.numaState':
+    'The VM now has {count, plural, =0 {no virtual NUMA nodes} one {# virtual NUMA node} other {# virtual NUMA nodes}}.',
+  'vm.edit.save.numaStateUnknown':
+    'Its virtual NUMA nodes could not be read back; reopen the dialog to see the current topology.',
   'vm.edit.save.cdFailed':
     'The VM was saved, but the CD change failed: {message}. Save again to retry.',
   'vm.create.watchdog.templateError':

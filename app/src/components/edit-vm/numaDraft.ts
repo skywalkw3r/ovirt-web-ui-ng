@@ -23,6 +23,8 @@ import type { EditVmDraft } from './editVmDraft'
 // read or the vm PUT body (Vm.numaNodes is a link; the REST mapper never reads
 // nodes from an update), so the modal seeds it separately (numaDraftFields) and
 // saves it through its own calls (buildNumaPlan), like the watchdog device.
+// These functions do not look at the VM status: the modal only calls numaError
+// and buildNumaPlan for a down VM (EditVmModal numaEditable says why).
 
 // One virtual NUMA node as the draft holds it. id '' marks a node that does not
 // exist on the engine yet; such a node has no vCPUs / memory of its own until
@@ -51,7 +53,9 @@ export const NUMA_TUNE_MODE_OPTIONS: { value: string; labelId: MessageId }[] = [
 
 // The draft fields for the loaded numanodes collection, in index order (the
 // api-model: "The order of the returned list of NUMA nodes isn't guaranteed").
-export function numaDraftFields(nodes: VmNumaNode[]): Pick<EditVmDraft, 'numaLoaded' | 'numaNodes'> {
+export function numaDraftFields(
+  nodes: VmNumaNode[],
+): Pick<EditVmDraft, 'numaLoaded' | 'numaNodes'> {
   return {
     numaLoaded: true,
     numaNodes: nodes

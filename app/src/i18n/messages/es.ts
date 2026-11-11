@@ -4611,6 +4611,85 @@ export const es: LocaleCatalog = {
     'El cambio de watchdog falló, por lo que no se guardó nada: {message}. Guarde de nuevo para reintentar.',
   'vm.edit.save.nextRunRefreshFailed':
     'El watchdog se guardó, pero la configuración pendiente de la VM para el siguiente inicio no se actualizó, por lo que el motor podría deshacer el cambio en el siguiente apagado: {message}. Guarde de nuevo para reintentar.',
+  'vm.edit.pinning.title': 'Fijación de CPU',
+  'vm.edit.pinning.policy': 'Política de fijación de CPU',
+  'vm.edit.pinning.policy.none': 'Ninguna',
+  'vm.edit.pinning.policy.manual': 'Manual',
+  'vm.edit.pinning.policy.resizeAndPin': 'Redimensionar y fijar NUMA',
+  'vm.edit.pinning.policy.dedicated': 'Dedicada',
+  'vm.edit.pinning.policy.isolateThreads': 'Aislar hilos',
+  'vm.edit.pinning.topology': 'Topología de fijación de CPU',
+  'vm.edit.pinning.hint.manualNeedsHost':
+    'La fijación manual requiere que la VM se ejecute en hosts específicos.',
+  'vm.edit.pinning.hint.dedicatedNeedsVersion':
+    'Dedicada y Aislar hilos requieren la versión de compatibilidad del clúster 4.7 o posterior.',
+  'vm.edit.pinning.hint.dedicatedNumaPinned':
+    'Dedicada y Aislar hilos no están disponibles mientras haya un nodo NUMA virtual fijado.',
+  'vm.edit.pinning.hint.resizeAndPin':
+    'Redimensionar y fijar NUMA dimensiona la topología de CPU y los nodos NUMA virtuales a partir del host cuando se inicia la VM.',
+  'vm.edit.pinning.error.required': 'Introduzca una topología de fijación, por ejemplo 0#0_1#1-3.',
+  'vm.edit.pinning.error.syntax':
+    'Escriba entradas vCPU#CPU del host unidas por _, por ejemplo 0#0_1#1-3 o 0#0-3,^2.',
+  'vm.edit.pinning.error.needsHost':
+    'La fijación manual requiere que la VM se ejecute en hosts específicos.',
+  'vm.edit.pinning.error.vcpuMissing':
+    'La vCPU {vcpu} no existe; esta VM tiene las vCPU de la 0 a la {max}.',
+  'vm.edit.pinning.error.duplicate': 'La vCPU {vcpu} está fijada más de una vez.',
+  'vm.edit.pinning.error.noCpu': 'La vCPU {vcpu} no está fijada a ninguna CPU del host.',
+  'fieldHelp.vm.cpuPinningPolicy':
+    'Cómo se asignan las vCPU a las CPU del host. Ninguna lo deja en manos del host; Manual usa la topología de fijación de abajo; Redimensionar y fijar NUMA dimensiona la VM según su host y la fija; Dedicada reserva CPU del host solo para esta VM; Aislar hilos además da a cada vCPU un núcleo físico propio. En una VM en ejecución se aplica en el siguiente arranque.',
+  'fieldHelp.vm.cpuPinningTopology':
+    'Fije cada vCPU a CPU del host como vCPU#CPU, con las entradas unidas por _. Un conjunto de CPU enumera CPU (0,2), rangos (1-3) y exclusiones (^2). Ejemplo: 0#0_1#1-3 fija la vCPU 0 a la CPU 0 del host y la vCPU 1 a las CPU 1 a 3 del host.',
+  'fieldHelp.vm.numaCount':
+    'Cuántos nodos NUMA virtuales ve el invitado. Las vCPU y la memoria se reparten entre ellos; fije un nodo a un nodo NUMA del host para mantener su memoria local. Solo se cambia con la VM apagada.',
+  'vm.edit.numa.title': 'NUMA virtual',
+  'vm.edit.numa.count': 'Número de nodos NUMA',
+  'vm.edit.numa.loading': 'Cargando nodos NUMA virtuales',
+  'vm.edit.numa.loadError': 'No se pudieron cargar los nodos NUMA virtuales; se dejan sin cambios',
+  'vm.edit.numa.hint.running':
+    'Los nodos NUMA virtuales solo se pueden cambiar mientras la VM está apagada.',
+  'vm.edit.numa.hint.needsHost':
+    'Fijar un nodo a un nodo NUMA del host requiere que la VM se ejecute en hosts específicos.',
+  'vm.edit.numa.hint.hostLoading': 'Cargando la topología NUMA del host',
+  'vm.edit.numa.hint.hostError': 'No se pudo cargar la topología NUMA del host',
+  'vm.edit.numa.table': 'Nodos NUMA virtuales',
+  'vm.edit.numa.column.node': 'Nodo',
+  'vm.edit.numa.column.resources': 'vCPU y memoria',
+  'vm.edit.numa.column.tune': 'Modo de ajuste',
+  'vm.edit.numa.column.hostNode': 'Nodo NUMA del host',
+  'vm.edit.numa.resources': 'vCPU {cpus}, {memory} MB',
+  'vm.edit.numa.tuneLabel': 'Modo de ajuste del nodo NUMA {index}',
+  'vm.edit.numa.pinLabel': 'Nodo NUMA del host para el nodo NUMA {index}',
+  'vm.edit.numa.pin.none': 'Sin fijar',
+  'vm.edit.numa.pin.hostNode': 'Nodo del host {index}',
+  'vm.edit.numa.tune.interleave': 'Intercalado (Interleave)',
+  'vm.edit.numa.tune.strict': 'Estricto (Strict)',
+  'vm.edit.numa.tune.preferred': 'Preferido (Preferred)',
+  'vm.edit.numa.error.preferred':
+    'Preferido solo funciona con un único nodo NUMA virtual fijado a un único nodo del host.',
+  'vm.edit.numa.error.tooManyNodes':
+    'La VM tiene {cpus} vCPU, por lo que no puede tener {count} nodos NUMA.',
+  'vm.edit.numa.error.pinsNeedHost':
+    'Los nodos NUMA fijados requieren que la VM se ejecute en hosts específicos.',
+  'vm.edit.numa.error.pinsWithDedicated':
+    'Dedicada y Aislar hilos no se pueden combinar con nodos NUMA fijados.',
+  'vm.edit.numa.error.hostUnsupported':
+    'El host {host} no informa de ninguna topología NUMA, por lo que una VM que se ejecute en él no puede tener nodos NUMA virtuales.',
+  'vm.edit.numa.error.hostNodeMissing': 'El host {host} no tiene el nodo NUMA {hostNode}.',
+  'vm.edit.numa.error.memory':
+    'El nodo NUMA virtual {node} necesita más memoria de la que tiene el nodo {hostNode} del host {host}, algo que Estricto no permite.',
+  'vm.edit.save.numaBeforeVmFailed':
+    'No se pudieron quitar los nodos NUMA virtuales antiguos, así que la VM no se guardó: {message}. Guarde de nuevo para reintentar.',
+  'vm.edit.save.vmFailedAfterNuma':
+    'Se quitaron los nodos NUMA virtuales antiguos, pero la VM no se pudo guardar, así que no se añadieron los nodos nuevos: {message}. Guarde de nuevo para reintentar.',
+  'vm.edit.save.numaAfterVmFailed':
+    'La VM se guardó, pero el cambio de NUMA virtual falló: {message}. Guarde de nuevo para reintentar.',
+  'vm.edit.save.numaFailed':
+    'El cambio de NUMA virtual falló: {message}. Guarde de nuevo para reintentar.',
+  'vm.edit.save.numaState':
+    'La VM tiene ahora {count, plural, =0 {ningún nodo NUMA virtual} one {# nodo NUMA virtual} other {# nodos NUMA virtuales}}.',
+  'vm.edit.save.numaStateUnknown':
+    'No se pudieron volver a leer sus nodos NUMA virtuales; vuelva a abrir el diálogo para ver la topología actual.',
   'vm.edit.save.cdFailed':
     'La VM se guardó, pero el cambio de CD falló: {message}. Guarde de nuevo para reintentar.',
   'vm.create.watchdog.templateError':
