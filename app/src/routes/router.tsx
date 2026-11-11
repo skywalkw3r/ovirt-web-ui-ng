@@ -354,6 +354,15 @@ const tasksRoute = createRoute({
   component: lazyRouteComponent(() => import('../pages/TasksPage'), 'TasksPage'),
 })
 
+// Pages contributed by UI plugins (registerNavPage, docs/PLUGINS.md). One
+// route serves every plugin page; ExtensionPage looks the contribution up in
+// the extension registry. Exported for its route-scoped useParams.
+export const extensionPageRoute = createRoute({
+  getParentRoute: () => protectedRoute,
+  path: '/extensions/$pluginName/$pageId',
+  component: lazyRouteComponent(() => import('../extensions/ExtensionPage'), 'ExtensionPage'),
+})
+
 const routeTree = rootRoute.addChildren([
   loginRoute,
   vmConsoleRoute,
@@ -399,6 +408,7 @@ const routeTree = rootRoute.addChildren([
     errataDetailRoute,
     volumesRoute,
     tasksRoute,
+    extensionPageRoute,
   ]),
 ])
 

@@ -4758,4 +4758,18 @@ export const zhCN: LocaleCatalog = {
   'vnicProfiles.column.networkFilter': '网络过滤器',
   'pools.column.running': '运行中的虚拟机',
   'volumes.column.spaceUsed': '已用空间',
+  // UI extensions (docs/PLUGINS.md): sidebar group, plugin error state,
+  // plugin page states, About dialog plugin list ------------------------
+  'nav.group.extensions': '扩展',
+  'extensions.error.title': '{plugin} 无法显示此内容',
+  'extensions.page.loading': '正在加载扩展页面',
+  'extensions.page.notFound.title': '扩展页面不可用',
+  'extensions.page.notFound.body':
+    '没有已加载的扩展提供此页面。它可能已从部署配置中移除、加载失败，或对您的帐户不可用。',
+  'extensions.page.notFound.back': '返回仪表板',
+  'about.extensions': '扩展',
+  'about.extensions.status.active': '已加载',
+  'about.extensions.status.loading': '正在加载',
+  'about.extensions.status.skipped': '未针对此引擎加载',
+  'about.extensions.status.failed': '失败：{reason}',
 }

@@ -36,6 +36,7 @@ import { MakeTemplateModalItem } from './MakeTemplateModal'
 import { AssignVmTagsModalItem } from './tags/AssignVmTagsModal'
 import { MoveToFolderModalItem } from './tags/MoveToFolderModal'
 import { POWER_ACTIONS, type PowerAction } from './vm-power-actions'
+import { ExtensionMenuItems } from '../extensions/ExtensionActions'
 import { vmKeys } from '../hooks/useVms'
 
 // Remove is not a lifecycle action (different endpoint, carries the disk
@@ -230,6 +231,8 @@ export function VmActionsMenu({
       <CloneVmModalItem vm={vm} />
       <ExportVmModalItem vm={vm} />
       <ExportOvaModalItem vm={vm} />
+      {/* Plugin actions (docs/PLUGINS.md): their own section, above Remove. */}
+      <ExtensionMenuItems kind="vm" entity={vm} onSelect={() => setIsOpen(false)} />
       {showRemove && (
         <>
           <Divider component="li" />

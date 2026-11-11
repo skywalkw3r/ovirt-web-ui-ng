@@ -45,6 +45,8 @@ import { PermissionsTab } from '../components/vm-tabs/PermissionsTab'
 import { SessionsTab } from '../components/vm-tabs/SessionsTab'
 import { SnapshotsTab } from '../components/vm-tabs/SnapshotsTab'
 import { VmDevicesTab } from '../components/vm-tabs/VmDevicesTab'
+import { ExtensionHeaderActions } from '../extensions/ExtensionActions'
+import { useExtensionTabs } from '../extensions/useExtensionTabs'
 import { useVm } from '../hooks/useVm'
 import { useT } from '../i18n/useT'
 import type { MessageId } from '../i18n/messages/en'
@@ -70,6 +72,8 @@ export function VmDetailsPage() {
   const navigate = useNavigate()
   const [activeKey, setActiveKey] = useState<string | number>('general')
   const [editing, setEditing] = useState(false)
+  // plugin subtabs (docs/PLUGINS.md), in the strip before the More menu
+  const extensionTabs = useExtensionTabs('vm', vm.data)
 
   const moreTabs = MORE_TABS.map((tab) => ({ eventKey: tab.eventKey, title: t(tab.titleId) }))
   const activeMoreTab = moreTabs.find((tab) => tab.eventKey === activeKey)
@@ -165,6 +169,7 @@ export function VmDetailsPage() {
                 </Button>
                 <VmPowerMenu vm={vm.data} />
                 <ConsoleButton vm={vm.data} />
+                <ExtensionHeaderActions kind="vm" entity={vm.data} />
                 <VmActionsMenu vm={vm.data} includePower={false} includeMigrate />
               </>
             }
@@ -247,6 +252,7 @@ export function VmDetailsPage() {
             {/* Renders inside the tablist <ul> as the last strip item; Tabs
                 skips it when mapping children to TabContent (no JSX children),
                 so the panel for the selected secondary tab renders below. */}
+            {extensionTabs}
             <MoreTabsMenu tabs={moreTabs} activeKey={activeKey} onSelect={setActiveKey} />
           </Tabs>
 

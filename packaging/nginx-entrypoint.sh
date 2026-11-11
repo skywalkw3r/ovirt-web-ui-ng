@@ -11,7 +11,7 @@
 # runtime vars ($host, $uri, $http_upgrade, ...) survive untouched:
 #   1. ${RESOLVER} in the main config, derived from the pod's DNS (for the
 #      multi-engine proxy's dynamic upstreams).
-#   2. ${ENGINE_ORIGIN} / ${CSP_CONNECT_EXTRA} in the single-engine server
+#   2. ${ENGINE_ORIGIN} / ${CSP_CONNECT_EXTRA} / ${CSP_SCRIPT_EXTRA} in the single-engine server
 #      block -- SKIPPED when a deployer has mounted its own default.conf at
 #      /etc/nginx/conf.d (the multi-engine proxy shape), which the main config
 #      includes as-is.
@@ -35,8 +35,9 @@ envsubst '${RESOLVER}' \
 # is removed at build), so one being there means a deployer mounted it. It is
 # used untouched -- never overwritten, even when the mount is writable.
 if [ ! -e /etc/nginx/conf.d/default.conf ]; then
-    export ENGINE_ORIGIN CSP_CONNECT_EXTRA
-    envsubst '${ENGINE_ORIGIN} ${CSP_CONNECT_EXTRA}' \
+    CSP_SCRIPT_EXTRA="${CSP_SCRIPT_EXTRA:-}"
+    export ENGINE_ORIGIN CSP_CONNECT_EXTRA CSP_SCRIPT_EXTRA
+    envsubst '${ENGINE_ORIGIN} ${CSP_CONNECT_EXTRA} ${CSP_SCRIPT_EXTRA}' \
         < /etc/nginx/templates/default.conf.template \
         > "$RUNTIME_DIR/conf.d/default.conf"
 fi

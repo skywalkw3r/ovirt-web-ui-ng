@@ -5244,4 +5244,18 @@ export const ru: LocaleCatalog = {
   'vnicProfiles.column.networkFilter': 'Сетевой фильтр',
   'pools.column.running': 'Запущенные ВМ',
   'volumes.column.spaceUsed': 'Использовано места',
+  // UI extensions (docs/PLUGINS.md): sidebar group, plugin error state,
+  // plugin page states, About dialog plugin list ------------------------
+  'nav.group.extensions': 'Расширения',
+  'extensions.error.title': '{plugin} не удалось отобразить это содержимое',
+  'extensions.page.loading': 'Загрузка страницы расширения',
+  'extensions.page.notFound.title': 'Страница расширения недоступна',
+  'extensions.page.notFound.body':
+    'Ни одно загруженное расширение не предоставляет эту страницу. Возможно, оно удалено из конфигурации развертывания, не загрузилось или недоступно для вашей учетной записи.',
+  'extensions.page.notFound.back': 'Вернуться к информационной панели',
+  'about.extensions': 'Расширения',
+  'about.extensions.status.active': 'Загружено',
+  'about.extensions.status.loading': 'Загрузка',
+  'about.extensions.status.skipped': 'Не загружается для этого движка',
+  'about.extensions.status.failed': 'Ошибка: {reason}',
 }

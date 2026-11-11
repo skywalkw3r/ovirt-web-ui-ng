@@ -35,12 +35,15 @@ import { ScopedEventsTab } from '../components/events/ScopedEventsTab'
 import { scopedEventsSearch } from '../lib/scopedEvents'
 import { useCluster } from '../hooks/useClusterDetail'
 import { clusterDetailRoute } from '../routes/router'
+import { useExtensionTabs } from '../extensions/useExtensionTabs'
 
 export function ClusterDetailPage() {
   const t = useT()
   const { clusterId } = clusterDetailRoute.useParams()
   const { loaded, isAdmin } = useCapabilities()
   const cluster = useCluster(clusterId)
+  // plugin subtabs (docs/PLUGINS.md); a hook, so above any early return
+  const extensionTabs = useExtensionTabs('cluster', cluster.data)
   const navigate = useNavigate()
   const [activeKey, setActiveKey] = useState<string | number>('general')
 
@@ -228,6 +231,7 @@ export function ClusterDetailPage() {
                 />
               </TabContentBody>
             </Tab>
+            {extensionTabs}
           </Tabs>
         </>
       )}

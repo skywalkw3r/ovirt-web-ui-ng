@@ -5098,4 +5098,18 @@ export const fr: LocaleCatalog = {
   'vnicProfiles.column.networkFilter': 'Filtre réseau',
   'pools.column.running': 'VM en cours d’exécution',
   'volumes.column.spaceUsed': 'Espace utilisé',
+  // UI extensions (docs/PLUGINS.md): sidebar group, plugin error state,
+  // plugin page states, About dialog plugin list ------------------------
+  'nav.group.extensions': 'Extensions',
+  'extensions.error.title': '{plugin} n’a pas pu afficher ce contenu',
+  'extensions.page.loading': 'Chargement de la page de l’extension',
+  'extensions.page.notFound.title': 'Page d’extension indisponible',
+  'extensions.page.notFound.body':
+    'Aucune extension chargée ne fournit cette page. Elle a peut-être été retirée de la configuration du déploiement, n’a pas pu être chargée ou n’est pas disponible pour votre compte.',
+  'extensions.page.notFound.back': 'Retour au tableau de bord',
+  'about.extensions': 'Extensions',
+  'about.extensions.status.active': 'Chargée',
+  'about.extensions.status.loading': 'Chargement',
+  'about.extensions.status.skipped': 'Non chargée pour ce moteur',
+  'about.extensions.status.failed': 'Échec : {reason}',
 }

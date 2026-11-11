@@ -45,6 +45,11 @@ const PARAM_FIXTURES: Record<string, string> = {
   poolId: 'pool-01',
   providerId: 'oip-01', // glance.lab.local (OpenStack image provider)
   erratumId: 'erratum-01',
+  // /extensions/$pluginName/$pageId: no plugin is configured in the mock
+  // config.js, so this sweeps the "Extension page not available" state;
+  // extensions.spec.ts drives the populated page with the sample plugin.
+  pluginName: 'sample',
+  pageId: 'page',
 }
 
 // Routes where the default fixture is the wrong subject.

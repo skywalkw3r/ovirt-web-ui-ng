@@ -5014,4 +5014,18 @@ export const ja: LocaleCatalog = {
   'vnicProfiles.column.networkFilter': 'ネットワークフィルター',
   'pools.column.running': '実行中のVM',
   'volumes.column.spaceUsed': '使用容量',
+  // UI extensions (docs/PLUGINS.md): sidebar group, plugin error state,
+  // plugin page states, About dialog plugin list ------------------------
+  'nav.group.extensions': '拡張機能',
+  'extensions.error.title': '{plugin} はこのコンテンツを表示できませんでした',
+  'extensions.page.loading': '拡張機能のページを読み込んでいます',
+  'extensions.page.notFound.title': '拡張機能のページを利用できません',
+  'extensions.page.notFound.body':
+    'このページを提供する読み込み済みの拡張機能はありません。デプロイメント設定から削除されたか、読み込みに失敗したか、お使いのアカウントでは利用できない可能性があります。',
+  'extensions.page.notFound.back': 'ダッシュボードに戻る',
+  'about.extensions': '拡張機能',
+  'about.extensions.status.active': '読み込み済み',
+  'about.extensions.status.loading': '読み込み中',
+  'about.extensions.status.skipped': 'このエンジンでは読み込まれません',
+  'about.extensions.status.failed': '失敗: {reason}',
 }

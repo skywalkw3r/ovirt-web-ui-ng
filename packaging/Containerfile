@@ -63,6 +63,14 @@ ENV VITE_MULTI_ENGINE=1
 ARG VITE_CSP_CONNECT_EXTRA=__CSP_CONNECT_EXTRA__
 ENV VITE_CSP_CONNECT_EXTRA=${VITE_CSP_CONNECT_EXTRA}
 
+# Same two shapes for the <meta> CSP script-src: the __CSP_SCRIPT_EXTRA__
+# placeholder (swapped by nginx sub_filter for ${CSP_SCRIPT_EXTRA}, the
+# origins of UI plugins served from another origin, docs/PLUGINS.md), or an
+# EMPTY build arg (--build-arg VITE_CSP_SCRIPT_EXTRA=) for a deployment that
+# mounts its own default.conf, or only serves plugins from this origin.
+ARG VITE_CSP_SCRIPT_EXTRA=__CSP_SCRIPT_EXTRA__
+ENV VITE_CSP_SCRIPT_EXTRA=${VITE_CSP_SCRIPT_EXTRA}
+
 # The git commit shown beside the version (sidebar foot, login card, About).
 # .dockerignore lets only .git/HEAD, refs/ and packed-refs into the context —
 # no history, no config — and vite.config.ts reads HEAD from them at
@@ -136,6 +144,11 @@ ENV ENGINE_ORIGIN=https://engine.local
 # Single-engine multi-CSP extra (space-separated direct-connect origins).
 # Empty keeps the strict same-origin policy; the OpenShift proxy leaves it empty.
 ENV CSP_CONNECT_EXTRA=''
+
+# UI plugins served from another origin (space-separated https origins),
+# appended to script-src. Empty keeps script-src 'self' (plugins under this
+# console's own /plugins/ path need nothing).
+ENV CSP_SCRIPT_EXTRA=''
 
 EXPOSE 8080
 # Sane default for non-OpenShift (podman) runs; OpenShift overrides with its

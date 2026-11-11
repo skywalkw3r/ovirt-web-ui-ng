@@ -5088,4 +5088,18 @@ export const it: LocaleCatalog = {
   'vnicProfiles.column.networkFilter': 'Filtro di rete',
   'pools.column.running': 'VM in esecuzione',
   'volumes.column.spaceUsed': 'Spazio utilizzato',
+  // UI extensions (docs/PLUGINS.md): sidebar group, plugin error state,
+  // plugin page states, About dialog plugin list ------------------------
+  'nav.group.extensions': 'Estensioni',
+  'extensions.error.title': '{plugin} non è riuscito a mostrare questo contenuto',
+  'extensions.page.loading': 'Caricamento della pagina dell’estensione',
+  'extensions.page.notFound.title': 'Pagina dell’estensione non disponibile',
+  'extensions.page.notFound.body':
+    'Nessuna estensione caricata fornisce questa pagina. Potrebbe essere stata rimossa dalla configurazione della distribuzione, non essere stata caricata o non essere disponibile per il tuo account.',
+  'extensions.page.notFound.back': 'Torna alla dashboard',
+  'about.extensions': 'Estensioni',
+  'about.extensions.status.active': 'Caricata',
+  'about.extensions.status.loading': 'Caricamento',
+  'about.extensions.status.skipped': 'Non caricata per questo engine',
+  'about.extensions.status.failed': 'Non riuscito: {reason}',
 }

@@ -34,6 +34,8 @@ import {
 import { FormattedMessage, useIntl } from 'react-intl'
 import { Link, Outlet, useRouterState } from '@tanstack/react-router'
 import { useBrandedTab } from '../branding/useBrandedTab'
+import { ExtensionMiniRailItem, ExtensionNavGroup } from '../extensions/ExtensionNav'
+import { ExtensionsHost } from '../extensions/ExtensionsHost'
 import { engineWebUiUrl } from '../lib/engineWebUi'
 import { monitoringPortalUrl, showMonitoringPortal } from '../lib/monitoringPortal'
 import { useCapabilities } from '../auth/capabilities'
@@ -244,6 +246,8 @@ function SidebarNav({
             </NavExpandable>
           )
         })}
+        {/* Pages registered by UI plugins; renders nothing without any. */}
+        <ExtensionNavGroup pathname={pathname} />
         {/* External anchor into the ENGINE's bundled Grafana — not a router
             Link, so PF's cloned child is a plain <a> that leaves the SPA. The
             href resolves against the active engine, never this console's own
@@ -312,6 +316,10 @@ function MiniRail({
           </Tooltip>
         )
       })}
+      <ExtensionMiniRailItem
+        pathname={pathname}
+        onOpen={() => onOpenGroup('nav.group.extensions')}
+      />
       {showMonitoringPortal(isAdmin) && (
         <Tooltip content={intl.formatMessage({ id: 'nav.monitoringPortal' })} position="right">
           <a
@@ -537,6 +545,8 @@ export function AppShell() {
           that render nothing until triggered. */}
       <CommandPalette />
       <ShortcutsHelp />
+      {/* UI plugin loader + bridge (docs/PLUGINS.md); renders nothing. */}
+      <ExtensionsHost />
       {/* Non-blocking connectivity warning pinned above page content; renders
           nothing while the engine is reachable. */}
       <OfflineBanner />

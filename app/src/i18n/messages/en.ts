@@ -5567,6 +5567,20 @@ export const en = {
   'vnicProfiles.column.networkFilter': 'Network Filter',
   'pools.column.running': 'Running VMs',
   'volumes.column.spaceUsed': 'Space Used',
+  // UI extensions (docs/PLUGINS.md): sidebar group, plugin error state,
+  // plugin page states, About dialog plugin list ------------------------
+  'nav.group.extensions': 'Extensions',
+  'extensions.error.title': '{plugin} could not display this content',
+  'extensions.page.loading': 'Loading extension page',
+  'extensions.page.notFound.title': 'Extension page not available',
+  'extensions.page.notFound.body':
+    'No loaded extension provides this page. It may have been removed from the deployment configuration, failed to load, or not be available to your account.',
+  'extensions.page.notFound.back': 'Back to dashboard',
+  'about.extensions': 'Extensions',
+  'about.extensions.status.active': 'Loaded',
+  'about.extensions.status.loading': 'Loading',
+  'about.extensions.status.skipped': 'Not loaded for this engine',
+  'about.extensions.status.failed': 'Failed: {reason}',
 } as const
 
 // The id union — source of truth for every typed i18n surface (useT, the

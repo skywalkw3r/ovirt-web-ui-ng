@@ -12,6 +12,7 @@ import { ExternalLinkAltIcon } from '@patternfly/react-icons'
 import { FormattedMessage } from 'react-intl'
 import { useQuery } from '@tanstack/react-query'
 import { fetchApiInfo } from '../api/resources/system'
+import { ExtensionsAboutSection } from '../extensions/ExtensionsAboutSection'
 import { brandAssets } from '../branding/logos'
 import { apiInfoKeys, useProductBrand } from '../hooks/useProductBrand'
 import { useT } from '../i18n/useT'
@@ -120,6 +121,9 @@ export function AboutDialog({ isOpen, onClose }: { isOpen: boolean; onClose: () 
             </GridItem>
           )}
         </Grid>
+
+        {/* UI plugins: what loaded, from where, and what failed */}
+        <ExtensionsAboutSection />
 
         {/* The docs link moved here from the user menu (it's reference
             material, not a daily action); reuses the menu's i18n id. */}
