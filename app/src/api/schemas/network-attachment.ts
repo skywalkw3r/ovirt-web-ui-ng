@@ -35,6 +35,16 @@ export const NetworkAttachmentSchema = z.looseObject({
       ip_address_assignment: z.array(IpAddressAssignmentSchema).optional(),
     })
     .optional(),
+  // Custom properties (api-model NetworkAttachment.properties: Property[]),
+  // e.g. bridge_opts. NetworkAttachmentMapper emits the block only when the
+  // attachment has any, so the key is absent on most attachments.
+  properties: z
+    .looseObject({
+      property: z
+        .array(z.looseObject({ name: z.string().optional(), value: z.string().optional() }))
+        .optional(),
+    })
+    .optional(),
   // per-property expected-vs-actual report backing in_sync; rendered raw if at
   // all, so a loose passthrough block suffices
   reported_configurations: z.looseObject({}).optional(),

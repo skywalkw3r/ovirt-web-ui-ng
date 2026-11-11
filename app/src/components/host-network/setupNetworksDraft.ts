@@ -2,6 +2,7 @@ import type {
   BondSpec,
   HostNicDetail,
   NetworkAttachmentSpec,
+  NetworkCustomPropertyDefinitions,
   RemovedBondSpec,
   SetupNetworksSpec,
 } from '../../api/resources/hosts'
@@ -33,6 +34,36 @@ export const BOND_MODES: { mode: number; labelId: MessageId }[] = [
 export const DEFAULT_BOND_MODE = 1
 
 // ---------------------------------------------------------------------------
+// Custom properties
+
+// One key/value row of an attachment's custom properties (api-model
+// NetworkAttachment.properties: Property[] with name/value). Both sides ride as
+// strings so the inputs stay controlled; a fully blank row (a trailing "add")
+// is dropped at diff/payload time.
+export interface CustomPropertyRow {
+  name: string
+  value: string
+}
+
+// The one key the engine special-cases: HostSetupNetworksValidator
+// .validateCustomProperties (and webadmin's HostSetupNetworksModel) drop it from
+// the valid set when the network is not a VM network, since only a bridged
+// network has a bridge to tune.
+export const BRIDGE_OPTS_KEY = 'bridge_opts'
+
+// Key suggestions for the free-form fallback editor (used only when the engine
+// does not expose its key list, see SetupNetworksDraft.propertyDefinitions).
+// bridge_opts is the engine's one PreDefinedNetworkCustomProperties key;
+// ethtool_opts is NOT predefined on 4.5: it is the documented
+// UserDefinedNetworkCustomProperties example an admin adds with engine-config,
+// so it is only a hint here and the engine still has the last word.
+export const WELL_KNOWN_PROPERTY_KEYS = [BRIDGE_OPTS_KEY, 'ethtool_opts']
+
+// Engine CustomPropertiesUtils syntax rules: a key is [a-zA-Z0-9_]+ and a value
+// may hold anything but the ';' pair delimiter.
+const PROPERTY_KEY_PATTERN = /^[a-zA-Z0-9_]+$/
+
+// ---------------------------------------------------------------------------
 // Draft types
 
 // The attachment exactly as the engine last reported it — the diff baseline.
@@ -57,6 +88,8 @@ export interface NetworkRowSeed {
   qosLinkshare: string
   qosUpperlimit: string
   qosRealtime: string
+  // the attachment's custom properties as reported (bridge_opts and friends)
+  customProperties: CustomPropertyRow[]
 }
 
 // One logical network in the dialog: attached to a NIC/bond (nicName set) or
@@ -71,6 +104,12 @@ export interface NetworkRow {
   // the cluster network whose usages include 'management' — it must stay
   // attached somewhere (webadmin's mgmtNotAttachedToolTip guard)
   isManagement: boolean
+  // whether the network is a VM (bridged) network: its usages include 'vm'.
+  // Gates the bridge_opts custom property, which the engine only accepts on a
+  // bridged network. Unknown (an attachment whose network left the cluster and
+  // carries no usages) counts as bridged so the dialog never blocks what the
+  // engine would accept; the engine re-validates either way.
+  isVmNetwork: boolean
   vlan?: number
   seed?: NetworkRowSeed
   // NIC or bond NAME this network is attached to, or null when parked
@@ -96,6 +135,10 @@ export interface NetworkRow {
   qosLinkshare: string
   qosUpperlimit: string
   qosRealtime: string
+  // per-attachment custom properties (webadmin's Custom Properties tab of the
+  // edit-attachment dialog). Diffed against seed.customProperties as a
+  // key/value set; they ride in the payload only when that set changed.
+  customProperties: CustomPropertyRow[]
 }
 
 // A bond exactly as the engine reported it — the diff baseline for edits and
@@ -140,6 +183,13 @@ export interface SetupNetworksDraft {
   // first attached) attachment and diffed against nameServersSeed
   nameServers: string[]
   nameServersSeed: string[]
+  // The engine's valid custom-property keys with their value regexes
+  // (PreDefinedNetworkCustomProperties + UserDefinedNetworkCustomProperties,
+  // read through GET /options/{name}), or null when the engine did not expose
+  // them. With definitions the editor mirrors webadmin: keys come from a
+  // closed list and values are checked against the key's regex. With null it
+  // falls back to free-form rows that only enforce the engine's syntax rules.
+  propertyDefinitions: NetworkCustomPropertyDefinitions | null
   // rollbackOnFailure — webadmin's "Verify connectivity", default on
   // (HostSetupNetworksModel line 193)
   checkConnectivity: boolean
@@ -238,6 +288,16 @@ function qosOf(attachment: NetworkAttachment | undefined): SeededQos {
   }
 }
 
+// Custom properties ride inline on the attachment read as
+// properties.property[{ name, value }] (NetworkAttachmentMapper emits the block
+// only when the attachment has any). Nameless entries cannot be addressed and
+// are dropped.
+function customPropertiesOf(attachment: NetworkAttachment): CustomPropertyRow[] {
+  return (attachment.properties?.property ?? [])
+    .filter((property) => property.name !== undefined && property.name !== '')
+    .map((property) => ({ name: property.name as string, value: property.value ?? '' }))
+}
+
 // Split an attachment's assignments into a v4 and a v6 leg. Static assignments
 // carry ip.version, so match on that first; unversioned legs (dhcp/none carry
 // no ip) fall back to position — the engine emits v4 then v6.
@@ -267,12 +327,14 @@ function emptyRow(
   networkId: string,
   networkName: string,
   isManagement: boolean,
+  isVmNetwork: boolean,
   vlan: number | undefined,
 ): NetworkRow {
   return {
     networkId,
     networkName,
     isManagement,
+    isVmNetwork,
     vlan,
     nicName: null,
     bootProtocol: 'none',
@@ -288,6 +350,7 @@ function emptyRow(
     qosLinkshare: '',
     qosUpperlimit: '',
     qosRealtime: '',
+    customProperties: [],
   }
 }
 
@@ -295,11 +358,14 @@ function rowFrom(
   networkId: string,
   networkName: string,
   isManagement: boolean,
+  isVmNetwork: boolean,
   vlan: number | undefined,
   attachment: NetworkAttachment | undefined,
   nics: HostNic[],
 ): NetworkRow {
-  if (attachment === undefined) return emptyRow(networkId, networkName, isManagement, vlan)
+  if (attachment === undefined) {
+    return emptyRow(networkId, networkName, isManagement, isVmNetwork, vlan)
+  }
   const { v4, v6 } = ipLegs(attachment)
   const qos = qosOf(attachment)
   const seed: NetworkRowSeed = {
@@ -318,11 +384,13 @@ function rowFrom(
     qosLinkshare: qos.linkshare,
     qosUpperlimit: qos.upperlimit,
     qosRealtime: qos.realtime,
+    customProperties: customPropertiesOf(attachment),
   }
   return {
     networkId,
     networkName,
     isManagement,
+    isVmNetwork,
     vlan,
     seed,
     nicName: seed.nicName,
@@ -339,17 +407,21 @@ function rowFrom(
     qosLinkshare: seed.qosLinkshare,
     qosUpperlimit: seed.qosUpperlimit,
     qosRealtime: seed.qosRealtime,
+    customProperties: seed.customProperties.map((property) => ({ ...property })),
   }
 }
 
 // One row per cluster network, wired up from the host's current attachments.
 // nicDetails (from listHostNicDetails) seeds the per-NIC label set; it defaults
 // to empty so callers that don't yet have labels still produce a valid draft.
+// propertyDefinitions (from fetchNetworkCustomPropertyDefinitions) defaults to
+// null, the free-form custom-properties fallback.
 export function seedSetupNetworksDraft(
   networks: Network[],
   attachments: NetworkAttachment[],
   nics: HostNic[],
   nicDetails: HostNicDetail[] = [],
+  propertyDefinitions: NetworkCustomPropertyDefinitions | null = null,
 ): SetupNetworksDraft {
   const byNetworkId = new Map<string, NetworkAttachment>()
   for (const attachment of attachments) {
@@ -366,6 +438,7 @@ export function seedSetupNetworksDraft(
         network.id,
         network.name,
         network.usages?.usage?.includes('management') ?? false,
+        network.usages?.usage?.includes('vm') ?? false,
         network.vlan?.id,
         byNetworkId.get(network.id),
         nics,
@@ -376,8 +449,19 @@ export function seedSetupNetworksDraft(
   for (const attachment of attachments) {
     const networkId = attachment.network?.id
     if (networkId === undefined || rows.some((row) => row.networkId === networkId)) continue
+    // the followed network carries its usages when the read inlined it; with
+    // none reported the row counts as bridged (see NetworkRow.isVmNetwork)
+    const usages = (attachment.network as { usages?: { usage?: string[] } } | undefined)?.usages
     rows.push(
-      rowFrom(networkId, attachment.network?.name ?? networkId, false, undefined, attachment, nics),
+      rowFrom(
+        networkId,
+        attachment.network?.name ?? networkId,
+        false,
+        usages?.usage?.includes('vm') ?? true,
+        undefined,
+        attachment,
+        nics,
+      ),
     )
   }
   // DNS name servers come off the management attachment (the default-route
@@ -406,6 +490,7 @@ export function seedSetupNetworksDraft(
     nicLabels,
     nameServers: [...nameServers],
     nameServersSeed: [...nameServers],
+    propertyDefinitions,
     checkConnectivity: true,
     commitOnSuccess: true,
   }
@@ -431,6 +516,7 @@ export type NetworkRowPatch = Partial<
     | 'qosLinkshare'
     | 'qosUpperlimit'
     | 'qosRealtime'
+    | 'customProperties'
   >
 >
 
@@ -805,6 +891,80 @@ export function qosValueError(value: string): MessageId | undefined {
   return 'setupNetworks.validation.qosValue'
 }
 
+// One custom-property row's failure as a MessageId plus its ICU values (the
+// ManagementGuardError idiom: the key and the engine's regex are only known
+// here, so they travel out for the modal to resolve through t(id, values)).
+export interface CustomPropertyError {
+  id: MessageId
+  values?: { key: string; format?: string }
+}
+
+// The keys this row's network may carry, or null when the engine did not expose
+// its list (free-form). Mirrors HostSetupNetworksModel and
+// HostSetupNetworksValidator: the predefined and user-defined keys merged,
+// minus bridge_opts on a network that is not a VM network.
+export function validPropertyKeys(row: NetworkRow, draft: SetupNetworksDraft): string[] | null {
+  if (draft.propertyDefinitions === null) return null
+  return Object.keys(draft.propertyDefinitions).filter(
+    (key) => key !== BRIDGE_OPTS_KEY || row.isVmNetwork,
+  )
+}
+
+// The engine matches the whole value against the key's regex (Java
+// String.matches). Java and JS regex syntax overlap for everything the engine
+// ships, but an admin-defined pattern JS cannot compile is skipped rather than
+// failed: the engine still validates on save.
+function matchesDefinition(value: string, pattern: string): boolean {
+  try {
+    return new RegExp(`^(?:${pattern})$`).test(value)
+  } catch {
+    return true
+  }
+}
+
+// Per-row inline errors for an attachment's custom properties, index-aligned
+// with row.customProperties. Ports SimpleCustomPropertiesUtil.validateProperties
+// (syntax, duplicate key, unknown key, value format) plus the bridge_opts
+// VM-network rule. A fully blank row stays quiet (it is dropped on the wire),
+// the house rule for an untouched input.
+export function customPropertyErrors(
+  row: NetworkRow,
+  draft: SetupNetworksDraft,
+): (CustomPropertyError | undefined)[] {
+  const definitions = draft.propertyDefinitions
+  const seen = new Set<string>()
+  return row.customProperties.map((property): CustomPropertyError | undefined => {
+    const key = property.name.trim()
+    const value = property.value.trim()
+    if (key === '') {
+      return value === '' ? undefined : { id: 'setupNetworks.validation.customPropertyKeyRequired' }
+    }
+    if (!PROPERTY_KEY_PATTERN.test(key)) {
+      return { id: 'setupNetworks.validation.customPropertyKey', values: { key } }
+    }
+    if (seen.has(key)) {
+      return { id: 'setupNetworks.validation.customPropertyDuplicate', values: { key } }
+    }
+    seen.add(key)
+    if (key === BRIDGE_OPTS_KEY && !row.isVmNetwork) {
+      return { id: 'setupNetworks.validation.customPropertyBridgeOpts', values: { key } }
+    }
+    if (value.includes(';')) {
+      return { id: 'setupNetworks.validation.customPropertyValueSyntax', values: { key } }
+    }
+    if (definitions !== null) {
+      const format = definitions[key]
+      if (format === undefined) {
+        return { id: 'setupNetworks.validation.customPropertyUnknown', values: { key } }
+      }
+      if (!matchesDefinition(value, format)) {
+        return { id: 'setupNetworks.validation.customPropertyValue', values: { key, format } }
+      }
+    }
+    return undefined
+  })
+}
+
 export interface RowFieldErrors {
   address?: MessageId
   netmask?: MessageId
@@ -845,8 +1005,17 @@ export function rowFieldErrors(row: NetworkRow): RowFieldErrors {
 // Save gate for one row: only rows that would actually ride in `modified`
 // need complete static config — a drifted (locked) row keeps whatever the
 // host reported and never reaches the wire.
-export function rowBlocksSave(row: NetworkRow): boolean {
+export function rowBlocksSave(row: NetworkRow, draft: SetupNetworksDraft): boolean {
   if (!rowIsModified(row)) return false
+  // custom properties only block when they would actually ride (a fresh attach
+  // or a changed set): an untouched seeded set is never resent, so a key the
+  // engine config has since dropped cannot wedge an unrelated edit
+  if (
+    customPropertiesRide(row) &&
+    customPropertyErrors(row, draft).some((error) => error !== undefined)
+  ) {
+    return true
+  }
   const errors = rowFieldErrors(row)
   if (row.bootProtocol === 'static') {
     if (
@@ -908,7 +1077,7 @@ export function managementGuardError(draft: SetupNetworksDraft): ManagementGuard
 export function draftBlocksSave(draft: SetupNetworksDraft): boolean {
   return (
     managementGuardError(draft) !== undefined ||
-    draft.rows.some(rowBlocksSave) ||
+    draft.rows.some((row) => rowBlocksSave(row, draft)) ||
     // only bonds that actually ride in modified_bonds are validated — an
     // untouched existing bond is never resent, so it can't block a save
     draft.bonds.some((bond) => bondIsModified(bond) && bondBlocksSave(bond)) ||
@@ -961,12 +1130,40 @@ function qosChanged(row: NetworkRow, seed: NetworkRowSeed): boolean {
   )
 }
 
+// The rows that would reach the wire: fully blank and keyless rows dropped
+// (a keyless row with a value is a validation error, so it never gets here),
+// key and value trimmed of outer padding. A bridge_opts list is
+// whitespace-separated inside, which trimming leaves alone.
+function effectiveProperties(properties: CustomPropertyRow[]): CustomPropertyRow[] {
+  return properties
+    .map((property) => ({ name: property.name.trim(), value: property.value.trim() }))
+    .filter((property) => property.name !== '')
+}
+
+// The engine stores the properties as a map (CustomPropertiesParser.toMap), so
+// the comparison is by key/value set: reordering rows is not a change.
+function customPropertiesChanged(row: NetworkRow, seed: NetworkRowSeed): boolean {
+  const current = effectiveProperties(row.customProperties)
+  const seeded = effectiveProperties(seed.customProperties)
+  if (current.length !== seeded.length) return true
+  const seededByName = new Map(seeded.map((property) => [property.name, property.value]))
+  return current.some((property) => seededByName.get(property.name) !== property.value)
+}
+
+// Whether this row's custom properties ride in the payload: a changed set on an
+// existing attachment (including a cleared one), or any properties on a fresh
+// attach.
+function customPropertiesRide(row: NetworkRow): boolean {
+  if (row.seed !== undefined) return customPropertiesChanged(row, row.seed)
+  return effectiveProperties(row.customProperties).length > 0
+}
+
 export function rowIsModified(row: NetworkRow): boolean {
   if (row.nicName === null) return false
   const seed = row.seed
   if (seed === undefined) return true
   if (row.nicName !== seed.nicName) return true
-  return ipConfigChanged(row, seed) || qosChanged(row, seed)
+  return ipConfigChanged(row, seed) || qosChanged(row, seed) || customPropertiesChanged(row, seed)
 }
 
 export function rowNeedsRemoval(row: NetworkRow): boolean {
@@ -1047,6 +1244,13 @@ function ipEntry(row: NetworkRow): NetworkAttachmentSpec {
     entry.qos = qos
   } else if (row.seed?.qosOverride) {
     entry.qos = {}
+  }
+  // Custom properties: a present list REPLACES the attachment's whole set
+  // (NetworkAttachmentMapper: isSetProperties, then setProperties), so the
+  // complete edited set rides whenever it changed and an emptied set rides as
+  // [] to clear it. Untouched properties are omitted so the engine keeps them.
+  if (customPropertiesRide(row)) {
+    entry.properties = effectiveProperties(row.customProperties)
   }
   return entry
 }

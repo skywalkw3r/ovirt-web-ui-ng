@@ -3816,6 +3816,13 @@ export const de: LocaleCatalog = {
     'Jeder Faktor muss eine ganze Zahl von mindestens 1 sein.',
   'schedulingPolicy.weights.label': 'Gewichtungsmodule',
   'setupNetworks.aria.configureSriov': 'SR-IOV für {name} konfigurieren',
+  'setupNetworks.aria.customPropertyAdd': 'Benutzerdefinierte Eigenschaft zu {name} hinzufügen',
+  'setupNetworks.aria.customPropertyKey':
+    'Schlüssel der benutzerdefinierten Eigenschaft {index} auf {name}',
+  'setupNetworks.aria.customPropertyRemove':
+    'Benutzerdefinierte Eigenschaft {index} von {name} entfernen',
+  'setupNetworks.aria.customPropertyValue':
+    'Wert der benutzerdefinierten Eigenschaft {index} auf {name}',
   'setupNetworks.aria.labelsOn': 'Labels auf {name}',
   'setupNetworks.aria.newLabel': 'Neues Label für {name}',
   'setupNetworks.aria.qosField': '{label} für {name}',
@@ -3825,6 +3832,15 @@ export const de: LocaleCatalog = {
   'setupNetworks.bondMode.mode2': 'Lastverteilung — balance-xor (Modus 2)',
   'setupNetworks.bondMode.mode4': 'Dynamische Link-Aggregation — 802.3ad (Modus 4)',
   'setupNetworks.bondMode.mode5': 'Adaptive Sende-Lastverteilung — balance-tlb (Modus 5)',
+  'setupNetworks.customProperties.add': 'Benutzerdefinierte Eigenschaft hinzufügen',
+  'setupNetworks.customProperties.freeForm':
+    'Die Engine hat nicht gemeldet, welche Schlüssel sie zulässt. Schlüssel werden daher erst beim Speichern geprüft.',
+  'setupNetworks.customProperties.help':
+    'Schlüssel/Wert-Optionen, die auf dem Host auf dieses Netzwerk angewendet werden, etwa bridge_opts zur Abstimmung der Bridge eines VM-Netzwerks. Die verfügbaren Schlüssel stammen aus der Engine-Konfiguration.',
+  'setupNetworks.customProperties.keyPlaceholder': 'Schlüssel auswählen',
+  'setupNetworks.customProperties.label': 'Benutzerdefinierte Eigenschaften',
+  'setupNetworks.customProperties.noKeys':
+    'Die Engine lässt für dieses Netzwerk keine Schlüssel für benutzerdefinierte Eigenschaften zu.',
   'setupNetworks.labels.add': 'Label hinzufügen',
   'setupNetworks.labels.help':
     'Netzwerk-Labels, die an diese NIC angehängt sind. Die Engine verbindet automatisch jedes Netzwerk, das ein passendes Label trägt, mit der NIC.',
@@ -3876,6 +3892,16 @@ export const de: LocaleCatalog = {
   'setupNetworks.sriov.networks.removeAria': 'Zugelassenes Netzwerk {name} entfernen',
   'setupNetworks.sriov.networks.selectPlaceholder': 'Netzwerk auswählen',
   'setupNetworks.sriov.title': 'SR-IOV-Konfiguration — {name}',
+  'setupNetworks.validation.customPropertyBridgeOpts': '{key} gilt nur für VM-Netzwerke',
+  'setupNetworks.validation.customPropertyDuplicate': '{key} ist bereits gesetzt',
+  'setupNetworks.validation.customPropertyKey':
+    'Ein Schlüssel darf nur Buchstaben, Ziffern und Unterstriche enthalten',
+  'setupNetworks.validation.customPropertyKeyRequired':
+    'Geben Sie einen Schlüssel für diesen Wert ein',
+  'setupNetworks.validation.customPropertyUnknown':
+    '{key} ist keine benutzerdefinierte Eigenschaft, die diese Engine zulässt',
+  'setupNetworks.validation.customPropertyValue': 'Der Wert von {key} muss {format} entsprechen',
+  'setupNetworks.validation.customPropertyValueSyntax': 'Ein Wert darf kein Semikolon enthalten',
   'setupNetworks.validation.ipv4': 'Geben Sie eine gültige IPv4-Adresse ein',
   'setupNetworks.validation.ipv6': 'Geben Sie eine gültige IPv6-Adresse ein',
   'setupNetworks.validation.managementGuard':

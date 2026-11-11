@@ -31,6 +31,10 @@ export const hostKeys = {
   // SetupNetworksModal's NIC read with labels/VF config inlined
   nicDetails: (id: string) => ['host', id, 'nicDetails'] as const,
   networkAttachments: (id: string) => ['host', id, 'networkAttachments'] as const,
+  // SetupNetworksModal's valid custom-property keys: engine config, versioned
+  // by cluster compatibility level rather than per host
+  networkCustomProperties: (version: string | undefined) =>
+    ['hosts', 'networkCustomProperties', version ?? 'any'] as const,
   devices: (id: string | undefined) => ['host', id, 'devices'] as const,
   mdevTypes: (id: string | undefined) => ['host', id, 'mdevTypes'] as const,
   hooks: (id: string) => ['host', id, 'hooks'] as const,

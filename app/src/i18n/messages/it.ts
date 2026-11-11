@@ -3797,6 +3797,12 @@ export const it: LocaleCatalog = {
   'schedulingPolicy.weights.factorError': 'Ogni fattore deve essere un numero intero di almeno 1.',
   'schedulingPolicy.weights.label': 'Moduli peso',
   'setupNetworks.aria.configureSriov': 'Configura SR-IOV per {name}',
+  'setupNetworks.aria.customPropertyAdd': 'Aggiungi una proprietà personalizzata a {name}',
+  'setupNetworks.aria.customPropertyKey': 'Chiave della proprietà personalizzata {index} su {name}',
+  'setupNetworks.aria.customPropertyRemove':
+    'Rimuovi la proprietà personalizzata {index} da {name}',
+  'setupNetworks.aria.customPropertyValue':
+    'Valore della proprietà personalizzata {index} su {name}',
   'setupNetworks.aria.labelsOn': 'Etichette su {name}',
   'setupNetworks.aria.newLabel': 'Nuova etichetta per {name}',
   'setupNetworks.aria.qosField': '{label} per {name}',
@@ -3807,6 +3813,15 @@ export const it: LocaleCatalog = {
   'setupNetworks.bondMode.mode4': 'Aggregazione dinamica dei collegamenti — 802.3ad (modalità 4)',
   'setupNetworks.bondMode.mode5':
     'Bilanciamento del carico di trasmissione adattivo — balance-tlb (modalità 5)',
+  'setupNetworks.customProperties.add': 'Aggiungi proprietà personalizzata',
+  'setupNetworks.customProperties.freeForm':
+    "L'engine non ha indicato quali chiavi consente, quindi le chiavi vengono verificate solo al salvataggio.",
+  'setupNetworks.customProperties.help':
+    "Opzioni chiave/valore applicate a questa rete sull'host, ad esempio bridge_opts per regolare il bridge di una rete VM. Le chiavi disponibili provengono dalla configurazione dell'engine.",
+  'setupNetworks.customProperties.keyPlaceholder': 'Seleziona una chiave',
+  'setupNetworks.customProperties.label': 'Proprietà personalizzate',
+  'setupNetworks.customProperties.noKeys':
+    "L'engine non consente alcuna chiave di proprietà personalizzata per questa rete.",
   'setupNetworks.labels.add': 'Aggiungi etichetta',
   'setupNetworks.labels.help':
     "Etichette di rete associate a questa NIC. Il motore collega automaticamente alla NIC ogni rete che riporta un'etichetta corrispondente.",
@@ -3858,6 +3873,17 @@ export const it: LocaleCatalog = {
   'setupNetworks.sriov.networks.removeAria': 'Rimuovi la rete consentita {name}',
   'setupNetworks.sriov.networks.selectPlaceholder': 'Seleziona una rete',
   'setupNetworks.sriov.title': 'Configurazione SR-IOV — {name}',
+  'setupNetworks.validation.customPropertyBridgeOpts': '{key} si applica solo alle reti VM',
+  'setupNetworks.validation.customPropertyDuplicate': '{key} è già impostata',
+  'setupNetworks.validation.customPropertyKey':
+    'Una chiave può contenere solo lettere, cifre e trattini bassi',
+  'setupNetworks.validation.customPropertyKeyRequired': 'Inserisci una chiave per questo valore',
+  'setupNetworks.validation.customPropertyUnknown':
+    '{key} non è una proprietà personalizzata consentita da questo engine',
+  'setupNetworks.validation.customPropertyValue':
+    'Il valore di {key} deve corrispondere a {format}',
+  'setupNetworks.validation.customPropertyValueSyntax':
+    'Un valore non può contenere un punto e virgola',
   'setupNetworks.validation.ipv4': 'Inserisci un indirizzo IPv4 valido',
   'setupNetworks.validation.ipv6': 'Inserisci un indirizzo IPv6 valido',
   'setupNetworks.validation.managementGuard':

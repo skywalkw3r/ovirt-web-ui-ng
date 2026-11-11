@@ -3695,6 +3695,10 @@ export const ko: LocaleCatalog = {
   'schedulingPolicy.weights.factorError': '각 계수는 1 이상의 정수여야 합니다.',
   'schedulingPolicy.weights.label': '가중치 모듈',
   'setupNetworks.aria.configureSriov': '{name}의 SR-IOV 구성',
+  'setupNetworks.aria.customPropertyAdd': '{name}에 사용자 지정 속성 추가',
+  'setupNetworks.aria.customPropertyKey': '{name}의 사용자 지정 속성 {index} 키',
+  'setupNetworks.aria.customPropertyRemove': '{name}에서 사용자 지정 속성 {index} 제거',
+  'setupNetworks.aria.customPropertyValue': '{name}의 사용자 지정 속성 {index} 값',
   'setupNetworks.aria.labelsOn': '{name}의 레이블',
   'setupNetworks.aria.newLabel': '{name}의 새 레이블',
   'setupNetworks.aria.qosField': '{name}의 {label}',
@@ -3704,6 +3708,15 @@ export const ko: LocaleCatalog = {
   'setupNetworks.bondMode.mode2': '부하 분산 — balance-xor (모드 2)',
   'setupNetworks.bondMode.mode4': '동적 링크 집계 — 802.3ad (모드 4)',
   'setupNetworks.bondMode.mode5': '적응형 전송 부하 분산 — balance-tlb (모드 5)',
+  'setupNetworks.customProperties.add': '사용자 지정 속성 추가',
+  'setupNetworks.customProperties.freeForm':
+    '엔진이 허용하는 키를 보고하지 않았으므로 키는 저장할 때만 확인됩니다.',
+  'setupNetworks.customProperties.help':
+    '호스트에서 이 네트워크에 적용되는 키/값 옵션입니다. 예를 들어 bridge_opts는 VM 네트워크의 브리지를 조정합니다. 사용 가능한 키는 엔진 구성에서 가져옵니다.',
+  'setupNetworks.customProperties.keyPlaceholder': '키 선택',
+  'setupNetworks.customProperties.label': '사용자 지정 속성',
+  'setupNetworks.customProperties.noKeys':
+    '엔진이 이 네트워크에 허용하는 사용자 지정 속성 키가 없습니다.',
   'setupNetworks.labels.add': '레이블 추가',
   'setupNetworks.labels.help':
     '이 NIC에 연결된 네트워크 레이블입니다. 엔진은 일치하는 레이블을 지닌 모든 네트워크를 NIC에 자동으로 연결합니다.',
@@ -3754,6 +3767,14 @@ export const ko: LocaleCatalog = {
   'setupNetworks.sriov.networks.removeAria': '허용된 네트워크 {name} 제거',
   'setupNetworks.sriov.networks.selectPlaceholder': '네트워크 선택',
   'setupNetworks.sriov.title': 'SR-IOV 구성 — {name}',
+  'setupNetworks.validation.customPropertyBridgeOpts': '{key}은(는) VM 네트워크에만 적용됩니다',
+  'setupNetworks.validation.customPropertyDuplicate': '{key}은(는) 이미 설정되어 있습니다',
+  'setupNetworks.validation.customPropertyKey': '키에는 문자, 숫자, 밑줄만 사용할 수 있습니다',
+  'setupNetworks.validation.customPropertyKeyRequired': '이 값의 키를 입력하십시오',
+  'setupNetworks.validation.customPropertyUnknown':
+    '{key}은(는) 이 엔진이 허용하는 사용자 지정 속성이 아닙니다',
+  'setupNetworks.validation.customPropertyValue': '{key} 값은 {format}과(와) 일치해야 합니다',
+  'setupNetworks.validation.customPropertyValueSyntax': '값에는 세미콜론을 사용할 수 없습니다',
   'setupNetworks.validation.ipv4': '유효한 IPv4 주소를 입력하십시오',
   'setupNetworks.validation.ipv6': '유효한 IPv6 주소를 입력하십시오',
   'setupNetworks.validation.managementGuard':

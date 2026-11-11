@@ -3740,6 +3740,10 @@ export const tr: LocaleCatalog = {
   'schedulingPolicy.weights.factorError': 'Her faktör en az 1 olan bir tam sayı olmalıdır.',
   'schedulingPolicy.weights.label': 'Ağırlık modülleri',
   'setupNetworks.aria.configureSriov': '{name} için SR-IOV yapılandır',
+  'setupNetworks.aria.customPropertyAdd': '{name} ağına özel özellik ekle',
+  'setupNetworks.aria.customPropertyKey': '{name} üzerindeki {index}. özel özelliğin anahtarı',
+  'setupNetworks.aria.customPropertyRemove': '{index}. özel özelliği {name} ağından kaldır',
+  'setupNetworks.aria.customPropertyValue': '{name} üzerindeki {index}. özel özelliğin değeri',
   'setupNetworks.aria.labelsOn': '{name} üzerindeki etiketler',
   'setupNetworks.aria.newLabel': '{name} için yeni etiket',
   'setupNetworks.aria.qosField': '{name} için {label}',
@@ -3749,6 +3753,15 @@ export const tr: LocaleCatalog = {
   'setupNetworks.bondMode.mode2': 'Yük dengeleme — balance-xor (mod 2)',
   'setupNetworks.bondMode.mode4': 'Dinamik bağlantı toplama — 802.3ad (mod 4)',
   'setupNetworks.bondMode.mode5': 'Uyarlanabilir iletim yük dengeleme — balance-tlb (mod 5)',
+  'setupNetworks.customProperties.add': 'Özel özellik ekle',
+  'setupNetworks.customProperties.freeForm':
+    'Engine hangi anahtarlara izin verdiğini bildirmedi; bu nedenle anahtarlar yalnızca kaydederken denetlenir.',
+  'setupNetworks.customProperties.help':
+    'Ana makinede bu ağa uygulanan anahtar/değer seçenekleri; örneğin bir VM ağının köprüsünü ayarlamak için bridge_opts. Kullanılabilir anahtarlar engine yapılandırmasından gelir.',
+  'setupNetworks.customProperties.keyPlaceholder': 'Bir anahtar seçin',
+  'setupNetworks.customProperties.label': 'Özel özellikler',
+  'setupNetworks.customProperties.noKeys':
+    'Engine bu ağ için hiçbir özel özellik anahtarına izin vermiyor.',
   'setupNetworks.labels.add': 'Etiket ekle',
   'setupNetworks.labels.help':
     'Bu NIC’e eklenmiş ağ etiketleri. Motor, eşleşen bir etiket taşıyan her ağı otomatik olarak NIC’e bağlar.',
@@ -3800,6 +3813,15 @@ export const tr: LocaleCatalog = {
   'setupNetworks.sriov.networks.removeAria': 'İzin verilen ağ {name} kaldır',
   'setupNetworks.sriov.networks.selectPlaceholder': 'Bir ağ seçin',
   'setupNetworks.sriov.title': 'SR-IOV yapılandırması — {name}',
+  'setupNetworks.validation.customPropertyBridgeOpts': '{key} yalnızca VM ağları için geçerlidir',
+  'setupNetworks.validation.customPropertyDuplicate': '{key} zaten ayarlanmış',
+  'setupNetworks.validation.customPropertyKey':
+    'Bir anahtar yalnızca harf, rakam ve alt çizgi içerebilir',
+  'setupNetworks.validation.customPropertyKeyRequired': 'Bu değer için bir anahtar girin',
+  'setupNetworks.validation.customPropertyUnknown':
+    '{key}, bu engine tarafından izin verilen bir özel özellik değil',
+  'setupNetworks.validation.customPropertyValue': '{key} değeri {format} ile eşleşmelidir',
+  'setupNetworks.validation.customPropertyValueSyntax': 'Bir değer noktalı virgül içeremez',
   'setupNetworks.validation.ipv4': 'Geçerli bir IPv4 adresi girin',
   'setupNetworks.validation.ipv6': 'Geçerli bir IPv6 adresi girin',
   'setupNetworks.validation.managementGuard':

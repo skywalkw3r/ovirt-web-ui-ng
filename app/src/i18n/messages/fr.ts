@@ -3799,6 +3799,12 @@ export const fr: LocaleCatalog = {
   'schedulingPolicy.weights.factorError': "Chaque facteur doit être un nombre entier d'au moins 1.",
   'schedulingPolicy.weights.label': 'Modules de poids',
   'setupNetworks.aria.configureSriov': 'Configurer SR-IOV pour {name}',
+  'setupNetworks.aria.customPropertyAdd': 'Ajouter une propriété personnalisée à {name}',
+  'setupNetworks.aria.customPropertyKey': 'Clé de la propriété personnalisée {index} sur {name}',
+  'setupNetworks.aria.customPropertyRemove':
+    'Supprimer la propriété personnalisée {index} de {name}',
+  'setupNetworks.aria.customPropertyValue':
+    'Valeur de la propriété personnalisée {index} sur {name}',
   'setupNetworks.aria.labelsOn': 'Étiquettes sur {name}',
   'setupNetworks.aria.newLabel': 'Nouvelle étiquette pour {name}',
   'setupNetworks.aria.qosField': '{label} pour {name}',
@@ -3809,6 +3815,15 @@ export const fr: LocaleCatalog = {
   'setupNetworks.bondMode.mode4': 'Agrégation dynamique de liens — 802.3ad (mode 4)',
   'setupNetworks.bondMode.mode5':
     'Répartition de charge adaptative en émission — balance-tlb (mode 5)',
+  'setupNetworks.customProperties.add': 'Ajouter une propriété personnalisée',
+  'setupNetworks.customProperties.freeForm':
+    "Le moteur n'a pas indiqué les clés qu'il autorise ; les clés ne sont donc vérifiées qu'à l'enregistrement.",
+  'setupNetworks.customProperties.help':
+    "Options clé/valeur appliquées à ce réseau sur l'hôte, comme bridge_opts pour régler le pont d'un réseau de VM. Les clés disponibles proviennent de la configuration du moteur.",
+  'setupNetworks.customProperties.keyPlaceholder': 'Sélectionnez une clé',
+  'setupNetworks.customProperties.label': 'Propriétés personnalisées',
+  'setupNetworks.customProperties.noKeys':
+    "Le moteur n'autorise aucune clé de propriété personnalisée pour ce réseau.",
   'setupNetworks.labels.add': 'Ajouter une étiquette',
   'setupNetworks.labels.help':
     'Étiquettes réseau attachées à cette carte réseau. Le moteur câble automatiquement sur la carte réseau chaque réseau portant une étiquette correspondante.',
@@ -3860,6 +3875,16 @@ export const fr: LocaleCatalog = {
   'setupNetworks.sriov.networks.removeAria': 'Supprimer le réseau autorisé {name}',
   'setupNetworks.sriov.networks.selectPlaceholder': 'Sélectionnez un réseau',
   'setupNetworks.sriov.title': 'Configuration SR-IOV — {name}',
+  'setupNetworks.validation.customPropertyBridgeOpts': "{key} ne s'applique qu'aux réseaux de VM",
+  'setupNetworks.validation.customPropertyDuplicate': '{key} est déjà définie',
+  'setupNetworks.validation.customPropertyKey':
+    'Une clé ne peut contenir que des lettres, des chiffres et des tirets bas',
+  'setupNetworks.validation.customPropertyKeyRequired': 'Saisissez une clé pour cette valeur',
+  'setupNetworks.validation.customPropertyUnknown':
+    "{key} n'est pas une propriété personnalisée autorisée par ce moteur",
+  'setupNetworks.validation.customPropertyValue': 'La valeur de {key} doit correspondre à {format}',
+  'setupNetworks.validation.customPropertyValueSyntax':
+    'Une valeur ne peut pas contenir de point-virgule',
   'setupNetworks.validation.ipv4': 'Saisissez une adresse IPv4 valide',
   'setupNetworks.validation.ipv6': 'Saisissez une adresse IPv6 valide',
   'setupNetworks.validation.managementGuard':

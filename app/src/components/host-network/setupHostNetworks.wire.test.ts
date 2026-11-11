@@ -1,5 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { setupHostNetworks } from '../../api/resources/hosts'
+import {
+  fetchNetworkCustomPropertyDefinitions,
+  listHostNetworkAttachments,
+  parseCustomPropertyDefinitions,
+  setupHostNetworks,
+} from '../../api/resources/hosts'
+import { resetMockVms } from '../../api/mock/handlers'
 import { ApiError } from '../../api/transport'
 import { clearSessionToken, setSessionToken } from '../../api/session'
 
@@ -247,6 +253,66 @@ describe('setupHostNetworks wire mapping', () => {
     expect(attachment.qos).toEqual({ type: 'hostnetwork' })
   })
 
+  it('emits custom properties as the wrapped properties.property list', async () => {
+    const fetchMock = mockFetch(200, { status: 'complete' })
+    await setupHostNetworks('host-01', {
+      modified: [
+        {
+          attachmentId: 'att-1',
+          networkId: 'net-1',
+          nicName: 'eno2',
+          bootProtocol: 'none',
+          ipv6BootProtocol: 'none',
+          ipChanged: false,
+          properties: [
+            { name: 'bridge_opts', value: 'forward_delay=1500 multicast_snooping=1' },
+            { name: 'ethtool_opts', value: '--offload em1 rx on' },
+          ],
+        },
+      ],
+    })
+
+    const attachment = (
+      sentBody(fetchMock) as {
+        modified_network_attachments: { network_attachment: Record<string, unknown>[] }
+      }
+    ).modified_network_attachments.network_attachment[0]
+    expect(attachment.properties).toEqual({
+      property: [
+        { name: 'bridge_opts', value: 'forward_delay=1500 multicast_snooping=1' },
+        { name: 'ethtool_opts', value: '--offload em1 rx on' },
+      ],
+    })
+    // a properties-only modify touches neither the IP config nor the QoS
+    expect(attachment.ip_address_assignments).toBeUndefined()
+    expect(attachment.qos).toBeUndefined()
+  })
+
+  it('keeps the properties key present (empty list) to clear them, and omits it otherwise', async () => {
+    const fetchMock = mockFetch(200, { status: 'complete' })
+    const base = {
+      networkId: 'net-1',
+      nicName: 'eno2',
+      bootProtocol: 'none' as const,
+      ipv6BootProtocol: 'none' as const,
+      ipChanged: false,
+    }
+    await setupHostNetworks('host-01', {
+      modified: [
+        { ...base, attachmentId: 'att-1', properties: [] },
+        { ...base, attachmentId: 'att-2' },
+      ],
+    })
+
+    const [cleared, untouched] = (
+      sentBody(fetchMock) as {
+        modified_network_attachments: { network_attachment: Record<string, unknown>[] }
+      }
+    ).modified_network_attachments.network_attachment
+    expect(cleared.properties).toEqual({ property: [] })
+    expect('properties' in untouched).toBe(false)
+  })
+
   it('maps modified/removed NIC labels into modified_labels/removed_labels', async () => {
     const fetchMock = mockFetch(200, { status: 'complete' })
     await setupHostNetworks('host-01', {
@@ -276,5 +342,161 @@ describe('setupHostNetworks wire mapping', () => {
     }).catch((e: unknown) => e)
     expect(error).toBeInstanceOf(ApiError)
     expect(error).toMatchObject({ status: 409, message: 'Bond mode 4 requires two slaves' })
+  })
+})
+
+describe('network custom property definitions', () => {
+  beforeEach(() => setSessionToken('tok-123'))
+  afterEach(() => {
+    clearSessionToken()
+    vi.unstubAllGlobals()
+  })
+
+  it('parses key=regex pairs, splitting each on its first equals sign', () => {
+    expect(
+      parseCustomPropertyDefinitions('bridge_opts=^[^\\s=]+=[^\\s=]+$;ethtool_opts=.*'),
+    ).toEqual({ bridge_opts: '^[^\\s=]+=[^\\s=]+$', ethtool_opts: '.*' })
+    expect(parseCustomPropertyDefinitions('')).toEqual({})
+  })
+
+  it('reads both engine options and takes the row of the cluster level', async () => {
+    const fetchMock = vi.fn().mockImplementation((url: string) =>
+      Promise.resolve({
+        ok: true,
+        status: 200,
+        json: () =>
+          Promise.resolve({
+            values: {
+              system_option_value: url.includes('PreDefined')
+                ? [
+                    { value: 'bridge_opts=old', version: '4.6' },
+                    { value: 'bridge_opts=new', version: '4.7' },
+                  ]
+                : [
+                    { value: '', version: '4.6' },
+                    { value: 'ethtool_opts=.*', version: '4.7' },
+                  ],
+            },
+          }),
+      }),
+    )
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(fetchNetworkCustomPropertyDefinitions('4.7')).resolves.toEqual({
+      bridge_opts: 'new',
+      ethtool_opts: '.*',
+    })
+    await expect(fetchNetworkCustomPropertyDefinitions('4.6')).resolves.toEqual({
+      bridge_opts: 'old',
+    })
+    // version unknown: the newest level the engine reports
+    await expect(fetchNetworkCustomPropertyDefinitions()).resolves.toEqual({
+      bridge_opts: 'new',
+      ethtool_opts: '.*',
+    })
+    expect(fetchMock.mock.calls.map(([url]) => url as string).slice(0, 2)).toEqual([
+      '/ovirt-engine/api/options/PreDefinedNetworkCustomProperties',
+      '/ovirt-engine/api/options/UserDefinedNetworkCustomProperties',
+    ])
+  })
+
+  it('rejects when the engine does not serve the options (free-form fallback)', async () => {
+    mockFetch(404, { fault: { reason: 'Not Found', detail: 'no such option' } })
+    await expect(fetchNetworkCustomPropertyDefinitions('4.7')).rejects.toBeInstanceOf(ApiError)
+  })
+})
+
+describe('custom properties through the mock engine', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    vi.stubEnv('VITE_MOCK', '1')
+    setSessionToken('tok-123')
+    resetMockVms()
+  })
+  afterEach(() => {
+    clearSessionToken()
+    vi.unstubAllEnvs()
+    vi.useRealTimers()
+  })
+
+  // Settle the mock latency timer (the api/host-detail.test.ts idiom).
+  async function call<T>(promise: Promise<T>): Promise<T> {
+    await vi.advanceTimersByTimeAsync(500)
+    return promise
+  }
+
+  async function rejects(promise: Promise<unknown>, status: number): Promise<void> {
+    const rejection = expect(promise).rejects.toMatchObject({ status })
+    await vi.advanceTimersByTimeAsync(500)
+    await rejection
+  }
+
+  const modify = (attachmentId: string, networkId: string) => ({
+    attachmentId,
+    networkId,
+    nicName: 'bond0',
+    bootProtocol: 'none' as const,
+    ipChanged: false,
+  })
+
+  async function propertiesOf(attachmentId: string) {
+    const attachments = await call(listHostNetworkAttachments('host-01'))
+    return attachments.find((a) => a.id === attachmentId)?.properties
+  }
+
+  it('serves the seeded bridge_opts and the engine key definitions', async () => {
+    expect(await propertiesOf('host-01-att-mgmt')).toEqual({
+      property: [{ name: 'bridge_opts', value: 'forward_delay=1500 multicast_snooping=1' }],
+    })
+    // the attachment without properties omits the key, like the live mapper
+    expect(await propertiesOf('host-01-att-storage')).toBeUndefined()
+    const definitions = await call(fetchNetworkCustomPropertyDefinitions('4.7'))
+    expect(Object.keys(definitions)).toEqual(['bridge_opts', 'ethtool_opts'])
+  })
+
+  it('round-trips a replaced set, keeps it on an unrelated modify, and clears it', async () => {
+    const replaced = [
+      { name: 'bridge_opts', value: 'forward_delay=0' },
+      { name: 'ethtool_opts', value: '--offload em1 rx on' },
+    ]
+    await call(
+      setupHostNetworks('host-01', {
+        modified: [{ ...modify('host-01-att-mgmt', 'net-01'), properties: replaced }],
+      }),
+    )
+    expect(await propertiesOf('host-01-att-mgmt')).toEqual({ property: replaced })
+
+    // a modify that omits properties keeps the stored set
+    await call(setupHostNetworks('host-01', { modified: [modify('host-01-att-mgmt', 'net-01')] }))
+    expect(await propertiesOf('host-01-att-mgmt')).toEqual({ property: replaced })
+
+    await call(
+      setupHostNetworks('host-01', {
+        modified: [{ ...modify('host-01-att-mgmt', 'net-01'), properties: [] }],
+      }),
+    )
+    expect(await propertiesOf('host-01-att-mgmt')).toBeUndefined()
+  })
+
+  it('409s bad custom properties the way the engine validator does, applying nothing', async () => {
+    const attempt = (networkId: string, attachmentId: string, name: string, value: string) =>
+      setupHostNetworks('host-01', {
+        modified: [{ ...modify(attachmentId, networkId), properties: [{ name, value }] }],
+      })
+    // bridge_opts on storage, which is not a VM network
+    await rejects(attempt('net-03', 'host-01-att-storage', 'bridge_opts', 'forward_delay=0'), 409)
+    // a key the engine config does not define
+    await rejects(attempt('net-01', 'host-01-att-mgmt', 'no_such_key', 'x'), 409)
+    // a value that does not match the key's regex
+    await rejects(attempt('net-01', 'host-01-att-mgmt', 'bridge_opts', 'forward_delay'), 409)
+    expect(await propertiesOf('host-01-att-storage')).toBeUndefined()
+    expect(await propertiesOf('host-01-att-mgmt')).toEqual({
+      property: [{ name: 'bridge_opts', value: 'forward_delay=1500 multicast_snooping=1' }],
+    })
+    // an admin-defined key is fine on a non-VM network
+    await call(attempt('net-03', 'host-01-att-storage', 'ethtool_opts', '-K em1 gso off'))
+    expect(await propertiesOf('host-01-att-storage')).toEqual({
+      property: [{ name: 'ethtool_opts', value: '-K em1 gso off' }],
+    })
   })
 })
